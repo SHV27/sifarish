@@ -2,31 +2,40 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Current workstream: WS0 → WS1 (Sach Ledger)
+## Current workstream: WS7 (Certification & Ship) — deploy remaining
 
 ## Done
-- WS0: volatile facts verified live (07-Jul-2026):
-  - Versions: Vite 8.1.3 · React 19.2.7 · TS pinned ~5.9 (6.0.3 too fresh) · Tailwind 4.3.2 · Dexie 4.4.4 ·
-    docx 9.7.1 · pdf-lib 1.17.1 · pdfjs-dist 6.1.200 · Vitest 4.1.10 · Playwright 1.61.1.
-  - CORS: Greenhouse/Lever/Ashby/SmartRecruiters ALL return `access-control-allow-origin: *` → browser-direct.
-  - GitHub: SHV27 has 13 public repos; unauth 60 req/hr confirmed; API CORS `*` → Nabz browser-side.
-  - Project repos (DARYA/MUNSHI/KATHA VAULT/YOJANA SETU/SUTRADHAR/Braillix) NOT public yet → seed `in_forge`.
-    `gloaming-game` live with README + deployed URL → seed `shipped`.
-  - All three user-supplied tokens FAILED auth (Groq invalid / GH PAT 401 / Vercel 403) → keyless build;
-    user rotates + re-issues later if amplifiers wanted.
-- Scaffold: package.json, tsconfigs, vite/vitest configs, index.html, tokens.css, .gitignore, git init.
+- **WS0** volatile facts verified live; scaffold; Ink & Appointment tokens.
+- **WS1** Sach Ledger: types, Dexie schema, real SHV27 seed (30 entries), shelf UI with inline edit,
+  Voice Bank, promotion ceremony.
+- **WS2** Darzi Engine: JD decode → evidence match → deterministic one-page compiler → pdf-lib PDF +
+  docx DOCX → pdfjs parse-back. Packet screen with paste lane.
+- **WS3** Shikaar Radar: 29-board live-probed watchlist seed, 4 keyless feed adapters, paste lane
+  (URL + text), rubric scoring with expandable WHY, ranked queue capped at 15.
+- **WS4** GitHub Nabz: keyless REST sync, diff→suggestion engine, one-click promotion loop, strength meter.
+- **WS5** Morcha Board: 6-column pipeline, day-7/14 nudges, interview dossier, persistent header strip.
+- **WS6** `/api/polish` edge function + deterministic fact-drift guard (client re-check), onboarding
+  (first packet <60s), keyboard nav (1–5 + skip link), teaching empty states, a11y (roles/labels/reduced-motion).
+- **WS7a** 65 gate/invariant tests green — incl. I5 real pdf.js parse-back round-trip.
+- **WS7b** Headless screenshots: 8 screens × 3 breakpoints (360/768/1280). **Zero console errors** verified.
+- **WS7c** README case-study + LAUNCH.md (LinkedIn draft + 100-word pitch); docs updated.
 
 ## ONE next action
-→ Write `src/types.ts` + Dexie schema + `seed/ledger.seed.json` (WS1).
+→ Deploy to Vercel (static + `/api/polish`), then paste the live URL into README + LAUNCH.md and print the final report.
 
 ## Gate status
 | Gate | Status |
 |---|---|
-| Ledger integrity (I1) | not yet run |
-| Parse-back fidelity (I5) | not yet run |
-| JD coverage | not yet run |
-| One page | not yet run |
-| Slop-scan | not yet run |
-| Radar rubric agreement | not yet run |
-| Fresh-Eyes ≤60s | not yet run |
-| UX floor (console/a11y/screenshots) | not yet run |
+| Ledger integrity (I1) | ✅ green |
+| Parse-back fidelity (I5) | ✅ green (real PDF round-trip) |
+| JD coverage (≥80% backed, 0 unbacked) | ✅ green |
+| One page | ✅ green |
+| Slop-scan | ✅ green |
+| Radar rubric agreement | ✅ green |
+| Fact-drift guard | ✅ green |
+| Chaos (empty/forge-only/malformed/overflow/HTML) | ✅ green |
+| Console errors | ✅ 0 across all screens |
+| 3-breakpoint screenshots | ✅ captured |
+| Deploy live | ⏳ pending |
+
+**Total: 65/65 tests · typecheck clean · build clean · 0 console errors.**

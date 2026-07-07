@@ -10,3 +10,6 @@ test-results/
 playwright-report/
 screenshots/
 *.tsbuildinfo
+
+screenshots/
+console-report.json

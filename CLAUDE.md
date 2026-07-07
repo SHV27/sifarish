@@ -161,3 +161,6 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
 - D12: TypeScript pinned ~5.9 — 6.0.3 is days old; ecosystem stability is the senior call. (WS0)
 - D13: GitHub API CORS is `*` → Nabz runs fully browser-side unauth with Dexie cache + honest rate-budget UI; PAT amplifier deferred until a valid key exists. (WS0)
 - D14: No router lib, no state lib — 6 screens on top-level state; Dexie + useLiveQuery IS the store. (WS0)
+- D15: Fact-drift guard rewritten from blunt token-diff to a precise 3-category detector (new numbers / known tech-skill vocab / proper-nouns+acronyms) — a token-diff false-rejected honest rephrasing ("co-op"→"cooperative"). The invariant forbids new FACTS, not new words. (WS7a)
+- D16: Export libs (pdf-lib, docx) + pdfjs dynamic-imported at call sites → initial bundle drops from 1.15MB to ~383KB gzip 120KB; pdf/docx chunks load only on export click. Web-vitals gate. (WS7b)
+- D17: Watchlist seed = 29 boards, each PROBED LIVE 07-Jul-2026 and confirmed returning jobs; dead tokens (Groq, W&B, Pinecone, HuggingFace, Krutrim, Fractal, etc.) dropped at probe time. (WS3)
