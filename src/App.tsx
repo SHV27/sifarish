@@ -1,0 +1,103 @@
+import { useEffect, useState, useCallback } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from './db/db'
+import { Shelf } from './screens/Shelf'
+import { Radar } from './screens/Radar'
+import { PacketScreen } from './screens/PacketScreen'
+import { Morcha } from './screens/Morcha'
+import { SettingsScreen } from './screens/SettingsScreen'
+import { Onboarding } from './screens/Onboarding'
+import { HeaderStrip } from './components/HeaderStrip'
+
+export type Screen = 'shelf' | 'radar' | 'packet' | 'morcha' | 'settings'
+
+const NAV: { key: Screen; label: string; hindi: string }[] = [
+  { key: 'shelf', label: 'Ledger', hindi: 'सच' },
+  { key: 'radar', label: 'Radar', hindi: 'शिकार' },
+  { key: 'packet', label: 'Packet', hindi: 'दर्ज़ी' },
+  { key: 'morcha', label: 'Morcha', hindi: 'मोर्चा' },
+  { key: 'settings', label: 'Settings', hindi: '⚙' },
+]
+
+export default function App() {
+  const [screen, setScreen] = useState<Screen>('shelf')
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const settings = useLiveQuery(() => db.settings.get('app'))
+
+  const openPacket = useCallback((jobId: string) => {
+    setActiveJobId(jobId)
+    setScreen('packet')
+  }, [])
+
+  // Keyboard map: 1–5 switch screens (never while typing in a field)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+      const idx = ['1', '2', '3', '4', '5'].indexOf(e.key)
+      if (idx >= 0) setScreen(NAV[idx].key)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  if (settings === undefined) return null // Dexie warming up; sub-frame flash only
+  if (!settings?.onboarded) return <Onboarding onDone={openPacket} />
+
+  return (
+    <div className="min-h-screen flex">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-ink focus:text-paper focus:px-3 focus:py-2"
+      >
+        Skip to content
+      </a>
+
+      {/* Sidebar */}
+      <nav aria-label="Primary" className="w-16 sm:w-52 shrink-0 border-r border-paper-edge bg-paper-sunken/40 flex flex-col">
+        <div className="px-3 sm:px-5 py-5 border-b border-paper-edge">
+          <div className="font-display font-black text-xl text-ink leading-none hidden sm:block">SIFARISH</div>
+          <div className="font-devanagari text-stamp text-sm sm:text-xs sm:mt-1">सिफ़ारिश</div>
+          <div className="hidden sm:block font-mono text-[10px] text-ink-soft mt-2 leading-tight">
+            Compile truth.<br />Draft everything.<br />Send nothing.
+          </div>
+        </div>
+        <ul className="flex-1 py-3">
+          {NAV.map((n, i) => (
+            <li key={n.key}>
+              <button
+                onClick={() => setScreen(n.key)}
+                aria-current={screen === n.key ? 'page' : undefined}
+                className={`w-full text-left px-3 sm:px-5 py-2.5 flex items-center gap-2 font-medium text-sm transition-colors
+                  ${screen === n.key ? 'bg-ink text-paper' : 'text-ink hover:bg-ink-wash'}`}
+              >
+                <span className="font-mono text-[10px] opacity-60">{i + 1}</span>
+                <span className="hidden sm:inline">{n.label}</span>
+                <span className={`font-devanagari text-xs ${screen === n.key ? 'opacity-80' : 'opacity-50'} sm:ml-auto`}>
+                  {n.hindi}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="px-3 sm:px-5 py-3 border-t border-paper-edge hidden sm:block">
+          <p className="font-mono text-[10px] text-ink-soft leading-snug">
+            Keyless mode — fully functional. No key ever required.
+          </p>
+        </div>
+      </nav>
+
+      {/* Main */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <HeaderStrip />
+        <main id="main" className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
+          {screen === 'shelf' && <Shelf />}
+          {screen === 'radar' && <Radar onTailor={openPacket} />}
+          {screen === 'packet' && <PacketScreen jobId={activeJobId} onPickJob={openPacket} />}
+          {screen === 'morcha' && <Morcha onOpenPacket={openPacket} />}
+          {screen === 'settings' && <SettingsScreen />}
+        </main>
+      </div>
+    </div>
+  )
+}
