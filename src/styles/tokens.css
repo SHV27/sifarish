@@ -1,0 +1,115 @@
+/* ============================================================
+   SIFARISH · "Ink & Appointment" — single design-token source
+   The aesthetic of the coveted Indian appointment letter and
+   the bureau desk that produces it. (CLAUDE.md §8)
+   ============================================================ */
+@import "tailwindcss";
+
+@theme {
+  /* -- Paper -- */
+  --color-paper: #f7f2e7;        /* warm cream, the field */
+  --color-paper-raised: #fdfaf2; /* cards, dossiers */
+  --color-paper-sunken: #efe8d8; /* wells, inputs */
+  --color-paper-edge: #d9cfb8;   /* hairline rules */
+
+  /* -- Ink -- */
+  --color-ink: #1b2a4a;          /* ink blue, primary text */
+  --color-ink-soft: #47536e;     /* secondary text */
+  --color-ink-faint: #7a819159;  /* disabled / placeholder (on paper) */
+  --color-ink-wash: #1b2a4a14;   /* tint fills */
+
+  /* -- Verdict colors (used sparingly, meaningfully) -- */
+  --color-stamp: #b3372f;        /* stamp red — verdicts & urgency ONLY */
+  --color-stamp-wash: #b3372f1a;
+  --color-shipped: #2e6b4f;      /* archival green — SHIPPED */
+  --color-shipped-wash: #2e6b4f1a;
+  --color-forge: #9a6b1f;        /* amber — IN FORGE */
+  --color-forge-wash: #9a6b1f1f;
+
+  /* -- Type -- */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Public Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-devanagari: "Noto Sans Devanagari", sans-serif;
+
+  /* -- Motion: paper-and-stamp language (150–250ms, meaningful only) -- */
+  --ease-paper: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-dossier-in: dossier-in 220ms var(--ease-paper) both;
+  --animate-stamp-down: stamp-down 180ms cubic-bezier(0.34, 1.3, 0.64, 1) both;
+  --animate-nudge: nudge-pulse 2.4s ease-in-out infinite;
+
+  /* -- Shadows: paper lifted off a desk -- */
+  --shadow-dossier: 0 1px 2px #1b2a4a14, 0 4px 14px #1b2a4a1a;
+  --shadow-dossier-hover: 0 2px 4px #1b2a4a1f, 0 10px 28px #1b2a4a26;
+}
+
+@keyframes dossier-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes stamp-down {
+  from { opacity: 0; transform: scale(1.6) rotate(-8deg); }
+  to   { opacity: 1; transform: scale(1) rotate(-3deg); }
+}
+@keyframes nudge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* -- Base -- */
+html {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle laid-paper texture: two crossing hairline gradients */
+body {
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 27px, #1b2a4a05 27px 28px),
+    repeating-linear-gradient(90deg, transparent 0 27px, #1b2a4a03 27px 28px);
+}
+
+::selection { background: var(--color-ink); color: var(--color-paper); }
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* -- Reusable primitives -- */
+.dossier {
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-paper-edge);
+  box-shadow: var(--shadow-dossier);
+  border-radius: 4px;
+}
+
+.stamp {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  padding: 0.1rem 0.45rem;
+  transform: rotate(-3deg);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+.stamp-shipped { color: var(--color-shipped); background: var(--color-shipped-wash); }
+.stamp-forge   { color: var(--color-forge); background: var(--color-forge-wash); transform: rotate(0deg); border-style: dashed; }
+.stamp-red     { color: var(--color-stamp); background: var(--color-stamp-wash); }
+
+.ledger-rule { border-top: 1px dashed var(--color-paper-edge); }
