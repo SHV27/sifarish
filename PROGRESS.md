@@ -2,7 +2,7 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Current workstream: WS7 (Certification & Ship) — deploy remaining
+## Current workstream: SHIPPED ✅ — live at https://sifarish-shv-s-projects.vercel.app
 
 ## Done
 - **WS0** volatile facts verified live; scaffold; Ink & Appointment tokens.
@@ -21,7 +21,8 @@
 - **WS7c** README case-study + LAUNCH.md (LinkedIn draft + 100-word pitch); docs updated.
 
 ## ONE next action
-→ Deploy to Vercel (static + `/api/polish`), then paste the live URL into README + LAUNCH.md and print the final report.
+→ Ship complete. If amplifiers wanted: user sets a valid `GROQ_API_KEY` (polish) + optional `GITHUB_PAT`
+  (higher Nabz limits) in Vercel env, then redeploy. Otherwise the keyless build is fully functional.
 
 ## Gate status
 | Gate | Status |

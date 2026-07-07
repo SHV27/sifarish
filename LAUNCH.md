@@ -46,7 +46,7 @@ a referee that writes invariant tests, and a hostile recruiter that skims every 
 Not looking for a resume that impresses. Looking for one that's *true* — and so well-armed that lying
 would be a downgrade.
 
-Live: [URL] · Code: github.com/SHV27
+Live: https://sifarish-shv-s-projects.vercel.app · Code: github.com/SHV27
 
 #AI #AgenticAI #JobSearch #BuildInPublic #MachineLearning
 

@@ -2,6 +2,8 @@
 
 ### A job-hunt chief of staff that refuses to lie.
 
+**▶ Live: https://sifarish-shv-s-projects.vercel.app** · Code: https://github.com/SHV27
+
 > **The Design Law:** *Compile truth. Draft everything. Send nothing.*
 
 SIFARISH is a personal hiring agent for one candidate — a 3rd-year CSE student hunting a
