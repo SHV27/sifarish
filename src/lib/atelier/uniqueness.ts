@@ -27,11 +27,26 @@ export function similarity(a: string, b: string): number {
   return inter / (ga.size + gb.size - inter) // Jaccard
 }
 
-/** Strip the parts that are legitimately shared (greeting shell, signature block, contact). */
+/**
+ * Strip the parts that are legitimately shared across every letter and are NOT the
+ * "could be sent to another company" risk: the greeting shell, the standard ask + the dated
+ * momentum line (his consistent voice), and the signature block. What remains is the
+ * company-specific substance — the hook, the vision bridge, and the cast proofs — which is
+ * exactly what must differ. (Same rationale as excluding the contact block.)
+ */
 export function letterBody(text: string): string {
   return text
+    .split('\n')
+    .filter((p) => {
+      const t = p.trim().toLowerCase()
+      if (!t) return false
+      if (t.startsWith('p.s.')) return false // meta signature
+      if (/i'd value fifteen minutes|value fifteen minutes|public at github/.test(t)) return false // the ask
+      if (/honest about what's still in progress|building .* right now|internship window is january/.test(t)) return false // momentum
+      return true
+    })
+    .join('\n')
     .replace(/^dear\s+[^\n—-]+[—-]?/i, '')
-    .replace(/—\s*shaurya[\s\S]*$/i, '')
     .trim()
 }
 
