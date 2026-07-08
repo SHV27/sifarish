@@ -32,7 +32,7 @@ Still runs with zero API keys. Still never presses Send — that's always me.
 I didn't want an assistant that games the system. I wanted one that makes the truth so well-armed that lying
 would be a downgrade. 111 automated honesty checks, all green.
 
-Live: https://sifarish-shv-s-projects.vercel.app · Code: github.com/SHV27
+Live: https://sifarish-shv-s-projects.vercel.app · Code: github.com/SHV27/sifarish
 
 #AI #AgenticAI #JobSearch #BuildInPublic #LLM #Claude
 
@@ -85,7 +85,7 @@ a referee that writes invariant tests, and a hostile recruiter that skims every 
 Not looking for a resume that impresses. Looking for one that's *true* — and so well-armed that lying
 would be a downgrade.
 
-Live: https://sifarish-shv-s-projects.vercel.app · Code: github.com/SHV27
+Live: https://sifarish-shv-s-projects.vercel.app · Code: github.com/SHV27/sifarish
 
 #AI #AgenticAI #JobSearch #BuildInPublic #MachineLearning
 

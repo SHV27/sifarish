@@ -2,7 +2,7 @@
 
 ### A job-hunt chief of staff that refuses to lie.
 
-**▶ Live: https://sifarish-shv-s-projects.vercel.app** · Code: https://github.com/SHV27
+**▶ Live: https://sifarish-shv-s-projects.vercel.app** · Code: https://github.com/SHV27/sifarish
 
 > **The Design Law:** *Compile truth. Draft everything. Send nothing.*
 
