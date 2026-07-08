@@ -1,5 +1,51 @@
 # LAUNCH — LinkedIn draft + 100-word pitch
 
+## v3 LinkedIn post — "The Dimaag Update" (Shaurya's voice, screenshots-only)
+
+---
+
+**My hiring agent now shows its reasoning for every line on my resume. Ask it why, and it answers.**
+
+I've spent three sessions building SIFARISH — an agent that builds my job applications on one rule:
+*compile truth, draft everything, send nothing.* v1 made it unable to lie. v2 gave it eyes. This week it
+got a brain.
+
+It no longer just *generates* my resume. It *reasons* about it — like a 40-year veteran recruiter — and
+writes the reasoning down where I can read it and overrule it.
+
+For every role it runs a four-pass Editor's Desk:
+
+→ **Archetype** — it reads the JD and decides what kind of reviewer will skim this in six seconds (it cast
+a recent role as "Agentic Systems Engineer" at 90% confidence, and told me exactly what that reviewer scans
+for first).
+
+→ **Casting** — it picks which projects lead and which sit out, with reasons. One benched project's note:
+"its domain would dilute this JD's safety focus." I can overrule any call in one click — my taste is final.
+
+→ **Angle** — it reframes each project for the role by re-ordering *evidence I actually have* — never
+inventing. A fact-drift guard runs on every reframe.
+
+→ **Red-Team** — a hostile 6-second skim. The packet can't be marked "ready" without a PASS.
+
+Every one of those calls has a **"Why?"** button. Tap it — it shows the options it weighed, the criteria,
+its choice, and its confidence. No hidden math. And it's honest about uncertainty.
+
+The cover letters are composed, not templated — a letter that could be sent to two companies is a failed
+letter, and there's an automated check that enforces exactly that.
+
+Oh, and it's careful with money: every AI call is cached and budgeted, and a ledger shows me every token.
+When the budget runs low it quietly falls back to deterministic logic. It runs fully without any API keys.
+
+I didn't build something that games the system. I built something that makes the truth so well-armed that
+lying would be a downgrade — and now it can explain, line by line, exactly why it made every call.
+
+145 automated honesty checks, all green. Screenshots below 👇
+
+#BuildInPublic #AI #AgenticAI #JobSearch #LLM
+
+---
+
+
 ## v2 LinkedIn post — "The Jasoos Update" (Shaurya's voice)
 
 ---

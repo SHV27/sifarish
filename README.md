@@ -12,6 +12,14 @@
 > cited company research before every compile, and a conversational **Guru** that knows your ledger,
 > refuses to invent skills, and never promises outcomes. Still fully functional with zero keys.
 
+> **v3 · The Dimaag Update (Final Form)** — the app now *thinks*, and shows its work. A reasoning
+> core (the **Dimaag**) weighs every consequential choice and stores a written, inspectable rationale
+> (I10): tap **Why?** on any decision and it answers. Resumes are built by a four-pass **Editor's Desk**
+> — archetype → casting → angle surgery → red-team — that decides which projects lead and how each is
+> framed, for the specific reviewer, with reasons you can overrule. Cover letters are **composed, not
+> filled** (a letter sendable to two companies is a failed letter). Every LLM call is cached, budgeted,
+> two-tier, and heuristic-fallback-safe — the **Dimaag Ledger** shows every token. Still zero-key functional.
+
 SIFARISH is a personal hiring agent for one candidate — a 3rd-year CSE student hunting a
 compulsory AI-engineering internship in a market where **91% of recruiters now actively hunt
 fabricated resumes** and **pretty resumes die in ATS parsers**. It collapses hours of per-company
@@ -86,6 +94,23 @@ compounds weekly *with real shipped work* — and the strength meter only moves 
 - **Pulse Loop** — a weekly cited news sweep proposes human-confirmed rubric/keyword updates, so the app
   stays present-tense. The rubric keeps an append-only changelog.
 
+### v3 — The Dimaag (the brain)
+
+9. **Dimaag Core** (दिमाग़ · the mind) — a shared reasoning engine: `decide` / `critique` / `classify`,
+   two-tier (gpt-oss-120b for reasoning, llama-3.1-8b for classification), **content-hash cached**
+   (identical inputs never re-call), **budgeted** per tier, and **deterministic-fallback-safe** (keyless =
+   heuristic, still honest). Every `decide` returns a stored `Rationale` — the **Why?** you can expand.
+10. **The Editor's Desk** (Darzi v3) — a four-pass editorial pipeline, each pass rationaled: **Archetype**
+    (what this reviewer scans for in 6s) → **Casting** (which 3 projects lead, which are benched, and why) →
+    **Angle Surgery** (frame each project for the role — evidence re-ordered, never invented) → **Red-Team**
+    (a hostile 6-second skim; PASS required for "ready"). The Casting Sheet shows all four; you can overrule
+    any call with one click (the compiler stays the final authority for I1/I2/one-page).
+11. **The Atelier** — cover letters composed from real parts: a cited company hook → a vision bridge → cast
+    proof points → dated momentum → the ask, plus an optional **Sifarish Signature** (per-company Dimaag
+    decision). A trigram uniqueness gate + a generic-phrase banlist enforce that no two letters are alike.
+- **Vision Engine** — edit your dream; the app derives hunt queries + role archetypes (with reasons) that
+  you confirm. The hunt flows from the vision.
+
 ## The invariants (Referee-enforced, in the test suite)
 
 - **I1** No orphan claims — every compiled content line carries `ledgerIds`; the renderer refuses uncited prose.
@@ -97,6 +122,7 @@ compounds weekly *with real shipped work* — and the strength meter only moves 
 - **I7** Cited intelligence — every claim about a company/role/trend carries a source URL; uncited external prose is an error.
 - **I8** Budget honesty — every metered API (Tavily/JSearch/Groq) has a visible monthly + per-run cap; sweeps never overspend, they degrade to keyless lanes.
 - **I9** No guarantee language — "guaranteed", "assured selection", "100% placement" are banned in UI, Guru replies, and documents. The app maximizes probability and says exactly that. I3 extends to Guru/Khabri: discovery via lawful APIs only, no auto-fill, no auto-send.
+- **I10** Reasoned decisions — every consequential choice (casting, angle, letter strategy, hunt derivation, signature) stores an inspectable rationale `{options, criteria, choice, why, confidence, evidence}`. A decision without a Why is a bug. Rationales are honest about uncertainty.
 
 The LLM polish pass (optional, behind a server-side key) is held to I1 too: a deterministic
 **fact-drift guard** rejects any rephrase that introduces a new number, tool, or skill — keeping the
@@ -105,7 +131,7 @@ compiled truth as the floor. The Guru's honesty-router intercepts fabrication-ba
 
 ## Gate results
 
-All gates run in `npm run gates` (Vitest). Latest: **111/111 green** (65 v1 + 46 v2).
+All gates run in `npm run gates` (Vitest). Latest: **145/145 green** (65 v1 + 46 v2 + 34 v3).
 
 | Gate | Target | Status |
 |---|---|---|
@@ -126,15 +152,37 @@ All gates run in `npm run gates` (Vitest). Latest: **111/111 green** (65 v1 + 46
 | Console errors | zero across all screens (v1 + Khabri + Guru + v2 packet), verified live | ✅ |
 | Responsive | 360 / 768 / 1280 captured | ✅ |
 
+| Dimaag core | decide/critique/classify + caching (identical-input re-calls = 0), honest usage | ✅ |
+| I10 rationale coverage | every editorial pass + signature + vision derivation carries a Why | ✅ |
+| Red-team gate | no packet is "ready" without a PASS | ✅ |
+| Angle fact-drift | angle bullets can only select/order REAL bullets (I1 by construction) | ✅ |
+| Letter uniqueness | trigram similarity below ceiling on a multi-company set; banlist v3 = 0 hits | ✅ |
+| Vision derivation | encoded dream → expected market role names, each with a reason | ✅ |
+| Budget discipline | two-tier caps enforced; exhaustion → heuristic; month rollover resets | ✅ |
+| Guru eval | 18 scripted conversations (adds angle/casting/signature/budget/derive intents) | ✅ |
+
 **Verified live in production** with real keys: JSearch surfaced 72 roles (67 new after dedupe),
-13 hiring signals, Guru refused a guarantee-bait and answered a ledger-grounded question, the Intel
-Dossier + Apply Plan + honesty note all rendered — zero console errors.
+13 hiring signals, Guru refused a guarantee-bait and answered a ledger-grounded question, and the
+four-pass Editor's Desk cast an "Applied AI Engineering Intern" role as **Agent/Agentic Systems
+Engineer (gpt-oss-120b, 90% confidence)** with a full, inspectable rationale, a red-team PASS, a
+composed cited cover letter, and the Dimaag Ledger tracking every token — zero console errors.
 
 ## Stack
 
 Vite 8 · React 19 · TypeScript · Tailwind 4 · Dexie (IndexedDB, offline-first) · pdf-lib (true
 text-layer PDF, drawn line-by-line so text order is deterministic) · docx · pdfjs-dist (parse-back) ·
-one Vercel edge function (`/api/polish`, Groq, keyless fallback mandatory) · Vitest + Playwright.
+Vercel edge functions (`/api/{polish,dimaag,guru,intel,pulse,khabri/*}` — Groq two-tier
+[gpt-oss-120b + llama-3.1-8b], Tavily, JSearch/OpenWeb Ninja; every one keyless-fallback-safe) ·
+Vitest + Playwright.
+
+## Final Form
+
+**SIFARISH is feature-complete.** Three sessions built it: v1 made it *unable to lie* (evidence-compiled
+resumes, parse-back-tested), v2 gave it *eyes* (lawful multi-source discovery + a hiring-signal radar +
+cited company intel + a conversational Guru), and v3 gave it a *brain* (a reasoning core that weighs every
+choice and writes down its reasons where you can read, question, and overrule them). Everything from here is
+**content — the ledger, the vision, the keys — never code.** The resume wins the interview call; Shaurya
+wins the room.
 
 ## Run it
 
