@@ -205,6 +205,25 @@ export interface JDDecode {
   compHints: string[]
 }
 
+/** The four-pass editorial plan (Darzi v3). Every pass stores its rationale (I10). */
+export interface CastChoice {
+  ledgerId: string
+  title: string
+  angleId: string
+  angleLabel: string
+  angleRationale: Rationale
+}
+export interface EditorialPlan {
+  archetype: { id: string; label: string; priorities: string[]; confidence: number; by: 'dimaag' | 'heuristic'; reviewerNote: string }
+  casting: Rationale
+  chosen: CastChoice[]
+  benched: { ledgerId: string; title: string; why: string }[]
+  redTeam: Critique
+  redTeamRounds: number
+  /** True if the user has manually overruled any casting decision. */
+  overruled?: boolean
+}
+
 export interface Packet {
   id: string
   jobId: string
@@ -219,6 +238,10 @@ export interface Packet {
   polished: boolean
   /** Cited company research (Darzi v2). Changes emphasis + the cover-letter hook, never a claim. */
   intel?: CompanyIntel
+  /** The Editor's Desk reasoning (Darzi v3). Absent for v1/v2-style compiles. */
+  editorial?: EditorialPlan
+  /** Whether the packet passed the red-team gate — required for "ready". */
+  ready?: boolean
 }
 
 // ---------- Nabz ----------

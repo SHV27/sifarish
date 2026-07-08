@@ -70,6 +70,15 @@ export interface CompileInput {
   decode: JDDecode
   coverage: CoverageReport
   jobId: string
+  /**
+   * Optional Darzi v3 editorial override: the Editor's Desk proposes which projects lead
+   * (order) and which bullets each shows (selection/order). The compiler DISPOSES — it still
+   * enforces I1/I2/one-page as final authority. Absent → v1 relevance sort (regression-safe).
+   */
+  editorial?: {
+    order: string[] // ledger ids, best-first
+    bullets: Record<string, string[]> // ledgerId → bullet ids in chosen order
+  }
 }
 
 export function compileResume(input: CompileInput): CompiledResume {
@@ -110,14 +119,21 @@ export function compileResume(input: CompileInput): CompiledResume {
     })
   }
 
-  // -- Projects: ranked per-JD, greedy under budget --
-  const projects = shipped
-    .filter((e) => e.kind === 'project')
-    .sort(
+  // -- Projects: editorial order if present (Darzi v3), else v1 relevance sort --
+  const allProjects = shipped.filter((e) => e.kind === 'project')
+  let projects: LedgerEntry[]
+  if (input.editorial) {
+    const rank = new Map(input.editorial.order.map((id, i) => [id, i]))
+    projects = allProjects
+      .slice()
+      .sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999) || entryRelevance(b, decode) - entryRelevance(a, decode))
+  } else {
+    projects = allProjects.sort(
       (a, b) =>
         entryRelevance(b, decode) - entryRelevance(a, decode) ||
         (b.evidence?.date ?? '').localeCompare(a.evidence?.date ?? ''),
     )
+  }
   if (projects.length > 0) {
     push(lines, { kind: 'heading', text: 'PROJECTS', ledgerIds: projects.map((e) => e.id) })
     for (const p of projects) {
@@ -128,10 +144,19 @@ export function compileResume(input: CompileInput): CompiledResume {
         ledgerIds: [p.id],
       })
       if (evidenceUrl) push(lines, { kind: 'meta', text: evidenceUrl.replace(/^https?:\/\//, ''), ledgerIds: [p.id] })
-      const chosen = p.bullets
-        .slice()
-        .sort((a, b) => bulletRelevance(b.keywords, decode) - bulletRelevance(a.keywords, decode))
-        .slice(0, 3)
+      // Editorial bullet plan (angle-driven selection/order) if present, else relevance sort.
+      const plan = input.editorial?.bullets[p.id]
+      let chosen: typeof p.bullets
+      if (plan && plan.length > 0) {
+        const byId = new Map(p.bullets.map((b) => [b.id, b]))
+        chosen = plan.map((id) => byId.get(id)).filter((b): b is (typeof p.bullets)[number] => !!b).slice(0, 3)
+        if (chosen.length === 0) chosen = p.bullets.slice(0, 3)
+      } else {
+        chosen = p.bullets
+          .slice()
+          .sort((a, b) => bulletRelevance(b.keywords, decode) - bulletRelevance(a.keywords, decode))
+          .slice(0, 3)
+      }
       for (const b of chosen) {
         push(lines, { kind: 'bullet', text: `- ${b.text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
       }

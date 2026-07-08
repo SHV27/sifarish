@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { CompiledDoc, Job, Packet } from '../types'
-import { buildPacket, savePacket } from '../lib/darzi'
+import { buildPacket, savePacket, overrulePacket } from '../lib/darzi'
 import { CompileError, LINE_METRICS } from '../lib/compile/compiler'
 import { saveFile } from '../lib/util/download'
 import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
 import { markApplied } from '../lib/morcha'
 import { buildApplyPlan } from '../lib/guru/applyPlan'
+import { Why } from '../components/Why'
+import type { EditorialPlan } from '../types'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
   const job = useLiveQuery(() => (jobId ? db.jobs.get(jobId) : undefined), [jobId])
@@ -282,6 +284,8 @@ function PacketBody({
     <div className="grid lg:grid-cols-[1fr_320px] gap-5">
       {/* Resume paper preview — the evidence is the interface */}
       <div>
+        {packet.editorial && <CastingSheet packet={packet} />}
+
         <div className="dossier p-6 sm:p-8 bg-white relative" aria-label="Compiled resume preview">
           <span className="stamp stamp-red absolute -top-2 -right-2 animate-stamp-down">Compiled · {new Date(packet.createdAt).toLocaleDateString('en-IN')}</span>
           {packet.resume.lines.map((line, i) => (
@@ -396,6 +400,128 @@ function ResumeLine({ text, kind, isName, count }: { text: string; kind: keyof t
         </span>
       )}
     </p>
+  )
+}
+
+/** The Casting Sheet (Darzi v3) — all four editorial passes, each with its Why, overrulable. */
+function CastingSheet({ packet }: { packet: Packet }) {
+  const ed = packet.editorial as EditorialPlan
+  const [busy, setBusy] = useState(false)
+
+  const overrule = async (opts: { promoteId?: string; benchId?: string }) => {
+    setBusy(true)
+    try {
+      await overrulePacket(packet, opts)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="dossier p-4 mb-3" aria-label="Casting sheet">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h2 className="font-display font-semibold text-ink text-sm">
+          The Editor's Desk — casting sheet
+        </h2>
+        <div className="flex items-center gap-2">
+          {ed.overruled && <span className="stamp stamp-forge !text-[9px]">overruled</span>}
+          {packet.ready ? (
+            <span className="stamp stamp-shipped !text-[10px]">red-team: PASS ✓</span>
+          ) : (
+            <span className="stamp stamp-red !text-[10px]">red-team: REVISE</span>
+          )}
+        </div>
+      </div>
+
+      {/* Pass 1 — Archetype */}
+      <div className="mt-3 ledger-rule pt-2">
+        <p className="text-xs text-ink">
+          <span className="font-mono text-[10px] text-ink-soft mr-1">1·ARCHETYPE</span>
+          Cast as <strong>{ed.archetype.label}</strong>{' '}
+          <span className={ed.archetype.by === 'dimaag' ? 'text-shipped' : 'text-forge'}>
+            ({ed.archetype.by === 'dimaag' ? '🧠' : '⚙'} {Math.round(ed.archetype.confidence * 100)}%)
+          </span>
+        </p>
+        <p className="text-[11px] text-ink-soft mt-0.5">{ed.archetype.reviewerNote}</p>
+        <p className="text-[11px] text-ink-soft">Scans first for: {ed.archetype.priorities.join(' · ')}</p>
+      </div>
+
+      {/* Pass 2 — Casting */}
+      <div className="mt-2 ledger-rule pt-2">
+        <p className="text-xs text-ink">
+          <span className="font-mono text-[10px] text-ink-soft mr-1">2·CASTING</span>
+          Leading: {ed.chosen.map((c) => c.title).join(', ')}
+        </p>
+        <Why rationale={ed.casting} label="why this lineup" />
+        <div className="mt-2 space-y-1">
+          {ed.chosen.map((c) => (
+            <div key={c.ledgerId} className="flex items-start justify-between gap-2 text-[11px]">
+              <span className="text-ink">
+                <span className="text-shipped">▲</span> <strong>{c.title}</strong> — angle: {c.angleLabel}
+              </span>
+              <button
+                className="text-ink-faint hover:text-stamp shrink-0 disabled:opacity-40"
+                disabled={busy || ed.chosen.length <= 1}
+                onClick={() => overrule({ benchId: c.ledgerId })}
+                title="Bench this (studio head overrule)"
+              >
+                bench ↓
+              </button>
+            </div>
+          ))}
+          {ed.benched.map((b) => (
+            <div key={b.ledgerId} className="flex items-start justify-between gap-2 text-[11px]">
+              <span className="text-ink-soft">
+                <span className="text-ink-faint">▽</span> {b.title} — {b.why}
+              </span>
+              <button
+                className="text-ink-faint hover:text-shipped shrink-0 disabled:opacity-40"
+                disabled={busy}
+                onClick={() => overrule({ promoteId: b.ledgerId })}
+                title="Promote this (studio head overrule)"
+              >
+                promote ↑
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pass 3 — Surgery (angles) */}
+      {ed.chosen.some((c) => c.angleRationale.optionsConsidered.length > 1) && (
+        <div className="mt-2 ledger-rule pt-2">
+          <p className="text-xs text-ink">
+            <span className="font-mono text-[10px] text-ink-soft mr-1">3·SURGERY</span>
+            Angle chosen per project (evidence re-ordered, never invented)
+          </p>
+          {ed.chosen
+            .filter((c) => c.angleRationale.optionsConsidered.length > 1)
+            .map((c) => (
+              <div key={c.ledgerId} className="mt-1">
+                <p className="text-[11px] text-ink">{c.title}: {c.angleLabel}</p>
+                <Why rationale={c.angleRationale} label="why this angle" />
+              </div>
+            ))}
+        </div>
+      )}
+
+      {/* Pass 4 — Red-Team */}
+      <div className="mt-2 ledger-rule pt-2">
+        <p className="text-xs text-ink">
+          <span className="font-mono text-[10px] text-ink-soft mr-1">4·RED-TEAM</span>
+          {ed.redTeam.by === 'dimaag' ? '🧠' : '⚙'} {ed.redTeam.verdict}
+          {ed.redTeam.smell && <span className="text-ink-soft"> — smell: {ed.redTeam.smell}</span>}
+        </p>
+        {ed.redTeam.fixes.length > 0 && (
+          <ul className="mt-1 space-y-0.5">
+            {ed.redTeam.fixes.map((f, i) => (
+              <li key={i} className="text-[11px] text-stamp">→ {f}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {busy && <p className="mt-2 text-[11px] text-ink-soft font-mono">Re-casting…</p>}
+    </section>
   )
 }
 

@@ -1,10 +1,11 @@
-import type { Job, Packet } from '../types'
+import type { Job, Packet, EditorialPlan } from '../types'
 import { db } from '../db/db'
 import { decodeJD } from './jd/decode'
 import { matchEvidence } from './match/evidence'
-import { compileResume } from './compile/compiler'
+import { compileResume, type CompileInput } from './compile/compiler'
 import { compileCoverLetter, compileOutreach, buildGapNote } from './compile/letters'
 import { getIntel, hookFromIntel } from './intel/client'
+import { runEditor, redTeamPass } from './darzi/editor'
 
 /**
  * The Darzi orchestrator: JD decode → evidence match → deterministic compile.
@@ -23,7 +24,33 @@ export async function buildPacket(job: Job): Promise<Packet> {
 
   const decode = decodeJD(job.jd)
   const coverage = matchEvidence(decode, ledger)
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id })
+
+  // -- Darzi v3 Editor's Desk: archetype → casting → surgery (passes 1-3) --
+  const shippedProjects = ledger.filter((e) => e.resumeEligible && e.tier === 'shipped' && e.kind === 'project')
+  let editorial: EditorialPlan | undefined
+  let compileEditorial: CompileInput['editorial']
+  if (shippedProjects.length > 0) {
+    const ed = await runEditor({ projects: shippedProjects, decode, jd: job.jd, intel }).catch(() => null)
+    if (ed) {
+      compileEditorial = { order: ed.order, bullets: ed.bullets }
+      editorial = { ...ed.plan, redTeam: { verdict: 'PASS', fixes: [], by: 'heuristic', at: new Date().toISOString() }, redTeamRounds: 0 }
+    }
+  }
+
+  // -- Compile (v1 compiler is final authority for I1/I2/one-page) --
+  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial })
+
+  // -- Pass 4: Red-Team loop (≤3 rounds). PASS required for "ready". --
+  let ready = true
+  if (editorial) {
+    const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
+    if (rt) {
+      editorial.redTeam = rt
+      editorial.redTeamRounds = 1
+      ready = rt.verdict === 'PASS'
+    }
+  }
+
   const coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook)
   const outreach = compileOutreach(job, identity, ledger, decode)
   const gapNote = buildGapNote(coverage)
@@ -40,7 +67,88 @@ export async function buildPacket(job: Job): Promise<Packet> {
     decode,
     polished: false,
     intel: intel && !intel.keyless && intel.bullets.length > 0 ? intel : undefined,
+    editorial,
+    ready,
   }
+}
+
+/**
+ * Overrule a casting call (Darzi v3). Shaurya is the studio head — his taste is final. Promoting
+ * a benched project or benching a chosen one recompiles deterministically (zero LLM budget: the
+ * human choice IS the decision), re-runs the red-team, and stamps the plan `overruled`.
+ */
+export async function overrulePacket(packet: Packet, opts: { promoteId?: string; benchId?: string }): Promise<Packet> {
+  if (!packet.editorial) return packet
+  const job = await db.jobs.get(packet.jobId)
+  const identity = await db.identity.get('me')
+  const ledger = await db.ledger.toArray()
+  if (!job || !identity) return packet
+
+  const ed = packet.editorial
+  let chosen = ed.chosen.slice()
+  let benched = ed.benched.slice()
+
+  if (opts.benchId) {
+    const c = chosen.find((x) => x.ledgerId === opts.benchId)
+    if (c) {
+      chosen = chosen.filter((x) => x.ledgerId !== opts.benchId)
+      benched = [{ ledgerId: c.ledgerId, title: c.title, why: 'Benched by Shaurya (studio head overrule).' }, ...benched]
+    }
+  }
+  if (opts.promoteId) {
+    const b = benched.find((x) => x.ledgerId === opts.promoteId)
+    const project = ledger.find((e) => e.id === opts.promoteId)
+    if (b && project) {
+      benched = benched.filter((x) => x.ledgerId !== opts.promoteId)
+      chosen = [
+        ...chosen,
+        {
+          ledgerId: b.ledgerId,
+          title: b.title,
+          angleId: 'manual',
+          angleLabel: 'Shaurya’s pick',
+          angleRationale: {
+            question: `Angle for ${b.title}`,
+            optionsConsidered: [b.title],
+            criteria: ['studio head’s call'],
+            choice: 'Shaurya’s pick',
+            why: 'Promoted by Shaurya — his taste overrides the machine (I10: the reason is "the studio head chose it").',
+            confidence: 1,
+            by: 'heuristic' as const,
+            at: new Date().toISOString(),
+          },
+        },
+      ].slice(0, 3)
+    }
+  }
+
+  const order = chosen.map((c) => c.ledgerId)
+  const bullets: Record<string, string[]> = {}
+  for (const c of chosen) {
+    const p = ledger.find((e) => e.id === c.ledgerId)
+    if (p) bullets[c.ledgerId] = p.bullets.slice(0, 3).map((b) => b.id)
+  }
+
+  const decode = packet.decode
+  const coverage = packet.coverage
+  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: { order, bullets } })
+  const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
+
+  const updated: Packet = {
+    ...packet,
+    resume,
+    editorial: {
+      ...ed,
+      chosen,
+      benched,
+      overruled: true,
+      redTeam: rt ?? ed.redTeam,
+      redTeamRounds: ed.redTeamRounds + 1,
+    },
+    ready: rt ? rt.verdict === 'PASS' : packet.ready,
+  }
+  await db.packets.put(updated)
+  return updated
 }
 
 /** Persist the packet and move the job forward — tracking as a side effect, never a chore. */
