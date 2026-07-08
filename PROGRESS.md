@@ -2,41 +2,34 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Current workstream: SHIPPED ✅ — live at https://sifarish-shv-s-projects.vercel.app
+## Current workstream: v2 "The Jasoos Update" — SHIPPED ✅
+Live: https://sifarish-shv-s-projects.vercel.app · 111/111 gates green · 0 console errors (verified live)
 
-## Done
-- **WS0** volatile facts verified live; scaffold; Ink & Appointment tokens.
-- **WS1** Sach Ledger: types, Dexie schema, real SHV27 seed (30 entries), shelf UI with inline edit,
-  Voice Bank, promotion ceremony.
-- **WS2** Darzi Engine: JD decode → evidence match → deterministic one-page compiler → pdf-lib PDF +
-  docx DOCX → pdfjs parse-back. Packet screen with paste lane.
-- **WS3** Shikaar Radar: 29-board live-probed watchlist seed, 4 keyless feed adapters, paste lane
-  (URL + text), rubric scoring with expandable WHY, ranked queue capped at 15.
-- **WS4** GitHub Nabz: keyless REST sync, diff→suggestion engine, one-click promotion loop, strength meter.
-- **WS5** Morcha Board: 6-column pipeline, day-7/14 nudges, interview dossier, persistent header strip.
-- **WS6** `/api/polish` edge function + deterministic fact-drift guard (client re-check), onboarding
-  (first packet <60s), keyboard nav (1–5 + skip link), teaching empty states, a11y (roles/labels/reduced-motion).
-- **WS7a** 65 gate/invariant tests green — incl. I5 real pdf.js parse-back round-trip.
-- **WS7b** Headless screenshots: 8 screens × 3 breakpoints (360/768/1280). **Zero console errors** verified.
-- **WS7c** README case-study + LAUNCH.md (LinkedIn draft + 100-word pitch); docs updated.
+## Done — v1 (shipped earlier)
+Five pillars (Sach Ledger, GitHub Nabz, Shikaar Radar, Darzi Engine, Morcha Board), I1–I6, 65 gates.
+
+## Done — v2 "The Jasoos Update"
+- **WS0** verified all keys live (Groq, Tavily, JSearch=OpenWeb Ninja, GitHub PAT); Vercel env + gitignored `.env`.
+- **WS1 Khabri Engine**: `/api/khabri/jobs` (JSearch → LinkedIn/Indeed) + `/api/khabri/signals` (Tavily),
+  keyless lanes (HN/Remotive/RemoteOK) browser-direct, normalize + cross-source dedupe, saved hunts,
+  Khabar Feed, sweep yield report.
+- **WS2 Darzi v2 Intel**: `/api/intel` (Tavily, 7-day cache), cited Intel Dossier panel, cited cover-letter
+  hook, I9 honesty note, Apply Plan on packet.
+- **WS3 Guru**: honesty-router (I9 + fabrication refusals — keyless mode + testable core), context compiler,
+  `/api/guru` Groq streaming, Apply Plan generator, chat UI. 12-conversation eval green.
+- **WS4 Pulse Loop**: `/api/pulse` cited briefs → human-confirmed rubric changelog. Ledger QoL: quick-add,
+  Nabz live-link discovery, Voice Bank nudge.
+- **WS5 Budgets (I8)** + Settings v2 (budget meters, keys-status, Vision Profile editor) + KEYS_GUIDE.md.
+- **WS6 Certification**: 111/111 gates (65 v1 + 46 v2); typecheck + build clean.
+- **WS7 Ship**: self-contained edge functions (D22), deployed, **live production smoke passed** (JSearch
+  72/67-new, 13 signals, Guru I9 refusal + ledger-grounded answer, Intel dossier, Apply Plan, 0 console
+  errors), README v2 + LAUNCH v2 (new LinkedIn draft).
 
 ## ONE next action
-→ Ship complete. If amplifiers wanted: user sets a valid `GROQ_API_KEY` (polish) + optional `GITHUB_PAT`
-  (higher Nabz limits) in Vercel env, then redeploy. Otherwise the keyless build is fully functional.
+→ Ship complete. Shaurya: **rotate all four keys** (they touched plaintext chat) at each provider console,
+  then update Vercel env — see KEYS_GUIDE.md §Rotation. The app keeps working keyless in the meantime.
 
-## Gate status
-| Gate | Status |
-|---|---|
-| Ledger integrity (I1) | ✅ green |
-| Parse-back fidelity (I5) | ✅ green (real PDF round-trip) |
-| JD coverage (≥80% backed, 0 unbacked) | ✅ green |
-| One page | ✅ green |
-| Slop-scan | ✅ green |
-| Radar rubric agreement | ✅ green |
-| Fact-drift guard | ✅ green |
-| Chaos (empty/forge-only/malformed/overflow/HTML) | ✅ green |
-| Console errors | ✅ 0 across all screens |
-| 3-breakpoint screenshots | ✅ captured |
-| Deploy live | ⏳ pending |
-
-**Total: 65/65 tests · typecheck clean · build clean · 0 console errors.**
+## Gate status — 111/111 green
+v1 (65): I1 orphan, I5 parse-back, JD coverage, one-page, slop, rubric, fact-drift, chaos, ledger integrity.
+v2 (46): Guru 12-conv eval, Khabri dedupe/normalize, I7 citation, I8 budgets, I9 honesty, security (no
+leaks + I3-no-send-v2). Console 0 · typecheck clean · build clean · 3-breakpoint screenshots.

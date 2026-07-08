@@ -6,6 +6,12 @@
 
 > **The Design Law:** *Compile truth. Draft everything. Send nothing.*
 
+> **v2 · The Jasoos Update** — SIFARISH now has eyes, ears, and a voice: live multi-source job
+> discovery (LinkedIn/Indeed-listed roles via a lawful aggregator — never scraping), a hiring-signal
+> radar ("Lloyds Bank is hunting 300 agentic-AI specialists" — surfaced before you'd have found it),
+> cited company research before every compile, and a conversational **Guru** that knows your ledger,
+> refuses to invent skills, and never promises outcomes. Still fully functional with zero keys.
+
 SIFARISH is a personal hiring agent for one candidate — a 3rd-year CSE student hunting a
 compulsory AI-engineering internship in a market where **91% of recruiters now actively hunt
 fabricated resumes** and **pretty resumes die in ATS parsers**. It collapses hours of per-company
@@ -64,6 +70,22 @@ compounds weekly *with real shipped work* — and the strength meter only moves 
 5. **Morcha Board** (मोर्चा · war room) — Found → Tailored → Applied → Follow-up → Interview → Verdict,
    with day-7/14 follow-up nudges and a per-company interview dossier.
 
+### v2 pillars — The Jasoos Update
+
+6. **Khabri Engine** (ख़बरी · the informant) — multi-source discovery + a hiring-signal radar. Aggregator
+   lane (JSearch/OpenWeb Ninja → LinkedIn/Indeed/Glassdoor listings, lawfully), a Tavily **signal** lane
+   (hiring *news*, not just postings), and three **keyless** lanes (Hacker News "Who is Hiring", Remotive,
+   RemoteOK). Cross-source dedupe collapses the same role to one card; every sweep reports found/new/duplicate.
+7. **Guru Mode** (गुरु · the guide) — a conversational assistant that knows your ledger, your Vision Profile,
+   and your live pipeline. It finds roles, explains any score, generates a step-by-step **Apply Plan** (you
+   apply — it never sends), and tells you honestly what to learn. Groq-streamed when a key is present; a
+   deterministic honesty-router otherwise. It refuses to claim a skill you can't prove and never promises an outcome.
+8. **Darzi v2 — Company Intel** — before compiling, a Tavily **Intel Pass** researches the company (cited).
+   The cover-letter hook references one specific, sourced fact — never a generic "I admire your mission".
+   Intel changes *emphasis and framing, never a claim*.
+- **Pulse Loop** — a weekly cited news sweep proposes human-confirmed rubric/keyword updates, so the app
+  stays present-tense. The rubric keeps an append-only changelog.
+
 ## The invariants (Referee-enforced, in the test suite)
 
 - **I1** No orphan claims — every compiled content line carries `ledgerIds`; the renderer refuses uncited prose.
@@ -72,14 +94,18 @@ compounds weekly *with real shipped work* — and the strength meter only moves 
 - **I4** Keyless core — every pillar works with zero keys; LLM polish and PAT limits are amplifiers.
 - **I5** Round-trip fidelity — the generated PDF's extracted text equals the compiled content, in order, 100%.
 - **I6** Always a legal action — every empty state teaches the next step.
+- **I7** Cited intelligence — every claim about a company/role/trend carries a source URL; uncited external prose is an error.
+- **I8** Budget honesty — every metered API (Tavily/JSearch/Groq) has a visible monthly + per-run cap; sweeps never overspend, they degrade to keyless lanes.
+- **I9** No guarantee language — "guaranteed", "assured selection", "100% placement" are banned in UI, Guru replies, and documents. The app maximizes probability and says exactly that. I3 extends to Guru/Khabri: discovery via lawful APIs only, no auto-fill, no auto-send.
 
 The LLM polish pass (optional, behind a server-side key) is held to I1 too: a deterministic
 **fact-drift guard** rejects any rephrase that introduces a new number, tool, or skill — keeping the
-compiled truth as the floor.
+compiled truth as the floor. The Guru's honesty-router intercepts fabrication-bait and guarantee-bait
+*before* the LLM, and re-scans every streamed token for guarantee language.
 
 ## Gate results
 
-All gates run in `npm run gates` (Vitest). Latest: **65/65 green.**
+All gates run in `npm run gates` (Vitest). Latest: **111/111 green** (65 v1 + 46 v2).
 
 | Gate | Target | Status |
 |---|---|---|
@@ -91,8 +117,18 @@ All gates run in `npm run gates` (Vitest). Latest: **65/65 green.**
 | Radar rubric | strong-fit ≥60, weak-fit <45 on labeled fixtures | ✅ |
 | Fact-drift guard | rejects invented numbers/tools/skills | ✅ |
 | Chaos | empty ledger · forge-only · malformed JD · huge JD · overflow · HTML sanitation | ✅ |
-| Console errors | zero across all screens | ✅ verified headless |
+| Guru eval (12 conversations) | intent routing, I9 refusals, fabrication refusals, ledger-only claims | ✅ |
+| Khabri dedupe | cross-source duplicates collapse; pipeline status survives re-sweep | ✅ |
+| I7 citation | intel bullets + cover-letter hook always carry a source URL | ✅ |
+| I8 budgets | monthly + per-run caps enforced; month rollover resets | ✅ (fake-indexeddb) |
+| I9 honesty | zero guarantee language in any packet, Guru reply, or UI copy | ✅ |
+| Security | no key/VITE_ leak in source or bundle; I3 no-send extends to v2 | ✅ |
+| Console errors | zero across all screens (v1 + Khabri + Guru + v2 packet), verified live | ✅ |
 | Responsive | 360 / 768 / 1280 captured | ✅ |
+
+**Verified live in production** with real keys: JSearch surfaced 72 roles (67 new after dedupe),
+13 hiring signals, Guru refused a guarantee-bait and answered a ledger-grounded question, the Intel
+Dossier + Apply Plan + honesty note all rendered — zero console errors.
 
 ## Stack
 
