@@ -14,7 +14,7 @@ import type { EditorialPlan } from '../types'
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
   const job = useLiveQuery(() => (jobId ? db.jobs.get(jobId) : undefined), [jobId])
   if (!jobId || !job) return <PasteLane onPickJob={onPickJob} />
-  return <PacketView job={job} />
+  return <PacketView key={job.id} job={job} />
 }
 
 /** The Paste Lane — the Darzi's front desk when no job is selected. */
