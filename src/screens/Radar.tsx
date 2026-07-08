@@ -3,7 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { Job, ScoreBreakdown } from '../types'
 import { syncRadar, ensureJd, type SyncResult } from '../lib/radar/feeds'
-import { scoreJob } from '../lib/radar/score'
+import { pruneStaleFinds } from '../lib/khabri/client'
+import { scoreJobCached } from '../lib/radar/score'
 import { buildPacket, savePacket } from '../lib/darzi'
 
 const VISIBLE_CAP = 15 // sniper, not spray — the cap is a feature (vision §P3)
@@ -23,7 +24,7 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
     if (!settings) return []
     return jobs
       .filter((j) => j.status === 'found')
-      .map((j) => ({ job: j, score: scoreJob(j, ledger, settings.rubric, starred.has(j.company)) }))
+      .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company)) }))
       .sort((a, b) => b.score.total - a.score.total)
   }, [jobs, ledger, settings, starred])
 
@@ -87,9 +88,21 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
       ) : (
         <>
           {ranked.length > VISIBLE_CAP && (
-            <p className="text-xs text-ink-soft mb-3">
-              Showing the top {VISIBLE_CAP} of {ranked.length}. The cap is deliberate — the ones below the line
-              aren't worth your hours. Raise your rubric bar in Settings, not the cap.
+            <p className="text-xs text-ink-soft mb-3 flex flex-wrap items-center gap-2">
+              <span>
+                Showing the top {VISIBLE_CAP} of {ranked.length}. The cap is deliberate — the ones below the line
+                aren't worth your hours. Raise your rubric bar in Settings, not the cap.
+              </span>
+              <button
+                className="font-mono text-[11px] text-ink underline decoration-dotted"
+                onClick={async () => {
+                  const n = await pruneStaleFinds(21)
+                  setResult(null)
+                  if (n === 0) alert('Nothing to clear — no untouched finds older than 21 days.')
+                }}
+              >
+                clear stale finds ↻
+              </button>
             </p>
           )}
           <div className="space-y-3">

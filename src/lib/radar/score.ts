@@ -8,6 +8,28 @@ import { LEXICON } from '../jd/lexicon'
  * from Settings; the WHY strings are written for a human reading the breakdown.
  */
 
+/**
+ * Score cache (v3 optimization): scoreJob is pure over (job JD, rubric, starred). Discovery adds
+ * ~100 jobs/sweep and the Radar re-renders often (e.g. tailoring flips a flag); without a cache
+ * every render re-decodes every JD. Keyed on job id + freshness + rubric signature + starred, so
+ * only genuinely-changed jobs recompute. Bounded to avoid unbounded growth.
+ */
+const scoreCache = new Map<string, ScoreBreakdown>()
+
+function rubricSig(r: RubricWeights): string {
+  return `${r.aiRelevance},${r.roleFit},${r.remoteIndia},${r.windowFit},${r.compSignal},${r.conviction}`
+}
+
+export function scoreJobCached(job: Job, ledger: LedgerEntry[], rubric: RubricWeights, starred: boolean): ScoreBreakdown {
+  const key = `${job.id}|${job.fetchedAt}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}`
+  const hit = scoreCache.get(key)
+  if (hit) return hit
+  const result = scoreJob(job, ledger, rubric, starred)
+  if (scoreCache.size > 800) scoreCache.clear() // simple bound; recompute is cheap after
+  scoreCache.set(key, result)
+  return result
+}
+
 export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights, starred: boolean): ScoreBreakdown {
   const decode = decodeJD(job.jd || job.title)
   const coverage = matchEvidence(decode, ledger)

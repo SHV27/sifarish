@@ -161,3 +161,17 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
 export async function seedHuntsIfEmpty(): Promise<void> {
   if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
 }
+
+/**
+ * Housekeeping (v3): prune `found` jobs older than `days` that were never tailored (no packet,
+ * never made it past discovery). Keeps the jobs table from growing unbounded across many sweeps.
+ * Only touches untouched finds — anything in the pipeline is never removed.
+ */
+export async function pruneStaleFinds(days = 21): Promise<number> {
+  const cutoff = Date.now() - days * 86400000
+  const stale = (await db.jobs.where('status').equals('found').toArray()).filter(
+    (j) => !j.packetId && new Date(j.fetchedAt).getTime() < cutoff,
+  )
+  await db.jobs.bulkDelete(stale.map((j) => j.id))
+  return stale.length
+}
