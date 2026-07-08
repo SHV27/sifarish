@@ -9,6 +9,12 @@ import type {
   NabzSuggestion,
   NabzCacheRow,
   Settings,
+  Signal,
+  SavedHunt,
+  CompanyIntel,
+  Budget,
+  PulseBrief,
+  GuruThread,
 } from '../types'
 
 export class SifarishDB extends Dexie {
@@ -21,6 +27,13 @@ export class SifarishDB extends Dexie {
   suggestions!: EntityTable<NabzSuggestion, 'id'>
   nabzCache!: EntityTable<NabzCacheRow, 'key'>
   settings!: EntityTable<Settings, 'id'>
+  // v2
+  signals!: EntityTable<Signal, 'id'>
+  savedHunts!: EntityTable<SavedHunt, 'id'>
+  intel!: EntityTable<CompanyIntel, 'company'>
+  budgets!: EntityTable<Budget, 'id'>
+  pulse!: EntityTable<PulseBrief, 'id'>
+  guruThreads!: EntityTable<GuruThread, 'id'>
 
   constructor() {
     super('sifarish')
@@ -34,6 +47,16 @@ export class SifarishDB extends Dexie {
       suggestions: 'id, status, repoName',
       nabzCache: 'key',
       settings: 'id',
+    })
+    // v2 "Jasoos Update" — additive tables + new job index for discovery dedupe.
+    this.version(2).stores({
+      jobs: 'id, status, source, fetchedAt, dedupeKey',
+      signals: 'id, seen, fetchedAt',
+      savedHunts: 'id, enabled',
+      intel: 'company, fetchedAt',
+      budgets: 'id',
+      pulse: 'id, status, at',
+      guruThreads: 'id, updatedAt',
     })
   }
 }

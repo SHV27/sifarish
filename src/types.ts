@@ -61,7 +61,16 @@ export interface VoiceBank {
 
 // ---------- Radar ----------
 
-export type JobSource = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'paste'
+export type JobSource =
+  | 'greenhouse'
+  | 'lever'
+  | 'ashby'
+  | 'smartrecruiters'
+  | 'paste'
+  | 'jsearch'
+  | 'hackernews'
+  | 'remotive'
+  | 'remoteok'
 
 export type JobStatus =
   | 'found'
@@ -106,11 +115,21 @@ export interface Job {
   /** Dead-link probe result. */
   linkAlive?: boolean
   notes?: string
+  /** Fuzzy company+title+location key for cross-source dedupe (Khabri). */
+  dedupeKey?: string
+  /** Which publisher surfaced it (e.g. "LinkedIn", "Indeed") — for the source badge. */
+  publisher?: string
+  /** True until the user has seen it in the queue — drives the NEW stamp. */
+  isNew?: boolean
+  /** Salary text when the source provides it. */
+  salary?: string
 }
+
+export type AtsSource = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters'
 
 export interface WatchlistCompany {
   id: string
-  source: Exclude<JobSource, 'paste'>
+  source: AtsSource
   company: string
   /** Board token / site slug for the ATS feed. */
   token: string
@@ -225,6 +244,25 @@ export interface NabzCacheRow {
 
 // ---------- Settings ----------
 
+export interface VisionProfile {
+  /** Shaurya's dream statement — feeds the Guru's system prompt so it knows him. */
+  dream: string
+  targetRoles: string[]
+  notInterested: string[]
+  compFloorStipend: number // ₹/month
+  ppoFloorLpa: number // ≥16 LPA
+  windowStart: string // 'Jan 2027'
+  windowEnd: string // 'May 2027'
+  remoteInternational: boolean
+  openToOctoberStart: boolean
+}
+
+export interface RubricChange {
+  at: string
+  summary: string
+  source?: string
+}
+
 export interface Settings {
   id: 'app'
   onboarded: boolean
@@ -233,4 +271,119 @@ export interface Settings {
   /** Applications marked this ISO week (resets by week key). */
   weekKey: string
   appliedThisWeek: number
+  visionProfile?: VisionProfile
+  rubricChangelog?: RubricChange[]
+  lastSweepAt?: string
+  lastPulseAt?: string
+}
+
+// ---------- Khabri (discovery + signals) ----------
+
+export type DiscoverySource = 'jsearch' | 'hackernews' | 'remotive' | 'remoteok'
+export type SignalSource = 'tavily'
+
+export interface SavedHunt {
+  id: string
+  query: string
+  country?: string
+  remoteOnly: boolean
+  datePosted?: 'all' | 'today' | '3days' | 'week' | 'month'
+  enabled: boolean
+}
+
+/** A hiring signal — news/announcement, not a posting. Every one carries a source URL (I7). */
+export interface Signal {
+  id: string
+  source: SignalSource
+  headline: string
+  url: string
+  publishedAt?: string
+  whyItMatters: string
+  company?: string
+  seen: boolean
+  fetchedAt: string
+}
+
+export interface SweepYield {
+  found: number
+  new: number
+  duplicate: number
+  bySource: Record<string, number>
+  creditsSpent: number
+  keylessLanes: string[]
+  keyedLanes: string[]
+  failed: string[]
+}
+
+// ---------- Intel (Darzi v2) ----------
+
+export interface IntelBullet {
+  text: string
+  url: string
+}
+
+export interface CompanyIntel {
+  company: string
+  bullets: IntelBullet[] // cited (I7)
+  fetchedAt: string
+  keyless: boolean
+}
+
+// ---------- Budgets (I8) ----------
+
+export interface Budget {
+  id: string // 'tavily' | 'jsearch' | 'groq'
+  label: string
+  monthKey: string // 'YYYY-MM'
+  used: number
+  monthlyCap: number
+  perRunCap: number
+  unit: string // 'credits' | 'requests' | 'calls'
+}
+
+// ---------- Pulse ----------
+
+export interface PulseBrief {
+  id: string
+  at: string
+  topic: string
+  headline: string
+  url: string
+  insight: string
+  /** Suggested rubric/keyword change; human confirms (Nabz pattern). */
+  suggestion?: string
+  status: 'pending' | 'accepted' | 'dismissed'
+}
+
+// ---------- Guru ----------
+
+export interface GuruMessage {
+  role: 'user' | 'assistant' | 'system' | 'tool'
+  content: string
+  /** Citations attached to an assistant message (I7). */
+  citations?: { title: string; url: string }[]
+  toolName?: string
+}
+
+export interface GuruThread {
+  id: string
+  title: string
+  messages: GuruMessage[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ApplyStep {
+  n: number
+  action: string
+  detail: string
+  /** e.g. attach file, paste text — always Shaurya-performed (I3). */
+  artifact?: 'resume-pdf' | 'resume-docx' | 'cover-letter' | 'outreach' | 'none'
+}
+
+export interface ApplyPlan {
+  jobId: string
+  steps: ApplyStep[]
+  screeningAnswers: { q: string; a: string; ledgerIds: string[] }[]
+  generatedBy: 'guru' | 'template'
 }

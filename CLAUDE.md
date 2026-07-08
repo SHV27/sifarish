@@ -43,6 +43,14 @@ it must actually run, delight, and produce a resume a hostile recruiter respects
 - **I5 — Round-trip fidelity.** Text extracted from every generated PDF must equal the compiled content,
   in order, 100% (automated parse-back test). What the ATS reads IS what we wrote.
 - **I6 — There is always a legal action.** Every screen state offers a next step; empty states teach.
+- **I7 — Cited intelligence.** Every claim the app makes about a company, role, or market trend carries a
+  source URL. Uncited external claims render as errors, not text. (The ledger rule, extended to the world.)
+- **I8 — Budget honesty.** Every metered API (Tavily, JSearch, Groq) has a tracked monthly budget visible in
+  Settings; sweeps enforce per-run caps; hitting a cap degrades legibly to keyless paths. Never a silent burn.
+- **I9 — No guarantee language.** "Guaranteed", "100% selection", "assured placement" and equivalents are on
+  the slop-scan banned list — in UI copy, Guru replies, and generated documents. The app maximizes
+  probability and says exactly that. I3 extends to Guru/Khabri: no auto-fill, no auto-send, discovery via
+  lawful APIs only (never scrape LinkedIn/Naukri/Upwork).
 
 ## 4 · THE INVERSION LEDGER (why this category dies — and our structural counter; full evidence in RESEARCH.md)
 
@@ -164,3 +172,8 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
 - D15: Fact-drift guard rewritten from blunt token-diff to a precise 3-category detector (new numbers / known tech-skill vocab / proper-nouns+acronyms) — a token-diff false-rejected honest rephrasing ("co-op"→"cooperative"). The invariant forbids new FACTS, not new words. (WS7a)
 - D16: Export libs (pdf-lib, docx) + pdfjs dynamic-imported at call sites → initial bundle drops from 1.15MB to ~383KB gzip 120KB; pdf/docx chunks load only on export click. Web-vitals gate. (WS7b)
 - D17: Watchlist seed = 29 boards, each PROBED LIVE 07-Jul-2026 and confirmed returning jobs; dead tokens (Groq, W&B, Pinecone, HuggingFace, Krutrim, Fractal, etc.) dropped at probe time. (WS3)
+--- v2 "The Jasoos Update" (08-Jul-2026) ---
+- D18: The "JSearch" aggregator is OpenWeb Ninja (`api.openwebninja.com/jsearch/search`, `X-API-Key: ak_…`) — verified live, surfaces LinkedIn/Indeed/Glassdoor listings legally via Google-for-Jobs. Not RapidAPI. (WS0-v2)
+- D19: Guru uses Groq `llama-3.3-70b-versatile` (function-calling + streaming both verified live). Keyless fallback = deterministic Apply Plan template. (WS0-v2)
+- D20: All four keys re-verified working 08-Jul (Groq+PAT failed transiently in session 1, fine now). Keys are server-side only: Vercel env + gitignored `.env`; live-integration tests gated behind `SIFARISH_LIVE=1` so the default gate suite stays keyless-deterministic. (WS0-v2)
+- D21: Discovery is API-only, never scraping (I3/I9). JSearch/Tavily/HN/Remotive/RemoteOK are all lawful public/aggregator APIs; the app holds NO LinkedIn/Naukri credentials and performs no platform actions. (WS0-v2)

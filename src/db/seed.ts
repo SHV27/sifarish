@@ -1,8 +1,25 @@
 import { db } from './db'
 import seedData from '../../seed/ledger.seed.json'
-import type { Identity, LedgerEntry, Settings, VoiceBank } from '../types'
+import type { Identity, LedgerEntry, Settings, VisionProfile, VoiceBank } from '../types'
 import { DEFAULT_RUBRIC } from '../lib/radar/rubric'
 import { WATCHLIST_SEED } from '../lib/radar/watchlist.seed'
+import { SEED_HUNTS } from '../lib/khabri/client'
+import { BUDGET_DEFAULTS, monthKey } from '../lib/budget'
+
+export const DEFAULT_VISION: VisionProfile = {
+  dream:
+    'Break into agentic-AI engineering by building real tools that solve Indian public problems — ' +
+    'ship things people actually use, learn the hard ML underneath, and land at a team that builds ' +
+    'with LLMs seriously.',
+  targetRoles: ['AI Engineer Intern', 'Agentic AI Intern', 'LLM Engineer Intern', 'Applied AI Intern', 'AI Residency'],
+  notInterested: ['Generic SDE / mass-MNC roles', 'Pure frontend', 'Non-AI QA/support'],
+  compFloorStipend: 35000,
+  ppoFloorLpa: 16,
+  windowStart: 'Jan 2027',
+  windowEnd: 'May 2027',
+  remoteInternational: true,
+  openToOctoberStart: true,
+}
 
 export function isoWeekKey(d = new Date()): string {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
@@ -29,14 +46,35 @@ export async function seedIfEmpty(): Promise<boolean> {
     weeklyQuota: 10,
     weekKey: isoWeekKey(),
     appliedThisWeek: 0,
+    visionProfile: DEFAULT_VISION,
+    rubricChangelog: [{ at: new Date().toISOString(), summary: 'Initial rubric (v1 defaults).' }],
   }
 
-  await db.transaction('rw', [db.ledger, db.identity, db.voicebank, db.settings, db.watchlist], async () => {
-    await db.ledger.bulkPut(entries)
-    await db.identity.put(identity)
-    await db.voicebank.put(voice)
-    await db.settings.put(settings)
-    await db.watchlist.bulkPut(WATCHLIST_SEED)
-  })
+  const mk = monthKey()
+  await db.transaction(
+    'rw',
+    [db.ledger, db.identity, db.voicebank, db.settings, db.watchlist, db.savedHunts, db.budgets],
+    async () => {
+      await db.ledger.bulkPut(entries)
+      await db.identity.put(identity)
+      await db.voicebank.put(voice)
+      await db.settings.put(settings)
+      await db.watchlist.bulkPut(WATCHLIST_SEED)
+      await db.savedHunts.bulkPut(SEED_HUNTS)
+      await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
+    },
+  )
   return true
+}
+
+/** For already-onboarded users upgrading to v2: backfill new tables without a reseed. */
+export async function backfillV2(): Promise<void> {
+  const s = await db.settings.get('app')
+  if (!s) return
+  if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
+  if ((await db.budgets.count()) === 0) {
+    const mk = monthKey()
+    await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
+  }
+  if (!s.visionProfile) await db.settings.update('app', { visionProfile: DEFAULT_VISION })
 }

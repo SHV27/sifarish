@@ -90,3 +90,27 @@ export const SLOP_PHRASES: string[] = [
   'i am excited to apply my passion',
   'excited to leverage',
 ]
+
+/** I9 — guarantee language. Banned in UI copy, Guru replies, and generated documents. */
+export const GUARANTEE_PHRASES: string[] = [
+  'guaranteed',
+  'guarantee you',
+  'guarantee a',
+  'guarantee the',
+  '100% selection',
+  '100% placement',
+  'assured placement',
+  'assured selection',
+  'assured job',
+  'assured offer',
+  'definitely get you',
+  "you will definitely get",
+  'certain to get hired',
+  'promise you a job',
+  'promise you an offer',
+  'promise you the',
+  'sure-shot',
+  'sure shot selection',
+  'no chance of rejection',
+  'cannot be rejected',
+]

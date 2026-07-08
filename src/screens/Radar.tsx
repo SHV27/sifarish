@@ -42,6 +42,7 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
 
   const tailor = async (job: Job) => {
     const withJd = await ensureJd(job)
+    if (job.isNew) await db.jobs.update(job.id, { isNew: false })
     const packet = await buildPacket(withJd)
     await savePacket(packet)
     onTailor(withJd.id)
@@ -135,10 +136,14 @@ function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; on
           {score.total}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-ink leading-snug">{job.title}</h3>
+          <h3 className="font-semibold text-ink leading-snug flex items-center gap-2">
+            {job.isNew && <span className="stamp stamp-red !text-[9px] shrink-0">NEW</span>}
+            {job.title}
+          </h3>
           <p className="text-sm text-ink-soft">
             {job.company}
             {job.location && ` · ${job.location}`}
+            {job.publisher && <span className="font-mono text-[10px] ml-2 text-ink-faint">via {job.publisher}</span>}
             {fresh !== null && (
               <span className="font-mono text-[11px] ml-2 text-ink-faint">
                 {fresh === 0 ? 'updated today' : `updated ${fresh}d ago`}

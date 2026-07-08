@@ -1,0 +1,163 @@
+import { db } from '../../db/db'
+import type { Job, SavedHunt, Signal, SweepYield } from '../../types'
+import { fetchHackerNews, fetchRemotive, fetchRemoteOK } from './keyless'
+import { mergeDiscovered } from './normalize'
+import { allowedThisRun, recordSpend } from '../budget'
+
+/**
+ * The Khabri sweep orchestrator. Runs every enabled lane, normalizes + dedupes, merges into
+ * the Radar queue with NEW stamps, and returns a transparent yield report (the Jasoos gate:
+ * found/new/duplicate, credits spent, which lanes were keyed vs keyless).
+ *
+ * Keyed lanes (JSearch, Tavily) go through serverless so keys stay server-side; when a key is
+ * absent they report `keyless:true` and the keyless lanes carry the sweep alone (I4).
+ */
+
+export const SEED_HUNTS: SavedHunt[] = [
+  { id: 'h1', query: 'AI engineer intern India remote', country: 'in', remoteOnly: false, datePosted: 'month', enabled: true },
+  { id: 'h2', query: 'agentic AI intern', remoteOnly: true, datePosted: 'month', enabled: true },
+  { id: 'h3', query: 'Claude Code engineer', remoteOnly: true, datePosted: 'month', enabled: true },
+  { id: 'h4', query: 'LLM engineer intern', remoteOnly: true, datePosted: 'month', enabled: true },
+  { id: 'h5', query: 'AI residency 2026', remoteOnly: false, datePosted: 'month', enabled: false },
+  { id: 'h6', query: 'prompt engineer intern remote', remoteOnly: true, datePosted: 'month', enabled: false },
+]
+
+export const SEED_SIGNAL_QUERIES = [
+  'hiring Claude engineers',
+  'agentic AI team hiring announcement',
+  'AI internship program announced India',
+  'Anthropic ecosystem jobs',
+]
+
+interface JobsApiResp {
+  keyless: boolean
+  jobs: Job[]
+  creditsSpent: number
+  error?: string
+}
+interface SignalsApiResp {
+  keyless: boolean
+  signals: Signal[]
+  creditsSpent: number
+}
+
+async function callJobsApi(hunt: SavedHunt): Promise<JobsApiResp | null> {
+  try {
+    const res = await fetch('/api/khabri/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: hunt.query,
+        country: hunt.country,
+        remoteOnly: hunt.remoteOnly,
+        datePosted: hunt.datePosted,
+        numPages: 1,
+      }),
+    })
+    if (!res.ok) return null
+    return (await res.json()) as JobsApiResp
+  } catch {
+    return null // pure vite dev (no serverless) → keyless lanes still run
+  }
+}
+
+async function callSignalsApi(queries: string[]): Promise<SignalsApiResp | null> {
+  try {
+    const res = await fetch('/api/khabri/signals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queries, maxResultsPerQuery: 4 }),
+    })
+    if (!res.ok) return null
+    return (await res.json()) as SignalsApiResp
+  } catch {
+    return null
+  }
+}
+
+export async function runSweep(onStep?: (label: string) => void): Promise<SweepYield> {
+  const hunts = (await db.savedHunts.toArray()).filter((h) => h.enabled)
+  const existing = await db.jobs.toArray()
+  const bySource: Record<string, number> = {}
+  const failed: string[] = []
+  const keyedLanes: string[] = []
+  const keylessLanes: string[] = []
+  let creditsSpent = 0
+  const discovered: Job[] = []
+
+  // --- Keyed aggregator lane (JSearch), budget-gated (I8) ---
+  const jsearchBudget = await allowedThisRun('jsearch')
+  let jsearchUsed = 0
+  for (const hunt of hunts) {
+    if (jsearchUsed >= jsearchBudget) break
+    onStep?.(`JSearch: "${hunt.query}"`)
+    const resp = await callJobsApi(hunt)
+    if (!resp) continue
+    if (resp.keyless) break // no key → skip the whole lane, keyless lanes carry it
+    if (!keyedLanes.includes('JSearch (LinkedIn/Indeed/…)')) keyedLanes.push('JSearch (LinkedIn/Indeed/…)')
+    jsearchUsed += resp.creditsSpent
+    creditsSpent += resp.creditsSpent
+    if (resp.error) failed.push('JSearch')
+    for (const j of resp.jobs) discovered.push(j)
+    bySource.jsearch = (bySource.jsearch ?? 0) + resp.jobs.length
+  }
+  if (jsearchUsed > 0) await recordSpend('jsearch', jsearchUsed)
+
+  // --- Keyless lanes (always run; I4) ---
+  const keywords = hunts.flatMap((h) => h.query.toLowerCase().split(/\s+/)).filter((w) => w.length > 3)
+  const laneRuns: [string, () => Promise<Job[]>][] = [
+    ['Hacker News · Who is Hiring', () => fetchHackerNews(keywords)],
+    ['Remotive', () => fetchRemotive(hunts[0]?.query ?? 'AI engineer')],
+    ['RemoteOK', () => fetchRemoteOK(hunts[0]?.query ?? 'AI')],
+  ]
+  for (const [label, run] of laneRuns) {
+    onStep?.(label)
+    try {
+      const jobs = await run()
+      keylessLanes.push(label)
+      for (const j of jobs) discovered.push(j)
+      const src = jobs[0]?.source
+      if (src) bySource[src] = (bySource[src] ?? 0) + jobs.length
+    } catch {
+      failed.push(label)
+    }
+  }
+
+  // --- Merge + dedupe into the Radar queue ---
+  const merge = mergeDiscovered(discovered, existing)
+  await db.jobs.bulkPut(merge.toPersist)
+
+  // --- Signal lane (Tavily), budget-gated ---
+  const tavilyBudget = await allowedThisRun('tavily')
+  if (tavilyBudget > 0) {
+    onStep?.('Signals: hiring news sweep')
+    const resp = await callSignalsApi(SEED_SIGNAL_QUERIES)
+    if (resp && !resp.keyless) {
+      keyedLanes.push('Tavily (hiring signals)')
+      creditsSpent += resp.creditsSpent
+      await recordSpend('tavily', resp.creditsSpent)
+      // Persist new signals (dedupe by id).
+      for (const s of resp.signals) {
+        const prior = await db.signals.get(s.id)
+        if (!prior) await db.signals.put(s)
+      }
+    }
+  }
+
+  await db.settings.update('app', { lastSweepAt: new Date().toISOString() })
+
+  return {
+    found: merge.found,
+    new: merge.added,
+    duplicate: merge.duplicate,
+    bySource,
+    creditsSpent,
+    keylessLanes,
+    keyedLanes,
+    failed,
+  }
+}
+
+export async function seedHuntsIfEmpty(): Promise<void> {
+  if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
+}

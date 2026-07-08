@@ -1,43 +1,39 @@
-# PLAN.md — SIFARISH build plan (WS0, 07-Jul-2026)
+# PLAN.md — SIFARISH v2 "The Jasoos Update" (08-Jul-2026)
 
-Constitution: CLAUDE.md. Evidence: RESEARCH.md. This plan executes the SESSION 1 brief workstream-by-workstream.
+v1 is live and green (65/65). v2 gives the app eyes, ears, and a voice — WITHOUT breaking the Design Law:
+*Compile truth. Draft everything. Send nothing.* Regression is the enemy; the v1 suite stays green.
 
-## Architecture (locked at WS0)
+## WS0 verified live (08-Jul-2026)
 
-- **App:** Vite 8 + React 19 + TS 5.9, Tailwind 4 (`src/styles/tokens.css` is the single token source).
-  No router lib — top-level screen state. No state lib — Dexie 4 + `dexie-react-hooks` `useLiveQuery` is the store.
-- **Persistence:** IndexedDB via Dexie. Tables: `ledger`, `identity`, `voicebank`, `jobs`, `packets`,
-  `watchlist`, `suggestions`, `settings`, `nabzCache`. Seed from `seed/ledger.seed.json` on first open.
-- **Darzi pipeline** (pure functions in `src/lib/`, each unit-tested):
-  `jd/decode` → `match/evidence` → `compile/compiler` (one-page budget, human-readable errors)
-  → `export/pdf` (pdf-lib, Helvetica standard font, manual line layout = deterministic text order)
-  → `export/docx` (docx) → `export/parseback` (pdfjs-dist; dev + CI gate).
-- **Radar:** browser-direct fetch (all four ATS feeds verified `Access-Control-Allow-Origin: *` live on
-  07-Jul-2026) + paste lane. Scoring rubric = visible, editable weights; every score expands to WHY.
-- **Nabz:** GitHub public REST browser-side (CORS `*` verified), Dexie cache with `fetchedAt`, rate budget
-  shown honestly. Suggestions queue; human confirms every mutation.
-- **Serverless:** exactly one function, `api/polish.ts` (Groq; keyless fallback = compiled text untouched).
-- **Compiled resume artifacts:** every `CompiledLine` carries `ledgerIds` (I1 structural); `in_forge`
-  renders only via the single dated "Currently Building" line (I2 structural); no send mechanism exists
-  anywhere (I3 — verified by a Referee test that greps the source for banned APIs).
+| Fact | Result |
+|---|---|
+| Tavily | ✅ `POST https://api.tavily.com/search` (api_key in body); returns `results[]`, `response_time` |
+| Groq | ✅ `llama-3.3-70b-versatile` — function-calling + streaming confirmed; also gpt-oss-120b/20b, llama-3.1-8b-instant, qwen3-32b |
+| **JSearch** | ✅ it's **OpenWeb Ninja** (`ak_` key, `X-API-Key` header): `GET https://api.openwebninja.com/jsearch/search?query=&page=&num_pages=&date_posted=&country=`; surfaces LinkedIn/Indeed/Glassdoor listings; 40+ fields |
+| GitHub PAT | ✅ 200 (raises Nabz to 5000/hr) |
+| HN Algolia | ✅ keyless; latest "Who is hiring? (July 2026)" = objectID 48747976; comments via `/api/v1/items/{id}` |
+| Remotive | ✅ keyless `GET https://remotive.com/api/remote-jobs?search=` |
+| RemoteOK | ✅ keyless `GET https://remoteok.com/api?tags=` (row 0 is metadata) |
+
+All keys server-side only (Vercel env: GROQ/TAVILY/JSEARCH/GITHUB_PAT set; local `.env` gitignored). Never VITE_.
+
+## v2 architecture
+
+- **Serverless functions (`api/`)** — all metered keys stay here:
+  - `api/polish.ts` (v1, Groq) · `api/khabri/jobs.ts` (JSearch) · `api/khabri/signals.ts` (Tavily) ·
+    `api/intel.ts` (Tavily, 7-day cache) · `api/guru.ts` (Groq streaming + tools) · `api/pulse.ts` (Tavily).
+  - Every function: reads key from `process.env`; if absent → 200 with `{keyless:true}` and the client uses a
+    keyless/deterministic path (I4). Enforces per-run caps + returns `creditsSpent` (I8).
+- **Keyless discovery** runs browser-direct (CORS-permitting) or via a keyless passthrough: HN Algolia
+  (CORS `*`), Remotive, RemoteOK.
+- **New Dexie tables:** `signals`, `intel`, `budgets`, `pulse`, `guruThreads`, `savedHunts`; extend `settings`
+  with `visionProfile` + `rubricChangelog`.
+- **New invariants I7 (cited intelligence), I8 (budget honesty), I9 (no guarantee language)** — Referee-enforced.
 
 ## Workstreams
+WS1 Khabri · WS2 Darzi v2 Intel · WS3 Guru · WS4 Pulse + Ledger QoL · WS5 Budgets + keys panel ·
+WS6 Certification v2 · WS7 Ship.
 
-- **WS0** ✅ verify volatile facts → scaffold + tokens + PLAN/PROGRESS + git.
-- **WS1** Sach Ledger: types, Dexie schema, real seed (SHV27 verified live), shelf UI, Voice Bank,
-  promotion ceremony.
-- **WS2** Darzi core (before Radar — a compiled truthful packet from a pasted JD is the walking skeleton):
-  decode → match → compile → PDF+DOCX → parse-back tests → packet UI.
-- **WS3** Shikaar Radar: feed adapters + live-probed watchlist seed + paste lane + rubric + ranked queue.
-- **WS4** GitHub Nabz: sync, suggestion queue, promotion loop, strength meter.
-- **WS5** Morcha Board: pipeline, day-7/14 nudges, interview dossier, header strip.
-- **WS6** `/api/polish` + fact-drift guard, onboarding (first packet ≤60s), keyboard map, empty states, a11y.
-- **WS7** Certification: full gate table, chaos runs, 3-breakpoint screenshots, README-as-case-study,
-  deploy (Vercel), LinkedIn draft + 100-word pitch.
-
-## Gate commands
-
-- `npm run gates` — full Vitest suite: invariants I1–I5, parse-back fidelity, JD coverage, one-page,
-  slop-scan, rubric agreement fixture, chaos cases.
-- `npm run build` — typecheck + production build (zero errors tolerated).
-- `npm run screenshots` — Playwright headless captures at 360/768/1280 (Law 9).
+## Gate commands (unchanged + additive)
+`npm run gates` (Vitest: v1 65 + new I7/I8/I9/Khabri/Guru/Intel) · `npm run build` · `npm run screenshots`.
+Live-integration checks are opt-in via `SIFARISH_LIVE=1` (reads `.env`) so CI stays keyless-deterministic.

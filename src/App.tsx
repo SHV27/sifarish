@@ -2,19 +2,23 @@ import { useEffect, useState, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db/db'
 import { Shelf } from './screens/Shelf'
+import { Khabri } from './screens/Khabri'
 import { Radar } from './screens/Radar'
 import { PacketScreen } from './screens/PacketScreen'
+import { Guru } from './screens/Guru'
 import { Morcha } from './screens/Morcha'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { Onboarding } from './screens/Onboarding'
 import { HeaderStrip } from './components/HeaderStrip'
 
-export type Screen = 'shelf' | 'radar' | 'packet' | 'morcha' | 'settings'
+export type Screen = 'shelf' | 'khabri' | 'radar' | 'packet' | 'guru' | 'morcha' | 'settings'
 
 const NAV: { key: Screen; label: string; hindi: string }[] = [
   { key: 'shelf', label: 'Ledger', hindi: 'सच' },
+  { key: 'khabri', label: 'Khabri', hindi: 'ख़बरी' },
   { key: 'radar', label: 'Radar', hindi: 'शिकार' },
   { key: 'packet', label: 'Packet', hindi: 'दर्ज़ी' },
+  { key: 'guru', label: 'Guru', hindi: 'गुरु' },
   { key: 'morcha', label: 'Morcha', hindi: 'मोर्चा' },
   { key: 'settings', label: 'Settings', hindi: '⚙' },
 ]
@@ -34,8 +38,8 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
-      const idx = ['1', '2', '3', '4', '5'].indexOf(e.key)
-      if (idx >= 0) setScreen(NAV[idx].key)
+      const idx = ['1', '2', '3', '4', '5', '6', '7'].indexOf(e.key)
+      if (idx >= 0 && idx < NAV.length) setScreen(NAV[idx].key)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -92,8 +96,10 @@ export default function App() {
         <HeaderStrip />
         <main id="main" className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
           {screen === 'shelf' && <Shelf />}
+          {screen === 'khabri' && <Khabri onOpenRadar={() => setScreen('radar')} />}
           {screen === 'radar' && <Radar onTailor={openPacket} />}
           {screen === 'packet' && <PacketScreen jobId={activeJobId} onPickJob={openPacket} />}
+          {screen === 'guru' && <Guru onOpenPacket={openPacket} />}
           {screen === 'morcha' && <Morcha onOpenPacket={openPacket} />}
           {screen === 'settings' && <SettingsScreen />}
         </main>
