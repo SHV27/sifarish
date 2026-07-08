@@ -1,13 +1,16 @@
-import { config as edgeConfig, json, readJson } from './_shared'
-
 /**
- * /api/pulse — the Industry Pulse (Tavily). A weekly news sweep on market topics that keeps
- * the app present-tense: "which AI skills are in demand", "agentic hiring trends". Returns
- * CITED briefs (I7). The client turns these into human-confirmed rubric/keyword suggestions
- * (the Nabz pattern, applied to the market). Keyless → { keyless:true }.
+ * /api/pulse — Industry Pulse (Tavily). Cited market briefs (I7) that keep the app
+ * present-tense. Keyless → { keyless:true }. Self-contained (no shared imports, edge-safe).
  */
 
-export const config = edgeConfig
+export const config = { runtime: 'edge' }
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  })
+}
 
 interface PulseRequest {
   topics: string[]
@@ -24,14 +27,17 @@ export default async function handler(req: Request): Promise<Response> {
   const key = process.env.TAVILY_API_KEY
   if (!key) return json({ keyless: true, briefs: [], creditsSpent: 0 })
 
-  const body = await readJson<PulseRequest>(req)
+  let body: PulseRequest | null = null
+  try {
+    body = (await req.json()) as PulseRequest
+  } catch {
+    return json({ briefs: [], creditsSpent: 0 })
+  }
   const topics = (body?.topics ?? []).slice(0, 3)
   if (topics.length === 0) return json({ briefs: [], creditsSpent: 0 })
 
-  const now = new Date().toISOString()
-  const briefs: { topic: string; headline: string; url: string; insight: string; publishedAt?: string }[] = []
+  const briefs: unknown[] = []
   let creditsSpent = 0
-
   for (const topic of topics) {
     try {
       const res = await fetch('https://api.tavily.com/search', {
@@ -56,6 +62,5 @@ export default async function handler(req: Request): Promise<Response> {
       /* one topic failing never fails the pulse */
     }
   }
-  void now
   return json({ keyless: false, briefs, creditsSpent })
 }

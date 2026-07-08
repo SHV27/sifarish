@@ -1,26 +1,34 @@
-import { config as edgeConfig, json, readJson, capRuns } from '../_shared'
-
 /**
  * Khabri signal lane — Tavily web search for HIRING SIGNALS, not postings:
  * "X is hiring Claude engineers", new AI-role categories, internship-program announcements.
- * Every result carries a source URL (I7). Budget (I8): max_results capped per run.
- *
- * Keyless: returns { keyless:true } and the client shows the signal feed's teach-state.
+ * Every result carries a source URL (I7). Budget (I8): query fan-out + results capped.
+ * Keyless: returns { keyless:true }. Self-contained (no shared imports, edge-safe).
  */
 
-export const config = edgeConfig
+export const config = { runtime: 'edge' }
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  })
+}
+
+/** Edge-safe base64 (no Node Buffer). */
+function b64(s: string): string {
+  if (typeof btoa === 'function') return btoa(unescape(encodeURIComponent(s)))
+  return s.replace(/\W/g, '').slice(0, 24)
+}
 
 interface SignalsRequest {
   queries: string[]
   maxResultsPerQuery?: number
 }
-
 interface TavilyResult {
   title: string
   url: string
   content: string
   published_date?: string
-  score?: number
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -28,22 +36,18 @@ export default async function handler(req: Request): Promise<Response> {
   const key = process.env.TAVILY_API_KEY
   if (!key) return json({ keyless: true, signals: [], creditsSpent: 0 })
 
-  const body = await readJson<SignalsRequest>(req)
+  let body: SignalsRequest | null = null
+  try {
+    body = (await req.json()) as SignalsRequest
+  } catch {
+    return json({ signals: [], creditsSpent: 0 })
+  }
   const queries = (body?.queries ?? []).slice(0, 4) // I8: cap query fan-out per sweep
   if (queries.length === 0) return json({ signals: [], creditsSpent: 0 })
-  const perQuery = capRuns(body?.maxResultsPerQuery, 4)
+  const perQuery = Math.max(1, Math.min(Math.floor(Number(body?.maxResultsPerQuery) || 4), 4))
 
   const now = new Date().toISOString()
-  const signals: {
-    id: string
-    source: 'tavily'
-    headline: string
-    url: string
-    publishedAt?: string
-    whyItMatters: string
-    seen: boolean
-    fetchedAt: string
-  }[] = []
+  const signals: unknown[] = []
   let creditsSpent = 0
   const seenUrls = new Set<string>()
 
@@ -52,14 +56,7 @@ export default async function handler(req: Request): Promise<Response> {
       const res = await fetch('https://api.tavily.com/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          api_key: key,
-          query: q,
-          search_depth: 'basic',
-          topic: 'news',
-          days: 30,
-          max_results: perQuery,
-        }),
+        body: JSON.stringify({ api_key: key, query: q, search_depth: 'basic', topic: 'news', days: 30, max_results: perQuery }),
       })
       creditsSpent += 1
       if (!res.ok) continue
@@ -68,7 +65,7 @@ export default async function handler(req: Request): Promise<Response> {
         if (seenUrls.has(r.url)) continue
         seenUrls.add(r.url)
         signals.push({
-          id: `tavily:${Buffer.from(r.url).toString('base64').slice(0, 24)}`,
+          id: `tavily:${b64(r.url).slice(0, 24)}`,
           source: 'tavily',
           headline: r.title,
           url: r.url,

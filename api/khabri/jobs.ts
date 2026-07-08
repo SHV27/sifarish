@@ -1,5 +1,3 @@
-import { config as edgeConfig, json, readJson, capRuns } from '../_shared'
-
 /**
  * Khabri aggregator lane — JSearch (OpenWeb Ninja). Google-for-Jobs aggregation that
  * surfaces roles listed on LinkedIn, Indeed, Glassdoor, ZipRecruiter, Naukri-indexed
@@ -7,10 +5,17 @@ import { config as edgeConfig, json, readJson, capRuns } from '../_shared'
  *
  * Key: JSEARCH_API_KEY (server-side, `ak_…`), sent as `X-API-Key` to api.openwebninja.com.
  * Keyless: returns { keyless:true } so the client falls back to HN/Remotive/RemoteOK.
- * Budget (I8): num_pages hard-capped at 1 per request.
+ * Budget (I8): num_pages hard-capped at 1 per request. Self-contained (no shared imports).
  */
 
-export const config = edgeConfig
+export const config = { runtime: 'edge' }
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  })
+}
 
 interface JobsRequest {
   query: string
@@ -33,7 +38,6 @@ interface JSearchJob {
   job_state?: string
   job_country?: string
   job_salary_string?: string
-  job_employment_type?: string
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -41,24 +45,28 @@ export default async function handler(req: Request): Promise<Response> {
   const key = process.env.JSEARCH_API_KEY
   if (!key) return json({ keyless: true, jobs: [], creditsSpent: 0 })
 
-  const body = await readJson<JobsRequest>(req)
+  let body: JobsRequest | null = null
+  try {
+    body = (await req.json()) as JobsRequest
+  } catch {
+    return json({ jobs: [], creditsSpent: 0 })
+  }
   if (!body?.query) return json({ jobs: [], creditsSpent: 0 })
 
-  const pages = capRuns(body.numPages, 1) // I8: never fetch more than one page per run
   const params = new URLSearchParams({
     query: body.query,
     page: '1',
-    num_pages: String(pages),
+    num_pages: '1', // I8: never more than one page per run
     date_posted: body.datePosted && body.datePosted !== 'all' ? body.datePosted : 'month',
   })
   if (body.country) params.set('country', body.country)
   if (body.remoteOnly) params.set('work_from_home', 'true')
 
   try {
-    const res = await fetch(`https://api.openwebninja.com/jsearch/search?${params}`, {
+    const res = await fetch(`https://api.openwebninja.com/jsearch/search?${params.toString()}`, {
       headers: { 'X-API-Key': key },
     })
-    if (!res.ok) return json({ keyless: false, jobs: [], creditsSpent: pages, error: `jsearch ${res.status}` })
+    if (!res.ok) return json({ keyless: false, jobs: [], creditsSpent: 1, error: `jsearch ${res.status}` })
     const data = (await res.json()) as { data?: JSearchJob[] }
     const now = new Date().toISOString()
     const jobs = (data.data ?? []).map((j) => ({
@@ -76,7 +84,7 @@ export default async function handler(req: Request): Promise<Response> {
       fetchedAt: now,
       status: 'found' as const,
     }))
-    return json({ keyless: false, jobs, creditsSpent: pages })
+    return json({ keyless: false, jobs, creditsSpent: 1 })
   } catch (e) {
     return json({ keyless: false, jobs: [], creditsSpent: 0, error: String(e).slice(0, 100) })
   }
