@@ -89,6 +89,23 @@ export const SLOP_PHRASES: string[] = [
   'in today\'s rapidly evolving',
   'i am excited to apply my passion',
   'excited to leverage',
+  // Atelier banlist v3 — the phrases every generic cover letter reaches for.
+  'i am excited to apply',
+  'i am writing to express',
+  'i believe i would be a great fit',
+  'i would be a great fit',
+  'i am a perfect fit',
+  'esteemed organization',
+  'esteemed company',
+  'your esteemed',
+  'passionate about technology',
+  'passionate about innovation',
+  'i am confident that my skills',
+  'i am the ideal candidate',
+  'wealth of experience',
+  'hit the ground running',
+  'wear many hats',
+  'i am reaching out',
 ]
 
 /** I9 — guarantee language. Banned in UI copy, Guru replies, and generated documents. */

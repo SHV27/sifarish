@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { CompiledDoc, Job, Packet } from '../types'
-import { buildPacket, savePacket, overrulePacket } from '../lib/darzi'
+import { buildPacket, savePacket, overrulePacket, toggleSignature } from '../lib/darzi'
 import { CompileError, LINE_METRICS } from '../lib/compile/compiler'
 import { saveFile } from '../lib/util/download'
 import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
@@ -314,6 +314,7 @@ function PacketBody({
         </div>
         {polishNote && <p className="mt-1.5 text-[11px] text-ink-soft">{polishNote}</p>}
 
+        {packet.signature && <SignatureToggle packet={packet} />}
         <CopyDoc title="Cover letter" doc={packet.coverLetter} />
         <CopyDoc title="Outreach draft (send it yourself — SIFARISH never sends)" doc={packet.outreach} />
         <ApplyPlanPanel packet={packet} job={job} />
@@ -400,6 +401,37 @@ function ResumeLine({ text, kind, isName, count }: { text: string; kind: keyof t
         </span>
       )}
     </p>
+  )
+}
+
+/** The Sifarish Signature toggle (Atelier) — per-company Dimaag recommendation, Shaurya's final call. */
+function SignatureToggle({ packet }: { packet: Packet }) {
+  const sig = packet.signature!
+  const [busy, setBusy] = useState(false)
+  return (
+    <section className="dossier p-3 mt-4" aria-label="Sifarish Signature">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-ink">Sifarish Signature</p>
+          <p className="text-[11px] text-ink-soft">The P.S. that reveals this letter was compiled by your own agent.</p>
+        </div>
+        <button
+          className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded ${sig.on ? 'bg-shipped text-paper' : 'bg-paper-sunken text-ink'} disabled:opacity-50`}
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true)
+            try {
+              await toggleSignature(packet, !sig.on)
+            } finally {
+              setBusy(false)
+            }
+          }}
+        >
+          {sig.on ? 'ON' : 'OFF'}
+        </button>
+      </div>
+      <Why rationale={sig.rationale} label="Dimaag's recommendation" />
+    </section>
   )
 }
 

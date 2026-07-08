@@ -6,6 +6,7 @@ import { compileResume, type CompileInput } from './compile/compiler'
 import { compileCoverLetter, compileOutreach, buildGapNote } from './compile/letters'
 import { getIntel, hookFromIntel } from './intel/client'
 import { runEditor, redTeamPass } from './darzi/editor'
+import { composeLetter, decideSignature } from './atelier/letter'
 
 /**
  * The Darzi orchestrator: JD decode → evidence match → deterministic compile.
@@ -51,7 +52,20 @@ export async function buildPacket(job: Job): Promise<Packet> {
     }
   }
 
-  const coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook)
+  // -- Atelier (v3): composed letter with per-company Sifarish Signature decision --
+  const settings = await db.settings.get('app')
+  const vision = settings?.visionProfile
+  let signature: Packet['signature']
+  let coverLetter
+  if (editorial) {
+    const sig = await decideSignature(job, editorial.archetype.id, intel).catch(() => null)
+    const useSignature = sig?.use ?? false
+    if (sig) signature = { on: useSignature, rationale: sig.rationale }
+    coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision, editorial, useSignature })
+  } else {
+    // Keyless / no-editorial path keeps the proven v2 letter (regression-safe).
+    coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook)
+  }
   const outreach = compileOutreach(job, identity, ledger, decode)
   const gapNote = buildGapNote(coverage)
 
@@ -69,7 +83,35 @@ export async function buildPacket(job: Job): Promise<Packet> {
     intel: intel && !intel.keyless && intel.bullets.length > 0 ? intel : undefined,
     editorial,
     ready,
+    signature,
   }
+}
+
+/** Toggle the Sifarish Signature on a packet and recompose the letter (zero LLM budget). */
+export async function toggleSignature(packet: Packet, on: boolean): Promise<Packet> {
+  const job = await db.jobs.get(packet.jobId)
+  const identity = await db.identity.get('me')
+  const ledger = await db.ledger.toArray()
+  const settings = await db.settings.get('app')
+  if (!job || !identity) return packet
+  const coverLetter = composeLetter({
+    job,
+    identity,
+    ledger,
+    decode: packet.decode,
+    coverage: packet.coverage,
+    intel: packet.intel,
+    vision: settings?.visionProfile,
+    editorial: packet.editorial,
+    useSignature: on,
+  })
+  const updated: Packet = {
+    ...packet,
+    coverLetter,
+    signature: packet.signature ? { ...packet.signature, on } : undefined,
+  }
+  await db.packets.put(updated)
+  return updated
 }
 
 /**

@@ -242,6 +242,8 @@ export interface Packet {
   editorial?: EditorialPlan
   /** Whether the packet passed the red-team gate — required for "ready". */
   ready?: boolean
+  /** Atelier (v3): the Sifarish Signature decision + whether it's currently on. */
+  signature?: { on: boolean; rationale: Rationale }
 }
 
 // ---------- Nabz ----------
