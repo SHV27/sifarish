@@ -29,9 +29,8 @@ describe('I9 — guarantee-language scan', () => {
     }
   })
   it('the packet honesty note itself is clean', () => {
-    const note = 'Research-backed fit — outcomes depend on interviews. No tool can guarantee selection.'
-    // The word "guarantee" here is a negation ("cannot guarantee") — the scan targets promises, not denials.
-    expect(scanHonesty('No tool can guarantee selection').guarantee).toHaveLength(0)
+    // "No tool can guarantee selection" is a negation — the scan targets promises, not denials.
+    expect(scanHonesty('Research-backed fit — outcomes depend on interviews. No tool can guarantee selection.').guarantee).toHaveLength(0)
   })
 })
 
