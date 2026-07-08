@@ -177,8 +177,9 @@ export interface CompiledResume {
 }
 
 export interface CompiledDoc {
-  /** Paragraphs; each carries the ledger entries backing its claims. */
-  paragraphs: { text: string; ledgerIds: string[] }[]
+  /** Paragraphs; each carries the ledger entries backing its claims (I1) and an optional
+   *  external source URL when the sentence references a cited company fact (I7). */
+  paragraphs: { text: string; ledgerIds: string[]; citationUrl?: string }[]
 }
 
 export interface KeywordHit {
@@ -216,11 +217,13 @@ export interface Packet {
   decode: JDDecode
   /** True when the optional Groq polish pass was applied (and survived the fact-drift guard). */
   polished: boolean
+  /** Cited company research (Darzi v2). Changes emphasis + the cover-letter hook, never a claim. */
+  intel?: CompanyIntel
 }
 
 // ---------- Nabz ----------
 
-export type SuggestionType = 'new_entry' | 'promotion' | 'bullet_update'
+export type SuggestionType = 'new_entry' | 'promotion' | 'bullet_update' | 'attach_link'
 
 export interface NabzSuggestion {
   id: string

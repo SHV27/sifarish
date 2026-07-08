@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
-import type { Signal, SweepYield } from '../types'
+import type { PulseBrief, Signal, SweepYield } from '../types'
 import { runSweep } from '../lib/khabri/client'
+import { runPulse, acceptPulse, dismissPulse, pulseDue } from '../lib/pulse/client'
 
 /**
  * Khabri — the jasoos. Multi-source discovery + a hiring-signal feed. "Reel pe dekha,
@@ -64,6 +65,8 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
       )}
 
       {result && <YieldReport result={result} newJobs={newJobs} onOpenRadar={onOpenRadar} />}
+
+      <PulsePanel lastPulseAt={settings?.lastPulseAt} />
 
       {newJobs > 0 && !result && (
         <button
@@ -152,6 +155,84 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
         </aside>
       </div>
     </div>
+  )
+}
+
+function PulsePanel({ lastPulseAt }: { lastPulseAt?: string }) {
+  const briefs = useLiveQuery(() => db.pulse.where('status').equals('pending').reverse().toArray()) ?? []
+  const [running, setRunning] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+  const due = pulseDue(lastPulseAt)
+
+  const run = async () => {
+    setRunning(true)
+    setNote(null)
+    try {
+      const r = await runPulse()
+      setNote(r.keyless ? 'Keyless — add TAVILY_API_KEY for the market pulse.' : `${r.count} new brief(s).`)
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  if (briefs.length === 0 && !note && !due) return null
+
+  return (
+    <section className="dossier p-4 mb-4" aria-label="Industry pulse">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display font-semibold text-lg text-ink">
+          Industry Pulse {due && <span className="stamp stamp-red !text-[9px] ml-1">due</span>}
+        </h2>
+        <button className="text-xs font-semibold bg-ink text-paper px-3 py-1.5 rounded disabled:opacity-50" onClick={run} disabled={running}>
+          {running ? 'Reading the market…' : 'Read the market'}
+        </button>
+      </div>
+      <p className="text-xs text-ink-soft mt-1">
+        Weekly cited news sweep. Emerging keywords become human-confirmed rubric suggestions — the app stays present-tense.
+      </p>
+      {note && <p className="text-[11px] text-ink-soft mt-1 font-mono">{note}</p>}
+      {briefs.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {briefs.map((b) => (
+            <PulseBriefRow key={b.id} brief={b} />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function PulseBriefRow({ brief }: { brief: PulseBrief }) {
+  return (
+    <li className="ledger-rule pt-2">
+      <a href={brief.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-ink hover:underline">
+        {brief.headline}
+      </a>
+      <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">{brief.insight}</p>
+      {brief.suggestion && (
+        <p className="text-xs text-stamp mt-1">
+          <span className="stamp stamp-red !text-[9px] mr-1">rubric</span>
+          {brief.suggestion}
+        </p>
+      )}
+      <div className="mt-1 flex items-center gap-3 text-[11px]">
+        <a href={brief.url} target="_blank" rel="noreferrer" className="font-mono text-ink underline decoration-dotted">
+          {(() => {
+            try {
+              return new URL(brief.url).hostname.replace(/^www\./, '')
+            } catch {
+              return 'source'
+            }
+          })()} ↗
+        </a>
+        <button className="ml-auto font-medium text-shipped hover:underline" onClick={() => acceptPulse(brief)}>
+          {brief.suggestion ? 'Log it ✓' : 'Got it ✓'}
+        </button>
+        <button className="text-ink-soft hover:underline" onClick={() => dismissPulse(brief.id)}>
+          dismiss
+        </button>
+      </div>
+    </li>
   )
 }
 

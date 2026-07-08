@@ -62,14 +62,14 @@ export function NabzPanel() {
           {pending.map((s) => (
             <li key={s.id} className="ledger-rule pt-2">
               <div className="flex items-start gap-2">
-                <span className={`stamp shrink-0 ${s.type === 'promotion' ? 'stamp-forge' : 'stamp-red'} !text-[10px]`}>
-                  {s.type === 'promotion' ? 'promote' : 'new'}
+                <span className={`stamp shrink-0 !text-[10px] ${s.type === 'promotion' ? 'stamp-forge' : s.type === 'attach_link' ? 'stamp-shipped' : 'stamp-red'}`}>
+                  {s.type === 'promotion' ? 'promote' : s.type === 'attach_link' ? 'link' : 'new'}
                 </span>
                 <p className="text-xs text-ink leading-relaxed flex-1">{s.why}</p>
               </div>
               <div className="mt-1.5 flex items-center gap-3 pl-1">
                 <button className="text-xs font-semibold text-shipped hover:underline" onClick={() => acceptSuggestion(s)}>
-                  {s.type === 'promotion' ? 'Stamp it shipped ✓' : 'Add to ledger ✓'}
+                  {s.type === 'promotion' ? 'Stamp it shipped ✓' : s.type === 'attach_link' ? 'Attach link ✓' : 'Add to ledger ✓'}
                 </button>
                 <button className="text-xs text-ink-soft hover:underline" onClick={() => dismissSuggestion(s.id)}>
                   Not now

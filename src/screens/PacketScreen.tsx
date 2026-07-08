@@ -7,6 +7,7 @@ import { CompileError, LINE_METRICS } from '../lib/compile/compiler'
 import { saveFile } from '../lib/util/download'
 import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
 import { markApplied } from '../lib/morcha'
+import { buildApplyPlan } from '../lib/guru/applyPlan'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
   const job = useLiveQuery(() => (jobId ? db.jobs.get(jobId) : undefined), [jobId])
@@ -311,6 +312,7 @@ function PacketBody({
 
         <CopyDoc title="Cover letter" doc={packet.coverLetter} />
         <CopyDoc title="Outreach draft (send it yourself — SIFARISH never sends)" doc={packet.outreach} />
+        <ApplyPlanPanel packet={packet} job={job} />
       </div>
 
       {/* Coverage sidebar */}
@@ -322,7 +324,20 @@ function PacketBody({
           <ChipRow label="Evidence on resume" tone="shipped" hits={coverage.matched.map((h) => h.keyword)} />
           <ChipRow label="Currently building (dated line only)" tone="forge" hits={coverage.building.map((h) => h.keyword)} />
           <ChipRow label="No evidence — kept OFF the resume" tone="stamp" hits={coverage.missing.map((h) => h.keyword)} />
+          {packet.intel && (
+            <p className="mt-3 text-[11px] text-ink-soft">
+              <span className="stamp stamp-red !text-[9px] !rotate-0 mr-1">intel-informed</span>
+              emphasis tuned to {packet.intel.bullets.length} cited facts about {job.company} (below) — framing only, never a claim.
+            </p>
+          )}
         </section>
+
+        <IntelPanel packet={packet} company={job.company} />
+
+        {/* I9 made visible — it's a feature, not a disclaimer. */}
+        <p className="text-[11px] text-ink-soft text-center px-2 leading-relaxed">
+          Research-backed fit — outcomes depend on interviews. No tool can guarantee selection.
+        </p>
 
         {packet.gapNote.length > 0 && (
           <section className="dossier p-4" aria-label="Gap note">
@@ -384,6 +399,82 @@ function ResumeLine({ text, kind, isName, count }: { text: string; kind: keyof t
   )
 }
 
+function IntelPanel({ packet, company }: { packet: Packet; company: string }) {
+  if (!packet.intel) {
+    return (
+      <section className="dossier p-4" aria-label="Company intel">
+        <h2 className="font-display font-semibold text-ink text-sm">Company intel</h2>
+        <p className="text-xs text-ink-soft mt-1.5 leading-relaxed">
+          Keyless mode — add <code className="font-mono text-[11px]">TAVILY_API_KEY</code> on Vercel for cited
+          company research. The compile proceeds exactly the same without it.
+        </p>
+      </section>
+    )
+  }
+  return (
+    <section className="dossier p-4" aria-label="Company intel">
+      <h2 className="font-display font-semibold text-ink text-sm">
+        Intel Dossier — {company} <span className="font-mono text-[10px] text-ink-soft">({packet.intel.bullets.length} cited)</span>
+      </h2>
+      <ul className="mt-2 space-y-2">
+        {packet.intel.bullets.map((b, i) => (
+          <li key={i} className="text-xs text-ink-soft leading-relaxed">
+            {b.text}{' '}
+            <a href={b.url} target="_blank" rel="noreferrer" className="font-mono text-[10px] text-ink underline decoration-dotted">
+              {sourceHost(b.url)} ↗
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function ApplyPlanPanel({ packet, job }: { packet: Packet; job: Job }) {
+  const ledger = useLiveQuery(() => db.ledger.toArray()) ?? []
+  const [open, setOpen] = useState(false)
+  const plan = buildApplyPlan(job, packet, ledger)
+  return (
+    <section className="dossier p-4 mt-4" aria-label="Apply plan">
+      <button className="w-full flex items-center justify-between" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <h2 className="font-display font-semibold text-ink text-sm">Apply plan — you apply, step by step</h2>
+        <span className="font-mono text-xs text-ink-soft">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <>
+          <ol className="mt-3 space-y-2">
+            {plan.steps.map((s) => (
+              <li key={s.n} className="text-xs text-ink leading-relaxed flex gap-2">
+                <span className="font-mono font-semibold text-stamp shrink-0">{s.n}</span>
+                <span>
+                  <strong className="text-ink">{s.action}.</strong> <span className="text-ink-soft">{s.detail}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-3 ledger-rule pt-2">
+            <p className="font-mono text-[11px] uppercase text-ink-soft tracking-wide mb-1">Likely screening questions</p>
+            {plan.screeningAnswers.map((sa, i) => (
+              <div key={i} className="mb-2">
+                <p className="text-xs font-semibold text-ink">{sa.q}</p>
+                <p className="text-xs text-ink-soft leading-relaxed">{sa.a}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
+function sourceHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'source'
+  }
+}
+
 function ChipRow({ label, tone, hits }: { label: string; tone: 'shipped' | 'forge' | 'stamp'; hits: string[] }) {
   if (hits.length === 0) return null
   const toneCls = { shipped: 'stamp-shipped', forge: 'stamp-forge', stamp: 'stamp-red' }[tone]
@@ -427,6 +518,17 @@ function CopyDoc({ title, doc }: { title: string; doc: CompiledDoc }) {
               <span className="ml-1 font-mono text-[9px] text-shipped" title={p.ledgerIds.join(', ')}>
                 ⛁{p.ledgerIds.length}
               </span>
+            )}
+            {p.citationUrl && (
+              <a
+                href={p.citationUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-1 font-mono text-[9px] text-stamp underline decoration-dotted"
+                title="Cited company fact (I7)"
+              >
+                ⌕source
+              </a>
             )}
           </p>
         ))}

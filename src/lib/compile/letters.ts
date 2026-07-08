@@ -1,4 +1,4 @@
-import type { CompiledDoc, CoverageReport, Identity, JDDecode, Job, LedgerEntry } from '../../types'
+import type { CompiledDoc, CoverageReport, Identity, IntelBullet, JDDecode, Job, LedgerEntry } from '../../types'
 import { entryRelevance } from '../match/evidence'
 
 /**
@@ -29,6 +29,7 @@ export function compileCoverLetter(
   ledger: LedgerEntry[],
   decode: JDDecode,
   coverage: CoverageReport,
+  intelHook?: IntelBullet | null,
 ): CompiledDoc {
   const proofs = topProjects(ledger, decode, 2)
   const forgeIds = new Set(coverage.building.flatMap((h) => h.ledgerIds))
@@ -36,10 +37,20 @@ export function compileCoverLetter(
 
   const paragraphs: CompiledDoc['paragraphs'] = []
 
-  paragraphs.push({
-    text: `Dear ${job.company} team — I'm applying for ${job.title}. The role asks for ${keywordPhrase(decode)}; that is exactly the work I do, and every claim below links to something you can open and check.`,
-    ledgerIds: [],
-  })
+  if (intelHook) {
+    // Darzi v2: a specific, CITED company fact opens the letter — never a generic "I admire your mission".
+    const fact = intelHook.text.replace(/\s+$/, '').replace(/[.;]?$/, '')
+    paragraphs.push({
+      text: `Dear ${job.company} team — I'm applying for ${job.title}. I noticed ${fact}. That's the kind of work I do, and the role's ask for ${keywordPhrase(decode)} maps directly onto what I've shipped — every claim below links to something you can open and check.`,
+      ledgerIds: [],
+      citationUrl: intelHook.url,
+    })
+  } else {
+    paragraphs.push({
+      text: `Dear ${job.company} team — I'm applying for ${job.title}. The role asks for ${keywordPhrase(decode)}; that is exactly the work I do, and every claim below links to something you can open and check.`,
+      ledgerIds: [],
+    })
+  }
 
   for (const p of proofs) {
     const url = p.evidence?.url ?? p.evidence?.repo ?? ''

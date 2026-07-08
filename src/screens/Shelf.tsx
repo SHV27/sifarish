@@ -29,9 +29,12 @@ export function Shelf() {
             Everything here is provable — or honestly dated as in the forge. The resume is compiled from this, never written.
           </p>
         </div>
-        <p className="font-mono text-xs text-ink-soft">
-          {strength.shipped} shipped · {strength.total - strength.shipped} in forge
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="font-mono text-xs text-ink-soft">
+            {strength.shipped} shipped · {strength.total - strength.shipped} in forge
+          </p>
+          <QuickAdd />
+        </div>
       </div>
 
       {KIND_ORDER.map(({ kind, label }) => {
@@ -284,6 +287,83 @@ function PromoteModal({
   )
 }
 
+/** Quick-add: achievement/certification/skill in ≤3 fields — he'll keep winning things. */
+function QuickAdd() {
+  const [open, setOpen] = useState(false)
+  const [kind, setKind] = useState<'achievement' | 'certification' | 'skill'>('achievement')
+  const [title, setTitle] = useState('')
+  const [detail, setDetail] = useState('')
+
+  const add = async () => {
+    if (!title.trim()) return
+    const id = `${kind}-${Date.now()}`
+    const now = new Date()
+    await db.ledger.put({
+      id,
+      kind,
+      title: title.trim(),
+      summary: detail.trim(),
+      bullets:
+        kind === 'skill'
+          ? [{ id: `${id}-b1`, text: title.trim(), keywords: [title.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')] }]
+          : [],
+      tier: 'shipped',
+      evidence: { date: `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`, note: detail.trim() || 'Quick-added.' },
+      tags: [kind],
+      resumeEligible: true,
+    })
+    setTitle('')
+    setDetail('')
+    setOpen(false)
+  }
+
+  if (!open)
+    return (
+      <button className="text-xs font-semibold bg-ink text-paper px-3 py-1.5 rounded hover:opacity-90" onClick={() => setOpen(true)}>
+        + Quick add
+      </button>
+    )
+
+  return (
+    <div className="dossier p-3 absolute right-6 z-20 w-72 mt-10 animate-dossier-in">
+      <div className="flex gap-1 mb-2">
+        {(['achievement', 'certification', 'skill'] as const).map((k) => (
+          <button
+            key={k}
+            className={`text-[11px] px-2 py-1 rounded capitalize ${kind === k ? 'bg-ink text-paper' : 'bg-paper-sunken text-ink'}`}
+            onClick={() => setKind(k)}
+          >
+            {k}
+          </button>
+        ))}
+      </div>
+      <input
+        className="w-full bg-paper-sunken px-2 py-1.5 rounded text-xs mb-1.5"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder={kind === 'skill' ? 'Skill name' : 'Title (e.g. 2nd place, XYZ Hackathon)'}
+        aria-label="Quick add title"
+        autoFocus
+      />
+      <input
+        className="w-full bg-paper-sunken px-2 py-1.5 rounded text-xs mb-2"
+        value={detail}
+        onChange={(e) => setDetail(e.target.value)}
+        placeholder="One-line detail (optional)"
+        aria-label="Quick add detail"
+      />
+      <div className="flex justify-end gap-2">
+        <button className="text-xs text-ink-soft" onClick={() => setOpen(false)}>
+          Cancel
+        </button>
+        <button className="text-xs font-semibold bg-shipped text-paper px-3 py-1 rounded" onClick={add}>
+          Add · stamped Shipped
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function VoiceBankCard() {
   const voice = useLiveQuery(() => db.voicebank.get('voice'))
   const [draft, setDraft] = useState('')
@@ -296,6 +376,13 @@ function VoiceBankCard() {
         Real sentences you wrote. The polish pass is held to this register — anything that doesn't sound like
         you gets rejected by the slop scan.
       </p>
+      {voice.samples.length < 5 && (
+        <p className="mt-2 text-xs text-forge bg-forge-wash rounded px-3 py-2 leading-relaxed">
+          Only {voice.samples.length} sample{voice.samples.length === 1 ? '' : 's'} so far. Add a few more sentences
+          you actually wrote (a project blurb, a commit message) — the more you give, the better the polish pass
+          sounds like you and the sharper the slop scan gets. Aim for 5+.
+        </p>
+      )}
       <ul className="mt-3 space-y-2">
         {voice.samples.map((s, i) => (
           <li key={i} className="text-xs text-ink font-mono bg-paper-sunken rounded px-3 py-2 flex justify-between gap-2">

@@ -17,6 +17,8 @@ export interface GhRepo {
   language: string | null
   fork: boolean
   size: number
+  /** Live-demo URL (GitHub "homepage" field) — Nabz suggests attaching it as evidence. */
+  homepage?: string | null
 }
 
 export interface RateBudget {
@@ -54,6 +56,14 @@ export async function fetchRepos(force = false): Promise<SyncNabz> {
   const repos: GhRepo[] = await res.json()
   await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(repos), fetchedAt: new Date().toISOString() })
   return { repos, budget, fromCache: false }
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
 }
 
 /** Slugified match: does a ledger entry plausibly correspond to this repo? */
@@ -98,6 +108,19 @@ export async function computeSuggestions(repos: GhRepo[]): Promise<NabzSuggestio
         repoName: repo.name,
         repoUrl: repo.html_url,
         why: `"${match.title.split('—')[0].trim()}" is in the forge, but its repo ${repo.name} is now public${repo.description ? ` — "${repo.description.slice(0, 80)}"` : ''}. The truth caught up: promote it.`,
+        targetLedgerId: match.id,
+        status: 'pending',
+        createdAt: now,
+      })
+    } else if (match && match.tier === 'shipped' && repo.homepage && !match.evidence?.url?.includes(hostOf(repo.homepage))) {
+      // Live-link discovery: repo has a homepage (live demo) not yet attached as evidence.
+      if (isDismissed(repo.name, 'attach_link')) continue
+      liveSuggestions.push({
+        id: `sug-link-${repo.name}`,
+        type: 'attach_link',
+        repoName: repo.name,
+        repoUrl: repo.homepage,
+        why: `${repo.name} has a live demo at ${hostOf(repo.homepage)} that isn't linked on "${match.title.split('—')[0].trim()}". Attach it — a working link is your strongest evidence.`,
         targetLedgerId: match.id,
         status: 'pending',
         createdAt: now,
@@ -156,6 +179,13 @@ export async function acceptSuggestion(s: NabzSuggestion): Promise<void> {
       })
     } else if (s.type === 'new_entry' && s.draftEntry) {
       await db.ledger.put(s.draftEntry)
+    } else if (s.type === 'attach_link' && s.targetLedgerId) {
+      const entry = await db.ledger.get(s.targetLedgerId)
+      if (entry) {
+        await db.ledger.update(s.targetLedgerId, {
+          evidence: { ...(entry.evidence ?? { date: '', note: '' }), url: s.repoUrl, note: entry.evidence?.note ?? 'Live demo attached via Nabz.' },
+        })
+      }
     }
     await db.suggestions.update(s.id, { status: 'accepted' })
   })
