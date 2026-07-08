@@ -21,12 +21,16 @@ export type Intent =
   | 'refuse_guarantee'
   | 'refuse_fabrication'
   | 'status'
+  | 'derive_hunts'
+  | 'explain_angle'
+  | 'signature_advice'
+  | 'resource_budget'
   | 'freeform'
 
 export interface RoutedReply {
   intent: Intent
   text: string
-  action?: 'sweep' | 'open_apply_plan' | 'open_radar'
+  action?: 'sweep' | 'open_apply_plan' | 'open_radar' | 'derive_hunts'
   citationsRequired: boolean
 }
 
@@ -51,6 +55,15 @@ export function detectIntent(text: string, ledger: LedgerEntry[]): Intent {
       if (!has) return 'refuse_fabrication'
     }
   }
+
+  // Vision-derived hunts (proposeHunts).
+  if (/\b(vision|dream|derive|hunt for|what.*hunt|roles?.*(match|fit).*vision|based on my (vision|dream|goals))\b/.test(t)) return 'derive_hunts'
+  // Angle / casting explanation.
+  if (/\b(angle|framed?|casting|why.*(lead|chose|picked|benched)|editor)/.test(t)) return 'explain_angle'
+  // Sifarish Signature advice.
+  if (/\b(signature|p\.?s\.?|meta.?hook|mention.*(built|sifarish))\b/.test(t)) return 'signature_advice'
+  // Resource / budget questions.
+  if (/\b(budget|spend|spent|credits?|tokens?|cost|how much.*(use|using|call)|cache)\b/.test(t)) return 'resource_budget'
 
   if (/\b(find|search|look for|show me|any|new)\b.*\b(job|role|intern|opening|position)/.test(t) || /\bsweep\b/.test(t)) return 'find_jobs'
   if (/\b(why|explain|how).*(score|rank|rated|point)/.test(t) || /score.*mean/.test(t)) return 'explain_score'
@@ -156,6 +169,31 @@ export function route(userText: string, ledger: LedgerEntry[], jobs: Job[]): Rou
         intent,
         text: "I'll build a step-by-step apply plan — open the role's packet and I'll lay out exactly what to attach, paste, and send (you send it; I never do).",
         action: 'open_apply_plan',
+        citationsRequired: false,
+      }
+    case 'derive_hunts':
+      return {
+        intent,
+        text: "Let me derive hunts straight from your vision — the role names the market uses for the work you actually want. I'll list them; you confirm each (nothing added silently). You can also do this in Settings → Vision Profile → Derive hunts.",
+        action: 'derive_hunts',
+        citationsRequired: false,
+      }
+    case 'explain_angle':
+      return {
+        intent,
+        text: "Open any tailored packet and look at the Casting Sheet — it shows all four editorial passes: which archetype I cast the role as, which projects I put forward and which I benched (with reasons), the angle chosen per project, and the red-team verdict. Every call has a 'Why?' you can expand — and you can overrule any of them; your taste is final.",
+        citationsRequired: false,
+      }
+    case 'signature_advice':
+      return {
+        intent,
+        text: "The Sifarish Signature is that P.S. revealing this letter was compiled by the agent you built. My rule of thumb: include it for AI-first, engineering-led teams (it reads as initiative and proof you ship) and omit it for conservative or non-technical reviewers (it can read as gimmicky). Each packet shows my per-company recommendation with a 'Why?' — and a toggle, so the final call is yours.",
+        citationsRequired: false,
+      }
+    case 'resource_budget':
+      return {
+        intent,
+        text: "Everything metered is in Settings → API budgets and the Dimaag Ledger: LLM calls, cache hits (reused reasoning that cost nothing), heuristic fallbacks, and tokens — per feature, this month. Identical inputs never re-call the model, and if a budget runs low I quietly switch to the deterministic path. Zero silent burn.",
         citationsRequired: false,
       }
     default:

@@ -3,6 +3,8 @@ import { db } from '../db/db'
 import { RUBRIC_LABELS } from '../lib/radar/rubric'
 import type { RubricWeights, VisionProfile } from '../types'
 import { ensureBudgets, monthKey } from '../lib/budget'
+import { deriveHunts, deriveArchetypes, type DerivedHunt } from '../lib/vision/derive'
+import { useState } from 'react'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -256,6 +258,71 @@ function VisionEditor({ vision }: { vision: VisionProfile }) {
         <input type="checkbox" checked={vision.openToOctoberStart} onChange={(e) => save({ openToOctoberStart: e.target.checked })} />
         Open to an October start
       </label>
+
+      <VisionDerivation vision={vision} />
     </section>
+  )
+}
+
+/** Vision Engine (P12): derive hunt queries + archetypes from the dream; human confirms each. */
+function VisionDerivation({ vision }: { vision: VisionProfile }) {
+  const [hunts, setHunts] = useState<DerivedHunt[] | null>(null)
+  const [added, setAdded] = useState<Set<string>>(new Set())
+  const archetypes = deriveArchetypes(vision)
+
+  const existing = useLiveQuery(() => db.savedHunts.toArray()) ?? []
+  const existingQueries = new Set(existing.map((h) => h.query.toLowerCase()))
+
+  const derive = () => setHunts(deriveHunts(vision))
+
+  const addHunt = async (h: DerivedHunt) => {
+    await db.savedHunts.put({
+      id: `h-vision-${h.query.toLowerCase().replace(/\W+/g, '-')}`,
+      query: h.query,
+      remoteOnly: h.remoteOnly,
+      datePosted: 'month',
+      enabled: true,
+    })
+    setAdded((s) => new Set(s).add(h.query))
+  }
+
+  return (
+    <div className="mt-4 ledger-rule pt-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-ink">Derive the hunt from your dream</p>
+        <button className="text-xs font-semibold bg-ink text-paper px-3 py-1.5 rounded" onClick={derive}>
+          Derive hunts →
+        </button>
+      </div>
+      {archetypes.length > 0 && (
+        <p className="text-[11px] text-ink-soft mt-2">
+          Your vision reads as: {archetypes.map((a) => a.label).join(' · ')}. These drive resume casting.
+        </p>
+      )}
+      {hunts && (
+        <div className="mt-2 space-y-1.5">
+          {hunts.map((h) => {
+            const already = existingQueries.has(h.query.toLowerCase()) || added.has(h.query)
+            return (
+              <div key={h.query} className="flex items-start justify-between gap-2 text-[11px]">
+                <span className="text-ink">
+                  <strong>{h.query}</strong> <span className="text-ink-soft">— {h.why}</span>
+                </span>
+                <button
+                  className="shrink-0 font-medium text-shipped hover:underline disabled:text-ink-faint disabled:no-underline"
+                  disabled={already}
+                  onClick={() => addHunt(h)}
+                >
+                  {already ? 'in hunts ✓' : 'add hunt'}
+                </button>
+              </div>
+            )
+          })}
+          <p className="text-[10px] text-ink-faint mt-1">
+            Every derived hunt is a suggestion — you confirm each one. Nothing is added silently.
+          </p>
+        </div>
+      )}
+    </div>
   )
 }

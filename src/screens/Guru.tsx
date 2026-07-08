@@ -57,6 +57,26 @@ export function Guru({ onOpenPacket }: { onOpenPacket: (jobId: string) => void }
       if (routed.action === 'sweep') {
         const note = await runAction('sweep')
         if (note) setMessages((m) => [...m, { role: 'assistant', content: note }])
+      } else if (routed.action === 'derive_hunts') {
+        const settings = await db.settings.get('app')
+        if (settings?.visionProfile) {
+          const { deriveHunts } = await import('../lib/vision/derive')
+          const hunts = deriveHunts(settings.visionProfile)
+          const existing = new Set((await db.savedHunts.toArray()).map((h) => h.query.toLowerCase()))
+          let added = 0
+          for (const h of hunts.slice(0, 6)) {
+            if (existing.has(h.query.toLowerCase())) continue
+            await db.savedHunts.put({ id: `h-vision-${h.query.toLowerCase().replace(/\W+/g, '-')}`, query: h.query, remoteOnly: h.remoteOnly, datePosted: 'month', enabled: true })
+            added += 1
+          }
+          setMessages((m) => [
+            ...m,
+            {
+              role: 'assistant',
+              content: `Derived from your vision: ${hunts.map((h) => h.query).join(', ')}. I added ${added} new one(s) to your saved hunts — run a sweep in Khabri to work them. (You can toggle any off in Khabri; nothing is permanent.)`,
+            },
+          ])
+        }
       } else if (routed.action === 'open_apply_plan') {
         const tailored = jobs.find((j) => j.status === 'tailored') ?? jobs.find((j) => j.packetId)
         if (tailored) await appendApplyPlan(tailored, setMessages, onOpenPacket)
