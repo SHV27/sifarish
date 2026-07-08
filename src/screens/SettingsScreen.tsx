@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { RUBRIC_LABELS } from '../lib/radar/rubric'
 import type { RubricWeights, VisionProfile } from '../types'
-import { ensureBudgets } from '../lib/budget'
+import { ensureBudgets, monthKey } from '../lib/budget'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -72,6 +72,8 @@ export function SettingsScreen() {
           })}
         </div>
       </section>
+
+      <DimaagLedger />
 
       {settings.rubricChangelog && settings.rubricChangelog.length > 0 && (
         <section className="dossier p-4 mb-5" aria-label="Rubric changelog">
@@ -152,6 +154,61 @@ export function SettingsScreen() {
         </div>
       </section>
     </div>
+  )
+}
+
+function DimaagLedger() {
+  const mk = monthKey()
+  const rows = useLiveQuery(() => db.dimaagUsage.where('monthKey').equals(mk).toArray(), [mk]) ?? []
+  const totals = rows.reduce(
+    (t, r) => ({ calls: t.calls + r.calls, tokens: t.tokens + r.tokens, hits: t.hits + r.cacheHits, fb: t.fb + r.fallbacks }),
+    { calls: 0, tokens: 0, hits: 0, fb: 0 },
+  )
+  const totalDecisions = totals.calls + totals.hits + totals.fb
+  const hitRate = totalDecisions > 0 ? Math.round((totals.hits / totalDecisions) * 100) : 0
+
+  return (
+    <section className="dossier p-4 mb-5" aria-label="Dimaag Ledger">
+      <h2 className="font-display font-semibold text-lg text-ink">
+        Dimaag Ledger <span className="font-devanagari text-sm text-stamp">दिमाग़</span>
+      </h2>
+      <p className="text-xs text-ink-soft mt-1 mb-3">
+        Every reasoning call this month, by feature. Identical inputs are served from cache (0 cost);
+        keyless / over-budget decisions use the deterministic heuristic (0 cost). Optimization is a feature.
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-xs text-ink-soft">No reasoning yet this month. Tailor a packet or edit your vision to see the Dimaag work.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-4 gap-2 mb-3 text-center">
+            {[
+              ['LLM calls', totals.calls, 'text-ink'],
+              ['cache hits', totals.hits, 'text-shipped'],
+              ['heuristic', totals.fb, 'text-forge'],
+              ['tokens', totals.tokens, 'text-ink-soft'],
+            ].map(([label, val, cls]) => (
+              <div key={label as string} className="bg-paper-sunken/60 rounded py-2">
+                <div className={`font-mono font-semibold ${cls}`}>{val as number}</div>
+                <div className="text-[10px] text-ink-soft">{label as string}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-ink-soft mb-2">
+            Cache hit-rate: <span className="font-mono text-shipped font-semibold">{hitRate}%</span> — reused reasoning that cost nothing.
+          </p>
+          <div className="space-y-1">
+            {rows.slice().sort((a, b) => b.calls - a.calls).map((r) => (
+              <div key={r.id} className="flex items-center justify-between text-xs ledger-rule pt-1">
+                <span className="text-ink">{r.feature}</span>
+                <span className="font-mono text-ink-soft">
+                  {r.calls} call{r.calls === 1 ? '' : 's'} · {r.cacheHits} cached · {r.fallbacks} heuristic · {r.tokens} tok
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
   )
 }
 

@@ -15,6 +15,9 @@ export const BUDGET_DEFAULTS: Omit<Budget, 'used' | 'monthKey'>[] = [
   { id: 'jsearch', label: 'JSearch (job aggregation)', monthlyCap: 200, perRunCap: 6, unit: 'requests' },
   { id: 'tavily', label: 'Tavily (signals + intel + pulse)', monthlyCap: 1000, perRunCap: 8, unit: 'credits' },
   { id: 'groq', label: 'Groq (Guru + polish)', monthlyCap: 5000, perRunCap: 40, unit: 'calls' },
+  // v3 two-tier reasoning budgets — a gpt-oss-120b reason call costs more than an 8b classify.
+  { id: 'dimaag', label: 'Dimaag reasoning (gpt-oss-120b)', monthlyCap: 2000, perRunCap: 12, unit: 'calls' },
+  { id: 'chhota', label: 'Dimaag classify (llama-3.1-8b)', monthlyCap: 4000, perRunCap: 20, unit: 'calls' },
 ]
 
 export async function ensureBudgets(): Promise<void> {

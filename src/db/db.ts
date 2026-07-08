@@ -15,6 +15,8 @@ import type {
   Budget,
   PulseBrief,
   GuruThread,
+  DimaagCacheRow,
+  DimaagUsageRow,
 } from '../types'
 
 export class SifarishDB extends Dexie {
@@ -34,6 +36,9 @@ export class SifarishDB extends Dexie {
   budgets!: EntityTable<Budget, 'id'>
   pulse!: EntityTable<PulseBrief, 'id'>
   guruThreads!: EntityTable<GuruThread, 'id'>
+  // v3
+  dimaagCache!: EntityTable<DimaagCacheRow, 'hash'>
+  dimaagUsage!: EntityTable<DimaagUsageRow, 'id'>
 
   constructor() {
     super('sifarish')
@@ -57,6 +62,11 @@ export class SifarishDB extends Dexie {
       budgets: 'id',
       pulse: 'id, status, at',
       guruThreads: 'id, updatedAt',
+    })
+    // v3 "Dimaag Update" — reasoning cache + per-feature usage ledger (zero-wastage discipline).
+    this.version(3).stores({
+      dimaagCache: 'hash, at',
+      dimaagUsage: 'id, feature, monthKey',
     })
   }
 }

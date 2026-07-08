@@ -245,6 +245,56 @@ export interface NabzCacheRow {
   fetchedAt: string
 }
 
+// ---------- Dimaag (reasoning core, I10) ----------
+
+/**
+ * I10 — every consequential decision carries a stored, inspectable rationale.
+ * A decision without one is a bug. Rationales are honest about uncertainty.
+ */
+export interface Rationale {
+  question: string
+  optionsConsidered: string[]
+  criteria: string[]
+  choice: string
+  ranking?: string[]
+  why: string
+  confidence: number // 0..1 — honest about uncertainty
+  citations?: { title: string; url: string }[]
+  /** Ledger entry ids the reasoning leaned on. */
+  evidenceRefs?: string[]
+  /** Whether an LLM reasoned this or the deterministic heuristic did (keyless). */
+  by: 'dimaag' | 'heuristic'
+  at: string
+}
+
+export interface Critique {
+  verdict: 'PASS' | 'REVISE'
+  /** Top fixes, most important first. */
+  fixes: string[]
+  smell?: string
+  by: 'dimaag' | 'heuristic'
+  at: string
+}
+
+export type DimaagTier = 'reasoning' | 'classify'
+
+export interface DimaagCacheRow {
+  hash: string
+  json: string
+  at: string
+}
+
+/** Per-feature usage this month — the Dimaag Ledger (zero-wastage discipline, I8). */
+export interface DimaagUsageRow {
+  id: string // `${feature}:${monthKey}`
+  feature: string
+  monthKey: string
+  calls: number // real LLM calls (spent budget)
+  tokens: number
+  cacheHits: number // identical input served from cache (0 cost)
+  fallbacks: number // deterministic heuristic used (keyless / over-budget; 0 cost)
+}
+
 // ---------- Settings ----------
 
 export interface VisionProfile {
