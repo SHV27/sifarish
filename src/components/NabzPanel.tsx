@@ -16,7 +16,10 @@ export function NabzPanel() {
     setErr(null)
     setNote(null)
     try {
-      const { repos, budget, fromCache } = await fetchRepos(false)
+      // A manual click is a deliberate ask for the latest truth — always hit the network,
+      // never silently replay the 30-min cache (that's what made a freshly-pushed public
+      // repo invisible until the cache expired).
+      const { repos, budget, fromCache } = await fetchRepos(true)
       setBudget(budget)
       const suggestions = await computeSuggestions(repos)
       setNote(
