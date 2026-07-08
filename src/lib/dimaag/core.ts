@@ -237,7 +237,7 @@ export interface ClassifyInput {
 }
 
 export async function classify(input: ClassifyInput): Promise<{ label: string; confidence: number; by: 'dimaag' | 'heuristic' }> {
-  const cacheKey = hash({ k: 'classify', t: input.text, l: input.labels.map((l) => l.id) })
+  const cacheKey = hash({ k: 'classify', t: input.text, l: input.labels.map((l) => l.id), i: input.instruction })
   const cached = await db.dimaagCache.get(cacheKey)
   if (cached) {
     await recordUsage(input.feature, 'classify', 'hit')

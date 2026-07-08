@@ -23,7 +23,12 @@ export async function archetypePass(decode: JDDecode, jd: string, intel?: Compan
     text,
     labels: ARCHETYPE_LABELS,
     instruction:
-      'You are triaging a job description into ONE reviewer archetype — the kind of person who will skim this resume in six seconds. Pick the closest.',
+      'Triage this job description into ONE reviewer archetype — the person who skims the resume in six ' +
+      'seconds. Decisive rule: if the role centers on LLMs, agents/agentic systems, RAG, prompting, or ' +
+      'guardrails/evals, choose applied-ai (product-building) or agent-eng (agent architecture) — NOT ' +
+      'ml-generalist — even when Python is listed. Reserve ml-generalist for classic data/stats/modeling ' +
+      'roles with no LLM/agent focus, research-intern for paper/method depth, forward-deployed for ' +
+      'customer-facing delivery, platform-infra for serving/MLOps. Pick the closest.',
   })
   const arch = archetypeById(res.label)
   return { arch, confidence: res.confidence, by: res.by }
