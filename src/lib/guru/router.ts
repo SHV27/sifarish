@@ -36,8 +36,8 @@ export function detectIntent(text: string, ledger: LedgerEntry[]): Intent {
   const t = text.toLowerCase()
 
   // I9 — guarantee-bait. Highest priority: never let it through.
-  if (/\b(guarantee|assured|100%|promise me|sure.?shot|definitely get me|will i definitely)\b/.test(t) &&
-      /\b(job|offer|intern|select|placement|hired|get in)\b/.test(t)) {
+  if (/\b(guarantee|assured|100%|promise me|sure.?shot|definitely get|will i definitely)\b/.test(t) &&
+      /\b(job|offer|intern|selec|placement|hire|get in|admit|placed)/.test(t)) {
     return 'refuse_guarantee'
   }
 
