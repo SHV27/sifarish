@@ -5,7 +5,6 @@ import type { Job, ScoreBreakdown } from '../types'
 import { syncRadar, ensureJd, type SyncResult } from '../lib/radar/feeds'
 import { pruneStaleFinds } from '../lib/khabri/client'
 import { scoreJobCached } from '../lib/radar/score'
-import { buildPacket, savePacket } from '../lib/darzi'
 
 const VISIBLE_CAP = 15 // sniper, not spray — the cap is a feature (vision §P3)
 
@@ -41,12 +40,13 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
     }
   }
 
+  // Navigate to the packet screen IMMEDIATELY (the four-pass compile takes ~10s of real
+  // reasoning; the Packet screen shows live progress). ensureJd runs first so the pasted/SR
+  // job has its full description before we hand off. No silent 10s block on the Radar.
   const tailor = async (job: Job) => {
-    const withJd = await ensureJd(job)
-    if (job.isNew) await db.jobs.update(job.id, { isNew: false })
-    const packet = await buildPacket(withJd)
-    await savePacket(packet)
-    onTailor(withJd.id)
+    if (job.isNew) await db.jobs.update(job.id, { isNew: false }).catch(() => {})
+    await ensureJd(job).catch(() => job)
+    onTailor(job.id)
   }
 
   const enabledCount = watchlist.filter((w) => w.enabled).length

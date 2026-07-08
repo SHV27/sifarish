@@ -13,13 +13,14 @@ import { composeLetter, decideSignature } from './atelier/letter'
  * Pure pipeline over the Sach Ledger; the optional polish amplifier is applied
  * separately (and diff-guarded) so the compiled truth is always the baseline.
  */
-export async function buildPacket(job: Job): Promise<Packet> {
+export async function buildPacket(job: Job, onProgress?: (step: string) => void): Promise<Packet> {
   const identity = await db.identity.get('me')
   const ledger = await db.ledger.toArray()
   if (!identity) throw new Error('Identity missing — reseed the app.')
 
   // Darzi v2: an Intel Pass runs before the compile. Cited (I7); keyless-safe (falls back to
   // v1 output). Intel shapes the cover-letter hook and the dossier panel — never a claim (I1).
+  onProgress?.('Researching the company…')
   const intel = await getIntel(job.company).catch(() => undefined)
   const intelHook = hookFromIntel(intel)
 
@@ -31,6 +32,7 @@ export async function buildPacket(job: Job): Promise<Packet> {
   let editorial: EditorialPlan | undefined
   let compileEditorial: CompileInput['editorial']
   if (shippedProjects.length > 0) {
+    onProgress?.('Reading the role & casting your projects…')
     const ed = await runEditor({ projects: shippedProjects, decode, jd: job.jd, intel }).catch(() => null)
     if (ed) {
       compileEditorial = { order: ed.order, bullets: ed.bullets }
@@ -39,11 +41,13 @@ export async function buildPacket(job: Job): Promise<Packet> {
   }
 
   // -- Compile (v1 compiler is final authority for I1/I2/one-page) --
+  onProgress?.('Compiling the one-page résumé…')
   const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial })
 
   // -- Pass 4: Red-Team loop (≤3 rounds). PASS required for "ready". --
   let ready = true
   if (editorial) {
+    onProgress?.('Red-teaming the draft…')
     const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
     if (rt) {
       editorial.redTeam = rt
@@ -53,6 +57,7 @@ export async function buildPacket(job: Job): Promise<Packet> {
   }
 
   // -- Atelier (v3): composed letter with per-company Sifarish Signature decision --
+  onProgress?.('Composing your cover letter…')
   const settings = await db.settings.get('app')
   const vision = settings?.visionProfile
   let signature: Packet['signature']

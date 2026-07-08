@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { CompiledDoc, Job, Packet } from '../types'
@@ -142,24 +142,40 @@ function PasteLane({ onPickJob }: { onPickJob: (id: string) => void }) {
 }
 
 function PacketView({ job }: { job: Job }) {
-  const packet = useLiveQuery(() => db.packets.where('jobId').equals(job.id).first(), [job.id])
+  // Query as an array so we can distinguish "still loading" (undefined) from "no packet" ([]).
+  const packets = useLiveQuery(() => db.packets.where('jobId').equals(job.id).toArray(), [job.id])
+  const packetLoaded = packets !== undefined
+  const packet = packets?.[0]
   const [error, setError] = useState<{ message: string; suggestions: string[] } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [step, setStep] = useState('')
   const [parseback, setParseback] = useState<string | null>(null)
+  const startedFor = useRef<string | null>(null)
 
   const tailor = async () => {
     setBusy(true)
     setError(null)
+    setStep('Warming up the Editor’s Desk…')
     try {
-      const p = await buildPacket(job)
+      const p = await buildPacket(job, (s) => setStep(s))
       await savePacket(p)
     } catch (e) {
       if (e instanceof CompileError) setError({ message: e.message, suggestions: e.suggestions })
-      else setError({ message: String(e), suggestions: [] })
+      else setError({ message: e instanceof Error ? e.message : String(e), suggestions: [] })
     } finally {
       setBusy(false)
+      setStep('')
     }
   }
+
+  // Auto-tailor the moment we land here from the Radar with no packet yet (one click, not two).
+  useEffect(() => {
+    if (packetLoaded && !packet && !busy && startedFor.current !== job.id) {
+      startedFor.current = job.id
+      void tailor()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packetLoaded, packet, job.id])
 
   const exportPdf = async (p: Packet) => {
     try {
@@ -215,18 +231,51 @@ function PacketView({ job }: { job: Job }) {
         </div>
       )}
 
-      {!packet ? (
+      {busy ? (
+        <div className="dossier p-8 animate-dossier-in" aria-live="polite" aria-busy="true">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-2.5 h-2.5 rounded-full bg-stamp animate-nudge" />
+            <p className="font-display font-semibold text-lg text-ink">The Editor's Desk is reasoning…</p>
+          </div>
+          <p className="text-sm text-ink mb-4 font-mono">{step || 'Warming up…'}</p>
+          <ol className="space-y-1.5 text-xs">
+            {[
+              'Researching the company…',
+              'Reading the role & casting your projects…',
+              'Compiling the one-page résumé…',
+              'Red-teaming the draft…',
+              'Composing your cover letter…',
+            ].map((label) => {
+              const order = [
+                'Researching the company…',
+                'Reading the role & casting your projects…',
+                'Compiling the one-page résumé…',
+                'Red-teaming the draft…',
+                'Composing your cover letter…',
+              ]
+              const done = order.indexOf(label) < order.indexOf(step)
+              const active = label === step
+              return (
+                <li key={label} className={`flex items-center gap-2 ${active ? 'text-ink font-medium' : done ? 'text-shipped' : 'text-ink-faint'}`}>
+                  <span>{done ? '✓' : active ? '▸' : '·'}</span>
+                  {label}
+                </li>
+              )
+            })}
+          </ol>
+          <p className="text-[11px] text-ink-faint mt-4">
+            A real four-pass edit with written reasons — about ten seconds. Keyless mode is instant.
+          </p>
+        </div>
+      ) : !packet ? (
         <div className="dossier p-8 text-center">
           <p className="text-sm text-ink-soft mb-4">
-            No packet yet for this role. The Darzi will decode the JD, match it against your ledger, and
-            compile the full application dossier.
+            {error
+              ? 'The compile hit a snag (above). You can retry, or open a different role.'
+              : 'The Darzi will decode the JD, match it against your ledger, and compile the full dossier.'}
           </p>
-          <button
-            className="bg-stamp text-paper font-semibold px-6 py-3 rounded hover:opacity-90 disabled:opacity-50"
-            disabled={busy}
-            onClick={tailor}
-          >
-            {busy ? 'Compiling…' : 'Tailor this packet →'}
+          <button className="bg-stamp text-paper font-semibold px-6 py-3 rounded hover:opacity-90 disabled:opacity-50" disabled={busy} onClick={tailor}>
+            {error ? 'Retry tailoring →' : 'Tailor this packet →'}
           </button>
         </div>
       ) : (
