@@ -30,8 +30,17 @@ v1 (65) + v2 (46) + v3 (34: Dimaag core+cache, editor 4-pass I10 coverage, angle
 letter uniqueness + banlist v3, vision derivation, budget discipline, v3 chaos, Guru 18-conv).
 Console 0 · typecheck clean · build clean · bundle 146KB gzip · 3-breakpoint screenshots.
 
+## v3.1 robustness pass (real-user hardening)
+- **D32 page-overflow killed**: compiler SOLVES one-page via progressive trim (never throws at the user
+  as the ledger grows); benched-means-benched.
+- **D33 v2-instant tailoring**: two-phase — instant deterministic packet (~700ms) then background Dimaag
+  refinement. Verified live: 6-shipped-project ledger → resume in 708ms, 0 compile errors.
+- **D34 autopilot**: discovery + market pulse auto-run in the background when due (budget-capped; human
+  confirms every change). Self-evolving, never outdated.
+- 146/146 gates · full hostile QA sweep 38 steps / 0 problems · deployed.
+
 ## ONE next action
-→ **None — SIFARISH is feature-complete. Future work is content, not code.**
+→ **None — SIFARISH is feature-complete and hardened. Future work is content, not code.**
    Ongoing content, when Shaurya wants it: edit the ledger as he ships, edit the Vision Profile, and
    **rotate the API keys** (they touched plaintext chat) — see KEYS_GUIDE.md §Rotation. The app runs
-   fully keyless in the meantime; keys only amplify.
+   fully keyless in the meantime; keys only amplify — and now it keeps itself current on its own.
