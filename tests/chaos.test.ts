@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { compileResume, CompileError } from '../src/lib/compile/compiler'
+import { compileResume, estimateHeight, USABLE_HEIGHT } from '../src/lib/compile/compiler'
 import { decodeJD } from '../src/lib/jd/decode'
 import { matchEvidence } from '../src/lib/match/evidence'
 import { compilePacketPure, fakeJob, SEED_IDENTITY } from './helpers'
@@ -68,8 +68,8 @@ describe('Chaos — HTML JD sanitation', () => {
   })
 })
 
-describe('Chaos — page overflow surfaces a legible error', () => {
-  it('30 fat projects throw CompileError, not a silent 2-pager', () => {
+describe('Chaos — a growing ledger never breaks the one-page compile (v3, D32)', () => {
+  it('30 fat projects trim to one page, never throw at the user, never a silent 2-pager', () => {
     const fat: LedgerEntry[] = Array.from({ length: 30 }, (_, i) => ({
       id: `p${i}`, kind: 'project', title: `Project ${i} With A Long Title`, summary: 's',
       tier: 'shipped', evidence: { repo: 'https://x/y', date: '01/2026', note: '' }, tags: ['python'], resumeEligible: true,
@@ -77,6 +77,7 @@ describe('Chaos — page overflow surfaces a legible error', () => {
     }))
     const decode = decodeJD('python')
     const coverage = matchEvidence(decode, fat)
-    expect(() => compileResume({ identity: SEED_IDENTITY, ledger: fat, decode, coverage, jobId: 'x' })).toThrow(CompileError)
+    const resume = compileResume({ identity: SEED_IDENTITY, ledger: fat, decode, coverage, jobId: 'x' })
+    expect(estimateHeight(resume.lines)).toBeLessThanOrEqual(USABLE_HEIGHT)
   })
 })

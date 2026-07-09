@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { CompiledDoc, Job, Packet } from '../types'
-import { buildPacket, savePacket, overrulePacket, toggleSignature } from '../lib/darzi'
+import { buildPacket, buildPacketFast, savePacket, overrulePacket, toggleSignature } from '../lib/darzi'
 import { CompileError, LINE_METRICS } from '../lib/compile/compiler'
 import { saveFile } from '../lib/util/download'
 import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
@@ -147,30 +147,37 @@ function PacketView({ job }: { job: Job }) {
   const packetLoaded = packets !== undefined
   const packet = packets?.[0]
   const [error, setError] = useState<{ message: string; suggestions: string[] } | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [step, setStep] = useState('')
+  const [firstBuild, setFirstBuild] = useState(false) // true only until the INSTANT packet lands
   const [parseback, setParseback] = useState<string | null>(null)
   const startedFor = useRef<string | null>(null)
 
+  // Two-phase (D33): phase 1 = instant deterministic packet (v2 speed); phase 2 = the Dimaag
+  // Editor's Desk refines casting + letter in the background and updates the view live.
   const tailor = async () => {
-    setBusy(true)
     setError(null)
-    setStep('Warming up the Editor’s Desk…')
+    setFirstBuild(true)
     try {
-      const p = await buildPacket(job, (s) => setStep(s))
-      await savePacket(p)
+      const fast = await buildPacketFast(job)
+      await savePacket(fast) // resume on screen in ~300ms
+    } catch (e) {
+      setError({ message: e instanceof Error ? e.message : String(e), suggestions: e instanceof CompileError ? e.suggestions : [] })
+      setFirstBuild(false)
+      return
+    }
+    setFirstBuild(false)
+    // Phase 2: refine in the background. A failure here just leaves the instant packet in place.
+    try {
+      const full = await buildPacket(job)
+      await savePacket(full)
     } catch (e) {
       if (e instanceof CompileError) setError({ message: e.message, suggestions: e.suggestions })
-      else setError({ message: e instanceof Error ? e.message : String(e), suggestions: [] })
-    } finally {
-      setBusy(false)
-      setStep('')
+      // else: keep the instant packet silently; it's fully usable.
     }
   }
 
   // Auto-tailor the moment we land here from the Radar with no packet yet (one click, not two).
   useEffect(() => {
-    if (packetLoaded && !packet && !busy && startedFor.current !== job.id) {
+    if (packetLoaded && !packet && !firstBuild && startedFor.current !== job.id) {
       startedFor.current = job.id
       void tailor()
     }
@@ -231,41 +238,11 @@ function PacketView({ job }: { job: Job }) {
         </div>
       )}
 
-      {busy ? (
-        <div className="dossier p-8 animate-dossier-in" aria-live="polite" aria-busy="true">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-2.5 h-2.5 rounded-full bg-stamp animate-nudge" />
-            <p className="font-display font-semibold text-lg text-ink">The Editor's Desk is reasoning…</p>
-          </div>
-          <p className="text-sm text-ink mb-4 font-mono">{step || 'Warming up…'}</p>
-          <ol className="space-y-1.5 text-xs">
-            {[
-              'Researching the company…',
-              'Reading the role & casting your projects…',
-              'Compiling the one-page résumé…',
-              'Red-teaming the draft…',
-              'Composing your cover letter…',
-            ].map((label) => {
-              const order = [
-                'Researching the company…',
-                'Reading the role & casting your projects…',
-                'Compiling the one-page résumé…',
-                'Red-teaming the draft…',
-                'Composing your cover letter…',
-              ]
-              const done = order.indexOf(label) < order.indexOf(step)
-              const active = label === step
-              return (
-                <li key={label} className={`flex items-center gap-2 ${active ? 'text-ink font-medium' : done ? 'text-shipped' : 'text-ink-faint'}`}>
-                  <span>{done ? '✓' : active ? '▸' : '·'}</span>
-                  {label}
-                </li>
-              )
-            })}
-          </ol>
-          <p className="text-[11px] text-ink-faint mt-4">
-            A real four-pass edit with written reasons — about ten seconds. Keyless mode is instant.
-          </p>
+      {firstBuild && !packet ? (
+        <div className="dossier p-8 text-center animate-dossier-in" aria-live="polite" aria-busy="true">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-stamp animate-nudge mb-3" />
+          <p className="font-display font-semibold text-lg text-ink">Compiling your dossier…</p>
+          <p className="text-sm text-ink-soft mt-1">One second — assembling the evidence.</p>
         </div>
       ) : !packet ? (
         <div className="dossier p-8 text-center">
@@ -274,7 +251,7 @@ function PacketView({ job }: { job: Job }) {
               ? 'The compile hit a snag (above). You can retry, or open a different role.'
               : 'The Darzi will decode the JD, match it against your ledger, and compile the full dossier.'}
           </p>
-          <button className="bg-stamp text-paper font-semibold px-6 py-3 rounded hover:opacity-90 disabled:opacity-50" disabled={busy} onClick={tailor}>
+          <button className="bg-stamp text-paper font-semibold px-6 py-3 rounded hover:opacity-90 disabled:opacity-50" disabled={firstBuild} onClick={tailor}>
             {error ? 'Retry tailoring →' : 'Tailor this packet →'}
           </button>
         </div>
@@ -333,6 +310,15 @@ function PacketBody({
     <div className="grid lg:grid-cols-[1fr_320px] gap-5">
       {/* Resume paper preview — the evidence is the interface */}
       <div>
+        {packet.enhancing && (
+          <div className="dossier p-3 mb-3 flex items-center gap-2 animate-dossier-in" aria-live="polite">
+            <span className="w-2 h-2 rounded-full bg-forge animate-nudge shrink-0" />
+            <p className="text-xs text-ink">
+              <strong>Ready to use now.</strong> The Dimaag is refining the casting, angles, and cover letter in
+              the background — this dossier will sharpen in a few seconds.
+            </p>
+          </div>
+        )}
         {packet.editorial && <CastingSheet packet={packet} />}
 
         <div className="dossier p-6 sm:p-8 bg-white relative" aria-label="Compiled resume preview">

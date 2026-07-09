@@ -244,6 +244,8 @@ export interface Packet {
   ready?: boolean
   /** Atelier (v3): the Sifarish Signature decision + whether it's currently on. */
   signature?: { on: boolean; rationale: Rationale }
+  /** True on the instant deterministic packet while the Dimaag layer refines in the background. */
+  enhancing?: boolean
 }
 
 // ---------- Nabz ----------

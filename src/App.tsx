@@ -33,6 +33,14 @@ export default function App() {
     setScreen('packet')
   }, [])
 
+  // Autopilot: keep discovery + market pulse current in the background (budget-capped; human
+  // still confirms every change). Runs once per session, only when due. The app stays present-tense.
+  useEffect(() => {
+    if (settings?.onboarded) {
+      import('./lib/autopilot').then((m) => m.runAutopilot()).catch(() => {})
+    }
+  }, [settings?.onboarded])
+
   // Keyboard map: 1–5 switch screens (never while typing in a field)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

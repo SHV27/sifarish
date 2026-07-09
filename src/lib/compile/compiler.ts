@@ -14,9 +14,17 @@ import { entryRelevance, bulletRelevance } from '../match/evidence'
  * I1 — every content line carries ledgerIds; a bullet with none is a thrown CompileError.
  * I2 — in_forge material renders ONLY through the single dated "Currently Building" line.
  *
- * Budget model shared with the PDF renderer (export/pdf.ts): A4, 48pt margins,
- * Helvetica. Estimates here are conservative (chars-per-line 88 vs real ~95), and the
- * renderer re-asserts the page bound with true font metrics as a hard error.
+ * ONE-PAGE IS A CONSTRAINT THE COMPILER SOLVES, NOT AN ERROR IT THROWS (v3 hardening, D32).
+ * As the ledger grows (Nabz keeps adding real shipped work — the self-strengthening loop),
+ * a fixed render + timid trim overflowed and surfaced a CompileError at the user. Now the
+ * compiler assembles at progressively tighter trim levels (fewer bullets → prune honors →
+ * fewer projects) until the page fits. The sniper principle applies to the resume itself:
+ * the strongest evidence makes the page; the rest waits on the shelf. CompileError remains
+ * only for the practically-impossible case (a single project + contact block won't fit).
+ *
+ * Budget model shared with the PDF renderer (export/pdf.ts): A4, 48pt margins, Helvetica.
+ * Estimates here are conservative (chars-per-line 88 vs real ~95), and the renderer
+ * re-asserts the page bound with true font metrics as a hard error.
  */
 
 export class CompileError extends Error {
@@ -30,7 +38,7 @@ export class CompileError extends Error {
 
 // -- Budget constants (points) --
 export const PAGE = { width: 595.28, height: 841.89, margin: 48 }
-const USABLE_HEIGHT = PAGE.height - PAGE.margin * 2 // 745.89
+export const USABLE_HEIGHT = PAGE.height - PAGE.margin * 2 // 745.89
 const CHARS_PER_LINE = 88
 
 export const LINE_METRICS: Record<CompiledLine['kind'], { size: number; leading: number; before: number; bold: boolean }> = {
@@ -71,171 +79,172 @@ export interface CompileInput {
   coverage: CoverageReport
   jobId: string
   /**
-   * Optional Darzi v3 editorial override: the Editor's Desk proposes which projects lead
-   * (order) and which bullets each shows (selection/order). The compiler DISPOSES — it still
-   * enforces I1/I2/one-page as final authority. Absent → v1 relevance sort (regression-safe).
+   * Optional Darzi v3 editorial override: the Editor's Desk casts which projects LEAD.
+   * Benched means benched — under an editorial plan ONLY the cast lineup renders (the
+   * Casting Sheet shows why each benched project sat out, and one click promotes it).
+   * The compiler remains final authority for I1/I2/one-page. Absent → v1 relevance sort.
    */
   editorial?: {
-    order: string[] // ledger ids, best-first
+    order: string[] // ledger ids, best-first (the cast lineup)
     bullets: Record<string, string[]> // ledgerId → bullet ids in chosen order
   }
 }
+
+/** Progressive trim levels — applied in order until the page fits (sniper over spray). */
+interface TrimLevel {
+  bulletsPerProject: number
+  maxProjects: number
+  maxAchievements: number
+  includePositions: boolean
+  includeCerts: boolean
+}
+const TRIM_LEVELS: TrimLevel[] = [
+  { bulletsPerProject: 3, maxProjects: 4, maxAchievements: 99, includePositions: true, includeCerts: true },
+  { bulletsPerProject: 3, maxProjects: 3, maxAchievements: 3, includePositions: true, includeCerts: true },
+  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 3, includePositions: true, includeCerts: true },
+  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 2, includePositions: false, includeCerts: true },
+  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 2, includePositions: false, includeCerts: false },
+  { bulletsPerProject: 1, maxProjects: 3, maxAchievements: 1, includePositions: false, includeCerts: false },
+  { bulletsPerProject: 1, maxProjects: 2, maxAchievements: 1, includePositions: false, includeCerts: false },
+  { bulletsPerProject: 1, maxProjects: 1, maxAchievements: 0, includePositions: false, includeCerts: false },
+]
 
 export function compileResume(input: CompileInput): CompiledResume {
   const { identity, ledger, decode, coverage, jobId } = input
   const eligible = ledger.filter((e) => e.resumeEligible)
   const shipped = eligible.filter((e) => e.tier === 'shipped')
-  const lines: CompiledLine[] = []
 
-  // -- Contact block (fixed) --
-  push(lines, { kind: 'contact', text: identity.name, ledgerIds: [] })
-  push(lines, {
-    kind: 'contact',
-    text: `${identity.email} | ${identity.phone} | ${identity.github} | ${identity.linkedin}`,
-    ledgerIds: [],
-  })
-  push(lines, { kind: 'contact', text: identity.location, ledgerIds: [] })
-
-  // -- Education (fixed) --
-  const education = shipped.filter((e) => e.kind === 'education')
-  if (education.length > 0) {
-    push(lines, { kind: 'heading', text: 'EDUCATION', ledgerIds: education.map((e) => e.id) })
-    for (const e of education) {
-      push(lines, { kind: 'entry-title', text: e.title, ledgerIds: [e.id] })
-      if (e.summary) push(lines, { kind: 'meta', text: e.summary, ledgerIds: [e.id] })
-    }
+  // -- Project pool: the cast lineup under an editorial plan, else v1 relevance sort --
+  const allProjects = shipped.filter((e) => e.kind === 'project')
+  const relevanceSorted = () =>
+    allProjects
+      .slice()
+      .sort(
+        (a, b) =>
+          entryRelevance(b, decode) - entryRelevance(a, decode) ||
+          (b.evidence?.date ?? '').localeCompare(a.evidence?.date ?? ''),
+      )
+  let projectPool: LedgerEntry[]
+  if (input.editorial && input.editorial.order.length > 0) {
+    const byId = new Map(allProjects.map((p) => [p.id, p]))
+    projectPool = input.editorial.order.map((id) => byId.get(id)).filter((p): p is LedgerEntry => !!p)
+    if (projectPool.length === 0) projectPool = relevanceSorted()
+  } else {
+    projectPool = relevanceSorted()
   }
 
-  // -- Skills: shipped only, ordered by JD relevance (I2 keeps in_forge out of here) --
+  // -- Fixed + trimmable content pools --
+  const education = shipped.filter((e) => e.kind === 'education')
   const skills = shipped
     .filter((e) => e.kind === 'skill')
     .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
-  if (skills.length > 0) {
-    push(lines, { kind: 'heading', text: 'SKILLS', ledgerIds: skills.map((e) => e.id) })
-    push(lines, {
-      kind: 'skills',
-      text: skills.map((e) => e.title).join(' | '),
-      ledgerIds: skills.map((e) => e.id),
-    })
-  }
-
-  // -- Projects: editorial order if present (Darzi v3), else v1 relevance sort --
-  const allProjects = shipped.filter((e) => e.kind === 'project')
-  let projects: LedgerEntry[]
-  if (input.editorial) {
-    const rank = new Map(input.editorial.order.map((id, i) => [id, i]))
-    projects = allProjects
-      .slice()
-      .sort((a, b) => (rank.get(a.id) ?? 999) - (rank.get(b.id) ?? 999) || entryRelevance(b, decode) - entryRelevance(a, decode))
-  } else {
-    projects = allProjects.sort(
-      (a, b) =>
-        entryRelevance(b, decode) - entryRelevance(a, decode) ||
-        (b.evidence?.date ?? '').localeCompare(a.evidence?.date ?? ''),
-    )
-  }
-  if (projects.length > 0) {
-    push(lines, { kind: 'heading', text: 'PROJECTS', ledgerIds: projects.map((e) => e.id) })
-    for (const p of projects) {
-      const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
-      push(lines, {
-        kind: 'entry-title',
-        text: `${p.title}${p.evidence?.date ? ` (${p.evidence.date})` : ''}`,
-        ledgerIds: [p.id],
-      })
-      if (evidenceUrl) push(lines, { kind: 'meta', text: evidenceUrl.replace(/^https?:\/\//, ''), ledgerIds: [p.id] })
-      // Editorial bullet plan (angle-driven selection/order) if present, else relevance sort.
-      const plan = input.editorial?.bullets[p.id]
-      let chosen: typeof p.bullets
-      if (plan && plan.length > 0) {
-        const byId = new Map(p.bullets.map((b) => [b.id, b]))
-        chosen = plan.map((id) => byId.get(id)).filter((b): b is (typeof p.bullets)[number] => !!b).slice(0, 3)
-        if (chosen.length === 0) chosen = p.bullets.slice(0, 3)
-      } else {
-        chosen = p.bullets
-          .slice()
-          .sort((a, b) => bulletRelevance(b.keywords, decode) - bulletRelevance(a.keywords, decode))
-          .slice(0, 3)
-      }
-      for (const b of chosen) {
-        push(lines, { kind: 'bullet', text: `- ${b.text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
-      }
-    }
-  }
-
-  // -- Currently Building: THE ONLY rendering of in_forge material (I2) --
+  const achievements = shipped
+    .filter((e) => e.kind === 'achievement')
+    .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
+  const positions = shipped.filter((e) => e.kind === 'position')
+  const certs = shipped.filter((e) => e.kind === 'certification')
   const forgeIds = new Set(coverage.building.flatMap((h) => h.ledgerIds))
   const forgeEntries = eligible.filter((e) => e.tier === 'in_forge' && forgeIds.has(e.id))
-  if (forgeEntries.length > 0) {
-    const eta = forgeEntries[0].forgeEta ?? 'July 2026'
-    const names = forgeEntries.map((e) => e.title.split('—')[0].trim()).join(', ')
+
+  const bulletsFor = (p: LedgerEntry, cap: number) => {
+    const plan = input.editorial?.bullets[p.id]
+    if (plan && plan.length > 0) {
+      const byId = new Map(p.bullets.map((b) => [b.id, b]))
+      const chosen = plan.map((id) => byId.get(id)).filter((b): b is (typeof p.bullets)[number] => !!b)
+      if (chosen.length > 0) return chosen.slice(0, cap)
+    }
+    return p.bullets
+      .slice()
+      .sort((a, b) => bulletRelevance(b.keywords, decode) - bulletRelevance(a.keywords, decode))
+      .slice(0, cap)
+  }
+
+  const assemble = (lv: TrimLevel): CompiledLine[] => {
+    const lines: CompiledLine[] = []
+
+    // Contact block (fixed)
+    push(lines, { kind: 'contact', text: identity.name, ledgerIds: [] })
     push(lines, {
-      kind: 'forge',
-      text: `Currently Building (${eta}): ${names}`,
-      ledgerIds: forgeEntries.map((e) => e.id),
+      kind: 'contact',
+      text: `${identity.email} | ${identity.phone} | ${identity.github} | ${identity.linkedin}`,
+      ledgerIds: [],
     })
-  }
+    push(lines, { kind: 'contact', text: identity.location, ledgerIds: [] })
 
-  // -- Achievements & Certifications: greedy by relevance, compact --
-  const honors = shipped.filter((e) => e.kind === 'achievement' || e.kind === 'position')
-  if (honors.length > 0) {
-    push(lines, { kind: 'heading', text: 'ACHIEVEMENTS', ledgerIds: honors.map((e) => e.id) })
-    for (const h of honors.filter((e) => e.kind === 'achievement')) {
-      push(lines, { kind: 'bullet', text: `- ${h.title}${h.summary ? ` — ${h.summary}` : ''}`, ledgerIds: [h.id] })
-    }
-    const positions = honors.filter((e) => e.kind === 'position')
-    if (positions.length > 0) {
-      push(lines, {
-        kind: 'bullet',
-        text: `- ${positions.map((p) => p.title).join('; ')}`,
-        ledgerIds: positions.map((p) => p.id),
-      })
-    }
-  }
-
-  const certs = shipped.filter((e) => e.kind === 'certification')
-  if (certs.length > 0) {
-    push(lines, { kind: 'heading', text: 'CERTIFICATIONS', ledgerIds: certs.map((e) => e.id) })
-    for (const c of certs) {
-      push(lines, { kind: 'bullet', text: `- ${c.title}${c.summary ? ` (${c.summary})` : ''}`, ledgerIds: [c.id] })
-    }
-  }
-
-  // -- One-page budget: trim from the bottom of the flexible sections, legibly --
-  let height = estimateHeight(lines)
-  if (height > USABLE_HEIGHT) {
-    // Drop the least relevant project bullets first (from last project upward), then certs summaries.
-    const cuts: string[] = []
-    for (let i = lines.length - 1; i >= 0 && height > USABLE_HEIGHT; i--) {
-      const line = lines[i]
-      if (line.kind === 'bullet' && line.text.length > 120) {
-        cuts.push(`Shorten: "${line.text.slice(0, 70)}…"`)
+    // Education (fixed)
+    if (education.length > 0) {
+      push(lines, { kind: 'heading', text: 'EDUCATION', ledgerIds: education.map((e) => e.id) })
+      for (const e of education) {
+        push(lines, { kind: 'entry-title', text: e.title, ledgerIds: [e.id] })
+        if (e.summary) push(lines, { kind: 'meta', text: e.summary, ledgerIds: [e.id] })
       }
     }
-    // Greedy removal: last project's 3rd bullet, then 2nd-to-last's, etc.
-    const projectHeadingIdx = lines.findIndex((l) => l.kind === 'heading' && l.text === 'PROJECTS')
-    for (let pass = 0; pass < 3 && height > USABLE_HEIGHT; pass++) {
-      for (let i = lines.length - 1; i > projectHeadingIdx && height > USABLE_HEIGHT; i--) {
-        if (lines[i].kind === 'bullet') {
-          const prev = lines[i - 1]
-          const next = lines[i + 1]
-          const isLastBulletOfEntry = !next || next.kind !== 'bullet'
-          const hasSibling = prev && prev.kind === 'bullet'
-          if (isLastBulletOfEntry && hasSibling) {
-            cuts.push(`Dropped for space: "${lines[i].text.slice(0, 70)}…"`)
-            lines.splice(i, 1)
-            height = estimateHeight(lines)
-          }
+
+    // Skills: shipped only (I2 keeps in_forge out of here)
+    if (skills.length > 0) {
+      push(lines, { kind: 'heading', text: 'SKILLS', ledgerIds: skills.map((e) => e.id) })
+      push(lines, { kind: 'skills', text: skills.map((e) => e.title).join(' | '), ledgerIds: skills.map((e) => e.id) })
+    }
+
+    // Projects
+    const projects = projectPool.slice(0, lv.maxProjects)
+    if (projects.length > 0) {
+      push(lines, { kind: 'heading', text: 'PROJECTS', ledgerIds: projects.map((e) => e.id) })
+      for (const p of projects) {
+        const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
+        push(lines, {
+          kind: 'entry-title',
+          text: `${p.title}${p.evidence?.date ? ` (${p.evidence.date})` : ''}`,
+          ledgerIds: [p.id],
+        })
+        if (evidenceUrl) push(lines, { kind: 'meta', text: evidenceUrl.replace(/^https?:\/\//, ''), ledgerIds: [p.id] })
+        for (const b of bulletsFor(p, lv.bulletsPerProject)) {
+          push(lines, { kind: 'bullet', text: `- ${b.text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
         }
       }
     }
-    if (height > USABLE_HEIGHT) {
-      throw new CompileError(
-        `Page overflow: compiled resume needs ${Math.ceil(height)}pt of ${Math.floor(USABLE_HEIGHT)}pt available.`,
-        cuts.length > 0 ? cuts : ['Reduce project bullets in the Ledger, or trim skill titles.'],
-      )
+
+    // Currently Building: THE ONLY rendering of in_forge material (I2)
+    if (forgeEntries.length > 0) {
+      const eta = forgeEntries[0].forgeEta ?? 'July 2026'
+      const names = forgeEntries.map((e) => e.title.split('—')[0].trim()).join(', ')
+      push(lines, { kind: 'forge', text: `Currently Building (${eta}): ${names}`, ledgerIds: forgeEntries.map((e) => e.id) })
     }
+
+    // Achievements (+ positions on one compact line)
+    const keptAch = achievements.slice(0, lv.maxAchievements)
+    const keptPos = lv.includePositions ? positions : []
+    if (keptAch.length > 0 || keptPos.length > 0) {
+      push(lines, { kind: 'heading', text: 'ACHIEVEMENTS', ledgerIds: [...keptAch, ...keptPos].map((e) => e.id) })
+      for (const h of keptAch) {
+        push(lines, { kind: 'bullet', text: `- ${h.title}${h.summary ? ` — ${h.summary}` : ''}`, ledgerIds: [h.id] })
+      }
+      if (keptPos.length > 0) {
+        push(lines, { kind: 'bullet', text: `- ${keptPos.map((p) => p.title).join('; ')}`, ledgerIds: keptPos.map((p) => p.id) })
+      }
+    }
+
+    // Certifications
+    if (lv.includeCerts && certs.length > 0) {
+      push(lines, { kind: 'heading', text: 'CERTIFICATIONS', ledgerIds: certs.map((e) => e.id) })
+      for (const c of certs) {
+        push(lines, { kind: 'bullet', text: `- ${c.title}${c.summary ? ` (${c.summary})` : ''}`, ledgerIds: [c.id] })
+      }
+    }
+
+    return lines
   }
 
-  return { lines, jobId }
+  // -- Solve the one-page constraint: tighten until it fits --
+  for (const lv of TRIM_LEVELS) {
+    const lines = assemble(lv)
+    if (estimateHeight(lines) <= USABLE_HEIGHT) return { lines, jobId }
+  }
+
+  // Practically unreachable: even 1 project × 1 bullet + contact + education won't fit.
+  const minimal = assemble(TRIM_LEVELS[TRIM_LEVELS.length - 1])
+  throw new CompileError(
+    `Page overflow even at maximum trim: ${Math.ceil(estimateHeight(minimal))}pt of ${Math.floor(USABLE_HEIGHT)}pt available.`,
+    ['A single entry in the Ledger is extremely long — shorten its title or bullets.'],
+  )
 }

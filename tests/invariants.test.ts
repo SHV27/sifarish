@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { JD_FIXTURES } from './fixtures/jds'
 import { compilePacketPure, fakeJob, allText, SEED_LEDGER } from './helpers'
-import { compileResume, CompileError } from '../src/lib/compile/compiler'
+import { compileResume, estimateHeight, USABLE_HEIGHT } from '../src/lib/compile/compiler'
 import { decodeJD } from '../src/lib/jd/decode'
 import { matchEvidence } from '../src/lib/match/evidence'
 import { SEED_IDENTITY } from './helpers'
@@ -109,25 +109,48 @@ describe('One-page budget (compiler)', () => {
     })
   }
 
-  it('genuine overflow raises CompileError with cut suggestions', () => {
+  it('a huge ledger (30 fat projects) compiles to ONE page — never an error at the user (v3, D32)', () => {
+    // The self-strengthening loop keeps adding real shipped work. The compiler must SOLVE the
+    // one-page constraint by trimming to the strongest evidence, not surface a CompileError.
     const fat: LedgerEntry[] = Array.from({ length: 30 }, (_, i) => ({
       id: `proj-fat-${i}`, kind: 'project', title: `Very Long Project Number ${i} With An Extended Descriptive Title`,
       summary: 'x', tier: 'shipped', evidence: { repo: 'https://github.com/x/y', date: '01/2026', note: '' },
       tags: ['python'], resumeEligible: true,
       bullets: [
         { id: `b${i}a`, text: 'A deliberately long bullet describing an enormous amount of engineering work done across many systems and services and pipelines to force page overflow in the compiler budget model beyond one page', keywords: ['python'] },
-        { id: `b${i}b`, text: 'A second equally long bullet describing yet more engineering work to guarantee the page budget is exceeded and the compiler must throw a legible compile error with suggestions', keywords: ['python'] },
+        { id: `b${i}b`, text: 'A second equally long bullet describing yet more engineering work that would overflow a one-page budget if the compiler did not trim to the strongest evidence', keywords: ['python'] },
       ],
     }))
     const decode = decodeJD('python machine learning')
     const coverage = matchEvidence(decode, fat)
-    let thrown: unknown
-    try {
-      compileResume({ identity: SEED_IDENTITY, ledger: fat, decode, coverage, jobId: 'x' })
-    } catch (e) {
-      thrown = e
+    const resume = compileResume({ identity: SEED_IDENTITY, ledger: fat, decode, coverage, jobId: 'x' })
+    // It fits one page…
+    expect(estimateHeight(resume.lines)).toBeLessThanOrEqual(USABLE_HEIGHT)
+    // …and it trimmed to a sniper lineup (not all 30 projects rendered).
+    const projectTitles = resume.lines.filter((l) => l.kind === 'entry-title' && /Very Long Project/.test(l.text))
+    expect(projectTitles.length).toBeLessThanOrEqual(4)
+    // …while still carrying real evidence (I1 holds).
+    for (const line of resume.lines) {
+      if (line.kind === 'bullet' || line.kind === 'forge') expect(line.ledgerIds.length).toBeGreaterThan(0)
     }
-    expect(thrown).toBeInstanceOf(CompileError)
-    expect((thrown as CompileError).suggestions.length).toBeGreaterThan(0)
+  })
+
+  it('respects an editorial cast: only the cast lineup renders, benched projects sit out', () => {
+    const projects: LedgerEntry[] = ['a', 'b', 'c', 'd', 'e'].map((k) => ({
+      id: `proj-${k}`, kind: 'project', title: `Project ${k.toUpperCase()}`, summary: 's', tier: 'shipped',
+      evidence: { repo: 'https://x/y', date: '01/2026', note: '' }, tags: ['python'], resumeEligible: true,
+      bullets: [{ id: `${k}1`, text: `Built project ${k} end to end`, keywords: ['python'] }],
+    }))
+    const decode = decodeJD('python')
+    const coverage = matchEvidence(decode, projects)
+    const resume = compileResume({
+      identity: SEED_IDENTITY, ledger: projects, decode, coverage, jobId: 'x',
+      editorial: { order: ['proj-a', 'proj-c'], bullets: {} }, // cast only A and C
+    })
+    const titles = resume.lines.filter((l) => l.kind === 'entry-title').map((l) => l.text)
+    expect(titles).toContain('Project A (01/2026)')
+    expect(titles).toContain('Project C (01/2026)')
+    expect(titles).not.toContain('Project B (01/2026)') // benched
+    expect(titles).not.toContain('Project D (01/2026)')
   })
 })

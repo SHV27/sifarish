@@ -13,6 +13,44 @@ import { composeLetter, decideSignature } from './atelier/letter'
  * Pure pipeline over the Sach Ledger; the optional polish amplifier is applied
  * separately (and diff-guarded) so the compiled truth is always the baseline.
  */
+/**
+ * INSTANT packet (v3 smoothness, D33) — a fully usable, evidence-true dossier with ZERO LLM
+ * calls, rendered the moment you click Tailor (v2 speed). It uses cached intel only (no fetch)
+ * and the deterministic v2 relevance compile. The Editor's Desk reasoning then refines it in
+ * the background (buildPacket) and updates the view. You never wait on a blank screen again.
+ */
+export async function buildPacketFast(job: Job): Promise<Packet> {
+  const identity = await db.identity.get('me')
+  const ledger = await db.ledger.toArray()
+  if (!identity) throw new Error('Identity missing — reseed the app.')
+
+  const cachedIntel = await db.intel.get(job.company.trim().toLowerCase())
+  const intel = cachedIntel && !cachedIntel.keyless && cachedIntel.bullets.length > 0 ? cachedIntel : undefined
+  const intelHook = hookFromIntel(intel)
+
+  const decode = decodeJD(job.jd)
+  const coverage = matchEvidence(decode, ledger)
+  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id }) // deterministic, no editorial
+  const coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook)
+  const outreach = compileOutreach(job, identity, ledger, decode)
+  const gapNote = buildGapNote(coverage)
+
+  return {
+    id: `packet-${job.id}-fast`,
+    jobId: job.id,
+    createdAt: new Date().toISOString(),
+    resume,
+    coverLetter,
+    outreach,
+    coverage,
+    gapNote,
+    decode,
+    polished: false,
+    intel,
+    enhancing: true, // the Dimaag layer is still refining casting + letter in the background
+  }
+}
+
 export async function buildPacket(job: Job, onProgress?: (step: string) => void): Promise<Packet> {
   const identity = await db.identity.get('me')
   const ledger = await db.ledger.toArray()
@@ -89,6 +127,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     editorial,
     ready,
     signature,
+    enhancing: false, // the Dimaag layer has finished — this is the fully-reasoned packet
   }
 }
 
