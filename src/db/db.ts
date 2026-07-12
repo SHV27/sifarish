@@ -18,6 +18,7 @@ import type {
   DimaagCacheRow,
   DimaagUsageRow,
   UstaadRow,
+  DakCard,
 } from '../types'
 
 export class SifarishDB extends Dexie {
@@ -42,6 +43,7 @@ export class SifarishDB extends Dexie {
   dimaagUsage!: EntityTable<DimaagUsageRow, 'id'>
   // v4
   ustaad!: EntityTable<UstaadRow, 'id'>
+  dak!: EntityTable<DakCard, 'id'>
 
   constructor() {
     super('sifarish')
@@ -71,9 +73,10 @@ export class SifarishDB extends Dexie {
       dimaagCache: 'hash, at',
       dimaagUsage: 'id, feature, monthKey',
     })
-    // v4 "Ustaad Update" — the craft library as runtime-refreshable data (I13).
+    // v4 "Ustaad Update" — craft library as runtime-refreshable data (I13) + Dak Khana mail cards.
     this.version(4).stores({
       ustaad: 'id',
+      dak: 'id, jobId, status, fetchedAt',
     })
   }
 }

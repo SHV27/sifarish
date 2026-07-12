@@ -117,6 +117,8 @@ export interface Job {
   notes?: string
   /** Fuzzy company+title+location key for cross-source dedupe (Khabri). */
   dedupeKey?: string
+  /** Dak Khana (v4): a mail reply from this company was detected — follow-up nudges auto-clear. */
+  replyDetectedAt?: string
   /** Which publisher surfaced it (e.g. "LinkedIn", "Indeed") — for the source badge. */
   publisher?: string
   /** True until the user has seen it in the queue — drives the NEW stamp. */
@@ -252,6 +254,24 @@ export interface Packet {
   quality?: CompileQuality
   /** Baithak decisions trail (P14): every applied conversational edit, logged. */
   baithakLog?: BaithakLogEntry[]
+}
+
+// ---------- Dak Khana (P15, I3 — read-only mail vigilance; sending is structurally impossible) ----------
+
+export interface DakCard {
+  id: string // gmail message id
+  jobId?: string
+  company: string
+  subject: string
+  from: string
+  date: string
+  snippet: string
+  /** Deep link into Gmail — reading and replying happen THERE, never here (I3). */
+  gmailUrl: string
+  /** Heuristic stage suggestion — the owner confirms (Nabz pattern), never auto-applied. */
+  stageSuggestion?: 'interview' | 'rejected'
+  status: 'pending' | 'confirmed' | 'dismissed'
+  fetchedAt: string
 }
 
 // ---------- Baithak (P14, I11 — conversation cannot bypass the compiler) ----------

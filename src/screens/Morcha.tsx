@@ -4,6 +4,7 @@ import { db } from '../db/db'
 import type { Job, JobStatus } from '../types'
 import { nudgeState, setJobStatus } from '../lib/morcha'
 import { buildDossier, type InterviewDossier } from '../lib/dossier'
+import DakPanel from '../components/DakPanel'
 
 const COLUMNS: { status: JobStatus; label: string; hindi: string }[] = [
   { status: 'found', label: 'Found', hindi: 'मिला' },
@@ -43,6 +44,8 @@ export function Morcha({ onOpenPacket }: { onOpenPacket: (jobId: string) => void
         </div>
         <p className="font-mono text-xs text-ink-soft">{tracked} in the pipeline</p>
       </div>
+
+      {tracked > 0 && <DakPanel />}
 
       {tracked === 0 ? (
         <div className="dossier p-8 text-center animate-dossier-in">

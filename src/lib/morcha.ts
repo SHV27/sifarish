@@ -21,6 +21,8 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<vo
 export function nudgeState(job: Job): { due: boolean; day: 7 | 14 | null } {
   if (job.status !== 'applied' && job.status !== 'followup') return { due: false, day: null }
   if (!job.appliedAt) return { due: false, day: null }
+  // Dak Khana (v4): they already replied — nudging them again would be noise. Auto-clear.
+  if (job.replyDetectedAt && new Date(job.replyDetectedAt) > new Date(job.appliedAt)) return { due: false, day: null }
   const days = (Date.now() - new Date(job.appliedAt).getTime()) / 86400000
   if (days >= 14) return { due: true, day: 14 }
   if (days >= 7 && job.status === 'applied') return { due: true, day: 7 }
