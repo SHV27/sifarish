@@ -222,46 +222,7 @@ export async function computeSuggestions(repos: GhRepo[]): Promise<NabzSuggestio
       }
     } else if (!match && repo.size > 0) {
       if (isDismissed(repo.name, 'new_entry')) continue
-      // Deep-read the README (cached, budget-respecting) so the draft carries real substance —
-      // the richer the entry, the more precisely the Darzi can tailor from it (D45).
-      const readme = await fetchReadme(repo.name).catch(() => null)
-      const distilled = readme ? distillReadme(readme) : null
-      const summary = distilled?.summary || repo.description || ''
-      const langKw = repo.language ? [repo.language.toLowerCase()] : []
-      const keywords = [...new Set([...(distilled?.keywords ?? []), ...langKw])]
-      const bulletTexts =
-        distilled && distilled.bullets.length > 0
-          ? distilled.bullets
-          : repo.description
-            ? [repo.description]
-            : []
-      liveSuggestions.push({
-        id: `sug-new-${repo.name}`,
-        type: 'new_entry',
-        repoName: repo.name,
-        repoUrl: repo.html_url,
-        why: `New public repo ${repo.name}${summary ? ` — "${summary.slice(0, 90)}"` : ''} isn't in the ledger yet.${
-          distilled?.summary ? ' Drafted from its README (your own words — richer context for the tailor).' : ''
-        } Add it?`,
-        draftEntry: {
-          id: `proj-${repo.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-          kind: 'project',
-          title: repo.name,
-          summary,
-          bullets: bulletTexts.map((text, i) => ({ id: `${repo.name}-b${i + 1}`, text, keywords })),
-          tier: 'shipped',
-          evidence: {
-            repo: repo.html_url,
-            url: repo.homepage || distilled?.liveUrl || undefined,
-            date: repo.pushed_at.slice(0, 7).replace('-', '/'),
-            note: 'Public GitHub repo (via Nabz).',
-          },
-          tags: keywords.slice(0, 6),
-          resumeEligible: true,
-        },
-        status: 'pending',
-        createdAt: now,
-      })
+      liveSuggestions.push(await buildNewEntrySuggestion(repo))
     }
   }
 
@@ -273,6 +234,90 @@ export async function computeSuggestions(repos: GhRepo[]): Promise<NabzSuggestio
     }
   })
   return liveSuggestions
+}
+
+/**
+ * Build a fresh new_entry suggestion for a repo (README-distilled draft, D45). Shared by
+ * `computeSuggestions` (auto sync) and `forceAddRepo` (manual override, D47).
+ */
+async function buildNewEntrySuggestion(repo: GhRepo): Promise<NabzSuggestion> {
+  const now = new Date().toISOString()
+  const readme = await fetchReadme(repo.name).catch(() => null)
+  const distilled = readme ? distillReadme(readme) : null
+  const summary = distilled?.summary || repo.description || ''
+  const langKw = repo.language ? [repo.language.toLowerCase()] : []
+  const keywords = [...new Set([...(distilled?.keywords ?? []), ...langKw])]
+  const bulletTexts = distilled && distilled.bullets.length > 0 ? distilled.bullets : repo.description ? [repo.description] : []
+  return {
+    id: `sug-new-${repo.name}`,
+    type: 'new_entry',
+    repoName: repo.name,
+    repoUrl: repo.html_url,
+    why: `New public repo ${repo.name}${summary ? ` — "${summary.slice(0, 90)}"` : ''} isn't in the ledger yet.${
+      distilled?.summary ? ' Drafted from its README (your own words — richer context for the tailor).' : ''
+    } Add it?`,
+    draftEntry: {
+      id: `proj-${repo.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      kind: 'project',
+      title: repo.name,
+      summary,
+      bullets: bulletTexts.map((text, i) => ({ id: `${repo.name}-b${i + 1}`, text, keywords })),
+      tier: 'shipped',
+      evidence: {
+        repo: repo.html_url,
+        url: repo.homepage || distilled?.liveUrl || undefined,
+        date: repo.pushed_at.slice(0, 7).replace('-', '/'),
+        note: 'Public GitHub repo (via Nabz).',
+      },
+      tags: keywords.slice(0, 6),
+      resumeEligible: true,
+    },
+    status: 'pending',
+    createdAt: now,
+  }
+}
+
+// ---------------- full visibility (v4.3, D47) ----------------
+// "GitHub ka sab show hona chahiye" — a dismissed or already-decided suggestion should
+// never PERMANENTLY hide a repo from view. This gives an unfiltered list of every public
+// repo with its live status, and a manual override that resurfaces ANY repo on demand —
+// regardless of what a past sync/dismiss/accept did.
+
+export type RepoStatus = 'shipped' | 'in_forge' | 'pending' | 'dismissed' | 'untracked'
+
+export interface RepoOverview {
+  repo: GhRepo
+  status: RepoStatus
+  ledgerTitle?: string
+}
+
+/** Every non-fork public repo, with its current ledger/suggestion status. Nothing hidden. */
+export async function overviewRepos(repos: GhRepo[]): Promise<RepoOverview[]> {
+  const ledger = await db.ledger.toArray()
+  const suggestions = await db.suggestions.toArray()
+  const out: RepoOverview[] = []
+  for (const repo of repos) {
+    if (repo.fork) continue
+    const match = ledgerForRepo(repo, ledger)
+    if (match) {
+      out.push({ repo, status: match.tier, ledgerTitle: match.title.split('—')[0].trim() })
+      continue
+    }
+    const sug = suggestions.find((s) => s.repoName === repo.name && s.type === 'new_entry')
+    out.push({ repo, status: sug?.status === 'dismissed' ? 'dismissed' : sug?.status === 'pending' ? 'pending' : 'untracked' })
+  }
+  return out
+}
+
+/**
+ * Manual override (D47): re-surface a new-entry suggestion for ANY repo, ignoring prior
+ * dismiss/accept history — an `upsert`, not a `put-if-absent`. The owner's right to add a
+ * repo to his own ledger does not expire because he once clicked "Not now".
+ */
+export async function forceAddRepo(repo: GhRepo): Promise<NabzSuggestion> {
+  const s = await buildNewEntrySuggestion(repo)
+  await db.suggestions.put(s)
+  return s
 }
 
 export async function acceptSuggestion(s: NabzSuggestion): Promise<void> {

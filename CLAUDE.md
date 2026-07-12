@@ -287,3 +287,11 @@ knowledge enters as versioned DATA (I13), not code.
 library versions, env values (owner code, keys). If code must ever change again, it is an exceptional
 event that requires this entire protocol, the Four Proofs, and an appended decision line explaining why
 the seal was broken.
+- D47: NABZ VISIBILITY IS PERMANENT (owner-caught: his own SIFARISH repo — the app itself — wasn't
+  showing in Sync). Root cause: `computeSuggestions` treats any past 'dismissed' status as a forever
+  block (`if (isDismissed(...)) continue`), so one "Not now" click (or any stale suggestion record)
+  hides a repo from the pending list permanently with no way back. Fix: NabzPanel gains "show every
+  public repo, unfiltered" — `overviewRepos()` lists ALL non-fork repos with true status (shipped/
+  in_forge/pending/dismissed/untracked), and `forceAddRepo()` is an upsert (not put-if-absent) that
+  resurfaces ANY repo as a fresh pending suggestion regardless of dismiss/accept history. "GitHub ka
+  sab dikhna chahiye" is now structurally true — nothing hides forever. (v4.3, 13-Jul-2026)
