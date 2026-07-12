@@ -211,7 +211,7 @@ function DarbaanSection() {
   const doOwnerSeed = async () => {
     setBusy(true)
     try {
-      const { loadOwnerSeed } = await import('../db/seed')
+      const { loadOwnerSeed } = await import('../db/ownerSeed')
       await loadOwnerSeed()
       setNote('Owner seed loaded — the real ledger replaced the demo persona.')
     } catch {

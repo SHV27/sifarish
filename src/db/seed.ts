@@ -3,7 +3,6 @@ import { db } from './db'
 // visitor never receives real personal data. The owner's real ledger lives in his own
 // browser + his encrypted backup (Settings → Darbaan), restorable via loadOwnerSeed().
 import seedData from '../../seed/demo.seed.json'
-import ownerSeedData from '../../seed/ledger.seed.json'
 import { withSeedAllowance } from '../lib/darbaan/lock'
 import type { Identity, LedgerEntry, Settings, VisionProfile, VoiceBank } from '../types'
 import { DEFAULT_RUBRIC } from '../lib/radar/rubric'
@@ -74,18 +73,6 @@ export async function seedIfEmpty(): Promise<boolean> {
   return true
 }
 
-/** Owner-only: replace the demo persona with the real owner seed (Darbaan-gated by the db). */
-export async function loadOwnerSeed(): Promise<void> {
-  const entries = ownerSeedData.entries as unknown as LedgerEntry[]
-  const identity = ownerSeedData.identity as Identity
-  const voice = ownerSeedData.voiceBank as VoiceBank
-  await db.transaction('rw', [db.ledger, db.identity, db.voicebank], async () => {
-    await db.ledger.clear()
-    await db.ledger.bulkPut(entries)
-    await db.identity.put(identity)
-    await db.voicebank.put(voice)
-  })
-}
 
 /** For already-onboarded users upgrading to v2: backfill new tables without a reseed. */
 export async function backfillV2(): Promise<void> {

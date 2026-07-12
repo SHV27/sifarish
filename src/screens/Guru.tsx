@@ -4,6 +4,7 @@ import { db } from '../db/db'
 import type { GuruMessage, Job } from '../types'
 import { planTurn, runAction, streamGuru } from '../lib/guru/client'
 import { buildApplyPlan } from '../lib/guru/applyPlan'
+import { deriveHunts } from '../lib/vision/derive'
 
 const GREETING: GuruMessage = {
   role: 'assistant',
@@ -61,7 +62,6 @@ export function Guru({ onOpenPacket }: { onOpenPacket: (jobId: string) => void }
       } else if (routed.action === 'derive_hunts') {
         const settings = await db.settings.get('app')
         if (settings?.visionProfile) {
-          const { deriveHunts } = await import('../lib/vision/derive')
           const hunts = deriveHunts(settings.visionProfile)
           const existing = new Set((await db.savedHunts.toArray()).map((h) => h.query.toLowerCase()))
           let added = 0

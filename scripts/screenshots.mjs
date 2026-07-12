@@ -1,6 +1,6 @@
 import { chromium } from 'playwright'
 import { spawn } from 'node:child_process'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 const OUT = 'screenshots'
@@ -61,20 +61,43 @@ try {
   await waitForServer()
   const browser = await chromium.launch()
   const page = await browser.newPage()
+  const apiMisses = []
+  page.on('response', (res) => {
+    if (res.status() >= 400) {
+      const url = new URL(res.url())
+      // /api/* 404s under `vite preview` are the DESIGNED keyless degradation (no serverless
+      // functions locally; every caller falls back deterministically). Anything else is a defect.
+      if (url.pathname.startsWith('/api/')) apiMisses.push(url.pathname)
+      else consoleErrors.push(`HTTP ${res.status()} on ${res.url()}`)
+    }
+  })
   page.on('console', (msg) => {
-    if (msg.type() === 'error') consoleErrors.push(msg.text())
+    if (msg.type() === 'error' && !/failed to load resource.*404/i.test(msg.text())) consoleErrors.push(msg.text())
   })
   page.on('pageerror', (err) => consoleErrors.push(String(err)))
 
-  // Fresh DB each run
+  // Fresh visitor each run: wipe IndexedDB AND localStorage (Darbaan state lives there)
   await page.goto(BASE, { waitUntil: 'networkidle' })
   await page.evaluate(async () => {
+    localStorage.clear()
     for (const db of await indexedDB.databases?.()) if (db.name) indexedDB.deleteDatabase(db.name)
   })
   await page.reload({ waitUntil: 'networkidle' })
   await sleep(800)
 
-  // --- Onboarding ---
+  // --- Darshak Mode (v4): a fresh browser is the read-only showcase on the demo persona ---
+  await shoot(page, '0-darshak-showcase', '(public showcase, demo seed)')
+
+  // --- Owner Mode: first unlock sets the passcode (P16) ---
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.getByRole('button', { name: /owner mode/i }).click()
+  await sleep(300)
+  await page.getByLabel('Passcode', { exact: true }).fill('screenshot-run')
+  await page.getByLabel('Confirm passcode').fill('screenshot-run')
+  await page.getByRole('button', { name: /set & unlock/i }).click()
+  await sleep(600)
+
+  // --- Onboarding (owner, not yet onboarded) ---
   await shoot(page, '1-onboarding', '(confirm ledger)')
   await page.getByRole('button', { name: /that's my truth/i }).click()
   await sleep(400)
@@ -86,18 +109,23 @@ try {
   await page.setViewportSize({ width: 1280, height: 900 })
   await shoot(page, '3-shelf', '(ledger shelf)')
 
-  // --- Packet via paste lane (deterministic, no network) ---
-  await page.getByRole('button', { name: /^3/ }).click() // nav to Packet
+  // --- Packet via paste lane (deterministic, no network). Nav: 4 = Packet (v4 order) ---
+  await page.getByRole('button', { name: /^4/ }).click()
   await sleep(400)
   await page.getByLabel('Company').fill('Anthropic')
   await page.getByLabel('Role title').fill('AI Engineering Intern')
   await page.getByLabel('Job description text').fill(SAMPLE_JD)
   await shoot(page, '4-packet-pastelane', '(paste lane)')
   await page.getByRole('button', { name: /tailor from text/i }).click()
-  await sleep(700)
-  await page.getByRole('button', { name: /tailor this packet/i }).click()
   await sleep(900)
-  await shoot(page, '5-packet-compiled', '(compiled dossier)')
+  const tailorBtn = page.getByRole('button', { name: /tailor this packet/i })
+  if (await tailorBtn.count()) {
+    await tailorBtn.click()
+    await sleep(1200)
+  } else {
+    await sleep(1500) // auto-tailor path
+  }
+  await shoot(page, '5-packet-compiled', '(compiled dossier + quality + baithak)')
 
   // Mark applied → populates Morcha
   const markBtn = page.getByRole('button', { name: /mark as applied/i })
@@ -106,29 +134,43 @@ try {
     await sleep(500)
   }
 
-  // --- Morcha ---
-  await page.getByRole('button', { name: /^4/ }).click()
+  // --- Morcha (6) with Dak Khana panel ---
+  await page.getByRole('button', { name: /^6/ }).click()
   await sleep(500)
-  await shoot(page, '6-morcha', '(war room)')
+  await shoot(page, '6-morcha', '(war room + dak khana)')
 
-  // --- Settings ---
-  await page.getByRole('button', { name: /^5/ }).click()
-  await sleep(400)
-  await shoot(page, '7-settings', '(keyless mode)')
-
-  // --- Radar (live scan attempt; empty-state fallback is also a designed screen) ---
+  // --- Khabri (2) with Taleem Radar ---
   await page.getByRole('button', { name: /^2/ }).click()
   await sleep(400)
-  await shoot(page, '8-radar-initial', '(dark radar)')
+  await shoot(page, '7-khabri-taleem', '(khabri + taleem radar)')
+
+  // --- Settings (7): darbaan, ustaad, budgets ---
+  await page.getByRole('button', { name: /^7/ }).click()
+  await sleep(400)
+  await shoot(page, '8-settings', '(darbaan + ustaad + budgets)')
+
+  // --- Radar (3) ---
+  await page.getByRole('button', { name: /^3/ }).click()
+  await sleep(400)
+  await shoot(page, '9-radar-initial', '(radar)')
 
   await browser.close()
 
   console.log('\nConsole errors during capture:', consoleErrors.length)
   for (const e of consoleErrors.slice(0, 20)) console.log('  ✗', e)
-  process.exitCode = 0
+  writeFileSync(
+    `${OUT}/console-report.json`,
+    JSON.stringify(
+      { errors: consoleErrors, keylessApiFallbacks: [...new Set(apiMisses)], at: new Date().toISOString() },
+      null,
+      2,
+    ),
+  )
+  server.kill()
+  process.exit(0) // hard exit: on Windows the shell-wrapped preview server otherwise keeps the run alive
 } catch (e) {
   console.error('screenshot run failed:', e)
-  process.exitCode = 1
-} finally {
+  writeFileSync(`${OUT}/console-report.json`, JSON.stringify({ failed: String(e), errors: consoleErrors }, null, 2))
   server.kill()
+  process.exit(1)
 }
