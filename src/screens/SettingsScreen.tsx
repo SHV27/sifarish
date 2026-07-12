@@ -5,6 +5,10 @@ import type { RubricWeights, VisionProfile } from '../types'
 import { ensureBudgets, monthKey } from '../lib/budget'
 import { deriveHunts, deriveArchetypes, type DerivedHunt } from '../lib/vision/derive'
 import { useState } from 'react'
+import { getLibrary, staleSources } from '../lib/ustaad/library'
+import { useDarbaan } from '../components/DarbaanControl'
+import { GOOGLE_CLIENT_ID } from '../lib/dak/gis'
+import { saveFile } from '../lib/util/download'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -76,6 +80,19 @@ export function SettingsScreen() {
       </section>
 
       <DimaagLedger />
+
+      <DarbaanSection />
+
+      <UstaadSection />
+
+      <section className="dossier p-4 mb-5" aria-label="Dak Khana">
+        <h2 className="font-display font-semibold text-lg text-ink">Dak Khana (mail vigilance)</h2>
+        <p className="text-xs text-ink-soft mt-1 leading-relaxed">
+          Connect from the <strong>Morcha</strong> board. Scope is <code className="font-mono">gmail.readonly</code>{' '}
+          only — sending is structurally impossible (I3); mail is read in this browser and never touches a server
+          of ours. OAuth Client ID (public-safe): <code className="font-mono text-[10px]">{GOOGLE_CLIENT_ID.slice(0, 18)}…</code>
+        </p>
+      </section>
 
       {settings.rubricChangelog && settings.rubricChangelog.length > 0 && (
         <section className="dossier p-4 mb-5" aria-label="Rubric changelog">
@@ -156,6 +173,137 @@ export function SettingsScreen() {
         </div>
       </section>
     </div>
+  )
+}
+
+/** DARBAAN (P16): encrypted backup, restore, and the owner seed — all Owner-Mode-gated. */
+function DarbaanSection() {
+  const owner = useDarbaan()
+  const [pass, setPass] = useState('')
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const doExport = async () => {
+    if (!pass) return setNote('Enter your passcode — it derives the encryption key.')
+    setBusy(true)
+    try {
+      const { exportBackup } = await import('../lib/darbaan/backup')
+      const text = await exportBackup(pass)
+      saveFile(new TextEncoder().encode(text), `sifarish-backup-${new Date().toISOString().slice(0, 10)}.json`, 'application/json')
+      setNote('Backup exported — encrypted with your passcode (AES-256-GCM). Keep it somewhere safe.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const doImport = async (file: File) => {
+    if (!pass) return setNote('Enter the passcode the backup was encrypted with.')
+    setBusy(true)
+    try {
+      const { importBackup } = await import('../lib/darbaan/backup')
+      const r = await importBackup(await file.text(), pass)
+      setNote(r.ok ? `Restored: ${Object.entries(r.counts ?? {}).map(([t, n]) => `${t} ${n}`).join(', ')}.` : `Import failed: ${r.reason}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const doOwnerSeed = async () => {
+    setBusy(true)
+    try {
+      const { loadOwnerSeed } = await import('../db/seed')
+      await loadOwnerSeed()
+      setNote('Owner seed loaded — the real ledger replaced the demo persona.')
+    } catch {
+      setNote('Owner Mode required.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="dossier p-4 mb-5" aria-label="Darbaan — owner data">
+      <h2 className="font-display font-semibold text-lg text-ink">
+        Darbaan <span className="font-devanagari text-sm text-stamp">दरबान</span>
+      </h2>
+      <p className="text-xs text-ink-soft mt-1 leading-relaxed">
+        Data is local-first: your real ledger lives only in this browser. Export one encrypted backup and keep
+        it — a browser reset then costs nothing. Public visitors see only the demo persona (I12).
+      </p>
+      {!owner ? (
+        <p className="mt-2 text-xs font-mono text-ink-soft">🔒 Unlock Owner Mode (header) to export, import, or load the owner seed.</p>
+      ) : (
+        <>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <input
+              type="password"
+              className="text-xs bg-paper-sunken px-3 py-2 rounded w-44"
+              placeholder="passcode (encryption key)"
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+              aria-label="Backup passcode"
+            />
+            <button className="text-xs font-semibold bg-ink text-paper px-3 py-2 rounded disabled:opacity-50" disabled={busy} onClick={() => void doExport()}>
+              Export encrypted backup
+            </button>
+            <label className="text-xs font-semibold border border-ink text-ink px-3 py-2 rounded cursor-pointer">
+              Import backup
+              <input
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void doImport(f)
+                  e.target.value = ''
+                }}
+              />
+            </label>
+            <button className="text-xs text-ink-soft hover:underline disabled:opacity-50" disabled={busy} onClick={() => void doOwnerSeed()}>
+              load owner seed
+            </button>
+          </div>
+          {note && <p className="mt-2 text-[11px] font-mono text-ink-soft">{note}</p>}
+        </>
+      )}
+    </section>
+  )
+}
+
+/** USTAAD (P13, I13): the craft library's version, citations, and staleness — visible, never trusted blind. */
+function UstaadSection() {
+  const lib = getLibrary()
+  const stale = staleSources()
+  return (
+    <section className="dossier p-4 mb-5" aria-label="Ustaad library">
+      <h2 className="font-display font-semibold text-lg text-ink">
+        Ustaad Library <span className="font-devanagari text-sm text-stamp">उस्ताद</span>
+      </h2>
+      <p className="text-xs text-ink-soft mt-1 leading-relaxed">
+        All resume-craft knowledge lives as versioned, dated, cited DATA (I13) — Pulse proposes refreshes; you
+        confirm. Nothing here is hardcoded folklore.
+      </p>
+      <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+        {[
+          ['version', lib.version],
+          ['updated', lib.updatedAt],
+          ['sources', String(lib.sources.length)],
+          ['patterns', String(lib.patterns.length)],
+        ].map(([label, val]) => (
+          <div key={label} className="bg-paper-sunken/60 rounded py-2">
+            <div className="font-mono text-xs font-semibold text-ink">{val}</div>
+            <div className="text-[10px] text-ink-soft">{label}</div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] font-mono">
+        {stale.length === 0 ? (
+          <span className="text-shipped">All {lib.sources.length} sources verified within 12 months.</span>
+        ) : (
+          <span className="text-stamp">{stale.length} source(s) stale (&gt;12 months) — flagged, never silently trusted. Pulse has proposed a review.</span>
+        )}
+      </p>
+    </section>
   )
 }
 

@@ -4,6 +4,7 @@ import { db } from '../db/db'
 import type { PulseBrief, Signal, SweepYield } from '../types'
 import { runSweep } from '../lib/khabri/client'
 import { runPulse, acceptPulse, dismissPulse, pulseDue } from '../lib/pulse/client'
+import TaleemPanel from '../components/TaleemPanel'
 
 /**
  * Khabri — the jasoos. Multi-source discovery + a hiring-signal feed. "Reel pe dekha,
@@ -67,6 +68,8 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
       {result && <YieldReport result={result} newJobs={newJobs} onOpenRadar={onOpenRadar} />}
 
       <PulsePanel lastPulseAt={settings?.lastPulseAt} />
+
+      <TaleemPanel />
 
       {newJobs > 0 && !result && (
         <button
