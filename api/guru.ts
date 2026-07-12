@@ -7,7 +7,9 @@
 
 export const config = { runtime: 'edge' }
 
-const MODEL = 'llama-3.3-70b-versatile'
+// llama-3.3-70b-versatile was deprecated by Groq 17-Jun-2026 (shutdown 16-Aug-2026);
+// openai/gpt-oss-120b is Groq's stated migration path (D35).
+const MODEL = 'openai/gpt-oss-120b'
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

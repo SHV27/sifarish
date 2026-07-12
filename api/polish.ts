@@ -11,7 +11,8 @@
  */
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const MODEL = 'llama-3.3-70b-versatile'
+// llama-3.3-70b-versatile deprecated by Groq 17-Jun-2026 (shutdown 16-Aug-2026) → gpt-oss-120b (D35).
+const MODEL = 'openai/gpt-oss-120b'
 
 interface PolishRequest {
   lines: string[]

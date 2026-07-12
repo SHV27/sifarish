@@ -1,7 +1,8 @@
 /**
  * /api/dimaag — the reasoning core's LLM tier (Groq, JSON mode). Two models:
- *   reasoning → openai/gpt-oss-120b  (decide / critique / casting / angle)
- *   classify  → llama-3.1-8b-instant (archetype / extraction)
+ *   reasoning → openai/gpt-oss-120b (decide / critique / casting / angle)
+ *   classify  → openai/gpt-oss-20b  (archetype / extraction) — Groq deprecated llama-3.1-8b-instant
+ *   on 17-Jun-2026 (shutdown 16-Aug-2026); gpt-oss-20b is Groq's stated migration path (D35).
  * Returns parsed JSON + token usage (for the Dimaag Ledger, I8). Keyless → { keyless:true }
  * so every caller falls back to a deterministic heuristic (I4). Self-contained (edge, no shared import).
  */
@@ -10,7 +11,7 @@ export const config = { runtime: 'edge' }
 
 const MODELS = {
   reasoning: 'openai/gpt-oss-120b',
-  classify: 'llama-3.1-8b-instant',
+  classify: 'openai/gpt-oss-20b',
 } as const
 
 function json(body: unknown, status = 200): Response {

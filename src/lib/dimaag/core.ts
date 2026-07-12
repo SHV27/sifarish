@@ -7,7 +7,7 @@ import { allowedThisRun, monthKey, recordSpend } from '../budget'
  * `decide`; every artifact can be `critique`d; classification uses `classify`. All three are:
  *   • CACHED — identical inputs never re-call the LLM (content-hash key). Zero wastage.
  *   • BUDGETED — a call that would exceed the tier's I8 cap degrades to the heuristic.
- *   • TWO-TIER — reasoning → gpt-oss-120b, classify → llama-3.1-8b.
+ *   • TWO-TIER — reasoning → gpt-oss-120b, classify → gpt-oss-20b (D35 migration).
  *   • FALLBACK-SAFE — keyless / over-budget / API-error always yields a deterministic result (I4).
  *   • RATIONALED — decide returns a stored, inspectable Rationale (I10). No decision without a why.
  *

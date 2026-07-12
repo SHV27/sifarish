@@ -112,3 +112,40 @@ recruiter skim is a real behavior — design the packet preview around it. First
 - [ ] Vercel serverless function config (runtime, env var handling) current docs.
 - [ ] Harvest API deprecation (Aug 2026) is irrelevant to us (we use Job Board API only) — confirm no
       Job Board API changes announced.
+
+## 7 · THE USTAAD SECTION (v4 — resume-craft evidence base, compiled 12-Jul-2026)
+
+The full machine-readable library (patterns + archetype guides + path briefs, every entry cited and dated)
+lives in `data/ustaad/library.json` (I13 — the library is data). 42 sources. Honesty rule honored: there is
+no public database of "resumes selected at company X" — the library encodes craft patterns with citations;
+per-company insight comes from Intel/JD analysis at tailor time.
+
+**Source classes used (full URL list in the library's `sources` array):**
+- **Bullet formulas:** Google's XYZ formula via Laszlo Bock (Inc., CNBC); CAR/STAR variants (Wonsulting).
+- **Skim science:** Ladders 2018 eye-tracking study (7.4s average first skim, E/F-pattern fixation; HR Dive).
+- **University career-center exemplars:** Stanford Career Education resume handout + examples PDFs, UC
+  Berkeley Job & Internship Guide, Harvard FAS Mignone Center (strong-resume guide + action-verbs list).
+- **ATS parsing:** 2026 multi-system parser tests (single column, no tables/text-boxes, exact-string
+  keywords, Month-YYYY dates) — ResumeAdapter, CVCraft 8-ATS test, RecruitBPM.
+- **Anti-manipulation:** white-fonting/keyword-stuffing detection + recruiter blacklisting (Jobscan,
+  Cangrade, Prosple).
+- **Quantification:** recruiter preference for quantified bullets (Resume Worded, Indeed, Forbes).
+- **Tech/intern specifics:** Tech Interview Handbook, freeCodeCamp, Interview Kickstart (projects-as-
+  experience for interns, live links, 8-15 defensible skills).
+- **AI/ML-role craft:** production-over-notebooks signals, LLM/RAG/evals keyword families (Resume Worded ML,
+  CV Compiler, MirrorCV).
+- **India norms:** one-page fresher rule, CGPA expectations, no photo/DOB (Monster India, ResumeVera).
+- **Cover letters:** MIT CAPD + Resume Genius (250-450 words, company-specific, strongest proof first).
+- **Hiring-path briefs (Guru v3):** referral vs cold-apply rates (Zippia, Ashby), intern-conversion norms
+  (NACE 63.1% 2024-25; Levels.fyi), startup-vs-big-tech interview emphasis (Simplify, Educative), research
+  residency requirements (awesome-ai-residency, Google Research residency), remote-international async norms
+  (CV Pro Maker, College Simplified).
+
+**Volatile facts re-verified live 12-Jul-2026 (Law 12):**
+- Groq DEPRECATED `llama-3.1-8b-instant` and `llama-3.3-70b-versatile` on 17-Jun-2026 (shutdown
+  16-Aug-2026, free/dev tiers). Migrated: classify → `openai/gpt-oss-20b`, Guru + polish →
+  `openai/gpt-oss-120b` (Groq's stated migration paths; both production models, JSON mode confirmed). → D35.
+- Google Identity Services token model current: `google.accounts.oauth2.initTokenClient({client_id, scope,
+  callback})` → `requestAccessToken()`; access token ~1h expiry, held in memory only. `gmail.readonly`
+  scope; Testing-mode OAuth consent (≤100 users) is exempt from verification. (developers.google.com GIS
+  token-model + JS reference.)

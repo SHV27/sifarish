@@ -192,3 +192,10 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
 - D32: One-page is a CONSTRAINT THE COMPILER SOLVES, not an error it throws. As Nabz grows the ledger (self-strengthening loop), the old fixed-render + timid trim overflowed and surfaced a CompileError AT THE USER. Compiler now assembles at progressive trim levels (fewer bullets → prune honors/certs → fewer projects) until it fits; benched-means-benched (editorial cast = only that lineup renders). CompileError reserved for the practically-impossible single-entry-too-long case. Overflow gate tests rewritten to assert the always-fits contract. (v3.1)
 - D33: Two-phase tailoring restores v2 instant-feel. buildPacketFast = deterministic packet (cached-intel only, no LLM) renders in ~300-700ms; buildPacket (full Dimaag Editor's Desk) then refines casting+letter in the background and swaps in live. 'Ready to use now' badge while enhancing. Live: 6-shipped-project ledger → resume in 708ms, 0 compile errors, enhancement at ~14s (non-blocking). (v3.1)
 - D34: Autopilot (src/lib/autopilot.ts) — on open, stale discovery sweep (>24h) + due market pulse (>7d) auto-run in the background, budget-capped, once per session. 'Self-evolving, never outdated.' Human still confirms every change (Nabz pattern) — new roles just appear in the Radar, pulse only PROPOSES rubric tweaks. Zero silent mutations. (v3.1)
+--- v4 "The Ustaad Update" (Final Form, 12-Jul-2026) ---
+- D35: Groq deprecated llama-3.1-8b-instant + llama-3.3-70b-versatile 17-Jun-2026 (shutdown 16-Aug-2026).
+  Migrated per Groq's stated paths: classify → openai/gpt-oss-20b; Guru + polish → openai/gpt-oss-120b.
+  Caught by the Law-12 live re-verify at WS0 — the app would have silently lost its LLM tier in August. (WS0-v4)
+- D36: Ustaad library = data/ustaad/library.json — 42 cited sources, 18 craft patterns, 6 archetype guides,
+  3 hiring-path briefs; versioned + dated + Pulse-refreshable (I13). No "selected-at-company-X" database is
+  pretended to exist; the library is craft patterns with receipts. (WS0-v4)
