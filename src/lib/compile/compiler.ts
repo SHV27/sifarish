@@ -87,8 +87,13 @@ export interface CompileInput {
   editorial?: {
     order: string[] // ledger ids, best-first (the cast lineup)
     bullets: Record<string, string[]> // ledgerId → bullet ids in chosen order
+    /** Ustaad archetype guide (P13): section order for THIS reviewer. Absent → default order. */
+    sectionOrder?: SectionKey[]
   }
 }
+
+export type SectionKey = 'education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs'
+const DEFAULT_SECTION_ORDER: SectionKey[] = ['education', 'skills', 'projects', 'forge', 'achievements', 'certs']
 
 /** Progressive trim levels — applied in order until the page fits (sniper over spray). */
 interface TrimLevel {
@@ -159,10 +164,12 @@ export function compileResume(input: CompileInput): CompiledResume {
       .slice(0, cap)
   }
 
+  const sectionOrder = input.editorial?.sectionOrder?.length ? input.editorial.sectionOrder : DEFAULT_SECTION_ORDER
+
   const assemble = (lv: TrimLevel): CompiledLine[] => {
     const lines: CompiledLine[] = []
 
-    // Contact block (fixed)
+    // Contact block (always first — the skim starts here)
     push(lines, { kind: 'contact', text: identity.name, ledgerIds: [] })
     push(lines, {
       kind: 'contact',
@@ -171,66 +178,67 @@ export function compileResume(input: CompileInput): CompiledResume {
     })
     push(lines, { kind: 'contact', text: identity.location, ledgerIds: [] })
 
-    // Education (fixed)
-    if (education.length > 0) {
-      push(lines, { kind: 'heading', text: 'EDUCATION', ledgerIds: education.map((e) => e.id) })
-      for (const e of education) {
-        push(lines, { kind: 'entry-title', text: e.title, ledgerIds: [e.id] })
-        if (e.summary) push(lines, { kind: 'meta', text: e.summary, ledgerIds: [e.id] })
-      }
-    }
-
-    // Skills: shipped only (I2 keeps in_forge out of here)
-    if (skills.length > 0) {
-      push(lines, { kind: 'heading', text: 'SKILLS', ledgerIds: skills.map((e) => e.id) })
-      push(lines, { kind: 'skills', text: skills.map((e) => e.title).join(' | '), ledgerIds: skills.map((e) => e.id) })
-    }
-
-    // Projects
-    const projects = projectPool.slice(0, lv.maxProjects)
-    if (projects.length > 0) {
-      push(lines, { kind: 'heading', text: 'PROJECTS', ledgerIds: projects.map((e) => e.id) })
-      for (const p of projects) {
-        const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
-        push(lines, {
-          kind: 'entry-title',
-          text: `${p.title}${p.evidence?.date ? ` (${p.evidence.date})` : ''}`,
-          ledgerIds: [p.id],
-        })
-        if (evidenceUrl) push(lines, { kind: 'meta', text: evidenceUrl.replace(/^https?:\/\//, ''), ledgerIds: [p.id] })
-        for (const b of bulletsFor(p, lv.bulletsPerProject)) {
-          push(lines, { kind: 'bullet', text: `- ${b.text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
+    // Sections render in the archetype guide's order (Ustaad P13); default order otherwise.
+    const sections: Record<SectionKey, () => void> = {
+      education: () => {
+        if (education.length === 0) return
+        push(lines, { kind: 'heading', text: 'EDUCATION', ledgerIds: education.map((e) => e.id) })
+        for (const e of education) {
+          push(lines, { kind: 'entry-title', text: e.title, ledgerIds: [e.id] })
+          if (e.summary) push(lines, { kind: 'meta', text: e.summary, ledgerIds: [e.id] })
         }
-      }
+      },
+      skills: () => {
+        // Shipped only (I2 keeps in_forge out of here)
+        if (skills.length === 0) return
+        push(lines, { kind: 'heading', text: 'SKILLS', ledgerIds: skills.map((e) => e.id) })
+        push(lines, { kind: 'skills', text: skills.map((e) => e.title).join(' | '), ledgerIds: skills.map((e) => e.id) })
+      },
+      projects: () => {
+        const projects = projectPool.slice(0, lv.maxProjects)
+        if (projects.length === 0) return
+        push(lines, { kind: 'heading', text: 'PROJECTS', ledgerIds: projects.map((e) => e.id) })
+        for (const p of projects) {
+          const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
+          push(lines, {
+            kind: 'entry-title',
+            text: `${p.title}${p.evidence?.date ? ` (${p.evidence.date})` : ''}`,
+            ledgerIds: [p.id],
+          })
+          if (evidenceUrl) push(lines, { kind: 'meta', text: evidenceUrl.replace(/^https?:\/\//, ''), ledgerIds: [p.id] })
+          for (const b of bulletsFor(p, lv.bulletsPerProject)) {
+            push(lines, { kind: 'bullet', text: `- ${b.text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
+          }
+        }
+      },
+      forge: () => {
+        // Currently Building: THE ONLY rendering of in_forge material (I2)
+        if (forgeEntries.length === 0) return
+        const eta = forgeEntries[0].forgeEta ?? 'July 2026'
+        const names = forgeEntries.map((e) => e.title.split('—')[0].trim()).join(', ')
+        push(lines, { kind: 'forge', text: `Currently Building (${eta}): ${names}`, ledgerIds: forgeEntries.map((e) => e.id) })
+      },
+      achievements: () => {
+        const keptAch = achievements.slice(0, lv.maxAchievements)
+        const keptPos = lv.includePositions ? positions : []
+        if (keptAch.length === 0 && keptPos.length === 0) return
+        push(lines, { kind: 'heading', text: 'ACHIEVEMENTS', ledgerIds: [...keptAch, ...keptPos].map((e) => e.id) })
+        for (const h of keptAch) {
+          push(lines, { kind: 'bullet', text: `- ${h.title}${h.summary ? ` — ${h.summary}` : ''}`, ledgerIds: [h.id] })
+        }
+        if (keptPos.length > 0) {
+          push(lines, { kind: 'bullet', text: `- ${keptPos.map((p) => p.title).join('; ')}`, ledgerIds: keptPos.map((p) => p.id) })
+        }
+      },
+      certs: () => {
+        if (!lv.includeCerts || certs.length === 0) return
+        push(lines, { kind: 'heading', text: 'CERTIFICATIONS', ledgerIds: certs.map((e) => e.id) })
+        for (const c of certs) {
+          push(lines, { kind: 'bullet', text: `- ${c.title}${c.summary ? ` (${c.summary})` : ''}`, ledgerIds: [c.id] })
+        }
+      },
     }
-
-    // Currently Building: THE ONLY rendering of in_forge material (I2)
-    if (forgeEntries.length > 0) {
-      const eta = forgeEntries[0].forgeEta ?? 'July 2026'
-      const names = forgeEntries.map((e) => e.title.split('—')[0].trim()).join(', ')
-      push(lines, { kind: 'forge', text: `Currently Building (${eta}): ${names}`, ledgerIds: forgeEntries.map((e) => e.id) })
-    }
-
-    // Achievements (+ positions on one compact line)
-    const keptAch = achievements.slice(0, lv.maxAchievements)
-    const keptPos = lv.includePositions ? positions : []
-    if (keptAch.length > 0 || keptPos.length > 0) {
-      push(lines, { kind: 'heading', text: 'ACHIEVEMENTS', ledgerIds: [...keptAch, ...keptPos].map((e) => e.id) })
-      for (const h of keptAch) {
-        push(lines, { kind: 'bullet', text: `- ${h.title}${h.summary ? ` — ${h.summary}` : ''}`, ledgerIds: [h.id] })
-      }
-      if (keptPos.length > 0) {
-        push(lines, { kind: 'bullet', text: `- ${keptPos.map((p) => p.title).join('; ')}`, ledgerIds: keptPos.map((p) => p.id) })
-      }
-    }
-
-    // Certifications
-    if (lv.includeCerts && certs.length > 0) {
-      push(lines, { kind: 'heading', text: 'CERTIFICATIONS', ledgerIds: certs.map((e) => e.id) })
-      for (const c of certs) {
-        push(lines, { kind: 'bullet', text: `- ${c.title}${c.summary ? ` (${c.summary})` : ''}`, ledgerIds: [c.id] })
-      }
-    }
+    for (const key of sectionOrder) sections[key]?.()
 
     return lines
   }

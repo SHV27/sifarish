@@ -2,6 +2,7 @@ import { db } from '../../db/db'
 import type { PulseBrief } from '../../types'
 import { recordSpend } from '../budget'
 import { LEXICON } from '../jd/lexicon'
+import { getLibrary, libraryRefreshDue, staleSources } from '../ustaad/library'
 
 /**
  * Pulse Loop — keeps the rubric present-tense. A weekly news sweep produces cited briefs;
@@ -14,6 +15,8 @@ export const PULSE_TOPICS = [
   'agentic AI hiring trends 2026',
   'AI intern skills in demand',
   'Claude Code adoption enterprises',
+  // v4: the Ustaad library stays evergreen — craft trends become proposed library diffs (I13).
+  'resume ATS parsing best practices 2026',
 ]
 
 /** Emerging terms worth watching in JDs — if a brief mentions one absent from the lexicon, suggest it. */
@@ -68,6 +71,32 @@ export async function runPulse(): Promise<{ keyless: boolean; count: number }> {
   } catch {
     keyless = true
   }
+
+  // Ustaad staleness watch (keyless-safe, I13): when the craft library is due a review,
+  // Pulse PROPOSES it — the owner confirms; entries are never silently trusted past their date.
+  if (libraryRefreshDue()) {
+    const lib = getLibrary()
+    const stale = staleSources()
+    const id = `pulse-ustaad-${lib.version}`
+    const prior = await db.pulse.get(id)
+    if (!prior) {
+      await db.pulse.put({
+        id,
+        at: new Date().toISOString(),
+        topic: 'Ustaad library freshness',
+        headline: `Craft library v${lib.version} is due a review (last updated ${lib.updatedAt})`,
+        url: 'https://www.theladders.com/static/images/basicSite/pdfs/TheLadders-EyeTracking-StudyC2.pdf',
+        insight:
+          stale.length > 0
+            ? `${stale.length} cited source(s) are >12 months old. Stale craft guidance is flagged, never silently trusted — re-verify and bump the library version.`
+            : 'Monthly review window reached. Re-verify the cited sources and bump the library version if anything moved.',
+        suggestion: 'Review data/ustaad/library.json sources and accept an updated library in Settings (owner confirms — Nabz pattern).',
+        status: 'pending',
+      })
+      count += 1
+    }
+  }
+
   await db.settings.update('app', { lastPulseAt: new Date().toISOString() })
   return { keyless, count }
 }

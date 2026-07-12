@@ -9,6 +9,7 @@ import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
 import { markApplied } from '../lib/morcha'
 import { buildApplyPlan } from '../lib/guru/applyPlan'
 import { Why } from '../components/Why'
+import QualityPanel from '../components/QualityPanel'
 import type { EditorialPlan } from '../types'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
@@ -371,6 +372,8 @@ function PacketBody({
             </p>
           )}
         </section>
+
+        {packet.quality && <QualityPanel quality={packet.quality} />}
 
         <IntelPanel packet={packet} company={job.company} />
 

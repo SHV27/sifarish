@@ -7,6 +7,7 @@ import { compileCoverLetter, compileOutreach, buildGapNote } from './compile/let
 import { getIntel, hookFromIntel } from './intel/client'
 import { runEditor, redTeamPass } from './darzi/editor'
 import { composeLetter, decideSignature } from './atelier/letter'
+import { estimateQuality } from './ustaad/quality'
 
 /**
  * The Darzi orchestrator: JD decode → evidence match → deterministic compile.
@@ -48,6 +49,7 @@ export async function buildPacketFast(job: Job): Promise<Packet> {
     polished: false,
     intel,
     enhancing: true, // the Dimaag layer is still refining casting + letter in the background
+    quality: estimateQuality(resume, coverage, ledger),
   }
 }
 
@@ -73,8 +75,8 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     onProgress?.('Reading the role & casting your projects…')
     const ed = await runEditor({ projects: shippedProjects, decode, jd: job.jd, intel }).catch(() => null)
     if (ed) {
-      compileEditorial = { order: ed.order, bullets: ed.bullets }
-      editorial = { ...ed.plan, redTeam: { verdict: 'PASS', fixes: [], by: 'heuristic', at: new Date().toISOString() }, redTeamRounds: 0 }
+      compileEditorial = { order: ed.order, bullets: ed.bullets, sectionOrder: ed.sectionOrder }
+      editorial = { ...ed.plan, sectionOrder: ed.sectionOrder, redTeam: { verdict: 'PASS', fixes: [], by: 'heuristic', at: new Date().toISOString() }, redTeamRounds: 0 }
     }
   }
 
@@ -128,6 +130,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     ready,
     signature,
     enhancing: false, // the Dimaag layer has finished — this is the fully-reasoned packet
+    quality: estimateQuality(resume, coverage, ledger),
   }
 }
 
@@ -217,12 +220,13 @@ export async function overrulePacket(packet: Packet, opts: { promoteId?: string;
 
   const decode = packet.decode
   const coverage = packet.coverage
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: { order, bullets } })
+  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: { order, bullets, sectionOrder: ed.sectionOrder } })
   const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
 
   const updated: Packet = {
     ...packet,
     resume,
+    quality: estimateQuality(resume, coverage, ledger),
     editorial: {
       ...ed,
       chosen,

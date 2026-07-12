@@ -222,6 +222,8 @@ export interface EditorialPlan {
   redTeamRounds: number
   /** True if the user has manually overruled any casting decision. */
   overruled?: boolean
+  /** Ustaad archetype guide's section order (P13) — kept so overrules/edits recompile identically. */
+  sectionOrder?: ('education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs')[]
 }
 
 export interface Packet {
@@ -246,9 +248,39 @@ export interface Packet {
   signature?: { on: boolean; rationale: Rationale }
   /** True on the instant deterministic packet while the Dimaag layer refines in the background. */
   enhancing?: boolean
+  /** Compile Quality (P13): honest rubric estimate with itemized remainders. Never a guarantee (I9). */
+  quality?: CompileQuality
+}
+
+// ---------- Ustaad (P13, I13 — the library is data) ----------
+
+export interface UstaadRow {
+  id: 'library'
+  json: string
+  version: string
+  updatedAt: string
+}
+
+/** Honest rubric-based estimate — never an "ATS score guarantee" (I9). Every missing
+ *  point is itemized as either an evidence gap (→ Gap Note) or a deliberate choice. */
+export interface QualityItem {
+  label: string
+  points: number
+  max: number
+  why: string
+  kind: 'ok' | 'gap' | 'choice'
+  /** Ustaad pattern this check derives from — the receipt. */
+  patternId?: string
+}
+
+export interface CompileQuality {
+  score: number // 0..100
+  items: QualityItem[]
+  at: string
 }
 
 // ---------- Nabz ----------
+
 
 export type SuggestionType = 'new_entry' | 'promotion' | 'bullet_update' | 'attach_link'
 

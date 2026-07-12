@@ -17,6 +17,7 @@ import type {
   GuruThread,
   DimaagCacheRow,
   DimaagUsageRow,
+  UstaadRow,
 } from '../types'
 
 export class SifarishDB extends Dexie {
@@ -39,6 +40,8 @@ export class SifarishDB extends Dexie {
   // v3
   dimaagCache!: EntityTable<DimaagCacheRow, 'hash'>
   dimaagUsage!: EntityTable<DimaagUsageRow, 'id'>
+  // v4
+  ustaad!: EntityTable<UstaadRow, 'id'>
 
   constructor() {
     super('sifarish')
@@ -67,6 +70,10 @@ export class SifarishDB extends Dexie {
     this.version(3).stores({
       dimaagCache: 'hash, at',
       dimaagUsage: 'id, feature, monthKey',
+    })
+    // v4 "Ustaad Update" — the craft library as runtime-refreshable data (I13).
+    this.version(4).stores({
+      ustaad: 'id',
     })
   }
 }

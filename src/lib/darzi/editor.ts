@@ -3,6 +3,7 @@ import { ARCHETYPES, ARCHETYPE_LABELS, archetypeById, type Archetype } from './a
 import { classify, decide, critique, type DecideOption } from '../dimaag/core'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { scanSlop, scanGuarantee } from '../slop/scan'
+import { citePatterns, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
 
 /**
  * THE EDITOR'S DESK (Darzi v3, P10). Four passes, each rationaled (I10):
@@ -71,7 +72,11 @@ export async function castingPass(
     criteria,
     context: `${arch.reviewerNote} Angle language rewarded: ${arch.angleHint}`,
     evidence: projects.map((p) => ({ ref: p.id, text: `${p.title}: ${p.summary}` })),
-    citations: intel?.bullets.slice(0, 2).map((b) => ({ title: 'company intel', url: b.url })),
+    citations: [
+      // The craft receipts (Ustaad P13): why casting optimizes the top of the page.
+      ...citePatterns(['six-second-skim', 'projects-are-experience'], 2),
+      ...(intel?.bullets.slice(0, 2).map((b) => ({ title: 'company intel', url: b.url })) ?? []),
+    ],
     heuristic,
   })
 
@@ -124,6 +129,7 @@ export async function surgeryPass(
       criteria: arch.priorities,
       context: arch.reviewerNote,
       evidence: [{ ref: project.id, text: `${project.title}: ${project.summary}` }],
+      citations: citePatterns(['xyz-formula', 'verb-strength-ladder'], 2),
     })
   } else {
     angleRationale = {
@@ -172,8 +178,11 @@ export async function redTeamPass(resumeText: string): Promise<import('../../typ
       const fixes: string[] = []
       if (scanSlop(a).length > 0) fixes.push(`Remove slop phrasing: ${scanSlop(a).join(', ')}`)
       if (scanGuarantee(a).length > 0) fixes.push('Remove guarantee language (I9).')
-      const firstBullet = a.split('\n').find((l) => l.trim().startsWith('-'))
-      if (firstBullet && firstBullet.length < 40) fixes.push('Lead bullet is thin — open with your strongest, most concrete evidence.')
+      const bulletLines = a.split('\n').filter((l) => l.trim().startsWith('-'))
+      if (bulletLines[0] && bulletLines[0].length < 40) fixes.push('Lead bullet is thin — open with your strongest, most concrete evidence.')
+      // Ustaad ¶action-verb-lead: weak openers fail the 6-second skim.
+      const weak = bulletLines.map((l) => startsWeak(l.replace(/^\s*-\s*/, ''))).filter(Boolean)
+      if (weak.length > 0) fixes.push(`Weak bullet opener(s) (${[...new Set(weak)].join(', ')}) — lead with a strong engineering verb (Ustaad ¶action-verb-lead).`)
       return fixes
     },
   })
@@ -189,7 +198,7 @@ export interface EditorInput {
 /** Runs passes 1–3 and returns the plan skeleton + the compiler override. Red-team runs after compile. */
 export async function runEditor(
   input: EditorInput,
-): Promise<{ plan: Omit<EditorialPlan, 'redTeam' | 'redTeamRounds'>; order: string[]; bullets: Record<string, string[]> }> {
+): Promise<{ plan: Omit<EditorialPlan, 'redTeam' | 'redTeamRounds'>; order: string[]; bullets: Record<string, string[]>; sectionOrder: SectionKey[] }> {
   const { arch, confidence, by } = await archetypePass(input.decode, input.jd, input.intel)
   const { casting, chosenIds, benched } = await castingPass(input.projects, arch, input.decode, input.intel)
 
@@ -212,6 +221,8 @@ export async function runEditor(
     },
     order: chosenIds,
     bullets,
+    // Ustaad archetype guide: what section order THIS reviewer expects (P13).
+    sectionOrder: sectionOrderFor(arch.id),
   }
 }
 
