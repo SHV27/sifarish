@@ -232,3 +232,58 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   keywords (same vocabulary the JD decoder speaks, so evidence matching just works), live URL from the
   README body → evidence. The richer the entry, the more precisely the Darzi tailors. Owner still
   confirms every draft (Nabz pattern; the README is his own written truth — I1 intact). (v4.1)
+- D46: OWNERSHIP IS SERVER-VERIFIED (v4.2, owner-caught hole). The old local-passcode lock let any
+  visitor "set a new lock" in their own browser — harmless for data (local-first) until D44 keyed metered
+  spend off isOwner(): two individually-sound decisions composed into a spend hole. Fix at the root:
+  /api/darbaan verifies the owner code against SIFARISH_OWNER_PASSCODE (Vercel env — the lock lives on
+  the server, in no browser), issues x-sifarish-token = SHA-256(code), and all 7 metered functions REQUIRE
+  it. The Gate screen (Owner vs Demo) is the only door; local-passcode flow survives solely for
+  self-hosted clones without the env. Lesson encoded in §14. (13-Jul-2026)
+
+## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
+
+Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
+survived certification and THE OWNER had to find them. Root-cause analysis of that failure, made law:
+
+**Why it happened (never repeat these):**
+- **RC1 — Client state was treated as identity.** The owner lock lived in localStorage; "owner" meant
+  "whoever set a passcode on this device." Fine for local data — until another change made isOwner()
+  unlock metered spend. LAW: anything that gates MONEY, IDENTITY, or PRIVACY is verified SERVER-SIDE.
+  Client state is a convenience, never a credential.
+- **RC2 — Certification tested features, not adversaries.** Gates asserted what we built; nobody played
+  the stranger. The owner found both holes in minutes by opening the app from a second Gmail. LAW: no
+  "done/sealed/final" without the RED-TEAM PASS below, executed and pasted as evidence.
+- **RC3 — Enforcement sat downstream of the side effect.** Token spend happened before the database
+  write-block that was supposed to stop the visitor. LAW: the guard lives at the choke point of the
+  resource itself (the serverless function holding the key; the DB layer holding the data) — never only
+  in UI, never only after the cost is paid.
+- **RC4 — "Sealed" was declared while the last diff was minutes old.** Confidence language outran
+  verification. LAW: the word "done" is EARNED by the Four Proofs below, in order, with output shown.
+
+**THE FOUR PROOFS (all mandatory before claiming any change is complete):**
+1. **Machine proof** — full gate suite + typecheck + warning-free production build, zero skips.
+2. **Fresh-eyes proof** — scripted walkthrough from a WIPED browser profile (screenshots ×3 breakpoints,
+   zero console errors), because the owner's warmed-up browser hides first-run bugs.
+3. **Adversary proof (the red-team pass)** — act out each persona against the LIVE deployment and paste
+   the results: (a) fresh visitor — must reach demo, spend ₹0, mutate nothing; (b) curl scripter with no
+   Origin — 403 on every function; (c) self-appointed owner — fabricated client state/token must not
+   spend; (d) second-device stranger — must find NO way to set, reset, or bypass any lock; (e) the real
+   owner — full happy path works end-to-end with real keys.
+4. **Money proof** — enumerate EVERY code path that can spend a metered resource (grep the fetch sites),
+   and show each is (i) owner-gated client-side, (ii) token-required server-side, (iii) budget-capped (I8).
+
+**Cross-feature blast radius rule:** changing what a definition MEANS (owner, shipped, ready, keyless)
+re-opens every consumer of that definition — grep them all and re-reason each before shipping.
+
+**Every bug fix ships with the regression test that would have caught it.** No exceptions — the test IS
+the apology.
+
+**Evergreen rule (Law 12 sharpened):** at session start, live-verify every volatile dependency (model
+IDs + deprecation pages, API shapes, quotas). Anything dated gets a shutdown-date check; anything
+expiring gets migrated NOW with its migration noted in §12. Prefer boring, stable, pinned tech; new
+knowledge enters as versioned DATA (I13), not code.
+
+**The seal (restated):** SIFARISH changes through data — ledger, vision, watchlists, budgets, Ustaad
+library versions, env values (owner code, keys). If code must ever change again, it is an exceptional
+event that requires this entire protocol, the Four Proofs, and an appended decision line explaining why
+the seal was broken.
