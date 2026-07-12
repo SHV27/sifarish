@@ -1,5 +1,6 @@
-import type { GuruMessage, Job, LedgerEntry } from '../../types'
+import type { GuruMessage, Job, LedgerEntry, VisionProfile } from '../../types'
 import { scanGuarantee } from '../slop/scan'
+import { pathBriefs, sourcesOf, citePatterns } from '../ustaad/library'
 
 /**
  * Deterministic intent router — the Guru's testable core AND its keyless mode (I4).
@@ -25,6 +26,9 @@ export type Intent =
   | 'explain_angle'
   | 'signature_advice'
   | 'resource_budget'
+  | 'path_brief'
+  | 'sharpen_vision'
+  | 'vision_check'
   | 'freeform'
 
 export interface RoutedReply {
@@ -32,6 +36,8 @@ export interface RoutedReply {
   text: string
   action?: 'sweep' | 'open_apply_plan' | 'open_radar' | 'derive_hunts'
   citationsRequired: boolean
+  /** I7 — external claims carry their sources. */
+  citations?: { title: string; url: string }[]
 }
 
 const FABRICATION_SKILLS = /\b(kubernetes|k8s|rust|golang|scala|terraform|hadoop|spark|tensorflow|c\+\+|\.net|php|salesforce)\b/i
@@ -56,8 +62,24 @@ export function detectIntent(text: string, ledger: LedgerEntry[]): Intent {
     }
   }
 
+  // Sharpen the vision/about (Guru v3 — the reported-failure fix: proposed edits, grounded + cited).
+  if (/\b(sharpen|improve|polish|rewrite|strengthen|better|raise)\b.*\b(about|vision|profile|headline|chances|odds)\b/.test(t) ||
+      /\b(about|vision)\b.*\b(sharpen|improve|kaise (behtar|sharp))\b/.test(t)) {
+    return 'sharpen_vision'
+  }
+  // Hiring-path briefs (Guru v3): "how do I get into an AI startup / research lab / big tech?"
+  if (/\b(how (do|can|should) i|kaise|what('s| is) the (path|way)|path (to|into)|break into|get into|get hired (at|by))\b/.test(t) &&
+      /\b(startup|research lab|lab|residency|big tech|faang|company|companies|openai|deepmind|anthropic)\b/.test(t)) {
+    return 'path_brief'
+  }
+  if (/\b(difference|compare|vs|versus)\b.*\b(startup|big tech|lab|residency)\b/.test(t)) return 'path_brief'
   // Vision-derived hunts (proposeHunts).
   if (/\b(vision|dream|derive|hunt for|what.*hunt|roles?.*(match|fit).*vision|based on my (vision|dream|goals))\b/.test(t)) return 'derive_hunts'
+  // Vision-alignment check: "should I apply/go for" an avoided lane → flagged answer, never a default.
+  if (/\b(should i|worth|kya main)\b.*\b(apply|join|go|try|target)\b/.test(t) &&
+      /\b(tcs|infosys|wipro|accenture|cognizant|mass (placement|recruit)|mnc|service compan)/.test(t)) {
+    return 'vision_check'
+  }
   // Angle / casting explanation.
   if (/\b(angle|framed?|casting|why.*(lead|chose|picked|benched)|editor)/.test(t)) return 'explain_angle'
   // Sifarish Signature advice.
@@ -130,6 +152,100 @@ export function statusReply(jobs: Job[]): RoutedReply {
   }
 }
 
+/** Pick the hiring-path brief(s) the question is about; default = compare all three. */
+export function pathBriefReply(text: string): RoutedReply {
+  const t = text.toLowerCase()
+  const briefs = pathBriefs()
+  const pick =
+    /\b(startup)\b/.test(t) && !/big tech|lab/.test(t)
+      ? briefs.filter((b) => b.id === 'ai-first-startup')
+      : /\b(lab|research|residency)\b/.test(t) && !/startup|big tech/.test(t)
+        ? briefs.filter((b) => b.id === 'research-lab')
+        : /\b(big tech|faang)\b/.test(t) && !/startup|lab/.test(t)
+          ? briefs.filter((b) => b.id === 'big-tech-internship')
+          : briefs
+  const body = pick
+    .map(
+      (b) =>
+        `${b.label.toUpperCase()}: ${b.summary} Timeline: ${b.timeline} Referrals: ${b.referralWeight} ` +
+        `Interview emphasis: ${b.portfolioVsDsa} Conversion: ${b.conversionNorms}`,
+    )
+    .join('\n\n')
+  const next =
+    pick.length === 1 && pick[0].id === 'ai-first-startup'
+      ? 'Next action: pick one company from your Radar queue and draft the hiring-manager outreach today — in this lane, the warm intro IS the pipeline.'
+      : pick.length === 1 && pick[0].id === 'research-lab'
+        ? 'Next action: make one project reproducible end-to-end (repo + honest eval writeup) — that artifact is the application.'
+        : pick.length === 1
+          ? 'Next action: check the application window now — big-tech intern pipelines open ~8–12 months ahead, and a missed window costs a season.'
+          : 'Next action: your lane is AI-first startups (your vision says so) — treat the other two as options you deliberately declined, not defaults you missed.'
+  const citations = pick.flatMap((b) => sourcesOf(b).slice(0, 2).map((s) => ({ title: s.title, url: s.url })))
+  return { intent: 'path_brief', text: `${body}\n\n${next}`, citationsRequired: true, citations }
+}
+
+/** Sharpen the About/Vision — ledger-grounded, library-cited, proposed (never silently applied). */
+export function sharpenVision(ledger: LedgerEntry[], vision?: VisionProfile): RoutedReply {
+  const shipped = ledger.filter((e) => e.resumeEligible && e.tier === 'shipped' && e.kind === 'project')
+  const withUrl = shipped.filter((p) => p.evidence?.url)
+  const strongest = withUrl[0] ?? shipped[0]
+  const suggestions = [
+    strongest
+      ? `Lead your About with the strongest shipped proof, not adjectives: "${strongest.title.split('—')[0].trim()}" with its live link — a recruiter's first skim fixates on the top lines (Ustaad ¶six-second-skim).`
+      : 'Ship one public project first — an About without a live artifact is adjectives.',
+    vision?.dream
+      ? `Your dream line ("${vision.dream.slice(0, 80)}…") is direction; sharpen it into an outcome sentence shaped like the XYZ formula — what you build, for whom, with what measured proof (¶xyz-formula).`
+      : 'Write the dream as one concrete sentence: what you build, for whom, with what proof.',
+    `Name the numbers your ledger already holds (projects shipped, boards probed, parse-back fidelity) — quantified lines are the top shortlisting signal recruiters report (¶quantify-everything-honest).`,
+    vision?.notInterested?.length
+      ? `Keep the "not interested" list (${vision.notInterested.slice(0, 2).join(', ')}) explicit in Settings — it is my guardrail: I will never pitch those lanes as defaults.`
+      : 'Fill the "not interested" list in Settings → Vision Profile — it becomes my guardrail.',
+  ]
+  return {
+    intent: 'sharpen_vision',
+    text:
+      `Proposed sharpenings (edit Settings → Vision Profile yourself — I propose, never apply):\n` +
+      suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n') +
+      `\n\nNext action: rewrite the dream line as one XYZ-shaped sentence and paste it into the Vision Profile now.`,
+    citationsRequired: true,
+    citations: citePatterns(['six-second-skim', 'xyz-formula', 'quantify-everything-honest'], 3),
+  }
+}
+
+/** Vision-alignment guardrail: an avoided lane is answered with an explicit flag, never as a default. */
+export function visionCheck(vision?: VisionProfile): RoutedReply {
+  const avoids = vision?.notInterested?.join(', ') || 'generic mass-placement lanes'
+  return {
+    intent: 'vision_check',
+    text:
+      `Ye tumhare stated avoids se hat ke hai (${avoids}) — isliye main ise kabhi default suggest nahi karta. ` +
+      `Sirf isliye bata raha hoon kyunki tumne poocha: mass-placement lanes optimize for volume, not for the ` +
+      `AI-first work in your ledger; your portfolio's edge disappears in that pipeline. If you still want a ` +
+      `safety lane, do it deliberately and time-boxed — but your Radar queue is built for the lane you chose. ` +
+      `Next action: open the Radar and tailor the top-ranked role instead.`,
+    citationsRequired: false,
+  }
+}
+
+/**
+ * The vision-alignment output scan (the reported-failure fix, structural): if a reply pushes
+ * an avoided lane without the explicit flag, the client appends the flag. Used on LLM output.
+ */
+const MISALIGNED_LANES =
+  /\b(google|microsoft|amazon|meta|apple|tcs|infosys|wipro|accenture|cognizant|capgemini|mass placement|service compan\w*|generic sde|big.?tech pipeline)\b/i
+const SUGGESTION_VERBS = /\b(apply|target|aim (for|at)|try|consider|focus on|recommend|suggest|you should|go for|pursue|prioritize)\b/i
+const FLAG_PHRASES = /hat ke hai|off your stated|against your (vision|avoids|stated)|you said no to|outside your lane|deliberately|sirf isliye bata/i
+
+export function visionAlignmentScan(text: string, vision?: VisionProfile): { aligned: boolean; hits: string[] } {
+  if (!vision?.notInterested?.length) return { aligned: true, hits: [] }
+  // Misaligned = the reply SUGGESTS an avoided lane (company/pipeline) without the explicit flag.
+  // Naming a company as a fact or comparison is fine; pitching it as his path is not.
+  const suggests = SUGGESTION_VERBS.test(text)
+  const laneHits = text.match(new RegExp(MISALIGNED_LANES.source, 'gi')) ?? []
+  const flagged = FLAG_PHRASES.test(text)
+  const misaligned = suggests && laneHits.length > 0 && !flagged
+  return { aligned: !misaligned, hits: misaligned ? [...new Set(laneHits.map((h) => h.toLowerCase()))] : [] }
+}
+
 /** The router's honesty gate — run on ANY Guru output (LLM or template) before display. */
 export function honestyGate(text: string): { ok: boolean; violations: string[] } {
   const g = scanGuarantee(text)
@@ -137,9 +253,15 @@ export function honestyGate(text: string): { ok: boolean; violations: string[] }
 }
 
 /** Route a user turn to a deterministic reply for the honesty-critical + keyless paths. */
-export function route(userText: string, ledger: LedgerEntry[], jobs: Job[]): RoutedReply {
+export function route(userText: string, ledger: LedgerEntry[], jobs: Job[], vision?: VisionProfile): RoutedReply {
   const intent = detectIntent(userText, ledger)
   switch (intent) {
+    case 'path_brief':
+      return pathBriefReply(userText)
+    case 'sharpen_vision':
+      return sharpenVision(ledger, vision)
+    case 'vision_check':
+      return visionCheck(vision)
     case 'refuse_guarantee':
       return refuseGuarantee()
     case 'refuse_fabrication': {

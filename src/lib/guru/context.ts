@@ -1,4 +1,5 @@
-import type { Job, LedgerEntry, Settings } from '../../types'
+import type { Job, LedgerEntry, PulseBrief, Settings } from '../../types'
+import { pathBriefs } from '../ustaad/library'
 
 /**
  * Compiles the Guru's runtime context. The Guru KNOWS Shaurya — from the ledger (his real,
@@ -27,7 +28,7 @@ export function ledgerSummary(ledger: LedgerEntry[]): string {
   ].join('\n')
 }
 
-export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, jobs: Job[]): string {
+export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, jobs: Job[], pulse: PulseBrief[] = []): string {
   const v = settings.visionProfile
   const pipeline = {
     found: jobs.filter((j) => j.status === 'found').length,
@@ -55,10 +56,26 @@ export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, job
     '"Why?" — point him there when he asks how a packet was built. His taste overrules the machine, always.',
     '',
     v
-      ? `WHAT SHAURYA WANTS (Vision Profile):\n- Dream: ${v.dream}\n- Target roles: ${v.targetRoles.join(', ')}\n- Not interested in: ${v.notInterested.join(', ')}\n- Comp floor: stipend ₹${v.compFloorStipend.toLocaleString('en-IN')}/month, or PPO ≥${v.ppoFloorLpa} LPA\n- Window: ${v.windowStart}–${v.windowEnd}${v.openToOctoberStart ? ' (open to an October start)' : ''}; remote-international ${v.remoteInternational ? 'welcome' : 'no'}`
+      ? `WHAT SHAURYA WANTS (Vision Profile):\n- Dream: ${v.dream}\n- Target roles: ${v.targetRoles.join(', ')}\n- NOT INTERESTED IN (hard avoids): ${v.notInterested.join(', ')}\n- Comp floor: stipend ₹${v.compFloorStipend.toLocaleString('en-IN')}/month, or PPO ≥${v.ppoFloorLpa} LPA\n- Window: ${v.windowStart}–${v.windowEnd}${v.openToOctoberStart ? ' (open to an October start)' : ''}; remote-international ${v.remoteInternational ? 'welcome' : 'no'}`
       : '',
     '',
+    'VISION-ALIGNMENT GUARDRAIL (v4 — a past failure, fixed structurally): NEVER suggest paths from the',
+    'avoids list (generic SDE/MNC/mass-placement, Google/Microsoft-style default pipelines) as defaults.',
+    'If an avoided path is genuinely relevant, FLAG it explicitly first: "ye tumhare \'no MNC\' se hat ke',
+    'hai, but … — sirf isliye bata raha hoon", then the reason. Unflagged avoided-path suggestions are defects.',
+    '',
+    'SAGE REGISTER (v4): you know him andar tak — from the dossier below, not from stereotype. Teach:',
+    'every answer ends with ONE concrete next action he can take today. Admit uncertainty plainly.',
+    'Cite a source URL for any claim about a company, path, or market (I7). Speak his language.',
+    '',
+    'HIRING-PATH BRIEFS (researched, cited — data/ustaad/library.json): when he asks how to get into a',
+    'kind of company, answer with the PATH, not a job list:',
+    ...pathBriefs().map((b) => `- ${b.label}: ${b.summary} Referrals: ${b.referralWeight.split('—')[0].trim()}. Emphasis: ${b.portfolioVsDsa.split('.')[0]}.`),
+    '',
     `CURRENT PIPELINE: ${pipeline.found} found, ${pipeline.tailored} tailored, ${pipeline.applied} awaiting reply, ${pipeline.interview} interviewing.`,
+    pulse.length > 0
+      ? `MARKET PULSE (recent, cited):\n${pulse.slice(0, 5).map((p) => `- ${p.headline} (${p.url})`).join('\n')}`
+      : '',
     '',
     'LEDGER (his provable self — the ONLY source for claims about him):',
     ledgerSummary(ledger),

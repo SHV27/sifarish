@@ -51,7 +51,8 @@ export function Guru({ onOpenPacket }: { onOpenPacket: (jobId: string) => void }
       }
       const answer = finalText ?? routed.text
       setStreaming('')
-      setMessages((m) => [...m, { role: 'assistant', content: answer }])
+      // Router citations ride along when the deterministic reply stands (I7).
+      setMessages((m) => [...m, { role: 'assistant', content: answer, citations: finalText ? undefined : routed.citations }])
 
       // Execute any routed action (sweep etc.) — client-side only, never an external action.
       if (routed.action === 'sweep') {

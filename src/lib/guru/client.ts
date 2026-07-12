@@ -1,7 +1,7 @@
 import { db } from '../../db/db'
 import type { GuruMessage } from '../../types'
 import { buildSystemPrompt } from './context'
-import { route, honestyGate, type RoutedReply } from './router'
+import { route, honestyGate, visionAlignmentScan, type RoutedReply } from './router'
 import { runSweep } from '../khabri/client'
 
 /**
@@ -23,9 +23,11 @@ export interface GuruTurn {
 export async function planTurn(userText: string): Promise<GuruTurn> {
   const ledger = await db.ledger.toArray()
   const jobs = await db.jobs.toArray()
-  const routed = route(userText, ledger, jobs)
-  // Honesty-critical intents are answered by the router verbatim — never handed to the LLM.
-  const deterministicIntents = new Set(['refuse_guarantee', 'refuse_fabrication'])
+  const settings = await db.settings.get('app')
+  const routed = route(userText, ledger, jobs, settings?.visionProfile)
+  // Honesty-critical + citation-carrying intents are answered by the router verbatim — never
+  // handed to the LLM (refusals, the vision guardrail, and the cited path briefs stay exact).
+  const deterministicIntents = new Set(['refuse_guarantee', 'refuse_fabrication', 'vision_check', 'path_brief', 'sharpen_vision'])
   return { routed, useLLM: !deterministicIntents.has(routed.intent) }
 }
 
@@ -47,7 +49,10 @@ export async function streamGuru(history: GuruMessage[], onToken: (t: string) =>
   const jobs = await db.jobs.toArray()
   const settings = await db.settings.get('app')
   if (!settings) return null
-  const system = buildSystemPrompt(ledger, settings, jobs)
+  // Guru v3: the compiled dossier on EVERY turn — vision + avoids + guardrail + path briefs +
+  // pipeline + recent pulse + ledger. Retrieved, not hoped for.
+  const pulse = await db.pulse.orderBy('at').reverse().limit(5).toArray().catch(() => [])
+  const system = buildSystemPrompt(ledger, settings, jobs, pulse)
   const messages = history
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
@@ -103,7 +108,13 @@ export async function streamGuru(history: GuruMessage[], onToken: (t: string) =>
       }
     }
   } catch {
-    return full.length > 0 && honestyGate(full).ok ? full : null
+    return full.length > 0 && replyClean(full, settings.visionProfile) ? full : null
   }
-  return honestyGate(full).ok ? full : null
+  return replyClean(full, settings.visionProfile) ? full : null
+}
+
+/** Final output gate: I9 guarantee scan + the vision-alignment scan (unflagged avoided-path
+ *  suggestions are discarded — the router's grounded text stands instead). */
+function replyClean(text: string, vision?: import('../../types').VisionProfile): boolean {
+  return honestyGate(text).ok && visionAlignmentScan(text, vision).aligned
 }
