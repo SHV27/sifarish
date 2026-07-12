@@ -9,6 +9,7 @@ import { getLibrary, staleSources } from '../lib/ustaad/library'
 import { useDarbaan } from '../components/DarbaanControl'
 import { GOOGLE_CLIENT_ID } from '../lib/dak/gis'
 import { saveFile } from '../lib/util/download'
+import { getApiToken, setApiToken } from '../lib/apiGuard'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -264,9 +265,48 @@ function DarbaanSection() {
             </button>
           </div>
           {note && <p className="mt-2 text-[11px] font-mono text-ink-soft">{note}</p>}
+          <ApiTokenField />
         </>
       )}
     </section>
+  )
+}
+
+/** Optional second wall for the metered APIs (D44): matches SIFARISH_OWNER_TOKEN on Vercel. */
+function ApiTokenField() {
+  const [token, setToken] = useState(getApiToken() ?? '')
+  const [saved, setSaved] = useState(false)
+  return (
+    <div className="mt-3 ledger-rule pt-3">
+      <p className="text-xs font-medium text-ink">API guard token (optional)</p>
+      <p className="text-[11px] text-ink-soft mt-0.5 leading-relaxed">
+        Showcase visitors already spend zero tokens (locked mode is structurally keyless). For full lockdown
+        against anything else, set <code className="font-mono">SIFARISH_OWNER_TOKEN</code> in the Vercel env
+        and paste the same value here — without it, keyed calls simply degrade to keyless.
+      </p>
+      <div className="mt-1.5 flex gap-2">
+        <input
+          type="password"
+          className="text-xs bg-paper-sunken px-3 py-1.5 rounded w-56"
+          placeholder="matches SIFARISH_OWNER_TOKEN"
+          value={token}
+          onChange={(e) => {
+            setToken(e.target.value)
+            setSaved(false)
+          }}
+          aria-label="API guard token"
+        />
+        <button
+          className="text-[11px] font-semibold border border-ink text-ink px-3 py-1.5 rounded"
+          onClick={() => {
+            setApiToken(token.trim())
+            setSaved(true)
+          }}
+        >
+          {saved ? 'saved ✓' : 'save'}
+        </button>
+      </div>
+    </div>
   )
 }
 

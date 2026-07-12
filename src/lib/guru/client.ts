@@ -3,6 +3,7 @@ import type { GuruMessage } from '../../types'
 import { buildSystemPrompt } from './context'
 import { route, honestyGate, visionAlignmentScan, type RoutedReply } from './router'
 import { runSweep } from '../khabri/client'
+import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 /**
  * Guru orchestration. The deterministic router runs FIRST on every turn and owns the
@@ -45,6 +46,8 @@ export async function runAction(action: RoutedReply['action']): Promise<string |
  * On any failure or keyless response, returns null so the caller uses the router text.
  */
 export async function streamGuru(history: GuruMessage[], onToken: (t: string) => void): Promise<string | null> {
+  // Darshak/demo browsers get the deterministic router only — zero token spend (D44).
+  if (!meteredCallsAllowed()) return null
   const ledger = await db.ledger.toArray()
   const jobs = await db.jobs.toArray()
   const settings = await db.settings.get('app')
@@ -61,7 +64,7 @@ export async function streamGuru(history: GuruMessage[], onToken: (t: string) =>
   try {
     res = await fetch('/api/guru', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: meteredHeaders(),
       body: JSON.stringify({ system, messages }),
     })
   } catch {

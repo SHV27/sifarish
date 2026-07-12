@@ -1,6 +1,7 @@
 import { db } from '../../db/db'
 import type { CompanyIntel, IntelBullet } from '../../types'
 import { recordSpend } from '../budget'
+import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 /**
  * Company Intel client. Fetches cited intel (I7), caches 7 days per company. Intel changes
@@ -16,12 +17,17 @@ export async function getIntel(company: string, force = false): Promise<CompanyI
     return cached
   }
 
+  // Darshak/demo: cached intel above is free to read; a FRESH fetch spends Tavily — owner only (D44).
+  if (!meteredCallsAllowed()) {
+    return cached ?? { company: key, bullets: [], fetchedAt: new Date().toISOString(), keyless: true }
+  }
+
   let bullets: IntelBullet[] = []
   let keyless = true
   try {
     const res = await fetch('/api/intel', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: meteredHeaders(),
       body: JSON.stringify({ company }),
     })
     if (res.ok) {

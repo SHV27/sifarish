@@ -3,6 +3,7 @@ import type { PulseBrief } from '../../types'
 import { recordSpend } from '../budget'
 import { LEXICON } from '../jd/lexicon'
 import { getLibrary, libraryRefreshDue, staleSources } from '../ustaad/library'
+import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 /**
  * Pulse Loop — keeps the rubric present-tense. A weekly news sweep produces cited briefs;
@@ -28,12 +29,14 @@ function knownInLexicon(term: string): boolean {
 }
 
 export async function runPulse(): Promise<{ keyless: boolean; count: number }> {
+  // Darshak/demo: a pulse sweep spends Tavily credits and writes briefs — Owner Mode only (D44).
+  if (!meteredCallsAllowed()) return { keyless: true, count: 0 }
   let keyless = true
   let count = 0
   try {
     const res = await fetch('/api/pulse', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: meteredHeaders(),
       body: JSON.stringify({ topics: PULSE_TOPICS }),
     })
     if (res.ok) {

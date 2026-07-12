@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { connectGmail, disconnectGmail, isConnected } from '../lib/dak/gis'
 import { sweepMail, confirmStage, dismissCard } from '../lib/dak/watch'
+import { useDarbaan } from './DarbaanControl'
 
 /**
  * DAK KHANA (P15) — the mailbox watchman on the Morcha board. Read-only by construction
@@ -11,9 +12,14 @@ import { sweepMail, confirmStage, dismissCard } from '../lib/dak/watch'
  */
 export default function DakPanel() {
   const cards = useLiveQuery(() => db.dak.where('status').equals('pending').toArray()) ?? []
+  const owner = useDarbaan()
   const [connected, setConnected] = useState(isConnected())
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+
+  // Darshak/demo: a visitor should never wire THEIR Gmail into a showcase — the watchman
+  // works only for the owner (I12; the card writes are db-blocked anyway).
+  if (!owner) return null
 
   const connect = async () => {
     setBusy(true)

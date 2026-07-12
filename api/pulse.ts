@@ -22,8 +22,42 @@ interface TavilyResult {
   published_date?: string
 }
 
+/**
+ * v4.1 request guard (D44) — two walls, zero mandatory setup:
+ *  1. Origin must be THIS app (its own vercel.app hosts or localhost dev). Browsers attach
+ *     Origin to every POST and enforce preflight, so third-party sites and raw curl/scripts
+ *     are refused before any key is touched.
+ *  2. Optional full lockdown: set SIFARISH_OWNER_TOKEN in the Vercel env and paste the same
+ *     value once in Settings — then a missing/wrong x-sifarish-token header degrades the call
+ *     to the keyless path (the app keeps working; the key does not spend).
+ */
+function guardRequest(req: Request): Response | null {
+  const origin = req.headers.get('origin') ?? ''
+  let host = ''
+  try {
+    host = new URL(origin).hostname
+  } catch {
+    /* absent or garbled Origin → not a browser session on this app */
+  }
+  const prodHost = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? ''
+  const originOk =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    (prodHost !== '' && host === prodHost) ||
+    host === 'sifarish-shv-s-projects.vercel.app' ||
+    host.endsWith('-shv-s-projects.vercel.app')
+  if (!originOk) return json({ error: 'forbidden' }, 403)
+  const required = process.env.SIFARISH_OWNER_TOKEN
+  if (required && req.headers.get('x-sifarish-token') !== required) {
+    return json({ keyless: true, reason: 'owner token required' }, 200)
+  }
+  return null
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
+  const guarded = guardRequest(req)
+  if (guarded) return guarded
   const key = process.env.TAVILY_API_KEY
   if (!key) return json({ keyless: true, briefs: [], creditsSpent: 0 })
 

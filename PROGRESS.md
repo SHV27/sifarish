@@ -4,7 +4,7 @@
 
 ## Status: v4 "The Ustaad Update" — FINAL FORM · SEALED ✦
 
-Live: https://sifarish-shv-s-projects.vercel.app · **231/231 gates green** · 0 console errors ·
+Live: https://sifarish-shv-s-projects.vercel.app · **244/244 gates green** · 0 console errors ·
 Lighthouse desktop 99/100/100 · build warning-free.
 
 ## Version history
@@ -13,7 +13,15 @@ Lighthouse desktop 99/100/100 · build warning-free.
 - **v2 — eyes (Jasoos).** Khabri discovery, Darzi Intel, Guru chat, Pulse Loop. I7–I9. 111 gates.
 - **v3 — brain (Dimaag).** Reasoning core (cached/budgeted/fallback-safe), four-pass Editor's Desk,
   Atelier letters, Vision Engine, Guru v2. I10. 145 gates (+v3.1 hardening → 146).
-- **v4 — mastery (Ustaad).** The final form. I11–I13. 231 gates.
+- **v4 — mastery (Ustaad).** The final form. I11–I13. 231 gates (+v4.1 bulletproof pass → 244).
+
+## v4.1 bulletproof pass (owner-requested, 13-Jul-2026)
+- **D44 — the showcase can never spend a rupee.** Every metered client checks the Darbaan lock BEFORE
+  fetching (Darshak/demo = structurally keyless), and all 7 API functions refuse foreign/absent Origins
+  + honor an optional `SIFARISH_OWNER_TOKEN` full-lockdown env (degrades to keyless, never breaks).
+- **D45 — Nabz reads READMEs.** New-repo drafts distill the README: summary from the first prose
+  paragraph, feature bullets (noise filtered), lexicon-matched keywords, live URL → richer entries mean
+  more precise tailoring. Owner confirms every draft.
 
 ## v4 workstreams — all done
 - **WS0** — Law-12 live audit caught the Groq deprecation (llama models shut down 16-Aug-2026) and
@@ -39,7 +47,7 @@ Lighthouse desktop 99/100/100 · build warning-free.
   parallel boot (FCP 1.8s, CLS 0.006), 30 screenshots ×3 breakpoints with 0 console errors.
 - **WS8** — Certification + seal + docs + deploy.
 
-## Gate table — 231/231 green
+## Gate table — 244/244 green
 | Suite | Gates | Covers |
 |---|---|---|
 | v1 core (invariants, parseback, radar, chaos, honesty, security, gates) | 65 | I1–I6 |
@@ -51,6 +59,7 @@ Lighthouse desktop 99/100/100 · build warning-free.
 | v4 dak | 9 | I3 zero-send proof |
 | v4 darbaan | 13 | I12, backup, PII scan |
 | v4 taleem | 6 | cited gap ranking |
+| v4.1 bulletproof | 13 | D44 zero-spend Darshak + API origin/token guard, D45 README distiller |
 
 Console 0 · typecheck clean · build warning-free · Lighthouse desktop 99/100/100 (mobile-sim 83 —
 slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoints refreshed.

@@ -2,6 +2,7 @@ import type { Packet } from '../../types'
 import { db } from '../../db/db'
 import { safePolish } from './factGuard'
 import { scanSlop } from '../slop/scan'
+import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 /**
  * Client-side polish orchestration. Sends compiled bullet lines to /api/polish, then
@@ -16,6 +17,8 @@ export interface PolishOutcome {
 }
 
 export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
+  // Darshak/demo mode: compiled text stands, zero spend (D44).
+  if (!meteredCallsAllowed()) return { packet, applied: 0, rejected: 0, keyless: true }
   const voice = (await db.voicebank.get('voice'))?.samples ?? []
 
   // Only bullet/forge lines are eligible; headings/contact/skills stay verbatim.
@@ -29,7 +32,7 @@ export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
   try {
     const res = await fetch('/api/polish', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: meteredHeaders(),
       body: JSON.stringify({ lines, voiceSamples: voice }),
     })
     const data = await res.json()

@@ -1,5 +1,6 @@
 import { db } from '../../db/db'
 import type { LedgerEntry, NabzSuggestion } from '../../types'
+import { LEXICON } from '../jd/lexicon'
 
 /**
  * GitHub Nabz — the pulse. Public REST, no key (CORS `*`, 60 req/hr unauth verified WS0).
@@ -56,6 +57,85 @@ export async function fetchRepos(force = false): Promise<SyncNabz> {
   const repos: GhRepo[] = await res.json()
   await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(repos), fetchedAt: new Date().toISOString() })
   return { repos, budget, fromCache: false }
+}
+
+// ---------------- README deep-read (v4.1, D45) ----------------
+// A repo's README is the richest, most truthful context the owner has already written about
+// his own work. Nabz distills it into the draft entry so the Darzi tailors from substance,
+// not a one-line description. Owner still confirms every draft (Nabz pattern, I1 intact).
+
+const README_TTL = 7 * 86400000
+
+export async function fetchReadme(repoName: string): Promise<string | null> {
+  const cacheKey = `readme:${USER}/${repoName}`
+  const cached = await db.nabzCache.get(cacheKey)
+  if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < README_TTL) {
+    return JSON.parse(cached.json)
+  }
+  try {
+    const res = await fetch(`https://api.github.com/repos/${USER}/${repoName}/readme`, {
+      headers: { Accept: 'application/vnd.github.raw+json' },
+    })
+    if (!res.ok) return cached ? JSON.parse(cached.json) : null
+    const text = await res.text()
+    await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(text), fetchedAt: new Date().toISOString() })
+    return text
+  } catch {
+    return cached ? JSON.parse(cached.json) : null
+  }
+}
+
+export interface ReadmeDistilled {
+  summary: string
+  bullets: string[]
+  keywords: string[]
+  liveUrl?: string
+}
+
+/** Pure distiller: markdown → {summary, feature bullets, lexicon keywords, live URL}. */
+export function distillReadme(md: string): ReadmeDistilled {
+  // Strip the noise: code fences, html, badges/images, link syntax → plain text lines.
+  const noCode = md.replace(/```[\s\S]*?```/g, ' ').replace(/~~~[\s\S]*?~~~/g, ' ')
+  const liveUrl = /(https?:\/\/[a-z0-9.-]+\.(?:vercel\.app|netlify\.app|github\.io|pages\.dev)[^\s)"'\]]*)/i.exec(noCode)?.[1]
+  const clean = (s: string) =>
+    s
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images/badges
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → their text
+      .replace(/<[^>]+>/g, '')
+      .replace(/[*_`>#]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+  const lines = noCode.split('\n')
+  // Summary = the first substantive prose paragraph (not a heading/badge/list line).
+  let summary = ''
+  for (const raw of lines) {
+    const t = raw.trim()
+    if (!t || /^#{1,6}\s/.test(t) || /^[-*+]\s/.test(t) || /^\d+\.\s/.test(t) || /^\|/.test(t) || /^!\[/.test(t) || /^\[!\[/.test(t)) continue
+    const c = clean(t)
+    if (c.length >= 40 && /[a-z]/i.test(c)) {
+      summary = c.slice(0, 240)
+      break
+    }
+  }
+
+  // Feature bullets = the first substantive list items (what it does / how it's built).
+  const bullets: string[] = []
+  for (const raw of lines) {
+    const m = /^\s*[-*+]\s+(.*)$/.exec(raw)
+    if (!m) continue
+    const c = clean(m[1])
+    if (c.length >= 30 && c.length <= 180 && /[a-z]/i.test(c) && !/license|contribut|install|clone|npm i /i.test(c)) {
+      bullets.push(c)
+      if (bullets.length >= 3) break
+    }
+  }
+
+  // Keywords: the same lexicon the JD decoder speaks — so evidence matching just works.
+  const hay = ` ${clean(noCode).toLowerCase()} `
+  const keywords = LEXICON.filter((l) => l.patterns.some((p) => hay.includes(p))).map((l) => l.canonical)
+
+  return { summary, bullets, keywords, liveUrl }
 }
 
 function hostOf(url: string): string {
@@ -142,23 +222,41 @@ export async function computeSuggestions(repos: GhRepo[]): Promise<NabzSuggestio
       }
     } else if (!match && repo.size > 0) {
       if (isDismissed(repo.name, 'new_entry')) continue
+      // Deep-read the README (cached, budget-respecting) so the draft carries real substance —
+      // the richer the entry, the more precisely the Darzi can tailor from it (D45).
+      const readme = await fetchReadme(repo.name).catch(() => null)
+      const distilled = readme ? distillReadme(readme) : null
+      const summary = distilled?.summary || repo.description || ''
+      const langKw = repo.language ? [repo.language.toLowerCase()] : []
+      const keywords = [...new Set([...(distilled?.keywords ?? []), ...langKw])]
+      const bulletTexts =
+        distilled && distilled.bullets.length > 0
+          ? distilled.bullets
+          : repo.description
+            ? [repo.description]
+            : []
       liveSuggestions.push({
         id: `sug-new-${repo.name}`,
         type: 'new_entry',
         repoName: repo.name,
         repoUrl: repo.html_url,
-        why: `New public repo ${repo.name}${repo.description ? ` — "${repo.description.slice(0, 90)}"` : ''} isn't in the ledger yet. Add it?`,
+        why: `New public repo ${repo.name}${summary ? ` — "${summary.slice(0, 90)}"` : ''} isn't in the ledger yet.${
+          distilled?.summary ? ' Drafted from its README (your own words — richer context for the tailor).' : ''
+        } Add it?`,
         draftEntry: {
           id: `proj-${repo.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
           kind: 'project',
           title: repo.name,
-          summary: repo.description ?? '',
-          bullets: repo.description
-            ? [{ id: `${repo.name}-b1`, text: repo.description, keywords: repo.language ? [repo.language.toLowerCase()] : [] }]
-            : [],
+          summary,
+          bullets: bulletTexts.map((text, i) => ({ id: `${repo.name}-b${i + 1}`, text, keywords })),
           tier: 'shipped',
-          evidence: { repo: repo.html_url, date: repo.pushed_at.slice(0, 7).replace('-', '/'), note: 'Public GitHub repo (via Nabz).' },
-          tags: repo.language ? [repo.language.toLowerCase()] : [],
+          evidence: {
+            repo: repo.html_url,
+            url: repo.homepage || distilled?.liveUrl || undefined,
+            date: repo.pushed_at.slice(0, 7).replace('-', '/'),
+            note: 'Public GitHub repo (via Nabz).',
+          },
+          tags: keywords.slice(0, 6),
           resumeEligible: true,
         },
         status: 'pending',

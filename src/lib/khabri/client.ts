@@ -3,6 +3,7 @@ import type { Job, SavedHunt, Signal, SweepYield } from '../../types'
 import { fetchHackerNews, fetchRemotive, fetchRemoteOK } from './keyless'
 import { mergeDiscovered } from './normalize'
 import { allowedThisRun, recordSpend } from '../budget'
+import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 /**
  * The Khabri sweep orchestrator. Runs every enabled lane, normalizes + dedupes, merges into
@@ -42,10 +43,11 @@ interface SignalsApiResp {
 }
 
 async function callJobsApi(hunt: SavedHunt): Promise<JobsApiResp | null> {
+  if (!meteredCallsAllowed()) return null // Darshak/demo: keyed lanes never spend (D44)
   try {
     const res = await fetch('/api/khabri/jobs', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: meteredHeaders(),
       body: JSON.stringify({
         query: hunt.query,
         country: hunt.country,
@@ -62,10 +64,11 @@ async function callJobsApi(hunt: SavedHunt): Promise<JobsApiResp | null> {
 }
 
 async function callSignalsApi(queries: string[]): Promise<SignalsApiResp | null> {
+  if (!meteredCallsAllowed()) return null // Darshak/demo: keyed lanes never spend (D44)
   try {
     const res = await fetch('/api/khabri/signals', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: meteredHeaders(),
       body: JSON.stringify({ queries, maxResultsPerQuery: 4 }),
     })
     if (!res.ok) return null
@@ -76,6 +79,10 @@ async function callSignalsApi(queries: string[]): Promise<SignalsApiResp | null>
 }
 
 export async function runSweep(onStep?: (label: string) => void): Promise<SweepYield> {
+  // Darshak/demo: sweeps mutate the Radar and can spend credits — Owner Mode only (D44).
+  if (!meteredCallsAllowed()) {
+    return { found: 0, new: 0, duplicate: 0, bySource: {}, creditsSpent: 0, keylessLanes: [], keyedLanes: [], failed: ['Owner Mode required — the showcase never sweeps'] }
+  }
   const hunts = (await db.savedHunts.toArray()).filter((h) => h.enabled)
   const existing = await db.jobs.toArray()
   const bySource: Record<string, number> = {}

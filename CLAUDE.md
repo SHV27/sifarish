@@ -220,3 +220,15 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   local-first app. (WS7-v4)
 - D43: v4 "The Ustaad Update" sealed 12-Jul-2026 — 231/231 gates, I1–I13 enforced, THE APP IS FINAL FORM.
   Future change arrives as runtime DATA (library versions, prompts-as-config, budgets, watchlists), never code.
+--- v4.1 bulletproof pass (owner-requested, 13-Jul-2026) ---
+- D44: DARSHAK MODE IS STRUCTURALLY KEYLESS. Every metered client (dimaag, guru, polish, intel, khabri
+  keyed lanes, pulse) checks the Darbaan lock BEFORE fetching — a locked/demo browser takes the
+  deterministic path and can never spend a token, by construction (the I12 write-block alone didn't stop
+  the spend that happened before the write). Server side: all 7 API functions refuse foreign/absent
+  Origins (403 before any key is touched) + optional SIFARISH_OWNER_TOKEN env for full lockdown (missing/
+  wrong header degrades to keyless, never breaks the app). Zero mandatory setup.
+- D45: Nabz deep-reads the README of every new repo (cached 7d, unauth budget respected): first prose
+  paragraph → summary, feature list items → bullets (install/license noise filtered), lexicon-matched
+  keywords (same vocabulary the JD decoder speaks, so evidence matching just works), live URL from the
+  README body → evidence. The richer the entry, the more precisely the Darzi tailors. Owner still
+  confirms every draft (Nabz pattern; the README is his own written truth — I1 intact). (v4.1)

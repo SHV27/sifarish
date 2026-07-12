@@ -1,6 +1,7 @@
 import { db } from '../../db/db'
 import type { Critique, DimaagTier, Rationale } from '../../types'
 import { allowedThisRun, monthKey, recordSpend } from '../budget'
+import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 /**
  * THE DIMAAG CORE — the app's reasoning spine (P9). Every consequential choice runs through
@@ -46,10 +47,12 @@ interface CallResult {
 }
 
 async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number): Promise<CallResult | null> {
+  // Darshak/demo mode is structurally keyless (D44): a locked browser never spends a token.
+  if (!meteredCallsAllowed()) return { result: null, tokens: 0, keyless: true }
   try {
     const res = await fetch('/api/dimaag', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: meteredHeaders(),
       body: JSON.stringify({ tier, system, user, maxTokens }),
     })
     if (!res.ok) return null
