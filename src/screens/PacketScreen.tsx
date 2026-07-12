@@ -10,6 +10,7 @@ import { markApplied } from '../lib/morcha'
 import { buildApplyPlan } from '../lib/guru/applyPlan'
 import { Why } from '../components/Why'
 import QualityPanel from '../components/QualityPanel'
+import Baithak from '../components/Baithak'
 import type { EditorialPlan } from '../types'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
@@ -349,6 +350,8 @@ function PacketBody({
           {parseback && <span className="font-mono text-[11px] text-shipped">{parseback}</span>}
         </div>
         {polishNote && <p className="mt-1.5 text-[11px] text-ink-soft">{polishNote}</p>}
+
+        <Baithak key={`baithak-${packet.id}`} packet={packet} />
 
         {packet.signature && <SignatureToggle packet={packet} />}
         <CopyDoc title="Cover letter" doc={packet.coverLetter} />

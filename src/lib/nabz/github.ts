@@ -125,6 +125,21 @@ export async function computeSuggestions(repos: GhRepo[]): Promise<NabzSuggestio
         status: 'pending',
         createdAt: now,
       })
+    } else if (match && match.tier === 'shipped' && !repo.homepage && repo.description && !match.evidence?.url) {
+      // Deep-scan (v4): a live URL written into the repo DESCRIPTION also counts as discoverable evidence.
+      const descUrl = /(https?:\/\/[^\s)"']+)/.exec(repo.description)?.[1]
+      if (descUrl && !isDismissed(repo.name, 'attach_link')) {
+        liveSuggestions.push({
+          id: `sug-link-${repo.name}`,
+          type: 'attach_link',
+          repoName: repo.name,
+          repoUrl: descUrl,
+          why: `${repo.name}'s description mentions ${hostOf(descUrl)} and "${match.title.split('—')[0].trim()}" has no live link yet. Attach it (it will be liveness-probed first)?`,
+          targetLedgerId: match.id,
+          status: 'pending',
+          createdAt: now,
+        })
+      }
     } else if (!match && repo.size > 0) {
       if (isDismissed(repo.name, 'new_entry')) continue
       liveSuggestions.push({

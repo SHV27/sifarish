@@ -250,6 +250,45 @@ export interface Packet {
   enhancing?: boolean
   /** Compile Quality (P13): honest rubric estimate with itemized remainders. Never a guarantee (I9). */
   quality?: CompileQuality
+  /** Baithak decisions trail (P14): every applied conversational edit, logged. */
+  baithakLog?: BaithakLogEntry[]
+}
+
+// ---------- Baithak (P14, I11 — conversation cannot bypass the compiler) ----------
+
+export type EditOp =
+  | { kind: 'attach-link'; ledgerId: string; url: string }
+  | { kind: 'promote-project'; ledgerId: string }
+  | { kind: 'bench-project'; ledgerId: string }
+  /** Bullet must already exist in the ledger — conversation can pick and order, never mint (I11). */
+  | { kind: 'lead-bullet'; ledgerId: string; bulletId: string }
+  | { kind: 'set-section-order'; sectionOrder: ('education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs')[] }
+  /** Runs the existing fact-drift-guarded polish pass — phrasing only, facts frozen (I1). */
+  | { kind: 'polish-tone' }
+
+export interface ProposedEdit {
+  id: string
+  op: EditOp
+  /** Diff card copy: what the packet says now vs after. */
+  before: string
+  after: string
+  /** Which invariants this op touches (rendered on the card). */
+  invariants: string[]
+}
+
+export interface BaithakParse {
+  reply: string
+  proposals: ProposedEdit[]
+  /** Set when the utterance asked for an unevidenced claim — the refusal is the feature. */
+  refused?: { term: string; gapNote: string }
+  citations?: { title: string; url: string }[]
+  by: 'deterministic' | 'dimaag'
+}
+
+export interface BaithakLogEntry {
+  at: string
+  utterance: string
+  summary: string
 }
 
 // ---------- Ustaad (P13, I13 — the library is data) ----------
