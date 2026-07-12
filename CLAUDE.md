@@ -199,3 +199,24 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
 - D36: Ustaad library = data/ustaad/library.json — 42 cited sources, 18 craft patterns, 6 archetype guides,
   3 hiring-path briefs; versioned + dated + Pulse-refreshable (I13). No "selected-at-company-X" database is
   pretended to exist; the library is craft patterns with receipts. (WS0-v4)
+- D37: Baithak parser is deterministic-first (Hinglish+English cue grammar over ledger names) — the keyless
+  mode IS the testable core (D23 pattern applied to the tailor). EditOps can only select/order/link/re-polish;
+  the refusal path (unevidenced claim → Gap Note) is a feature, not an error. (WS2-v4)
+- D38: Guru's reported failure (Google/Microsoft-style suggestions against stated vision) diagnosed as
+  context starvation + path blindness. Fixed structurally: compiled dossier every turn, hard-avoids guardrail
+  in the prompt, visionAlignmentScan discards unflagged avoided-lane LLM output, cited path briefs answer
+  "how do I get into X" with a path, not a job list. Regression test in the 30-convo eval. (WS3-v4)
+- D39: Dak Khana scope is gmail.readonly ONLY, token in memory only, client-side matching; a source-level
+  grep gate bans every send-capable scope/endpoint string from src/ and api/ (I3 proven, not promised). (WS4-v4)
+- D40: Darbaan enforces I12 at the Dexie DBCore level — locked mode rejects story-table mutations no matter
+  the code path; infra caches stay writable. Fresh browsers seed the FICTIONAL demo persona (real PII out of
+  the public seed; owner seed is a lazy chunk restored under Owner Mode); backups are AES-256-GCM with the
+  GCM tag as the integrity check. (WS5-v4)
+- D41: Compile Quality is a rubric over CRAFT EXECUTION, never an "ATS score" (I9). Gap-vs-choice itemization
+  is the core: points dock only for what the compile could have done better; what the ledger cannot prove is
+  a Gap Note item. Golden packets 100/100 with honest remainders. (WS1-v4)
+- D42: Lighthouse desktop 99/100/100; mobile-sim 83 (slow-4G LCP = SPA cold-load floor; FCP 1.8s, CLS 0.006,
+  TBT 140ms after static-splash + parallel boot). Stated plainly, not gamed — SSR is out of scope for a
+  local-first app. (WS7-v4)
+- D43: v4 "The Ustaad Update" sealed 12-Jul-2026 — 231/231 gates, I1–I13 enforced, THE APP IS FINAL FORM.
+  Future change arrives as runtime DATA (library versions, prompts-as-config, budgets, watchlists), never code.

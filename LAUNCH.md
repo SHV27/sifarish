@@ -136,3 +136,39 @@ Live: https://sifarish-shv-s-projects.vercel.app · Code: github.com/SHV27/sifar
 #AI #AgenticAI #JobSearch #BuildInPublic #MachineLearning
 
 ---
+
+---
+
+## v4 LinkedIn post — "The Ustaad Update · Final Form" (Shaurya's voice)
+
+---
+
+**My hiring agent studied the best resumes on the internet, argues with me about mine, watches my inbox, and still refuses to lie. It's sealed. Now it's my turn.**
+
+Four sessions. One rule the whole way: *compile truth, draft everything, send nothing.*
+
+v1 made it unable to lie — every resume line is compiled from evidence, and a parse-back test proves the ATS reads exactly what I wrote.
+v2 gave it eyes — lawful multi-source discovery, hiring signals, cited company research.
+v3 gave it a brain — every casting call and angle has a written rationale I can read and overrule.
+
+This week, v4 — the final form:
+
+→ **It trained on the masters.** 42 cited sources — Google's XYZ formula, the Ladders eye-tracking study, Stanford/Harvard/Berkeley career-center guides, multi-ATS parser tests — distilled into a living craft library. Every compile now shows an honest Compile Quality score with the missing points *itemized*: this one's an evidence gap, that one's a deliberate choice. Never an "ATS score guarantee" — those don't exist, and any tool that promises one is lying to you.
+
+→ **I can argue with it.** "GLOAMING aage kar. Ye le link. Thoda technical tone." My instinct becomes structured edit operations behind diff cards — and every one still passes through the same compiler and gates. I asked it to add Kubernetes (I don't know Kubernetes). It refused, and filed the gap in my learning radar instead.
+
+→ **It watches my mailbox.** Read-only Gmail scope — sending is structurally impossible — and replies from companies in my pipeline become cards with suggested stage moves I confirm.
+
+→ **It locked the door and opened a window.** The public URL is a read-only showcase on a demo persona. My real ledger lives in my browser and an encrypted backup. Owner Mode is a passcode; mutations are blocked at the database layer, not the button layer.
+
+→ **It tells me what to learn.** Taleem Radar ranks the gap between what the market's JDs demand and what my ledger can prove — with the actual job posts as receipts.
+
+231 automated gates. Zero console errors. And the seal: from today, this product changes through *data* — library updates, ledger entries, watchlists — never code.
+
+It studied the best. It argues from evidence. It cannot lie on my behalf.
+
+Now it's my turn to ship the work that fills its ledger.
+
+Built with Claude Code. Live link in comments.
+
+#AIEngineering #AgenticAI #BuildInPublic #JobSearch

@@ -20,6 +20,21 @@
 > filled** (a letter sendable to two companies is a failed letter). Every LLM call is cached, budgeted,
 > two-tier, and heuristic-fallback-safe — the **Dimaag Ledger** shows every token. Still zero-key functional.
 
+> **v4 · The Ustaad Update (FINAL FORM — sealed)** — the tailor trained on the best craft the open
+> internet holds. The **Ustaad Library** (42 cited sources: Google's XYZ formula, the Ladders eye-tracking
+> study, Stanford/Berkeley/Harvard career-center guides, multi-ATS parser tests…) lives as versioned,
+> dated, Pulse-refreshable **data** (I13) and teaches every Darzi pass; every compile carries an honest
+> **Compile Quality** rubric (never an "ATS score") with each missing point itemized as an evidence gap or
+> a deliberate choice. Talk to the tailor in the **Baithak** — Hinglish welcome — and instinct becomes
+> structured EditOps behind ✓/✗ diff cards; asking it to claim what you haven't done gets a refusal and a
+> Gap Note (I11: conversation cannot bypass the compiler). **Guru v3** knows the map as well as the man:
+> cited hiring-path briefs, a vision-alignment guardrail (with a regression test for the one time it
+> drifted), a 30-conversation eval. **Dak Khana** watches the inbox on `gmail.readonly` — a scope that
+> makes sending structurally impossible. **Darbaan** locks every mutation behind Owner Mode *at the
+> database level*; the public URL is a read-only showcase on a fictional demo persona, and the real ledger
+> travels only as an AES-256-GCM encrypted backup. **Taleem Radar** ranks the gap between market demand
+> and the ledger, with receipts. **231/231 gates. Sealed: future change = data, not code.**
+
 SIFARISH is a personal hiring agent for one candidate — a 3rd-year CSE student hunting a
 compulsory AI-engineering internship in a market where **91% of recruiters now actively hunt
 fabricated resumes** and **pretty resumes die in ATS parsers**. It collapses hours of per-company
@@ -111,6 +126,27 @@ compounds weekly *with real shipped work* — and the strength meter only moves 
 - **Vision Engine** — edit your dream; the app derives hunt queries + role archetypes (with reasons) that
   you confirm. The hunt flows from the vision.
 
+### v4 — The Ustaad (mastery, conversation, vigilance, permanence)
+
+12. **Ustaad Library** (उस्ताद · the master) — resume craft as *data*: 42 cited sources distilled into 18
+    patterns, 6 archetype guides (section order per reviewer), and 3 hiring-path briefs. Consulted by every
+    Darzi pass, cited in every rationale, staleness-flagged, Pulse-refreshable (I13). Honesty rule: no
+    "selected-at-company-X database" is pretended to exist — craft patterns with receipts, nothing more.
+13. **Darzi Baithak** (बैठक · the sitting) — a chat dock on the packet: "GLOAMING aage kar", "ye le link",
+    "thoda technical tone". Utterances become proposed **EditOps** rendered as diff cards (before/after +
+    the invariants each touches); ✓ runs them through the same compiler, red-team, and gates as any input.
+    Links are liveness-probed; unevidenced claims are refused with a Gap Note. **Compile Quality** shows
+    the honest craft score with every missing point itemized.
+14. **Dak Khana** (डाक-ख़ाना · the post office) — read-only Gmail vigilance: replies from pipeline
+    companies become "📬 ne jawab diya" cards with owner-confirmed stage suggestions; follow-up nudges
+    auto-clear. `gmail.readonly` is the only scope in the codebase — a source-grep gate proves it.
+15. **Darbaan** (दरबान · the doorkeeper) — Owner Mode passcode (PBKDF2, hash stored locally); without it
+    the app is **Darshak Mode**: a read-only showcase on a fictional demo persona, enforced at the Dexie
+    DBCore level. One-click AES-256-GCM encrypted export/import keeps the real ledger immortal.
+16. **Taleem Radar** (तालीम · the education) — aggregates keyword demand across every JD seen (90 days),
+    subtracts what the ledger can prove, and ranks the gaps by demand × vision-fit — each with the jobs
+    that asked (cited), a first resource, and one-tap honest in-forge tracking.
+
 ## The invariants (Referee-enforced, in the test suite)
 
 - **I1** No orphan claims — every compiled content line carries `ledgerIds`; the renderer refuses uncited prose.
@@ -123,6 +159,9 @@ compounds weekly *with real shipped work* — and the strength meter only moves 
 - **I8** Budget honesty — every metered API (Tavily/JSearch/Groq) has a visible monthly + per-run cap; sweeps never overspend, they degrade to keyless lanes.
 - **I9** No guarantee language — "guaranteed", "assured selection", "100% placement" are banned in UI, Guru replies, and documents. The app maximizes probability and says exactly that. I3 extends to Guru/Khabri: discovery via lawful APIs only, no auto-fill, no auto-send.
 - **I10** Reasoned decisions — every consequential choice (casting, angle, letter strategy, hunt derivation, signature) stores an inspectable rationale `{options, criteria, choice, why, confidence, evidence}`. A decision without a Why is a bug. Rationales are honest about uncertainty.
+- **I11** Conversation cannot bypass the compiler — Baithak/Guru chat produces *proposed structured EditOps* that pass through the same pipeline, guards, and gates as any input. Natural language is an input method, never a backdoor.
+- **I12** Owner-only mutation — every mutating action requires Owner Mode; the block lives in the database middleware, not in button logic. Public visitors get a read-only showcase on demo data.
+- **I13** The library is data — all craft knowledge (patterns, briefs, banned phrases, exemplars) is versioned, dated, cited JSON, refreshable at runtime by Pulse. The structural guarantee of evergreen-ness.
 
 The LLM polish pass (optional, behind a server-side key) is held to I1 too: a deterministic
 **fact-drift guard** rejects any rephrase that introduces a new number, tool, or skill — keeping the
@@ -131,7 +170,8 @@ compiled truth as the floor. The Guru's honesty-router intercepts fabrication-ba
 
 ## Gate results
 
-All gates run in `npm run gates` (Vitest). Latest: **145/145 green** (65 v1 + 46 v2 + 34 v3).
+All gates run in `npm run gates` (Vitest). Latest: **231/231 green** (65 v1 + 46 v2 + 35 v3 + 85 v4:
+ustaad 15 · baithak 22 · guru-v3 20 · dak 9 · darbaan 13 · taleem 6).
 
 | Gate | Target | Status |
 |---|---|---|
@@ -172,17 +212,23 @@ composed cited cover letter, and the Dimaag Ledger tracking every token — zero
 Vite 8 · React 19 · TypeScript · Tailwind 4 · Dexie (IndexedDB, offline-first) · pdf-lib (true
 text-layer PDF, drawn line-by-line so text order is deterministic) · docx · pdfjs-dist (parse-back) ·
 Vercel edge functions (`/api/{polish,dimaag,guru,intel,pulse,khabri/*}` — Groq two-tier
-[gpt-oss-120b + llama-3.1-8b], Tavily, JSearch/OpenWeb Ninja; every one keyless-fallback-safe) ·
-Vitest + Playwright.
+[gpt-oss-120b + gpt-oss-20b, migrated ahead of Groq's Aug-2026 llama shutdown], Tavily,
+JSearch/OpenWeb Ninja; every one keyless-fallback-safe) · Google Identity Services (`gmail.readonly`,
+token in memory) · WebCrypto (PBKDF2 + AES-256-GCM for the owner lock and backups) · Vitest + Playwright.
 
-## Final Form
+## Final Form — the seal
 
-**SIFARISH is feature-complete.** Three sessions built it: v1 made it *unable to lie* (evidence-compiled
-resumes, parse-back-tested), v2 gave it *eyes* (lawful multi-source discovery + a hiring-signal radar +
-cited company intel + a conversational Guru), and v3 gave it a *brain* (a reasoning core that weighs every
-choice and writes down its reasons where you can read, question, and overrule them). Everything from here is
-**content — the ledger, the vision, the keys — never code.** The resume wins the interview call; Shaurya
-wins the room.
+**SIFARISH is sealed.** Four sessions built it: v1 made it *unable to lie* (evidence-compiled,
+parse-back-tested), v2 gave it *eyes* (lawful discovery + signals + cited intel + the Guru), v3 gave it a
+*brain* (a reasoning core that writes down its reasons where you can read, question, and overrule them),
+and v4 gave it *mastery and permanence* — a tailor trained on the best craft the open internet holds, who
+argues from evidence in the Baithak; a sage who knows the man and the map; a watchman on the mailbox; a
+locked door with a public window.
+
+> **Future change = data, not code.** Ledger entries, the Vision Profile, watchlists, budgets, and
+> Pulse-proposed library updates are the only moving parts — all confirmed inside the app. No software is
+> literally eternal; what this architecture guarantees is that staying current never again requires
+> opening an editor.
 
 ## Run it
 
@@ -200,9 +246,12 @@ limits: optional server-side `GITHUB_PAT`.
 
 ## Make it yours
 
-The entire profile lives in [`seed/ledger.seed.json`](seed/ledger.seed.json). Replace the identity,
-entries, and Voice Bank samples with your own — the app self-seeds on first open. Real contact details
-belong on a resume, so they live in plaintext there by design.
+A fresh browser self-seeds with the fictional demo persona in
+[`seed/demo.seed.json`](seed/demo.seed.json) and opens as a read-only showcase (Darbaan). To make it
+yours: set an Owner Mode passcode (header 🔒), then either edit the ledger in-app or replace the demo
+seed with your own profile. The owner's profile ships separately in `seed/ledger.seed.json` (loaded only
+via Settings → Darbaan → *load owner seed*); real contact details belong on a resume, so that file keeps
+them in plaintext by design.
 
 ## Art direction — "Ink & Appointment"
 
