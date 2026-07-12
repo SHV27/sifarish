@@ -8,13 +8,47 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23F7F2E7'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='%23B3372F' font-family='serif' font-weight='bold'>सि</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonts load without blocking first paint (media swap on load); system-serif renders first. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@500;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@500;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Static shell: paints before any JS so the first contentful paint is instant even on
+         slow mobile. React replaces it wholesale (no layout shift — same box, same position). -->
+    <style>
+      html { background: #f7f2e7; }
+      .boot-splash { text-align: center; padding: 12vh 24px 0; }
+      .boot-splash h1 {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-weight: 900;
+        font-size: clamp(40px, 8vw, 64px);
+        letter-spacing: 0.01em;
+        color: #1b2a4a;
+        margin: 0 0 8px;
+      }
+      .boot-splash p {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 14px;
+        color: #47536e;
+        margin: 0;
+      }
+    </style>
+    <div id="root">
+      <div class="boot-splash">
+        <h1>SIFARISH · सिफ़ारिश</h1>
+        <p>Compile truth. Draft everything. Send nothing. — opening the daftar…</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

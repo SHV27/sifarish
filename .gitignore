@@ -15,3 +15,5 @@ screenshots/
 console-report.json
 
 .vercel
+
+lighthouse*.json
