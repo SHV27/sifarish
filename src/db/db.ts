@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
+import { DarbaanLockedError, mutationAllowed } from '../lib/darbaan/lock'
 import type {
   LedgerEntry,
   Identity,
@@ -82,3 +83,27 @@ export class SifarishDB extends Dexie {
 }
 
 export const db = new SifarishDB()
+
+// DARBAAN (I12), enforced at the DBCore level — structural impossibility beats vigilance:
+// in Darshak mode every mutation to a story table is rejected at the database, no matter
+// which button, chat, or code path asked for it. Infra caches stay writable so the showcase
+// itself still works.
+db.use({
+  stack: 'dbcore',
+  name: 'darbaan',
+  create(down) {
+    return {
+      ...down,
+      table(name: string) {
+        const t = down.table(name)
+        return {
+          ...t,
+          mutate(req) {
+            if (!mutationAllowed(name)) return Promise.reject(new DarbaanLockedError(name))
+            return t.mutate(req)
+          },
+        }
+      },
+    }
+  },
+})

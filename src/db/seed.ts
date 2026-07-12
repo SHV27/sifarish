@@ -1,5 +1,10 @@
 import { db } from './db'
-import seedData from '../../seed/ledger.seed.json'
+// DARBAAN (P16): a fresh browser is seeded with the FICTIONAL demo persona — a public
+// visitor never receives real personal data. The owner's real ledger lives in his own
+// browser + his encrypted backup (Settings → Darbaan), restorable via loadOwnerSeed().
+import seedData from '../../seed/demo.seed.json'
+import ownerSeedData from '../../seed/ledger.seed.json'
+import { withSeedAllowance } from '../lib/darbaan/lock'
 import type { Identity, LedgerEntry, Settings, VisionProfile, VoiceBank } from '../types'
 import { DEFAULT_RUBRIC } from '../lib/radar/rubric'
 import { WATCHLIST_SEED } from '../lib/radar/watchlist.seed'
@@ -51,30 +56,47 @@ export async function seedIfEmpty(): Promise<boolean> {
   }
 
   const mk = monthKey()
-  await db.transaction(
-    'rw',
-    [db.ledger, db.identity, db.voicebank, db.settings, db.watchlist, db.savedHunts, db.budgets],
-    async () => {
-      await db.ledger.bulkPut(entries)
-      await db.identity.put(identity)
-      await db.voicebank.put(voice)
-      await db.settings.put(settings)
-      await db.watchlist.bulkPut(WATCHLIST_SEED)
-      await db.savedHunts.bulkPut(SEED_HUNTS)
-      await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
-    },
+  await withSeedAllowance(() =>
+    db.transaction(
+      'rw',
+      [db.ledger, db.identity, db.voicebank, db.settings, db.watchlist, db.savedHunts, db.budgets],
+      async () => {
+        await db.ledger.bulkPut(entries)
+        await db.identity.put(identity)
+        await db.voicebank.put(voice)
+        await db.settings.put(settings)
+        await db.watchlist.bulkPut(WATCHLIST_SEED)
+        await db.savedHunts.bulkPut(SEED_HUNTS)
+        await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
+      },
+    ),
   )
   return true
+}
+
+/** Owner-only: replace the demo persona with the real owner seed (Darbaan-gated by the db). */
+export async function loadOwnerSeed(): Promise<void> {
+  const entries = ownerSeedData.entries as unknown as LedgerEntry[]
+  const identity = ownerSeedData.identity as Identity
+  const voice = ownerSeedData.voiceBank as VoiceBank
+  await db.transaction('rw', [db.ledger, db.identity, db.voicebank], async () => {
+    await db.ledger.clear()
+    await db.ledger.bulkPut(entries)
+    await db.identity.put(identity)
+    await db.voicebank.put(voice)
+  })
 }
 
 /** For already-onboarded users upgrading to v2: backfill new tables without a reseed. */
 export async function backfillV2(): Promise<void> {
   const s = await db.settings.get('app')
   if (!s) return
-  if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
-  if ((await db.budgets.count()) === 0) {
-    const mk = monthKey()
-    await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
-  }
-  if (!s.visionProfile) await db.settings.update('app', { visionProfile: DEFAULT_VISION })
+  await withSeedAllowance(async () => {
+    if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
+    if ((await db.budgets.count()) === 0) {
+      const mk = monthKey()
+      await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
+    }
+    if (!s.visionProfile) await db.settings.update('app', { visionProfile: DEFAULT_VISION })
+  })
 }

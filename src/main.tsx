@@ -4,6 +4,9 @@ import './styles/tokens.css'
 import App from './App'
 import { seedIfEmpty, backfillV2 } from './db/seed'
 import { loadLibraryOverride } from './lib/ustaad/library'
+import { restoreDarbaan } from './lib/darbaan/lock'
+
+restoreDarbaan() // Darbaan: per-device Owner Mode unlock survives reloads; visitors stay in Darshak
 
 seedIfEmpty()
   .then(() => backfillV2())

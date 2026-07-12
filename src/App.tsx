@@ -10,6 +10,7 @@ import { Morcha } from './screens/Morcha'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { Onboarding } from './screens/Onboarding'
 import { HeaderStrip } from './components/HeaderStrip'
+import DarbaanControl, { DarshakBanner, useDarbaan } from './components/DarbaanControl'
 
 export type Screen = 'shelf' | 'khabri' | 'radar' | 'packet' | 'guru' | 'morcha' | 'settings'
 
@@ -27,6 +28,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('shelf')
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const settings = useLiveQuery(() => db.settings.get('app'))
+  const owner = useDarbaan()
 
   const openPacket = useCallback((jobId: string) => {
     setActiveJobId(jobId)
@@ -36,10 +38,11 @@ export default function App() {
   // Autopilot: keep discovery + market pulse current in the background (budget-capped; human
   // still confirms every change). Runs once per session, only when due. The app stays present-tense.
   useEffect(() => {
-    if (settings?.onboarded) {
+    // Autopilot mutates jobs/settings — Owner Mode only (I12); the showcase never self-mutates.
+    if (settings?.onboarded && owner) {
       import('./lib/autopilot').then((m) => m.runAutopilot()).catch(() => {})
     }
-  }, [settings?.onboarded])
+  }, [settings?.onboarded, owner])
 
   // Keyboard map: 1–5 switch screens (never while typing in a field)
   useEffect(() => {
@@ -54,10 +57,14 @@ export default function App() {
   }, [])
 
   if (settings === undefined) return null // Dexie warming up; sub-frame flash only
-  if (!settings?.onboarded) return <Onboarding onDone={openPacket} />
+  // Onboarding writes data → Owner Mode only. A visitor (Darshak) skips straight to the
+  // read-only showcase on the demo seed — the guided tour IS the app itself.
+  if (!settings?.onboarded && owner) return <Onboarding onDone={openPacket} />
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col">
+      <DarshakBanner />
+      <div className="flex-1 flex min-h-0">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-ink focus:text-paper focus:px-3 focus:py-2"
@@ -101,7 +108,12 @@ export default function App() {
 
       {/* Main */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <HeaderStrip />
+        <div className="flex items-center gap-3 border-b border-paper-edge pr-4">
+          <div className="flex-1 min-w-0">
+            <HeaderStrip />
+          </div>
+          <DarbaanControl />
+        </div>
         <main id="main" className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
           {screen === 'shelf' && <Shelf />}
           {screen === 'khabri' && <Khabri onOpenRadar={() => setScreen('radar')} />}
@@ -111,6 +123,7 @@ export default function App() {
           {screen === 'morcha' && <Morcha onOpenPacket={openPacket} />}
           {screen === 'settings' && <SettingsScreen />}
         </main>
+      </div>
       </div>
     </div>
   )
