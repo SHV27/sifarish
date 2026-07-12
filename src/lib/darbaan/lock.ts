@@ -94,18 +94,90 @@ export function lock(): void {
   notify()
 }
 
-/** Restore per-device unlock at boot. */
+/** Restore per-device unlock at boot: remote sessions need their token, local ones their record. */
 export function restoreDarbaan(): void {
-  ownerUnlocked = hasPasscode() && storage()?.getItem(UNLOCK_KEY) === '1'
+  const unlocked = storage()?.getItem(UNLOCK_KEY) === '1'
+  ownerUnlocked = unlocked && (getApiToken() !== null || hasPasscode())
+}
+
+/** Owner check. Ownership is granted ONLY by `authenticate()` — server-verified when the
+ *  deployment has SIFARISH_OWNER_PASSCODE set (D46), local-passcode only for self-hosted/dev. */
+export function isOwner(): boolean {
+  return ownerUnlocked
+}
+
+// ---------------- owner API token (grants the metered endpoints) ----------------
+
+const TOKEN_KEY = 'sifarish.apitoken'
+
+export function getApiToken(): string | null {
+  return storage()?.getItem(TOKEN_KEY) ?? null
+}
+
+export function setApiToken(token: string): void {
+  if (token) storage()?.setItem(TOKEN_KEY, token)
+  else storage()?.removeItem(TOKEN_KEY)
+}
+
+// ---------------- authentication (D46 — the server decides who the owner is) ----------------
+
+export type GateMode = 'remote' | 'local'
+
+/** Is this deployment owner-locked server-side? (fresh dev/preview/self-hosted → 'local') */
+export async function gateMode(): Promise<GateMode> {
+  try {
+    const r = await fetch('/api/darbaan')
+    if (r.ok) {
+      const d = (await r.json()) as { configured?: boolean }
+      if (d.configured) return 'remote'
+    }
+  } catch {
+    /* no serverless here (vite dev / preview) → local */
+  }
+  return 'local'
 }
 
 /**
- * Owner check. A browser with NO passcode record is a fresh/visitor browser: it runs in
- * Darshak mode until someone sets a passcode ("Enter Owner Mode" → first-run setup). That
- * visitor owns only their local demo copy — stated honestly in the UI.
+ * The ONLY door into Owner Mode. Remote-first: the passcode is verified by /api/darbaan
+ * against the server env — a stranger can never "set a new lock", because the lock does not
+ * live in their browser. Falls back to the local PBKDF2 flow only when the deployment has no
+ * server secret (self-hosted clones, dev, preview).
+ *
+ * `confirm` is only used by the local first-run setup; reason 'local-setup' tells the UI to
+ * show the confirm field.
  */
-export function isOwner(): boolean {
-  return ownerUnlocked
+export async function authenticate(passcode: string, confirm?: string): Promise<{ ok: boolean; reason?: string }> {
+  if (!passcode) return { ok: false, reason: 'Enter the owner code.' }
+  try {
+    const r = await fetch('/api/darbaan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passcode }),
+    })
+    if (r.ok) {
+      const d = (await r.json()) as { configured?: boolean; ok?: boolean; token?: string }
+      if (d.configured !== false) {
+        if (d.ok && d.token) {
+          setApiToken(d.token)
+          ownerUnlocked = true
+          storage()?.setItem(UNLOCK_KEY, '1')
+          notify()
+          return { ok: true }
+        }
+        return { ok: false, reason: 'Wrong owner code.' }
+      }
+    }
+  } catch {
+    /* endpoint unreachable → local fallback below */
+  }
+
+  // Local fallback (no server secret): self-hosted users still get an owner lock.
+  if (hasPasscode()) {
+    return (await unlock(passcode)) ? { ok: true } : { ok: false, reason: 'Wrong passcode.' }
+  }
+  if (confirm === undefined) return { ok: false, reason: 'local-setup' }
+  if (passcode !== confirm) return { ok: false, reason: 'Passcodes do not match.' }
+  return setPasscode(passcode)
 }
 
 export class DarbaanLockedError extends Error {

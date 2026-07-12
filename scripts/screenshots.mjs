@@ -85,13 +85,18 @@ try {
   await page.reload({ waitUntil: 'networkidle' })
   await sleep(800)
 
-  // --- Darshak Mode (v4): a fresh browser is the read-only showcase on the demo persona ---
-  await shoot(page, '0-darshak-showcase', '(public showcase, demo seed)')
+  // --- The Gate (D46): every fresh browser chooses its door ---
+  await shoot(page, '0-gate', '(owner vs demo gate)')
+  await page.getByRole('button', { name: /show me the demo/i }).click()
+  await sleep(600)
+  await shoot(page, '0-darshak-showcase', '(demo mode, fictional persona)')
 
-  // --- Owner Mode: first unlock sets the passcode (P16) ---
+  // --- Owner Mode via the gate. Local preview has no server secret → local first-run flow ---
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.getByRole('button', { name: /owner mode/i }).click()
-  await sleep(300)
+  await sleep(400)
+  await page.getByRole('button', { name: /i am the owner/i }).click()
+  await sleep(400)
   await page.getByLabel('Passcode', { exact: true }).fill('screenshot-run')
   await page.getByLabel('Confirm passcode').fill('screenshot-run')
   await page.getByRole('button', { name: /set & unlock/i }).click()

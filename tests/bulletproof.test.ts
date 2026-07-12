@@ -9,6 +9,7 @@ import { distillReadme } from '../src/lib/nabz/github'
 import dimaagHandler from '../api/dimaag'
 import guruHandler from '../api/guru'
 import polishHandler from '../api/polish'
+import darbaanHandler from '../api/darbaan'
 
 /**
  * v4.1 "bulletproof" gates (D44/D45):
@@ -136,6 +137,75 @@ describe('D44 — server-side request guard (origin wall + optional owner token)
       expect(body.keyless).toBe(true) // through the guard, into the (keyless) handler
     } finally {
       delete process.env.SIFARISH_OWNER_TOKEN
+    }
+  })
+})
+
+describe('D46 — ownership is server-verified (a stranger cannot become the owner)', () => {
+  const OWN_ORIGIN = 'https://sifarish-shv-s-projects.vercel.app'
+  const sha256Hex = async (s: string) => {
+    const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+    return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  }
+  const post = (handler: (req: Request) => Promise<Response>, body: unknown, origin = OWN_ORIGIN) =>
+    handler(
+      new Request('https://x/api/darbaan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Origin: origin },
+        body: JSON.stringify(body),
+      }),
+    )
+
+  it('unconfigured deployment says so (self-hosted clones use the local flow)', async () => {
+    delete process.env.SIFARISH_OWNER_PASSCODE
+    const g = await darbaanHandler(new Request('https://x/api/darbaan', { method: 'GET' }))
+    expect((await g.json()).configured).toBe(false)
+  })
+
+  it('wrong owner code is refused; right code returns the API token (= sha256 of the code)', async () => {
+    process.env.SIFARISH_OWNER_PASSCODE = 'sahi-code-123'
+    try {
+      const wrong = await post(darbaanHandler, { passcode: 'galat' })
+      const wb = await wrong.json()
+      expect(wb.ok).toBe(false)
+      expect(wb.token).toBeUndefined()
+      const right = await post(darbaanHandler, { passcode: 'sahi-code-123' })
+      const rb = await right.json()
+      expect(rb.ok).toBe(true)
+      expect(rb.token).toBe(await sha256Hex('sahi-code-123'))
+    } finally {
+      delete process.env.SIFARISH_OWNER_PASSCODE
+    }
+  }, 15000)
+
+  it('darbaan itself refuses foreign origins (no off-site brute-forcing)', async () => {
+    process.env.SIFARISH_OWNER_PASSCODE = 'sahi-code-123'
+    try {
+      const res = await post(darbaanHandler, { passcode: 'sahi-code-123' }, 'https://evil.example.com')
+      expect(res.status).toBe(403)
+    } finally {
+      delete process.env.SIFARISH_OWNER_PASSCODE
+    }
+  })
+
+  it('with the owner passcode set, metered APIs demand its hash — nothing else spends', async () => {
+    process.env.SIFARISH_OWNER_PASSCODE = 'sahi-code-123'
+    try {
+      const call = (token?: string) =>
+        dimaagHandler(
+          new Request('https://x/api/dimaag', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Origin: OWN_ORIGIN, ...(token ? { 'x-sifarish-token': token } : {}) },
+            body: JSON.stringify({ tier: 'classify', system: 's', user: 'u' }),
+          }),
+        )
+      expect((await (await call()).json()).reason).toBe('owner token required')
+      expect((await (await call('self-appointed-owner-token')).json()).reason).toBe('owner token required')
+      const good = await (await call(await sha256Hex('sahi-code-123'))).json()
+      expect(good.reason).toBeUndefined()
+      expect(good.keyless).toBe(true) // through the guard, into the (keyless-in-tests) handler
+    } finally {
+      delete process.env.SIFARISH_OWNER_PASSCODE
     }
   })
 })

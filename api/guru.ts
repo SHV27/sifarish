@@ -24,15 +24,22 @@ interface GuruRequest {
 }
 
 /**
- * v4.1 request guard (D44) — two walls, zero mandatory setup:
+ * v4.2 request guard (D46) — the owner is verified by the SERVER, never self-declared:
  *  1. Origin must be THIS app (its own vercel.app hosts or localhost dev). Browsers attach
  *     Origin to every POST and enforce preflight, so third-party sites and raw curl/scripts
  *     are refused before any key is touched.
- *  2. Optional full lockdown: set SIFARISH_OWNER_TOKEN in the Vercel env and paste the same
- *     value once in Settings — then a missing/wrong x-sifarish-token header degrades the call
- *     to the keyless path (the app keeps working; the key does not spend).
+ *  2. When SIFARISH_OWNER_PASSCODE is set (the production deployment), every metered call
+ *     must carry x-sifarish-token = SHA-256(passcode) — issued only by /api/darbaan after a
+ *     correct owner code. Missing/wrong token degrades to the keyless path: the app keeps
+ *     working for everyone, the keys spend for no one but the owner.
+ *  (Legacy SIFARISH_OWNER_TOKEN, if set, is honored as a raw shared token.)
  */
-function guardRequest(req: Request): Response | null {
+async function sha256Hex(s: string): Promise<string> {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function guardRequest(req: Request): Promise<Response | null> {
   const origin = req.headers.get('origin') ?? ''
   let host = ''
   try {
@@ -48,8 +55,13 @@ function guardRequest(req: Request): Response | null {
     host === 'sifarish-shv-s-projects.vercel.app' ||
     host.endsWith('-shv-s-projects.vercel.app')
   if (!originOk) return json({ error: 'forbidden' }, 403)
-  const required = process.env.SIFARISH_OWNER_TOKEN
-  if (required && req.headers.get('x-sifarish-token') !== required) {
+  const header = req.headers.get('x-sifarish-token') ?? ''
+  const legacy = process.env.SIFARISH_OWNER_TOKEN
+  if (legacy) {
+    return header === legacy ? null : json({ keyless: true, reason: 'owner token required' }, 200)
+  }
+  const passcode = process.env.SIFARISH_OWNER_PASSCODE
+  if (passcode && header !== (await sha256Hex(passcode))) {
     return json({ keyless: true, reason: 'owner token required' }, 200)
   }
   return null
@@ -57,7 +69,7 @@ function guardRequest(req: Request): Response | null {
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
-  const guarded = guardRequest(req)
+  const guarded = await guardRequest(req)
   if (guarded) return guarded
   const key = process.env.GROQ_API_KEY
   if (!key) return json({ keyless: true })
