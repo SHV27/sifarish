@@ -69,9 +69,10 @@ try {
       // /api/* 404s under `vite preview` are the DESIGNED keyless degradation (no serverless
       // functions locally; every caller falls back deterministically).
       if (url.pathname.startsWith('/api/')) apiMisses.push(url.pathname)
-      // GitHub's public API 60/hr rate limit is an EXTERNAL condition (hit only by repeated CI
-      // runs on one IP). Nabz backs off silently; in single-user production it never trips.
-      else if (url.hostname === 'api.github.com' && (res.status() === 403 || res.status() === 429)) externalRateLimits.push(url.pathname)
+      // GitHub public API conditions are EXTERNAL, not product defects: 403/429 = the 60/hr rate
+      // limit (repeated CI runs on one IP; Nabz backs off silently), and 404 on a /readme = a repo
+      // with no README (normal; Nabz just shows it without deep detail). Neither ever breaks the app.
+      else if (url.hostname === 'api.github.com' && [403, 429, 404].includes(res.status())) externalRateLimits.push(url.pathname)
       else consoleErrors.push(`HTTP ${res.status()} on ${res.url()}`)
     }
   })

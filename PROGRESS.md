@@ -4,7 +4,7 @@
 
 ## Status: Session 5 "The Pehchaan Repair" — CURED · RESEALED ✦
 
-Live: https://sifarish-shv-s-projects.vercel.app · **284/284 gates green** · 0 console errors ·
+Live: https://sifarish-shv-s-projects.vercel.app · **291/291 gates green** · 0 console errors ·
 build warning-free · all Four Proofs (§14) executed.
 
 ### Session 5 — the disease cured (one root cause, not four)
