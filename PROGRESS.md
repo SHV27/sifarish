@@ -94,8 +94,10 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
    URL as authorized JS origin. Client ID `166073365717-…googleusercontent.com` is already wired as the
    default (public-safe); set `VITE_GOOGLE_CLIENT_ID` only if it changes. In-app: Morcha → Connect Gmail
    (proceed through the "unverified app" Testing-mode warning).
-2. **Owner code (v4.2):** the app opens to a Gate — Owner Mode is verified against `SIFARISH_OWNER_PASSCODE` (already set in the Vercel env; change it there anytime, then redeploy). Then Settings → Darbaan →
-   **load owner seed** (fresh browsers carry the demo persona) and **export one encrypted backup**.
+2. **Owner code:** the app opens to a Gate — Owner Mode is verified against `SIFARISH_OWNER_PASSCODE`
+   (set in the Vercel env, currently `Vers@tile1`; change there + redeploy anytime). On first owner unlock
+   the owner vault **auto-seeds from the real profile** (Session 5 — no manual "load owner seed" step), and
+   an encrypted auto-backup runs after every edit. Optionally export one manual backup from Settings → Darbaan.
 3. Rotate API keys when convenient (they touched plaintext chat in earlier sessions — KEYS_GUIDE.md).
 
 ## THE SEAL
@@ -105,4 +107,5 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
 > architecture guarantees is that staying current never again requires opening an editor.
 
 ## ONE next action
-→ **None for the code — the seal holds.** For the owner: Owner Mode → load owner seed → export a backup.
+→ **None for the code — the seal holds (284/284, Four Proofs green).** For the owner: open the app →
+   🔑 Owner Mode → `Vers@tile1` → you're Shaurya, your real data, auto-backed-up. Then go get the internship.
