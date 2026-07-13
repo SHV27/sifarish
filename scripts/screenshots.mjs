@@ -100,7 +100,7 @@ try {
   await page.getByLabel('Passcode', { exact: true }).fill('screenshot-run')
   await page.getByLabel('Confirm passcode').fill('screenshot-run')
   await page.getByRole('button', { name: /set & unlock/i }).click()
-  await sleep(600)
+  await sleep(2800) // enterOwnerMode() reloads into the owner vault (Session 5)
 
   // --- Onboarding (owner, not yet onboarded) ---
   await shoot(page, '1-onboarding', '(confirm ledger)')
