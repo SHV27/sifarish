@@ -1,96 +1,27 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-
-// In-memory localStorage so the passcode record has somewhere to live under Node.
-class MemStorage {
-  private m = new Map<string, string>()
-  getItem(k: string) {
-    return this.m.get(k) ?? null
-  }
-  setItem(k: string, v: string) {
-    this.m.set(k, v)
-  }
-  removeItem(k: string) {
-    this.m.delete(k)
-  }
-  clear() {
-    this.m.clear()
-  }
-  get length() {
-    return this.m.size
-  }
-  key(i: number) {
-    return [...this.m.keys()][i] ?? null
-  }
-}
-;(globalThis as Record<string, unknown>).localStorage = new MemStorage()
-
-import { setPasscode, unlock, lock, isOwner, hasPasscode, mutationAllowed, DarbaanLockedError } from '../src/lib/darbaan/lock'
+import { setPasscode, hasPasscode } from '../src/lib/darbaan/lock'
 import { exportBackup, importBackup } from '../src/lib/darbaan/backup'
 import { db } from '../src/db/db'
 import { SEED_IDENTITY, SEED_LEDGER } from './helpers'
 
-/** P16 gates — Darbaan: owner lock, Darshak read-only, encrypted export/import, PII scrub. */
+/** P16 gates — Darbaan: local passcode storage + encrypted export/import + PII scrub.
+ *  (Identity resolution moved to pehchaan.test.ts; the vault to tijori.test.ts.) */
 
-describe('Darbaan passcode (PBKDF2, stored hash only)', () => {
-  beforeAll(async () => {
+describe('Darbaan local passcode (PBKDF2, stored hash only)', () => {
+  it('stores a salted hash, never the passcode', async () => {
     await setPasscode('sher-e-punjab')
-  })
-
-  it('stores a salted hash, never the passcode', () => {
     const raw = localStorage.getItem('sifarish.darbaan')!
     expect(raw).toBeTruthy()
     expect(raw).not.toContain('sher-e-punjab')
     const rec = JSON.parse(raw)
     expect(rec.iterations).toBeGreaterThanOrEqual(100_000)
     expect(rec.saltB64.length).toBeGreaterThan(10)
-  })
-
-  it('wrong passcode stays locked; right passcode unlocks; lock() locks', async () => {
-    lock()
-    expect(isOwner()).toBe(false)
-    expect(await unlock('wrong-pass')).toBe(false)
-    expect(isOwner()).toBe(false)
-    expect(await unlock('sher-e-punjab')).toBe(true)
-    expect(isOwner()).toBe(true)
-    lock()
-    expect(isOwner()).toBe(false)
-    await unlock('sher-e-punjab')
+    expect(hasPasscode()).toBe(true)
   })
 
   it('rejects passcodes under 4 characters', async () => {
     expect((await setPasscode('ab')).ok).toBe(false)
-  })
-
-  it('hasPasscode reflects the stored record', () => {
-    expect(hasPasscode()).toBe(true)
-  })
-})
-
-describe('Darshak mode — mutations blocked at the DATABASE level (I12, handler-level proof)', () => {
-  it('mutationAllowed: story tables locked, infra tables open', () => {
-    lock()
-    expect(mutationAllowed('ledger')).toBe(false)
-    expect(mutationAllowed('packets')).toBe(false)
-    expect(mutationAllowed('settings')).toBe(false)
-    expect(mutationAllowed('jobs')).toBe(false)
-    expect(mutationAllowed('dimaagCache')).toBe(true) // showcase still thinks
-    expect(mutationAllowed('budgets')).toBe(true) // and meters honestly
-  })
-
-  it('a locked write to the ledger rejects with DarbaanLockedError; unlocking allows it', async () => {
-    lock()
-    await expect(db.ledger.put(SEED_LEDGER[0])).rejects.toThrow(DarbaanLockedError)
-    await unlock('sher-e-punjab')
-    await expect(db.ledger.put(SEED_LEDGER[0])).resolves.toBeTruthy()
-  })
-
-  it('reads work fine while locked (the showcase is alive, not blank)', async () => {
-    await db.ledger.put(SEED_LEDGER[0])
-    lock()
-    const rows = await db.ledger.toArray()
-    expect(rows.length).toBeGreaterThan(0)
-    await unlock('sher-e-punjab')
   })
 })
 
@@ -134,18 +65,20 @@ describe('Encrypted export/import (round-trip + tamper chaos)', () => {
   })
 })
 
-describe('Public seed PII scan (the showcase never carries real personal data)', () => {
+describe('Public seed PII scan (the demo persona never carries real personal data)', () => {
   const REAL_PII = ['shaurya.verma2705', '9041523296', '94a607329', 'Shaurya Verma']
 
-  it('demo.seed.json (what a fresh browser receives) holds zero real PII', () => {
+  it('demo.seed.json (what a demo visitor receives) holds zero real PII', () => {
     const demo = readFileSync('seed/demo.seed.json', 'utf8')
     for (const pii of REAL_PII) {
       expect(demo.includes(pii), `demo seed leaks "${pii}"`).toBe(false)
     }
   })
 
-  it('the boot seeding path uses the demo seed', () => {
+  it('the demo vault is seeded from the demo seed; the owner vault from the real seed', () => {
     const seedTs = readFileSync('src/db/seed.ts', 'utf8')
-    expect(seedTs).toMatch(/seedData from '..\/..\/seed\/demo.seed.json'/)
+    expect(seedTs).toMatch(/demoSeed from '\.\.\/\.\.\/seed\/demo\.seed\.json'/)
+    // Owner seed is DYNAMICALLY imported (owner mode only) so demo visitors never download his PII.
+    expect(seedTs).toMatch(/await import\('\.\/ownerSeed'\)/)
   })
 })

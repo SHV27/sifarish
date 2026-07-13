@@ -256,6 +256,20 @@ export interface Packet {
   baithakLog?: BaithakLogEntry[]
 }
 
+// ---------- Tijori (persistence vault — Session 5) ----------
+
+/** An AES-256-GCM encrypted snapshot of the owner's data, in a table separate from the data
+ *  itself so it survives even if the main store is corrupted. Newest N are kept. */
+export interface BackupSnapshot {
+  id: string // ISO timestamp
+  at: string
+  saltB64: string
+  ivB64: string
+  cipherB64: string
+  /** Sanity display without decrypting: how many ledger entries the snapshot holds. */
+  ledgerCount: number
+}
+
 // ---------- Dak Khana (P15, I3 — read-only mail vigilance; sending is structurally impossible) ----------
 
 export interface DakCard {

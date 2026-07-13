@@ -1,20 +1,14 @@
-import { db } from './db'
 import ownerSeedData from '../../seed/ledger.seed.json'
 import type { Identity, LedgerEntry, VoiceBank } from '../types'
 
 /**
- * Owner-only: replace the demo persona with the real owner seed (Darbaan-gated by the db
- * middleware — a locked browser cannot run this). Lives in its own lazily-loaded module so
- * the owner's data never ships in the public entry bundle.
+ * The owner's real seed, isolated in its own module so it is DYNAMICALLY imported only in owner
+ * mode (see seed.ts). A demo visitor's browser never downloads this chunk → his PII stays off the
+ * public path. This module no longer mutates the DB — seeding is import-IF-EMPTY only (FIX-3: the
+ * old loadOwnerSeed() cleared the ledger on every click and destroyed edits).
  */
-export async function loadOwnerSeed(): Promise<void> {
-  const entries = ownerSeedData.entries as unknown as LedgerEntry[]
-  const identity = ownerSeedData.identity as Identity
-  const voice = ownerSeedData.voiceBank as VoiceBank
-  await db.transaction('rw', [db.ledger, db.identity, db.voicebank], async () => {
-    await db.ledger.clear()
-    await db.ledger.bulkPut(entries)
-    await db.identity.put(identity)
-    await db.voicebank.put(voice)
-  })
+export const OWNER_SEED = {
+  entries: ownerSeedData.entries as unknown as LedgerEntry[],
+  identity: ownerSeedData.identity as Identity,
+  voice: ownerSeedData.voiceBank as VoiceBank,
 }

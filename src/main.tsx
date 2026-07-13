@@ -4,22 +4,41 @@ import './styles/tokens.css'
 import App from './App'
 import { seedIfEmpty, backfillV2 } from './db/seed'
 import { loadLibraryOverride } from './lib/ustaad/library'
-import { restoreDarbaan } from './lib/darbaan/lock'
+import { requestDurableStorage, restoreOnEmptyIfNeeded } from './db/tijori'
+import { isOwnerMode } from './lib/pehchaan'
 
-restoreDarbaan() // Darbaan: per-device Owner Mode unlock survives reloads; visitors stay in Darshak
-
-// Boot pipeline runs in PARALLEL with the first render (seed time off the critical path —
-// Lighthouse LCP). Until it settles, React shows the same splash the static HTML painted,
-// so the swap is pixel-stable (zero layout shift).
+// PEHCHAAN has already resolved the mode synchronously (module load) and db.ts opened the right
+// vault. Boot pipeline runs in PARALLEL with the first render (seed off the critical path).
 let booted = false
 const bootListeners = new Set<() => void>()
-seedIfEmpty()
-  .then(() => backfillV2())
-  .then(() => loadLibraryOverride()) // Ustaad: an accepted Pulse library update wins over the bundled copy (I13)
-  .finally(() => {
-    booted = true
-    for (const l of bootListeners) l()
-  })
+
+async function boot() {
+  // Owner vault: request durable storage FIRST (the reproduced data-loss root — FIX-2), then
+  // restore from an encrypted backup if the store was evicted/emptied, before seeding.
+  if (isOwnerMode()) {
+    await requestDurableStorage()
+    await restoreOnEmptyIfNeeded()
+  }
+  await seedIfEmpty()
+  await backfillV2()
+  await loadLibraryOverride() // Ustaad: an accepted Pulse library update wins over the bundled copy (I13)
+
+  // Auto-backup after owner edits (debounced) — his work is never one glitch from gone.
+  if (isOwnerMode()) {
+    const { onOwnerMutation } = await import('./db/db')
+    const { autoBackup } = await import('./db/tijori')
+    let timer: ReturnType<typeof setTimeout> | undefined
+    onOwnerMutation(() => {
+      clearTimeout(timer)
+      timer = setTimeout(() => void autoBackup(), 2500)
+    })
+  }
+}
+
+boot().finally(() => {
+  booted = true
+  for (const l of bootListeners) l()
+})
 
 function useBooted(): boolean {
   return useSyncExternalStore(

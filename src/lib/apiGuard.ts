@@ -1,19 +1,17 @@
-import { getApiToken, isOwner } from './darbaan/lock'
+import { getApiToken } from './darbaan/lock'
+import { isOwnerMode } from './pehchaan'
 
 /**
- * METERED-API GUARD (D44/D46) — "only the verified owner can spend."
+ * METERED-API GUARD (D44/D46, Session-5 rewire) — "only the verified owner can spend."
  *
  * Every client that can reach a keyed serverless endpoint (Groq / Tavily / JSearch) asks this
- * module first. Locked (Darshak/demo) browsers get `false` and take their deterministic
- * keyless path — a viral public URL can never spend a token of the owner's budget.
- *
- * Ownership itself is granted only by `authenticate()` (darbaan/lock.ts): server-verified
- * against SIFARISH_OWNER_PASSCODE. The token it issues (SHA-256 of the passcode) rides on
- * every metered call; the API functions refuse to spend without it. Belt AND suspenders:
- * even a tampered client state cannot spend, because the server checks the token again.
+ * first. In DEMO mode `meteredCallsAllowed()` is false → the deterministic keyless path runs, so
+ * a viral public URL can never spend a token. Ownership is PEHCHAAN's single answer; the
+ * server-issued token rides on every call and the API functions refuse to spend without it. Belt
+ * AND suspenders: even tampered client state cannot spend, because the server re-checks the token.
  */
 export function meteredCallsAllowed(): boolean {
-  return isOwner()
+  return isOwnerMode()
 }
 
 /** Headers for every metered /api call: JSON + the owner token when present. */

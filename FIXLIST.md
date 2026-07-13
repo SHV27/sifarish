@@ -1,29 +1,56 @@
-# FIXLIST.md — v3 WS0 Audit (08-Jul-2026)
+# FIXLIST.md — Session 5 "The Pehchaan Repair" (root-cause, 13-Jul-2026)
 
-Baseline: 111/111 gates green · typecheck clean · build clean · main bundle 134KB gzip (pdf/docx
-lazy-loaded, no chunk-size warning) · v2 live smoke passed with 0 console errors last session.
+Reproduced from a WIPED browser profile against the production build (Mandate 0). Each entry:
+symptom → PROVEN mechanism (file:line) → cure → the regression gate that will guard it.
 
-## P0 (blocking) — none found
-The app is in good shape entering v3. No broken states, no console errors, no dead code, no debt markers
-(`grep` for TODO/FIXME/@ts-ignore/console.log → clean), no `any` leaks, all invariant gates green.
+## THE ONE ROOT CAUSE (blast-radius insight, §14)
+All four reported symptoms are ONE disease: **there is a single Dexie store (`sifarish`) shared by
+owner and demo, seeded with the demo persona, and identity is a boolean flag — not a resolved
+identity.** When "who is here" is ambiguous, every symptom follows.
 
-## P1 (fix this session) — folded into v3 work
-- **[WS0] Two-tier model strategy** — pin `openai/gpt-oss-120b` (reasoning: decide/critique/casting/angle)
-  + `llama-3.1-8b-instant` (classification: archetype/extraction). Both verified live in JSON mode.
-  I8 budgets split per tier (a reasoning call costs more than a classify call).
-- **[WS0] Resource discipline** — every LLM call gets a content-hash cache key, a token cap, and a
-  deterministic fallback. Built into the Dimaag Core (WS1) by construction, surfaced in the Dimaag Ledger.
+## P0 — DATA LOSS + IDENTITY LEAK (blocking; his life's data)
 
-## P2 (optimization sweep — WS5)
-- **Radar score caching** — `scoreJob` (decodeJD + matchEvidence) runs for every `found` job inside a
-  `useMemo` keyed on `jobs`; tailoring flips `isNew` → full re-score. Cache score by
-  `job.id + rubric-hash` so only new/changed jobs recompute. (Perf, not correctness.)
-- **Jobs table growth** — each sweep adds up to ~100 `found` rows with no pruning; over many sweeps the
-  table grows unbounded. Add a "clear old untouched finds" action + auto-prune `found` jobs older than
-  N days that were never tailored. (Housekeeping.)
-- **Dexie `.toArray()` then in-memory filter** — fine at current scale; the score cache above removes the
-  only hot path. No index changes needed.
+- **FIX-1 · Owner greeted as "Arjun" (demo persona).** REPRODUCED: in owner mode
+  `identity.get('me').name === "Arjun Mishra (Demo)"`.
+  MECHANISM: `db.ts:50` opens ONE store `sifarish`; `seed.ts:5,38` seeds it from `demo.seed.json`;
+  `authenticate()` (`lock.ts:149`) only flips `ownerUnlocked=true` — it never loads the owner's real
+  data. Owner sees Arjun until the manual `loadOwnerSeed()` footgun.
+  CURE (WS1/WS2): TIJORI splits into `sifarish_owner` / `sifarish_demo`; PEHCHAAN mounts the owner
+  store in owner mode. Demo persona is physically in the demo DB → cannot appear in owner mode.
+  GATE: `owner-mode identity === Shaurya` and `demo persona never renders in owner mode`.
 
-## Verified live (Law 12)
-- Groq lineup (17 models); two-tier picks confirmed with JSON-mode + reasoning-token support on gpt-oss-120b.
-- Tavily / JSearch / GitHub PAT still valid (v2 live smoke last session).
+- **FIX-2 · Owner edits vanish on reopen.** REPRODUCED: `navigator.storage.persisted() === false`.
+  MECHANISM: durable storage was never requested (`persist()` absent everywhere), so IndexedDB is
+  best-effort and the browser evicts it under pressure / in some privacy modes = literal loss.
+  Compounded by `loadOwnerSeed()` (`ownerSeed.ts:15`) doing `ledger.clear()` — a re-click wipes edits.
+  CURE (WS2): call `navigator.storage.persist()` on first owner unlock; auto-backup (encrypted) after
+  edits to a separate `backups` store; restore-on-empty; seed-once (never clear owner data).
+  GATE (headline): owner edit → reload → **edit still present**; persist() requested; backup written;
+  restore-on-empty works.
+
+- **FIX-3 · loadOwnerSeed is a clobber footgun.** MECHANISM: `ownerSeed.ts:14-19` unconditionally
+  `clear()`s the owner ledger and reloads the pristine seed — every click destroys edits.
+  CURE (WS2): seeding is import-IF-EMPTY only; neuter the manual overwrite (import merges, never wipes).
+  GATE: seeding never overwrites existing owner entries.
+
+- **FIX-4 · Demo/owner store collision (PII leak + confusion).** MECHANISM: same `sifarish` store; a
+  visitor who picks Demo after an owner session (or vice versa) sees the other mode's data; the gate's
+  `sessionStorage` flag (`App.tsx`) doesn't switch stores.
+  CURE (WS2): two physical DBs; PEHCHAAN mounts exactly one; demo DB is reseeded/wiped without ever
+  reading the owner DB. GATE: demo seed cannot write the owner store (asserted).
+
+## P1 — recertify (were "done", must be re-proven not re-claimed, §14 RC2/RC4)
+
+- **FIX-5 · Zero-spend demo** — re-route every metered client through `usePehchaan().mode==='owner'`
+  (was `isOwner()`; same intent, must survive the rebuild). Money Proof automated.
+- **FIX-6 · Server Origin/token guard on all 7 functions** — unchanged in intent; re-verify live.
+
+## Volatile deps — re-verified live 13-Jul-2026 (Evergreen, §14)
+- Groq: `openai/gpt-oss-120b` + `openai/gpt-oss-20b` are the CURRENT non-deprecated production lineup
+  (verified against console.groq.com/docs/deprecations — they appear only as recommended replacements,
+  never as deprecated). Our code already uses exactly these. No migration due. The deprecated llama/qwen
+  models (shutdown 16-Aug/17-Jul-2026) are NOT referenced anywhere in `api/`.
+
+## Enhancements (depth, not new pillars) — after the cure is proven
+- ATELIER BAITHAK (talk to the letter, I11 extended) + the Sifarish Signature UI moment.
+- KHABRI deeper sweeps + INTEL Alignment Map (requirement→evidence, honest gaps → Taleem).

@@ -4,7 +4,7 @@ import { RUBRIC_LABELS } from '../lib/radar/rubric'
 import type { RubricWeights, VisionProfile } from '../types'
 import { ensureBudgets, monthKey } from '../lib/budget'
 import { deriveHunts, deriveArchetypes, type DerivedHunt } from '../lib/vision/derive'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getLibrary, staleSources } from '../lib/ustaad/library'
 import { useDarbaan } from '../components/DarbaanControl'
 import { GOOGLE_CLIENT_ID } from '../lib/dak/gis'
@@ -209,66 +209,108 @@ function DarbaanSection() {
     }
   }
 
-  const doOwnerSeed = async () => {
-    setBusy(true)
-    try {
-      const { loadOwnerSeed } = await import('../db/ownerSeed')
-      await loadOwnerSeed()
-      setNote('Owner seed loaded — the real ledger replaced the demo persona.')
-    } catch {
-      setNote('Owner Mode required.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <section className="dossier p-4 mb-5" aria-label="Darbaan — owner data">
       <h2 className="font-display font-semibold text-lg text-ink">
-        Darbaan <span className="font-devanagari text-sm text-stamp">दरबान</span>
+        Darbaan <span className="font-devanagari text-sm text-stamp">दरबान</span> · Tijori
       </h2>
       <p className="text-xs text-ink-soft mt-1 leading-relaxed">
-        Data is local-first: your real ledger lives only in this browser. Export one encrypted backup and keep
-        it — a browser reset then costs nothing. Public visitors see only the demo persona (I12).
+        Your real ledger lives in its own owner vault (separate from the demo store — they can never mix).
+        It is auto-backed-up after every edit, and durable storage is requested so nothing is evicted.
       </p>
       {!owner ? (
-        <p className="mt-2 text-xs font-mono text-ink-soft">🔒 Unlock Owner Mode (header) to export, import, or load the owner seed.</p>
+        <p className="mt-2 text-xs font-mono text-ink-soft">🔑 Unlock Owner Mode (header) to manage your vault.</p>
       ) : (
         <>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <input
-              type="password"
-              className="text-xs bg-paper-sunken px-3 py-2 rounded w-44"
-              placeholder="passcode (encryption key)"
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
-              aria-label="Backup passcode"
-            />
-            <button className="text-xs font-semibold bg-ink text-paper px-3 py-2 rounded disabled:opacity-50" disabled={busy} onClick={() => void doExport()}>
-              Export encrypted backup
-            </button>
-            <label className="text-xs font-semibold border border-ink text-ink px-3 py-2 rounded cursor-pointer">
-              Import backup
+          <TijoriVault />
+          <div className="mt-3 ledger-rule pt-3">
+            <p className="text-xs font-medium text-ink mb-1.5">Manual encrypted backup file (extra safety)</p>
+            <div className="flex flex-wrap items-center gap-2">
               <input
-                type="file"
-                accept="application/json"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) void doImport(f)
-                  e.target.value = ''
-                }}
+                type="password"
+                className="text-xs bg-paper-sunken px-3 py-2 rounded w-44"
+                placeholder="passcode (encryption key)"
+                value={pass}
+                onChange={(e) => setPass(e.target.value)}
+                aria-label="Backup passcode"
               />
-            </label>
-            <button className="text-xs text-ink-soft hover:underline disabled:opacity-50" disabled={busy} onClick={() => void doOwnerSeed()}>
-              load owner seed
-            </button>
+              <button className="text-xs font-semibold bg-ink text-paper px-3 py-2 rounded disabled:opacity-50" disabled={busy} onClick={() => void doExport()}>
+                Download encrypted backup
+              </button>
+              <label className="text-xs font-semibold border border-ink text-ink px-3 py-2 rounded cursor-pointer">
+                Import backup file
+                <input
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) void doImport(f)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            </div>
           </div>
           {note && <p className="mt-2 text-[11px] font-mono text-ink-soft">{note}</p>}
           <ApiTokenField />
         </>
       )}
     </section>
+  )
+}
+
+/** Tijori vault status: durable-storage state + in-app encrypted snapshots (auto + on-demand). */
+function TijoriVault() {
+  const [persisted, setPersisted] = useState<boolean | null>(null)
+  const [note, setNote] = useState('')
+  const backups = useLiveQuery(() => db.backups.orderBy('at').reverse().toArray()) ?? []
+  useEffect(() => {
+    void import('../db/tijori').then((m) => m.storagePersisted().then(setPersisted))
+  }, [])
+
+  const makeBackup = async () => {
+    const { autoBackup } = await import('../db/tijori')
+    const snap = await autoBackup()
+    setNote(snap ? `Snapshot saved (${snap.ledgerCount} ledger entries).` : 'Could not snapshot.')
+  }
+  const restore = async () => {
+    const { restoreFromLatest } = await import('../db/tijori')
+    const counts = await restoreFromLatest()
+    setNote(counts ? `Restored latest snapshot: ${Object.entries(counts).map(([t, n]) => `${t} ${n}`).join(', ')}.` : 'No snapshot to restore.')
+  }
+  const requestDurable = async () => {
+    const { requestDurableStorage } = await import('../db/tijori')
+    setPersisted(await requestDurableStorage())
+  }
+
+  return (
+    <div className="mt-3 grid sm:grid-cols-2 gap-3">
+      <div className="bg-paper-sunken/60 rounded p-3">
+        <p className="text-[11px] text-ink-soft">Storage durability</p>
+        {persisted === null ? (
+          <p className="text-xs font-mono text-ink-soft">checking…</p>
+        ) : persisted ? (
+          <p className="text-xs font-mono text-shipped">Persistent ✓ — the browser won't evict your data.</p>
+        ) : (
+          <div>
+            <p className="text-xs font-mono text-stamp">Best-effort — could be evicted.</p>
+            <button className="mt-1 text-[11px] font-semibold text-ink underline" onClick={() => void requestDurable()}>
+              request durable storage →
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="bg-paper-sunken/60 rounded p-3">
+        <p className="text-[11px] text-ink-soft">Auto-backups kept: <span className="font-mono text-ink">{backups.length}</span></p>
+        <p className="text-[10px] text-ink-faint">{backups[0] ? `latest ${new Date(backups[0].at).toLocaleString('en-IN')}` : 'none yet — edit something'}</p>
+        <div className="mt-1 flex gap-3">
+          <button className="text-[11px] font-semibold text-ink underline" onClick={() => void makeBackup()}>backup now</button>
+          <button className="text-[11px] font-semibold text-ink underline disabled:opacity-40" disabled={backups.length === 0} onClick={() => void restore()}>restore latest</button>
+        </div>
+      </div>
+      {note && <p className="sm:col-span-2 text-[11px] font-mono text-ink-soft">{note}</p>}
+    </div>
   )
 }
 

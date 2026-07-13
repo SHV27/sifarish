@@ -10,8 +10,9 @@ import { Morcha } from './screens/Morcha'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { Onboarding } from './screens/Onboarding'
 import { HeaderStrip } from './components/HeaderStrip'
-import DarbaanControl, { DarshakBanner, useDarbaan } from './components/DarbaanControl'
+import DarbaanControl, { DarshakBanner } from './components/DarbaanControl'
 import GateScreen from './components/GateScreen'
+import { usePehchaan, chooseDemoMode } from './lib/pehchaan'
 
 export type Screen = 'shelf' | 'khabri' | 'radar' | 'packet' | 'guru' | 'morcha' | 'settings'
 
@@ -29,31 +30,8 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('shelf')
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const settings = useLiveQuery(() => db.settings.get('app'))
-  const owner = useDarbaan()
-  // The Gate (D46): every non-owner session chooses its door — Owner (server-verified) or Demo.
-  const [demoChosen, setDemoChosen] = useState(() => {
-    try {
-      return sessionStorage.getItem('sifarish.gate') === 'demo'
-    } catch {
-      return false
-    }
-  })
-  const chooseDemo = useCallback(() => {
-    try {
-      sessionStorage.setItem('sifarish.gate', 'demo')
-    } catch {
-      /* session-only convenience */
-    }
-    setDemoChosen(true)
-  }, [])
-  const reopenGate = useCallback(() => {
-    try {
-      sessionStorage.removeItem('sifarish.gate')
-    } catch {
-      /* ditto */
-    }
-    setDemoChosen(false)
-  }, [])
+  const { mode, boot } = usePehchaan()
+  const owner = mode === 'owner'
 
   const openPacket = useCallback((jobId: string) => {
     setActiveJobId(jobId)
@@ -81,9 +59,9 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // The Gate first (PEHCHAAN boot state): undecided visitor picks Owner (server-verified) or Demo.
+  if (boot === 'gate') return <GateScreen onDemo={chooseDemoMode} />
   if (settings === undefined) return null // Dexie warming up; sub-frame flash only
-  // The Gate first (D46): Owner Mode is server-verified; Demo is the read-only showcase.
-  if (!owner && !demoChosen) return <GateScreen onDemo={chooseDemo} />
   // Onboarding writes data → Owner Mode only. A demo visitor skips straight to the
   // read-only showcase on the demo seed — the guided tour IS the app itself.
   if (!settings?.onboarded && owner) return <Onboarding onDone={openPacket} />
@@ -139,7 +117,7 @@ export default function App() {
           <div className="flex-1 min-w-0">
             <HeaderStrip />
           </div>
-          <DarbaanControl onGate={reopenGate} />
+          <DarbaanControl />
         </div>
         <main id="main" className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
           {screen === 'shelf' && <Shelf />}

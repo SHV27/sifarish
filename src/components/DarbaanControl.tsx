@@ -1,26 +1,25 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
-import { DarbaanLockedError, isOwner, lock, onDarbaanChange } from '../lib/darbaan/lock'
+import { useEffect, useState } from 'react'
+import { DarbaanLockedError } from '../db/db'
+import { usePehchaan, lockToGate } from '../lib/pehchaan'
 
-/** Subscribe React to the Darbaan lock state. */
+/** Backward-compatible hook name — the single source is PEHCHAAN. */
 export function useDarbaan(): boolean {
-  return useSyncExternalStore(onDarbaanChange, isOwner, () => false)
+  return usePehchaan().mode === 'owner'
 }
 
 /**
- * DARBAAN header control (P16, I12/D46). Authentication happens ONLY at the Gate
- * (server-verified owner code) — this control just locks, or routes back to the Gate.
- * A stranger has nothing to "set" here; the lock does not live in their browser.
+ * DARBAAN header control (Session 5). Authentication happens ONLY at the Gate (server-verified);
+ * this control just locks (→ gate) and surfaces any demo-mode write-block as a calm toast.
  */
-export default function DarbaanControl({ onGate }: { onGate: () => void }) {
+export default function DarbaanControl() {
   const owner = useDarbaan()
   const [toast, setToast] = useState('')
 
-  // Any blocked mutation anywhere in the app surfaces here as a calm toast, not a console error.
   useEffect(() => {
     const onRejection = (e: PromiseRejectionEvent) => {
       if (e.reason instanceof DarbaanLockedError || e.reason?.name === 'DarbaanLockedError') {
         e.preventDefault()
-        setToast('Demo mode is read-only — Owner Mode (verified) unlocks editing.')
+        setToast('Demo mode is read-only — this is the public showcase store.')
         setTimeout(() => setToast(''), 4000)
       }
     }
@@ -33,19 +32,13 @@ export default function DarbaanControl({ onGate }: { onGate: () => void }) {
       {owner ? (
         <button
           className="font-mono text-[11px] text-ink-soft hover:text-ink hover:underline"
-          onClick={() => {
-            lock()
-            onGate()
-          }}
-          title="Lock the app and return to the gate"
+          onClick={lockToGate}
+          title="Lock and return to the gate"
         >
           🔓 owner · lock
         </button>
       ) : (
-        <button
-          className="font-mono text-[11px] font-semibold text-ink border border-ink px-2 py-1 rounded hover:bg-ink hover:text-paper"
-          onClick={onGate}
-        >
+        <button className="font-mono text-[11px] font-semibold text-ink border border-ink px-2 py-1 rounded hover:bg-ink hover:text-paper" onClick={lockToGate}>
           🔑 Owner Mode
         </button>
       )}
@@ -59,18 +52,18 @@ export default function DarbaanControl({ onGate }: { onGate: () => void }) {
   )
 }
 
-/** The demo banner (Darshak Mode) — honest about what a visitor is seeing. */
+/** The demo banner (only in demo mode) — honest about what a visitor is seeing. */
 export function DarshakBanner() {
   const owner = useDarbaan()
   if (owner) return null
   return (
     <div className="bg-ink text-paper text-center text-[11px] px-3 py-1.5" role="note">
-      <strong>Demo Mode</strong> — SIFARISH on fictional data, read-only, spending nothing. Built by
+      <strong>Demo Mode</strong> — SIFARISH on a fictional persona, read-only, spending nothing. Built by
       Shaurya Verma (
       <a className="underline decoration-dotted" href="https://github.com/SHV27" target="_blank" rel="noreferrer">
         github.com/SHV27
       </a>
-      ). Data is local-first: this browser holds only the demo seed.
+      ). Your real data lives in a separate owner vault, never here.
     </div>
   )
 }

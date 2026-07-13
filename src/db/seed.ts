@@ -1,14 +1,15 @@
-import { db } from './db'
-// DARBAAN (P16): a fresh browser is seeded with the FICTIONAL demo persona — a public
-// visitor never receives real personal data. The owner's real ledger lives in his own
-// browser + his encrypted backup (Settings → Darbaan), restorable via loadOwnerSeed().
-import seedData from '../../seed/demo.seed.json'
-import { withSeedAllowance } from '../lib/darbaan/lock'
+import Dexie from 'dexie'
+import { db, withSeedAllowance } from './db'
+// A fresh DEMO store is seeded with the FICTIONAL persona (statically imported — it is public,
+// PII-free, and small). The OWNER store is seeded from the real seed, DYNAMICALLY imported only
+// in owner mode so a demo visitor never downloads it.
+import demoSeed from '../../seed/demo.seed.json'
 import type { Identity, LedgerEntry, Settings, VisionProfile, VoiceBank } from '../types'
 import { DEFAULT_RUBRIC } from '../lib/radar/rubric'
 import { WATCHLIST_SEED } from '../lib/radar/watchlist.seed'
 import { SEED_HUNTS } from '../lib/khabri/client'
 import { BUDGET_DEFAULTS, monthKey } from '../lib/budget'
+import { getMode } from '../lib/pehchaan'
 
 export const DEFAULT_VISION: VisionProfile = {
   dream:
@@ -34,16 +35,8 @@ export function isoWeekKey(d = new Date()): string {
   return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
 }
 
-/** Idempotent: seeds only when the ledger is empty. The app opens already knowing Shaurya. */
-export async function seedIfEmpty(): Promise<boolean> {
-  const count = await db.ledger.count()
-  if (count > 0) return false
-
-  const entries = seedData.entries as unknown as LedgerEntry[]
-  const identity = seedData.identity as Identity
-  const voice = seedData.voiceBank as VoiceBank
-
-  const settings: Settings = {
+function freshSettings(): Settings {
+  return {
     id: 'app',
     onboarded: false,
     rubric: DEFAULT_RUBRIC,
@@ -53,7 +46,94 @@ export async function seedIfEmpty(): Promise<boolean> {
     visionProfile: DEFAULT_VISION,
     rubricChangelog: [{ at: new Date().toISOString(), summary: 'Initial rubric (v1 defaults).' }],
   }
+}
 
+/** Resolve the seed for the ACTIVE vault: owner store → real seed (lazy), demo store → demo persona. */
+async function seedForActiveStore(): Promise<{ entries: LedgerEntry[]; identity: Identity; voice: VoiceBank }> {
+  if (getMode() === 'owner') {
+    const { OWNER_SEED } = await import('./ownerSeed')
+    return { entries: OWNER_SEED.entries, identity: OWNER_SEED.identity, voice: OWNER_SEED.voice }
+  }
+  return {
+    entries: demoSeed.entries as unknown as LedgerEntry[],
+    identity: demoSeed.identity as Identity,
+    voice: demoSeed.voiceBank as VoiceBank,
+  }
+}
+
+/**
+ * One-time migration (owner mode only): the pre-Session-5 build kept ONE store named `sifarish`.
+ * If it holds the owner's REAL data (identity looks like Shaurya, not the demo persona), move it
+ * into the new owner vault so nothing he did is lost. Demo-polluted old stores are ignored.
+ */
+async function migrateLegacyOwnerData(): Promise<boolean> {
+  try {
+    const exists = (await Dexie.exists('sifarish')) === true
+    if (!exists) return false
+    const legacy = new Dexie('sifarish')
+    // Open with whatever schema is there (dynamic) by declaring the tables we read.
+    legacy.version(5).stores({
+      ledger: 'id, kind, tier',
+      identity: 'id',
+      voicebank: 'id',
+      jobs: 'id',
+      packets: 'id',
+      watchlist: 'id',
+      savedHunts: 'id',
+      suggestions: 'id',
+      guruThreads: 'id',
+      settings: 'id',
+    })
+    await legacy.open()
+    const identity = (await legacy.table('identity').get('me')) as Identity | undefined
+    const isRealOwner = !!identity && /shaurya/i.test(identity.name) && !/demo/i.test(identity.name)
+    if (!isRealOwner) {
+      legacy.close()
+      return false
+    }
+    const tables = ['ledger', 'identity', 'voicebank', 'jobs', 'packets', 'watchlist', 'savedHunts', 'suggestions', 'guruThreads', 'settings']
+    const data: Record<string, unknown[]> = {}
+    for (const t of tables) {
+      try {
+        data[t] = await legacy.table(t).toArray()
+      } catch {
+        data[t] = []
+      }
+    }
+    legacy.close()
+    await withSeedAllowance(() =>
+      db.transaction('rw', [db.ledger, db.identity, db.voicebank, db.jobs, db.packets, db.watchlist, db.savedHunts, db.suggestions, db.guruThreads, db.settings], async () => {
+        for (const t of tables) {
+          const rows = data[t]
+          if (Array.isArray(rows) && rows.length > 0) await (db as unknown as Record<string, { bulkPut(r: unknown[]): Promise<unknown> }>)[t].bulkPut(rows)
+        }
+      }),
+    )
+    return (await db.ledger.count()) > 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Idempotent, SEED-ONCE (FIX-3): fills the active vault only when its ledger is empty. Never
+ * clears or overwrites existing entries. The owner's edits are authoritative forever.
+ */
+export async function seedIfEmpty(): Promise<boolean> {
+  if ((await db.ledger.count()) > 0) return false
+
+  // Owner mode: try to rescue pre-Session-5 real data before seeding fresh.
+  if (getMode() === 'owner') {
+    const migrated = await migrateLegacyOwnerData()
+    if (migrated) {
+      await withSeedAllowance(async () => {
+        if (!(await db.settings.get('app'))) await db.settings.put(freshSettings())
+      })
+      return true
+    }
+  }
+
+  const { entries, identity, voice } = await seedForActiveStore()
   const mk = monthKey()
   await withSeedAllowance(() =>
     db.transaction(
@@ -63,7 +143,7 @@ export async function seedIfEmpty(): Promise<boolean> {
         await db.ledger.bulkPut(entries)
         await db.identity.put(identity)
         await db.voicebank.put(voice)
-        await db.settings.put(settings)
+        await db.settings.put(freshSettings())
         await db.watchlist.bulkPut(WATCHLIST_SEED)
         await db.savedHunts.bulkPut(SEED_HUNTS)
         await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
@@ -73,8 +153,7 @@ export async function seedIfEmpty(): Promise<boolean> {
   return true
 }
 
-
-/** For already-onboarded users upgrading to v2: backfill new tables without a reseed. */
+/** Backfill new tables without a reseed (both stores). */
 export async function backfillV2(): Promise<void> {
   const s = await db.settings.get('app')
   if (!s) return
