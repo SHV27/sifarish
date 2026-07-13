@@ -1,12 +1,31 @@
-import { describe, expect, it, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach, afterAll, vi } from 'vitest'
 import { db } from '../src/db/db'
 import { overviewRepos, forceAddRepo, addRepoToLedger, dismissSuggestion, computeSuggestions, distillReadme, type GhRepo } from '../src/lib/nabz/github'
 import { SEED_LEDGER } from './helpers'
 
 /**
- * D47 gates — "GitHub ka sab show hona chahiye": a dismissed/accepted suggestion must never
- * PERMANENTLY hide a repo from view, and the owner can always resurface any repo on demand.
+ * D47/D52 gates — "GitHub ka sab show hona chahiye": a dismissed/accepted suggestion must never
+ * PERMANENTLY hide a repo from view; every repo is deeply read; the owner can always add any.
  */
+
+const MOCK_README = `# सिफ़ारिश · SIFARISH
+### A job-hunt chief of staff that refuses to lie.
+Compiles an ATS-safe resume from an evidence ledger using RAG-style matching and Groq guardrails.
+## Features
+- Compiles a one-page resume from an evidence-linked ledger with a parse-back fidelity test
+- Discovers live roles from keyless Greenhouse and Lever feeds and scores each against a rubric
+## License
+MIT`
+
+// Offline + deterministic: no Nabz test ever touches the real GitHub network.
+beforeEach(() => {
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input)
+    if (url.includes('/readme')) return new Response(MOCK_README, { status: 200, headers: { 'x-ratelimit-remaining': '55' } })
+    return new Response('{}', { status: 404, headers: { 'x-ratelimit-remaining': '55' } })
+  }) as typeof fetch
+})
+afterAll(() => vi.restoreAllMocks())
 
 function repo(name: string, overrides: Partial<GhRepo> = {}): GhRepo {
   return {
@@ -25,6 +44,7 @@ function repo(name: string, overrides: Partial<GhRepo> = {}): GhRepo {
 beforeEach(async () => {
   await db.suggestions.clear()
   await db.ledger.clear()
+  await db.nabzCache.clear()
   await db.ledger.bulkPut(SEED_LEDGER)
 })
 
@@ -102,7 +122,7 @@ describe('D52 — "Your GitHub, deeply read": every repo always shown + one-clic
     expect(sif!.status).toBe('dismissed') // shown, and still addable in the UI
   })
 
-  it('addRepoToLedger writes a rich draft straight to the ledger, ignoring dismiss history', async () => {
+  it('addRepoToLedger writes a RICH README-distilled draft, ignoring dismiss history', async () => {
     const r = repo('sifarish', { description: 'A job-hunt chief of staff that refuses to lie.' })
     await computeSuggestions([r])
     await dismissSuggestion('sug-new-sifarish')
@@ -111,8 +131,27 @@ describe('D52 — "Your GitHub, deeply read": every repo always shown + one-clic
     const entry = await db.ledger.get('proj-sifarish')
     expect(entry?.tier).toBe('shipped')
     expect(entry?.evidence?.repo).toContain('sifarish')
+    // Rich: the draft carries README-distilled bullets + summary (not just the one-line description).
+    expect(entry?.summary.toLowerCase()).toContain('refuses to lie')
+    expect(entry!.bullets.length).toBeGreaterThanOrEqual(2)
+    expect(entry!.tags).toContain('rag')
     // and the suggestion is now accepted (trail), not blocking
     expect((await db.suggestions.get('sug-new-sifarish'))?.status).toBe('accepted')
+  })
+})
+
+describe('D52.1 — rate-limit backoff: a 403 can never surface (zero console errors)', () => {
+  it('once GitHub returns 403 / 0-remaining, further calls serve cache and make NO network request', async () => {
+    const { fetchRepos } = await import('../src/lib/nabz/github')
+    // First call: GitHub says rate-limited (403, 0 remaining).
+    globalThis.fetch = vi.fn(async () => new Response('{}', { status: 403, headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 3600) } })) as typeof fetch
+    const r1 = await fetchRepos(true)
+    expect(Array.isArray(r1.repos)).toBe(true) // never throws at the user
+    // Second call must NOT hit the network at all (backoff recorded).
+    const spy = vi.fn(async () => new Response('[]', { status: 200 }))
+    globalThis.fetch = spy as unknown as typeof fetch
+    await fetchRepos(true)
+    expect(spy).not.toHaveBeenCalled() // structurally silent — no request, no console 403
   })
 })
 

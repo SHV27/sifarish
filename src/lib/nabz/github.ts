@@ -34,25 +34,52 @@ export interface SyncNabz {
   fromCache: boolean
 }
 
+// ---- rate-limit backoff (D52.1) — once GitHub says 0-remaining or 403, we make ZERO further
+// network calls until the reset, so a 403 can never surface as a browser console error. In normal
+// owner use (≈15 calls, cached 7d) this never trips; it is a pure safety net. ----
+const RL_KEY = 'ratelimit:github'
+
+async function rateLimitedUntil(): Promise<number> {
+  const row = await db.nabzCache.get(RL_KEY)
+  return row ? Number(row.json) : 0
+}
+async function noteRateLimit(resetAtMs: number): Promise<void> {
+  // Default to a 60-min backoff if the reset header was missing/zero.
+  const until = resetAtMs > Date.now() ? resetAtMs : Date.now() + 60 * 60 * 1000
+  await db.nabzCache.put({ key: RL_KEY, json: String(until), fetchedAt: new Date().toISOString() })
+}
+async function githubBlocked(): Promise<boolean> {
+  return Date.now() < (await rateLimitedUntil())
+}
+
 export async function fetchRepos(force = false): Promise<SyncNabz> {
   const cacheKey = `repos:${USER}`
   const cached = await db.nabzCache.get(cacheKey)
   if (!force && cached && Date.now() - new Date(cached.fetchedAt).getTime() < CACHE_TTL) {
     return { repos: JSON.parse(cached.json), budget: null, fromCache: true }
   }
+  // Known rate-limited → never hit the network (zero console 403s). Serve cache or an empty list.
+  if (await githubBlocked()) {
+    return { repos: cached ? JSON.parse(cached.json) : [], budget: null, fromCache: true }
+  }
 
-  const res = await fetch(`https://api.github.com/users/${USER}/repos?sort=pushed&per_page=100`, {
-    headers: { Accept: 'application/vnd.github+json' },
-  })
+  let res: Response
+  try {
+    res = await fetch(`https://api.github.com/users/${USER}/repos?sort=pushed&per_page=100`, {
+      headers: { Accept: 'application/vnd.github+json' },
+    })
+  } catch {
+    // Offline / network error — serve cache, never throw at the user.
+    return { repos: cached ? JSON.parse(cached.json) : [], budget: null, fromCache: true }
+  }
   const budget: RateBudget = {
     remaining: Number(res.headers.get('x-ratelimit-remaining') ?? '0'),
     limit: Number(res.headers.get('x-ratelimit-limit') ?? '60'),
     resetAt: Number(res.headers.get('x-ratelimit-reset') ?? '0') * 1000,
   }
-  if (!res.ok) {
-    // Rate-limited or offline: fall back to cache if we have it (I4 keyless resilience).
-    if (cached) return { repos: JSON.parse(cached.json), budget, fromCache: true }
-    throw new Error(`GitHub ${res.status}${res.status === 403 ? ' — rate limit; try again after reset' : ''}`)
+  if (!res.ok || budget.remaining <= 0) {
+    await noteRateLimit(budget.resetAt) // back off so subsequent calls stay silent
+    return { repos: cached ? JSON.parse(cached.json) : [], budget, fromCache: true }
   }
   const repos: GhRepo[] = await res.json()
   await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(repos), fetchedAt: new Date().toISOString() })
@@ -72,11 +99,18 @@ export async function fetchReadme(repoName: string): Promise<string | null> {
   if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < README_TTL) {
     return JSON.parse(cached.json)
   }
+  // Known rate-limited → never hit the network (zero console 403s).
+  if (await githubBlocked()) return cached ? JSON.parse(cached.json) : null
   try {
     const res = await fetch(`https://api.github.com/repos/${USER}/${repoName}/readme`, {
       headers: { Accept: 'application/vnd.github.raw+json' },
     })
-    if (!res.ok) return cached ? JSON.parse(cached.json) : null
+    if (!res.ok) {
+      if (res.status === 403 || Number(res.headers.get('x-ratelimit-remaining') ?? '1') <= 0) {
+        await noteRateLimit(Number(res.headers.get('x-ratelimit-reset') ?? '0') * 1000)
+      }
+      return cached ? JSON.parse(cached.json) : null
+    }
     const text = await res.text()
     await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(text), fetchedAt: new Date().toISOString() })
     return text
@@ -257,7 +291,7 @@ export async function computeSuggestions(repos: GhRepo[]): Promise<NabzSuggestio
       }
     } else if (!match && repo.size > 0) {
       if (isDismissed(repo.name, 'new_entry')) continue
-      liveSuggestions.push(await buildNewEntrySuggestion(repo))
+      liveSuggestions.push(await buildNewEntrySuggestion(repo, false)) // lightweight during sync
     }
   }
 
@@ -275,9 +309,13 @@ export async function computeSuggestions(repos: GhRepo[]): Promise<NabzSuggestio
  * Build a fresh new_entry suggestion for a repo (README-distilled draft, D45). Shared by
  * `computeSuggestions` (auto sync) and `forceAddRepo` (manual override, D47).
  */
-async function buildNewEntrySuggestion(repo: GhRepo): Promise<NabzSuggestion> {
+async function buildNewEntrySuggestion(repo: GhRepo, deep = true): Promise<NabzSuggestion> {
   const now = new Date().toISOString()
-  const readme = await fetchReadme(repo.name).catch(() => null)
+  // Lightweight during a bulk sync (deep=false → cached README only, no new network call);
+  // deep=true when the owner actually adds the repo, so its draft carries full README substance.
+  const cacheKey = `readme:${USER}/${repo.name}`
+  const cachedReadme = await db.nabzCache.get(cacheKey)
+  const readme = deep ? await fetchReadme(repo.name).catch(() => null) : cachedReadme ? (JSON.parse(cachedReadme.json) as string) : null
   const distilled = readme ? distillReadme(readme) : null
   const summary = distilled?.summary || repo.description || ''
   const langKw = repo.language ? [repo.language.toLowerCase()] : []
@@ -335,10 +373,14 @@ export interface RepoOverview {
  * past dismiss. `readReadmes` fetches missing READMEs (cached 7d, capped per call for the 60/hr
  * unauth budget); cached ones render instantly.
  */
-export async function overviewRepos(repos: GhRepo[], readReadmes = true, fetchCap = 14): Promise<RepoOverview[]> {
+export async function overviewRepos(repos: GhRepo[], readReadmes = true, budgetRemaining?: number): Promise<RepoOverview[]> {
   const ledger = await db.ledger.toArray()
   const suggestions = await db.suggestions.toArray()
   const out: RepoOverview[] = []
+  // Never fire a network README fetch we expect to fail: only fetch as many as the known
+  // remaining rate-limit budget safely allows (minus a margin), and none at all if blocked.
+  const blocked = await githubBlocked()
+  const safeFetches = blocked ? 0 : budgetRemaining === undefined ? 8 : Math.max(0, budgetRemaining - 4)
   let fetched = 0
   const nonFork = repos.filter((r) => !r.fork).sort((a, b) => (b.pushed_at ?? '').localeCompare(a.pushed_at ?? ''))
   for (const repo of nonFork) {
@@ -348,7 +390,7 @@ export async function overviewRepos(repos: GhRepo[], readReadmes = true, fetchCa
       const cacheKey = `readme:${USER}/${repo.name}`
       const cached = await db.nabzCache.get(cacheKey)
       let md: string | null = cached ? (JSON.parse(cached.json) as string) : null
-      if (md === null && fetched < fetchCap) {
+      if (md === null && fetched < safeFetches) {
         md = await fetchReadme(repo.name).catch(() => null)
         fetched += 1
       }

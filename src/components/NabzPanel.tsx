@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
+import { isOwnerMode } from '../lib/pehchaan'
 import {
   fetchRepos,
   computeSuggestions,
@@ -43,7 +44,7 @@ export function NabzPanel() {
       const { repos, budget: b } = await fetchRepos(force)
       setBudget(b)
       await computeSuggestions(repos) // refresh promotion / attach highlights
-      setOverview(await overviewRepos(repos, true))
+      setOverview(await overviewRepos(repos, true, b?.remaining))
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e))
     } finally {
@@ -52,8 +53,9 @@ export function NabzPanel() {
   }
 
   // Auto-load on mount so the owner always sees his GitHub without a click (cache-first, fast).
+  // Owner-only: Nabz watches HIS GitHub to strengthen HIS ledger — never in the demo showcase.
   useEffect(() => {
-    void load(false)
+    if (isOwnerMode()) void load(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -80,6 +82,9 @@ export function NabzPanel() {
   })
 
   const untrackedCount = overview?.filter((o) => o.status === 'untracked' || o.status === 'dismissed').length ?? 0
+
+  // Nabz is owner-only: it watches Shaurya's real GitHub. The demo showcase never shows it.
+  if (!isOwnerMode()) return null
 
   return (
     <section className="dossier p-4 mt-2" aria-label="GitHub Nabz">
