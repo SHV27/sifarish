@@ -295,3 +295,24 @@ the seal was broken.
   in_forge/pending/dismissed/untracked), and `forceAddRepo()` is an upsert (not put-if-absent) that
   resurfaces ANY repo as a fresh pending suggestion regardless of dismiss/accept history. "GitHub ka
   sab dikhna chahiye" is now structurally true — nothing hides forever. (v4.3, 13-Jul-2026)
+--- Session 5 "The Pehchaan Repair" (root-cause, 13-Jul-2026) ---
+- D47: THE DISEASE WAS ONE ROOT CAUSE, NOT FOUR (owner-reported: greeted as demo 'Arjun'; edits vanish on
+  reopen; leaky modes; token-spend fear). Reproduced from a wiped profile: a SINGLE Dexie store 'sifarish'
+  shared by owner+demo, seeded with the demo persona, with identity as a boolean flag; and durable storage
+  never requested (navigator.storage.persisted()=false → eviction). Cured by rebuild, not patch (Law 13).
+- D48: PEHCHAAN (src/lib/pehchaan.ts) — THE single identity resolver. Mode resolves synchronously at boot;
+  every transition (unlock/lock/demo) persists + FULL-RELOADS so store+identity+gates recompute from one
+  truth. No component infers mode any other way. The senior call: reload-on-transition eliminates the
+  entire "stale store / wrong identity flash" class (simpler + safer than a live-swapping proxy).
+- D49: TIJORI (src/db/db.ts + tijori.ts) — TWO physical Dexie DBs (sifarish_owner / sifarish_demo) that can
+  never clobber. Owner vault seeds ONCE from the real seed (dynamically imported → demo visitors never
+  download his PII) with a safe migration from the pre-S5 single store; demo vault seeds the fictional
+  persona. navigator.storage.persist() requested at boot; debounced AES-256-GCM auto-backup after every
+  owner edit (bounded to 5); restore-on-empty at boot. loadOwnerSeed clobber footgun removed; seed is
+  import-if-empty only. The 'Arjun-in-owner' + 'edits vanish' classes are now structurally impossible.
+- D50: Atelier Baithak (talk to the letter, I11 extended) — signature/tone/tighten/swap-proof ops as diff
+  cards; adversarial 'add X (no evidence)' → refusal + Gap Note. Alignment Map — every JD requirement →
+  exact ledger evidence or honest gap → Taleem; honest score, no invented coverage (I1), cited (I7).
+- D51: Session 5 sealed 13-Jul-2026 — all Four Proofs (§14) EXECUTED and pasted, incl. live adversary
+  (demo visitor: 0 spend + sees Arjun + no owner vault; real owner: greeted Shaurya + edit persists on
+  reopen; 7/7 functions 403 no-origin; fabricated token can't spend). 278/278 gates. THE CURE HOLDS.

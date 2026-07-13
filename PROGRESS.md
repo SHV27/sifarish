@@ -2,10 +2,34 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: v4 "The Ustaad Update" — FINAL FORM · SEALED ✦
+## Status: Session 5 "The Pehchaan Repair" — CURED · RESEALED ✦
 
-Live: https://sifarish-shv-s-projects.vercel.app · **248/248 gates green** · 0 console errors ·
-Lighthouse desktop 99/100/100 · build warning-free.
+Live: https://sifarish-shv-s-projects.vercel.app · **278/278 gates green** · 0 console errors ·
+build warning-free · all Four Proofs (§14) executed.
+
+### Session 5 — the disease cured (one root cause, not four)
+The owner reported: greeted as demo 'Arjun'; **owner edits vanish on reopen**; leaky modes; token-spend
+fear. Reproduced from a wiped profile → ONE root cause: a single Dexie store shared by owner+demo, seeded
+with the demo persona, identity as a boolean flag; durable storage never requested (evictable).
+
+- **PEHCHAAN** (`src/lib/pehchaan.ts`) — the single identity resolver; mode resolves at boot, every
+  transition full-reloads so store+identity+gates recompute from one truth. (D48)
+- **TIJORI** (`src/db/db.ts` + `tijori.ts`) — two physical vaults (`sifarish_owner`/`sifarish_demo`) that
+  can never clobber; owner vault seeds ONCE from the real seed (lazy → demo visitors never get his PII);
+  `storage.persist()` requested; debounced encrypted auto-backup + restore-on-empty. loadOwnerSeed footgun
+  removed. The Arjun-in-owner + edits-vanish classes are structurally impossible. (D49)
+- **Atelier Baithak** (talk to the letter, I11) + **Alignment Map** (requirement→evidence, honest gaps→
+  Taleem) + deeper Khabri hunts. (D50)
+
+**THE FOUR PROOFS (§14) — executed:**
+1. Machine: 278/278 tests · tsc clean · warning-free build.
+2. Fresh-eyes: 33 screenshots ×3 breakpoints, 0 console errors, owner rendered as Shaurya, all features render.
+3. Adversary (live prod): demo visitor 0 metered calls + sees Arjun + no owner vault; curl no-origin 403 on
+   all 7 functions; fabricated/absent token cannot spend; wrong owner code refused; **real owner greeted as
+   Shaurya + edit survives reopen**.
+4. Money: every metered client owner-gated (source-scan) + server token-required (7/7) + budget-capped (I8).
+
+Owner code: `Vers@tile1` (Vercel env `SIFARISH_OWNER_PASSCODE`; change there + redeploy anytime).
 
 ## Version history
 - **v1 — honesty.** Five pillars (Sach Ledger, Nabz, Radar, Darzi, Morcha), I1–I6, evidence-compiled +

@@ -1,4 +1,9 @@
-# FIXLIST.md — Session 5 "The Pehchaan Repair" (root-cause, 13-Jul-2026)
+# FIXLIST.md — Session 5 "The Pehchaan Repair" (root-cause, 13-Jul-2026) · ✅ ALL CURED
+
+STATUS: every P0/P1 below reproduced from a wiped profile, root-caused, cured by the PEHCHAAN + TIJORI
+rebuild, and PROVEN (live Four Proofs). FIX-1..4 verified live: owner greeted as Shaurya, edit survives
+reopen, demo vault separate + shows Arjun, zero demo spend. FIX-5/6 recertified (source-scan + live 403/token).
+
 
 Reproduced from a WIPED browser profile against the production build (Mandate 0). Each entry:
 symptom → PROVEN mechanism (file:line) → cure → the regression gate that will guard it.
