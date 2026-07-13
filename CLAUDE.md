@@ -325,3 +325,17 @@ the seal was broken.
   hidden by a past dismiss — structurally. Deepened distillReadme; overviewRepos now carries the distilled
   detail (cached 7d, capped to the 60/hr unauth budget). Verified live: all 17 repos incl. SIFARISH shown
   with its real tagline, 0 console errors. Regression test uses SIFARISH's actual README. (D52, 14-Jul-2026)
+--- Session 5.2 "The Smart Polish" (owner-requested, 14-Jul-2026) ---
+- D53: SMART BAITHAK + TIMELESS PROFESSIONAL SUMMARY + declutter. (1) Baithak was a rigid cue-grammar
+  parser with no intelligence ("add a professional summary" hit the fallback menu). Fix: deterministic
+  parser still runs first (owns the clear intents + refusals = the safe keyless core); when it doesn't
+  match (handled=false), a SMART LLM layer with full ledger context proposes structured EditOps — but
+  every op is re-validated against real ledger IDs before it can apply (the LLM returns IDs, never free
+  text; unevidenced → refusal). I11 holds by construction; owner-only + budgeted + keyless-degradable.
+  (2) PROFESSIONAL SUMMARY (src/lib/darzi/summary.ts): a timeless, VISION-framed AI-architect positioning
+  line — role from vision.targetRoles, NO project names, NO geography (remote-friendly), NO "currently
+  building X" (decays as he ships), AI/ML skills leading, a recompiled shipped-project count as proof.
+  Evidence-linked (I1), parse-back-safe (I5). New compiler line-kind 'summary'; default-on; Baithak-
+  toggleable via set-summary. (3) Nabz: in-ledger repos collapse to one compact line (no congestion).
+  (4) Morcha: columns cap at 8 (score-sorted) with show-more + a clear-found bulk action. (5) CASE_STUDY.md
+  written — full engineering post-mortem, every problem v1→v5.2. 291/291 gates, Four Proofs green. (D53)

@@ -227,9 +227,12 @@ This is the most instructive failure in the project — "final" had to be declar
   context takes over, mapping the freeform request to proposed EditOps — **but every op is re-validated
   against real ledger IDs** before it can become a diff card (the LLM returns IDs, never free text; anything
   unevidenced → a refusal). I11 (conversation can't bypass the compiler) holds by construction. Owner-only +
-  budgeted + keyless-degradable. Separately, a first-class **Professional Summary** feature was added
-  (evidence-dense, compiled from headline + strongest project + top JD-matched skills + honest momentum;
-  every clause traces to a ledger entry — I1).
+  budgeted + keyless-degradable. Separately, a first-class **Professional Summary** feature was added — a
+  **timeless, vision-framed** AI-engineer positioning line: no project names (the projects speak for
+  themselves below), no geography (he targets remote/international), no "currently building X" (that decays
+  as he ships — the app is ever-evolving), AI/ML skills leading the capability list, and a recompiled
+  shipped-project *count* as quantified proof. Every clause traces to a real ledger entry (I1); parse-back
+  (I5) holds.
 - **Lesson:** "smart" and "safe" aren't in tension if the LLM proposes and a deterministic validator disposes.
 
 ---

@@ -18,16 +18,28 @@ function ctx() {
 }
 
 describe('professional summary — evidence-dense, never minted (I1)', () => {
-  it('compiles a summary that references REAL ledger entries only', () => {
+  it('compiles a strong, global, name-free summary from REAL evidence only', () => {
     const { decode, coverage } = ctx()
     const line = buildSummaryLine({ identity: SEED_IDENTITY, vision: DEFAULT_VISION, ledger: SEED_LEDGER, decode, coverage })
     expect(line).toBeTruthy()
     expect(line!.kind).toBe('summary')
-    expect(line!.text.length).toBeGreaterThan(30)
+    expect(line!.text.length).toBeGreaterThan(40)
     const ids = new Set(SEED_LEDGER.map((e) => e.id))
     for (const id of line!.ledgerIds) expect(ids.has(id)).toBe(true)
-    // Mentions his strongest shipped project (GLOAMING is the seed's shipped project).
-    expect(line!.text).toMatch(/GLOAMING/)
+    // Architect-grade role framing from the vision (agentic).
+    expect(line!.text).toMatch(/Agentic-AI engineer/i)
+    // NO project names — the summary is positioning, the projects speak for themselves below.
+    for (const name of ['GLOAMING', 'SUTRADHAR', 'DARYA', 'MUNSHI', 'KATHA', 'YOJANA', 'BRAILLIX']) {
+      expect(line!.text).not.toContain(name)
+    }
+    // NO geography (he targets remote/international too).
+    expect(line!.text).not.toMatch(/India|Indian|Punjab/i)
+    // Proof by NUMBER (a real project count), not name.
+    expect(line!.text).toMatch(/\d+ (production |shipped )?project/)
+    // TIMELESS — no forward-dated "currently building X" that would decay as he ships.
+    expect(line!.text).not.toMatch(/currently|building|forge/i)
+    // AI-led capabilities (architect image) — generic tooling doesn't lead.
+    expect(line!.text).toMatch(/Agent Design|LLM|RAG|Groq|agent/i)
   })
 
   it('renders at the TOP of the resume (first fixation) when passed to the compiler', () => {
