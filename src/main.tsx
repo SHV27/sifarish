@@ -4,7 +4,8 @@ import './styles/tokens.css'
 import App from './App'
 import { seedIfEmpty, backfillV2 } from './db/seed'
 import { loadLibraryOverride } from './lib/ustaad/library'
-import { requestDurableStorage, restoreOnEmptyIfNeeded } from './db/tijori'
+import { requestDurableStorage, restoreOnEmptyIfNeeded, autoBackup } from './db/tijori'
+import { onOwnerMutation } from './db/db'
 import { isOwnerMode } from './lib/pehchaan'
 
 // PEHCHAAN has already resolved the mode synchronously (module load) and db.ts opened the right
@@ -25,8 +26,6 @@ async function boot() {
 
   // Auto-backup after owner edits (debounced) — his work is never one glitch from gone.
   if (isOwnerMode()) {
-    const { onOwnerMutation } = await import('./db/db')
-    const { autoBackup } = await import('./db/tijori')
     let timer: ReturnType<typeof setTimeout> | undefined
     onOwnerMutation(() => {
       clearTimeout(timer)

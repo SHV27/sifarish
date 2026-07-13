@@ -10,6 +10,7 @@ import { useDarbaan } from '../components/DarbaanControl'
 import { GOOGLE_CLIENT_ID } from '../lib/dak/gis'
 import { saveFile } from '../lib/util/download'
 import { getApiToken } from '../lib/apiGuard'
+import { storagePersisted, autoBackup, restoreFromLatest, requestDurableStorage } from '../db/tijori'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -266,21 +267,18 @@ function TijoriVault() {
   const [note, setNote] = useState('')
   const backups = useLiveQuery(() => db.backups.orderBy('at').reverse().toArray()) ?? []
   useEffect(() => {
-    void import('../db/tijori').then((m) => m.storagePersisted().then(setPersisted))
+    void storagePersisted().then(setPersisted)
   }, [])
 
   const makeBackup = async () => {
-    const { autoBackup } = await import('../db/tijori')
     const snap = await autoBackup()
     setNote(snap ? `Snapshot saved (${snap.ledgerCount} ledger entries).` : 'Could not snapshot.')
   }
   const restore = async () => {
-    const { restoreFromLatest } = await import('../db/tijori')
     const counts = await restoreFromLatest()
     setNote(counts ? `Restored latest snapshot: ${Object.entries(counts).map(([t, n]) => `${t} ${n}`).join(', ')}.` : 'No snapshot to restore.')
   }
   const requestDurable = async () => {
-    const { requestDurableStorage } = await import('../db/tijori')
     setPersisted(await requestDurableStorage())
   }
 
