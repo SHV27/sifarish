@@ -316,3 +316,12 @@ the seal was broken.
 - D51: Session 5 sealed 13-Jul-2026 — all Four Proofs (§14) EXECUTED and pasted, incl. live adversary
   (demo visitor: 0 spend + sees Arjun + no owner vault; real owner: greeted Shaurya + edit persists on
   reopen; 7/7 functions 403 no-origin; fabricated token can't spend). 278/278 gates. THE CURE HOLDS.
+- D52: NABZ REGRESSION KILLED FOR GOOD + vision-aligned. The 'SIFARISH not showing in Nabz' bug recurred
+  because Session 5's store-split migrated a DISMISSED suggestion record, and the D47 'show all' was a
+  buried toggle. Root fix: Nabz reframed from a suggestions-feed into "YOUR GITHUB, DEEPLY READ" — EVERY
+  public repo is ALWAYS shown (auto-loads on mount), richly: README deep-distilled into a real 1-2 sentence
+  summary (prefers the repo's tagline), up to 5 feature bullets, tech stack, keywords, best live URL — each
+  with an inline one-click add that works regardless of dismiss history (addRepoToLedger). Nothing is ever
+  hidden by a past dismiss — structurally. Deepened distillReadme; overviewRepos now carries the distilled
+  detail (cached 7d, capped to the 60/hr unauth budget). Verified live: all 17 repos incl. SIFARISH shown
+  with its real tagline, 0 console errors. Regression test uses SIFARISH's actual README. (D52, 14-Jul-2026)

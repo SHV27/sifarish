@@ -86,56 +86,91 @@ export async function fetchReadme(repoName: string): Promise<string | null> {
 }
 
 export interface ReadmeDistilled {
+  /** A rich 1–2 sentence description (prefers the repo's own tagline). */
   summary: string
+  /** Up to 5 substantive feature/what-it-does bullets. */
   bullets: string[]
+  /** Lexicon keywords → drive evidence matching. */
   keywords: string[]
+  /** Human-readable tech stack line ("React · TypeScript · Groq"). */
+  stack: string[]
+  /** Best live/demo URL found in the README. */
   liveUrl?: string
+  /** Whether a README was actually read (vs. nothing available). */
+  hasReadme: boolean
 }
 
-/** Pure distiller: markdown → {summary, feature bullets, lexicon keywords, live URL}. */
-export function distillReadme(md: string): ReadmeDistilled {
-  // Strip the noise: code fences, html, badges/images, link syntax → plain text lines.
-  const noCode = md.replace(/```[\s\S]*?```/g, ' ').replace(/~~~[\s\S]*?~~~/g, ' ')
-  const liveUrl = /(https?:\/\/[a-z0-9.-]+\.(?:vercel\.app|netlify\.app|github\.io|pages\.dev)[^\s)"'\]]*)/i.exec(noCode)?.[1]
-  const clean = (s: string) =>
-    s
-      .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images/badges
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → their text
-      .replace(/<[^>]+>/g, '')
-      .replace(/[*_`>#]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
+const SECTION_WORDS = /^(installation|install|usage|getting started|setup|features|table of contents|contents|license|contributing|contributors|acknowledg|prerequisites|requirements|demo|screenshots?|tech stack|built with|about|overview|run it|make it yours|art direction)\b/i
 
+function cleanMd(s: string): string {
+  return s
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images/badges
+    .replace(/\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)/g, '') // linked badges
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → their text
+    .replace(/<[^>]+>/g, '')
+    .replace(/[*_`>#~|]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Pure distiller (deep, D52): markdown → rich {summary, bullets, stack, keywords, liveUrl}. */
+export function distillReadme(md: string): ReadmeDistilled {
+  const noCode = md.replace(/```[\s\S]*?```/g, ' ').replace(/~~~[\s\S]*?~~~/g, ' ')
   const lines = noCode.split('\n')
-  // Summary = the first substantive prose paragraph (not a heading/badge/list line).
-  let summary = ''
+
+  // Best live URL: prefer a deployment host; else any http link that isn't github/shields.
+  const urls = [...noCode.matchAll(/(https?:\/\/[^\s)"'\]]+)/gi)].map((m) => m[1])
+  const liveUrl =
+    urls.find((u) => /(vercel\.app|netlify\.app|github\.io|pages\.dev|\.web\.app|streamlit\.app|onrender\.com|railway\.app)/i.test(u)) ??
+    urls.find((u) => !/github\.com|shields\.io|img\.|badge/i.test(u))
+
+  // Summary: prefer a descriptive tagline (a sub-heading that reads like a phrase, not a section
+  // word), then enrich with the first prose sentence. Falls back to the first prose paragraph.
+  let tagline = ''
   for (const raw of lines) {
-    const t = raw.trim()
-    if (!t || /^#{1,6}\s/.test(t) || /^[-*+]\s/.test(t) || /^\d+\.\s/.test(t) || /^\|/.test(t) || /^!\[/.test(t) || /^\[!\[/.test(t)) continue
-    const c = clean(t)
-    if (c.length >= 40 && /[a-z]/i.test(c)) {
-      summary = c.slice(0, 240)
+    const h = /^#{2,4}\s+(.*)$/.exec(raw.trim())
+    if (!h) continue
+    const c = cleanMd(h[1])
+    if (c.length >= 12 && !SECTION_WORDS.test(c) && /[a-z]/i.test(c)) {
+      tagline = c
       break
     }
   }
+  let prose = ''
+  for (const raw of lines) {
+    const t = raw.trim()
+    if (!t || /^#{1,6}\s/.test(t) || /^[-*+]\s/.test(t) || /^\d+\.\s/.test(t) || /^\|/.test(t) || /^!\[/.test(t) || /^\[!\[/.test(t)) continue
+    const c = cleanMd(t)
+    if (c.length >= 40 && /[a-z]/i.test(c) && !SECTION_WORDS.test(c)) {
+      prose = c
+      break
+    }
+  }
+  let summary = tagline && prose ? `${tagline.replace(/[.:]$/, '')} — ${prose}` : tagline || prose
+  summary = summary.slice(0, 320).trim()
 
-  // Feature bullets = the first substantive list items (what it does / how it's built).
+  // Feature bullets: up to 5 substantive list items (what it does / how it's built).
   const bullets: string[] = []
+  const seen = new Set<string>()
   for (const raw of lines) {
     const m = /^\s*[-*+]\s+(.*)$/.exec(raw)
     if (!m) continue
-    const c = clean(m[1])
-    if (c.length >= 30 && c.length <= 180 && /[a-z]/i.test(c) && !/license|contribut|install|clone|npm i /i.test(c)) {
+    const c = cleanMd(m[1])
+    const key = c.toLowerCase()
+    if (c.length >= 25 && c.length <= 200 && /[a-z]/i.test(c) && !/(license|contribut|^install|clone|npm i |git clone|©|copyright)/i.test(c) && !seen.has(key)) {
+      seen.add(key)
       bullets.push(c)
-      if (bullets.length >= 3) break
+      if (bullets.length >= 5) break
     }
   }
 
-  // Keywords: the same lexicon the JD decoder speaks — so evidence matching just works.
-  const hay = ` ${clean(noCode).toLowerCase()} `
-  const keywords = LEXICON.filter((l) => l.patterns.some((p) => hay.includes(p))).map((l) => l.canonical)
+  const hay = ` ${cleanMd(noCode).toLowerCase()} `
+  const matched = LEXICON.filter((l) => l.patterns.some((p) => hay.includes(p)))
+  const keywords = matched.map((l) => l.canonical)
+  // Tech stack = human-readable subset of the matched keywords (languages/frameworks/tools).
+  const stack = [...new Set(keywords.map((k) => k.replace(/-/g, ' ')))].slice(0, 8)
 
-  return { summary, bullets, keywords, liveUrl }
+  return { summary, bullets, keywords, stack, liveUrl, hasReadme: cleanMd(noCode).length > 20 }
 }
 
 function hostOf(url: string): string {
@@ -289,35 +324,68 @@ export interface RepoOverview {
   repo: GhRepo
   status: RepoStatus
   ledgerTitle?: string
+  ledgerId?: string
+  /** Deep README detail (D52) — every repo is shown richly, nothing hidden. */
+  distilled?: ReadmeDistilled
 }
 
-/** Every non-fork public repo, with its current ledger/suggestion status. Nothing hidden. */
-export async function overviewRepos(repos: GhRepo[]): Promise<RepoOverview[]> {
+/**
+ * "YOUR GITHUB, DEEPLY READ" (D52) — every non-fork public repo, ALWAYS, with its ledger status
+ * AND a deep README distillation. This is the primary Nabz surface: nothing is ever hidden by a
+ * past dismiss. `readReadmes` fetches missing READMEs (cached 7d, capped per call for the 60/hr
+ * unauth budget); cached ones render instantly.
+ */
+export async function overviewRepos(repos: GhRepo[], readReadmes = true, fetchCap = 14): Promise<RepoOverview[]> {
   const ledger = await db.ledger.toArray()
   const suggestions = await db.suggestions.toArray()
   const out: RepoOverview[] = []
-  for (const repo of repos) {
-    if (repo.fork) continue
+  let fetched = 0
+  const nonFork = repos.filter((r) => !r.fork).sort((a, b) => (b.pushed_at ?? '').localeCompare(a.pushed_at ?? ''))
+  for (const repo of nonFork) {
     const match = ledgerForRepo(repo, ledger)
-    if (match) {
-      out.push({ repo, status: match.tier, ledgerTitle: match.title.split('—')[0].trim() })
-      continue
+    let distilled: ReadmeDistilled | undefined
+    if (readReadmes) {
+      const cacheKey = `readme:${USER}/${repo.name}`
+      const cached = await db.nabzCache.get(cacheKey)
+      let md: string | null = cached ? (JSON.parse(cached.json) as string) : null
+      if (md === null && fetched < fetchCap) {
+        md = await fetchReadme(repo.name).catch(() => null)
+        fetched += 1
+      }
+      if (md) distilled = distillReadme(md)
     }
-    const sug = suggestions.find((s) => s.repoName === repo.name && s.type === 'new_entry')
-    out.push({ repo, status: sug?.status === 'dismissed' ? 'dismissed' : sug?.status === 'pending' ? 'pending' : 'untracked' })
+    if (match) {
+      out.push({ repo, status: match.tier, ledgerTitle: match.title.split('—')[0].trim(), ledgerId: match.id, distilled })
+    } else {
+      const sug = suggestions.find((s) => s.repoName === repo.name && s.type === 'new_entry')
+      out.push({ repo, status: sug?.status === 'dismissed' ? 'dismissed' : sug?.status === 'pending' ? 'pending' : 'untracked', distilled })
+    }
   }
   return out
 }
 
 /**
  * Manual override (D47): re-surface a new-entry suggestion for ANY repo, ignoring prior
- * dismiss/accept history — an `upsert`, not a `put-if-absent`. The owner's right to add a
- * repo to his own ledger does not expire because he once clicked "Not now".
+ * dismiss/accept history — an `upsert`, not a `put-if-absent`.
  */
 export async function forceAddRepo(repo: GhRepo): Promise<NabzSuggestion> {
   const s = await buildNewEntrySuggestion(repo)
   await db.suggestions.put(s)
   return s
+}
+
+/**
+ * ONE-CLICK ADD (D52): build the deep README-distilled draft and write it straight to the ledger,
+ * recording an accepted suggestion for the trail. Works for ANY untracked/dismissed repo — the
+ * owner's right to add his own project never expires. Returns the created ledger entry id.
+ */
+export async function addRepoToLedger(repo: GhRepo): Promise<string> {
+  const s = await buildNewEntrySuggestion(repo)
+  await db.transaction('rw', [db.ledger, db.suggestions], async () => {
+    if (s.draftEntry) await db.ledger.put(s.draftEntry)
+    await db.suggestions.put({ ...s, status: 'accepted' })
+  })
+  return s.draftEntry?.id ?? ''
 }
 
 export async function acceptSuggestion(s: NabzSuggestion): Promise<void> {
