@@ -162,6 +162,47 @@ export async function toggleSignature(packet: Packet, on: boolean): Promise<Pack
 }
 
 /**
+ * ATELIER BAITHAK executor (Session 5) — apply an owner-approved letter refinement op. Every op
+ * recomposes the letter deterministically from real parts (I1) and re-checks uniqueness; tone runs
+ * the same fact-drift-guarded polish as the resume. Conversation refines, it never mints a claim.
+ */
+export async function refineLetter(packet: Packet, op: import('./atelier/baithak').LetterOp): Promise<{ packet: Packet; note: string }> {
+  if (op.kind === 'toggle-signature') {
+    const updated = await toggleSignature(packet, op.on)
+    return { packet: updated, note: op.on ? 'Signature added.' : 'Signature removed.' }
+  }
+  if (op.kind === 'tone') {
+    const { polishDoc } = await import('./polish/client')
+    const r = await polishDoc(packet.coverLetter)
+    const updated: Packet = { ...packet, coverLetter: r.doc }
+    await db.packets.put(updated)
+    return { packet: updated, note: r.keyless ? 'Keyless mode — phrasing kept as compiled.' : `Rephrased ${r.applied} line(s); ${r.rejected} rejected by the fact-drift guard.` }
+  }
+  // swap-proof / tighten → recompose deterministically
+  const job = await db.jobs.get(packet.jobId)
+  const identity = await db.identity.get('me')
+  const ledger = await db.ledger.toArray()
+  const settings = await db.settings.get('app')
+  if (!job || !identity) return { packet, note: 'Missing job/identity.' }
+  const coverLetter = composeLetter({
+    job,
+    identity,
+    ledger,
+    decode: packet.decode,
+    coverage: packet.coverage,
+    intel: packet.intel,
+    vision: settings?.visionProfile,
+    editorial: packet.editorial,
+    useSignature: packet.signature?.on ?? false,
+    proofLeadId: op.kind === 'swap-proof' ? op.toLedgerId : undefined,
+    tightTo: op.kind === 'tighten' ? 170 : undefined,
+  })
+  const updated: Packet = { ...packet, coverLetter }
+  await db.packets.put(updated)
+  return { packet: updated, note: op.kind === 'tighten' ? 'Letter tightened to its strongest single proof.' : 'Proof lineup updated.' }
+}
+
+/**
  * Overrule a casting call (Darzi v3). Shaurya is the studio head — his taste is final. Promoting
  * a benched project or benching a chosen one recompiles deterministically (zero LLM budget: the
  * human choice IS the decision), re-runs the red-team, and stamps the plan `overruled`.

@@ -69,6 +69,10 @@ export interface AtelierInput {
   vision?: VisionProfile
   editorial?: EditorialPlan
   useSignature: boolean
+  /** Atelier Baithak: force a specific shipped project to LEAD the proof points (evidence-true). */
+  proofLeadId?: string
+  /** Atelier Baithak: cap the core word count harder than the default 250 (tighter letter). */
+  tightTo?: number
 }
 
 export function composeLetter(input: AtelierInput): CompiledDoc {
@@ -78,10 +82,16 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
   // Proof projects: prefer the Editor's cast lineup (already reasoned); else JD relevance.
   const castIds = editorial?.chosen.map((c) => c.ledgerId) ?? []
   const proofPool = ledger.filter((e) => e.resumeEligible && e.tier === 'shipped' && e.kind === 'project')
-  const proofs = (castIds.length > 0
-    ? (castIds.map((id) => proofPool.find((p) => p.id === id)).filter(Boolean) as LedgerEntry[])
-    : proofPool.slice().sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
-  ).slice(0, 2)
+  let ordered =
+    castIds.length > 0
+      ? (castIds.map((id) => proofPool.find((p) => p.id === id)).filter(Boolean) as LedgerEntry[])
+      : proofPool.slice().sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
+  // Atelier Baithak: an owner-chosen proof project leads (still a real ledger project — I1 holds).
+  if (input.proofLeadId) {
+    const lead = proofPool.find((p) => p.id === input.proofLeadId)
+    if (lead) ordered = [lead, ...ordered.filter((p) => p.id !== lead.id)]
+  }
+  const proofs = ordered.slice(0, 2)
 
   // 1 — Cited company hook (real fact) or an honest fallback opener.
   const hook = hookFromIntel(intel)
@@ -143,9 +153,10 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
     })
   }
 
-  // Trim to ≤250 words (excluding the P.S.) by dropping the 2nd proof if needed.
+  // Trim to the word cap (excluding the P.S.) by dropping the 2nd proof if needed.
+  const cap = input.tightTo ?? 250
   const core = () => paragraphs.filter((p) => !p.text.startsWith('P.S.')).reduce((n, p) => n + words(p.text), 0)
-  while (core() > 250 && proofs.length > 1) {
+  while (core() > cap && proofs.length > 1) {
     // remove the last proof paragraph (index of 2nd proof)
     const idx = paragraphs.findIndex((p) => p.ledgerIds[0] === proofs[proofs.length - 1].id)
     if (idx === -1) break

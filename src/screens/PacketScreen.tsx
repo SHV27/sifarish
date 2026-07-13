@@ -11,6 +11,8 @@ import { buildApplyPlan } from '../lib/guru/applyPlan'
 import { Why } from '../components/Why'
 import QualityPanel from '../components/QualityPanel'
 import Baithak from '../components/Baithak'
+import AtelierBaithak from '../components/AtelierBaithak'
+import AlignmentMap from '../components/AlignmentMap'
 import type { EditorialPlan } from '../types'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
@@ -355,6 +357,7 @@ function PacketBody({
 
         {packet.signature && <SignatureToggle packet={packet} />}
         <CopyDoc title="Cover letter" doc={packet.coverLetter} />
+        <AtelierBaithak key={`atelier-${packet.id}`} packet={packet} />
         <CopyDoc title="Outreach draft (send it yourself — SIFARISH never sends)" doc={packet.outreach} />
         <ApplyPlanPanel packet={packet} job={job} />
       </div>
@@ -377,6 +380,8 @@ function PacketBody({
         </section>
 
         {packet.quality && <QualityPanel quality={packet.quality} />}
+
+        <AlignmentMap packet={packet} />
 
         <IntelPanel packet={packet} company={job.company} />
 

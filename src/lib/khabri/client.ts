@@ -21,6 +21,13 @@ export const SEED_HUNTS: SavedHunt[] = [
   { id: 'h4', query: 'LLM engineer intern', remoteOnly: true, datePosted: 'month', enabled: true },
   { id: 'h5', query: 'AI residency 2026', remoteOnly: false, datePosted: 'month', enabled: false },
   { id: 'h6', query: 'prompt engineer intern remote', remoteOnly: true, datePosted: 'month', enabled: false },
+  // Deeper reach (Session 5): niche / hidden-gem lanes alongside the common ones. Budget-capped
+  // by I8; API-only (I3/I9). Enable more from Khabri when you want to widen the net.
+  { id: 'h7', query: 'applied AI intern startup', remoteOnly: true, datePosted: 'month', enabled: true },
+  { id: 'h8', query: 'RAG engineer intern', remoteOnly: true, datePosted: 'month', enabled: false },
+  { id: 'h9', query: 'AI evaluation intern', remoteOnly: true, datePosted: 'month', enabled: false },
+  { id: 'h10', query: 'ML research intern remote India', country: 'in', remoteOnly: true, datePosted: 'month', enabled: false },
+  { id: 'h11', query: 'developer relations AI intern', remoteOnly: true, datePosted: 'month', enabled: false },
 ]
 
 export const SEED_SIGNAL_QUERIES = [
