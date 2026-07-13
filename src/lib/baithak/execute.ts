@@ -3,7 +3,7 @@ import type { BaithakLogEntry, EditOp, Packet } from '../../types'
 import { compileResume } from '../compile/compiler'
 import { matchEvidence } from '../match/evidence'
 import { redTeamPass } from '../darzi/editor'
-import { overrulePacket } from '../darzi'
+import { overrulePacket, setSummary } from '../darzi'
 import { estimateQuality } from '../ustaad/quality'
 
 /**
@@ -131,6 +131,15 @@ export async function applyEdit(packet: Packet, op: EditOp, utterance: string, p
         note: r.keyless
           ? 'Keyless mode — compiled text kept as-is (polish needs GROQ_API_KEY).'
           : `Polished: ${r.applied} line(s) improved, ${r.rejected} rejected by the fact-drift guard.`,
+        packet: done,
+      }
+    }
+    case 'set-summary': {
+      const updated = await setSummary(packet, op.on)
+      const done = await persist(updated, utterance, `Professional summary ${op.on ? 'added' : 'removed'}`)
+      return {
+        ok: true,
+        note: op.on ? 'Professional summary added — evidence-dense, compiled from your ledger + vision.' : 'Professional summary removed.',
         packet: done,
       }
     }

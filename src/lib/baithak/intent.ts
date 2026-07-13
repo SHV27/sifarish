@@ -48,6 +48,8 @@ const CUE = {
   claimAdd: /\b(add that i know|likh de|likh do|bol de|mention kar|daal de)\b|\b(jaanta|jaanti|aata|aati)\s+(hai|hoon|hu)\b/i,
   sectionSkills: /\bskills?\s+(upar|pehle|first|top)\b/i,
   sectionEdu: /\b(education|padhai)\s+(upar|pehle|first|top)\b/i,
+  summary: /\b(professional summary|summary|about me|profile|objective|intro)\b/i,
+  removeWord: /\b(hata|remove|nikaal|off|bina|without|no)\b/i,
 }
 
 /** Search the whole ledger for evidence of a term (title, tags, keywords, bullet text).
@@ -249,7 +251,30 @@ export function parseUtterance(utterance: string, ctx: BaithakContext): BaithakP
     return { reply: 'Section order badal deta hoon — content wahi rahega, sirf tarteeb badlegi.', proposals, by: 'deterministic' }
   }
 
-  // --- 6 · Tone / polish ---
+  // --- 6 · Professional summary (his example — now handled smartly, even keyless) ---
+  if (CUE.summary.test(u)) {
+    const on = !CUE.removeWord.test(u)
+    proposals.push(
+      proposal(
+        { kind: 'set-summary', on },
+        on ? 'No professional summary line' : 'Resume has a professional summary',
+        on
+          ? 'A targeted, evidence-dense summary at the top — compiled from your headline, strongest shipped project, top JD-matched skills, and honest momentum'
+          : 'Professional summary removed',
+        on ? ['I1 (every clause traces to real ledger evidence — nothing minted)', 'Ustaad ¶headline-mirrors-role'] : ['content only'],
+      ),
+    )
+    return {
+      reply: on
+        ? 'Haan — ek professional summary bana deta hoon jo tumhare truth se compile hoti hai (headline + sabse strong shipped project + top skills + honest momentum). Ye generic objective nahi, evidence-dense hai — recruiter ka pehla 6-second fixation isi pe padta hai. ✓ karo.'
+        : 'Summary hata deta hoon.',
+      proposals,
+      by: 'deterministic',
+      handled: true,
+    }
+  }
+
+  // --- 7 · Tone / polish ---
   if (CUE.tone.test(u)) {
     proposals.push(
       proposal(
@@ -263,16 +288,18 @@ export function parseUtterance(utterance: string, ctx: BaithakContext): BaithakP
       reply: 'Polish pass chala doonga — sirf phrasing, facts frozen. Jo line naya fact ugalti hai, guard usse reject kar deta hai.',
       proposals,
       by: 'deterministic',
+      handled: true,
     }
   }
 
-  // --- 7 · Fallback: teach (I6 — always a legal action) ---
+  // --- 8 · Fallback: NOT handled deterministically → the smart LLM layer may take over ---
   return {
     reply:
-      'Main ye kar sakta hoon: "GLOAMING aage kar" (casting) · "SUTRADHAR hata" (bench) · "DARYA ka link daal https://…" (probe-gated) · ' +
-      '"hash-chain wala point ghusa" (ledger bullet ko lead karao) · "skills upar" (section order) · "thoda technical tone" (guarded polish) · ' +
-      '"ye kyun chuna?" (rationale + Ustaad citations). Jo ledger mein nahi hai, woh main nahi likh sakta — that is the whole point.',
+      'Main ye kar sakta hoon: "professional summary daal" · "GLOAMING aage kar" (casting) · "SUTRADHAR hata" (bench) · ' +
+      '"DARYA ka link daal https://…" (probe-gated) · "hash-chain wala point ghusa" (ledger bullet lead) · "skills upar" (section order) · ' +
+      '"thoda technical tone" (guarded polish) · "ye kyun chuna?" (rationale). Jo ledger mein nahi hai, woh main nahi likh sakta.',
     proposals: [],
     by: 'deterministic',
+    handled: false,
   }
 }

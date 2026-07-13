@@ -17,6 +17,17 @@ export async function setJobStatus(jobId: string, status: JobStatus): Promise<vo
   await db.jobs.update(jobId, { status })
 }
 
+/**
+ * Clear the "Found" column (Session 5.2 — easier board management). Only ever removes untailored
+ * `found` jobs; anything you've tailored/applied/interviewed is never touched. The self-strengthening
+ * hunt keeps refilling Found, so pruning the noise is safe and reversible (re-sweep in Khabri).
+ */
+export async function clearFound(): Promise<number> {
+  const ids = (await db.jobs.where('status').equals('found').toArray()).map((j) => j.id)
+  if (ids.length > 0) await db.jobs.bulkDelete(ids)
+  return ids.length
+}
+
 /** Day-7 / day-14 follow-up nudges: due when applied N days ago and still waiting. */
 export function nudgeState(job: Job): { due: boolean; day: 7 | 14 | null } {
   if (job.status !== 'applied' && job.status !== 'followup') return { due: false, day: null }

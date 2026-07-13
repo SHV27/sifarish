@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { Job, JobStatus } from '../types'
-import { nudgeState, setJobStatus } from '../lib/morcha'
+import { nudgeState, setJobStatus, clearFound } from '../lib/morcha'
 import { buildDossier, type InterviewDossier } from '../lib/dossier'
 import DakPanel from '../components/DakPanel'
 
@@ -86,6 +86,8 @@ export function Morcha({ onOpenPacket }: { onOpenPacket: (jobId: string) => void
   )
 }
 
+const PAGE = 8 // cards shown per column before "show more" — keeps the board scannable (Found had 996)
+
 function Column({
   col,
   jobs,
@@ -97,6 +99,12 @@ function Column({
   onOpenPacket: (id: string) => void
   onDossier: (job: Job) => void
 }) {
+  const [limit, setLimit] = useState(PAGE)
+  const [clearing, setClearing] = useState(false)
+  // Highest-scoring first so the cap always shows the best of a big column.
+  const sorted = useMemo(() => jobs.slice().sort((a, b) => (b.score?.total ?? 0) - (a.score?.total ?? 0)), [jobs])
+  const shown = sorted.slice(0, limit)
+
   return (
     <div className="w-56 shrink-0">
       <h2 className="font-display font-semibold text-sm text-ink mb-2 flex items-center justify-between">
@@ -105,10 +113,32 @@ function Column({
         </span>
         <span className="font-mono text-[11px] text-ink-soft">{jobs.length}</span>
       </h2>
+      {col.status === 'found' && jobs.length > 0 && (
+        <button
+          className="mb-1.5 text-[10px] font-mono text-ink-soft hover:text-stamp disabled:opacity-50"
+          disabled={clearing}
+          onClick={async () => {
+            setClearing(true)
+            try {
+              await clearFound()
+            } finally {
+              setClearing(false)
+            }
+          }}
+          title="Removes only untailored Found jobs; tailored/applied are never touched. Re-sweep anytime."
+        >
+          {clearing ? 'clearing…' : '✕ clear found'}
+        </button>
+      )}
       <div className="space-y-2 min-h-16 bg-paper-sunken/30 rounded p-1.5">
-        {jobs.map((job) => (
+        {shown.map((job) => (
           <MorchaCard key={job.id} job={job} onOpenPacket={onOpenPacket} onDossier={() => onDossier(job)} />
         ))}
+        {jobs.length > limit && (
+          <button className="w-full text-[11px] font-mono text-ink-soft hover:text-ink py-1" onClick={() => setLimit((l) => l + PAGE)}>
+            show {Math.min(PAGE, jobs.length - limit)} more ({jobs.length - limit} hidden)
+          </button>
+        )}
       </div>
     </div>
   )

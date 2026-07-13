@@ -35,10 +35,20 @@ export default function Baithak({ packet }: { packet: Packet }) {
     setInput('')
     setItems((xs) => [...xs, { role: 'owner', text: utterance }])
     const ledger = await db.ledger.toArray()
-    const parse = parseUtterance(utterance, { packet, ledger })
+    let parse = parseUtterance(utterance, { packet, ledger })
+    // Smart layer (D53): if the deterministic parser didn't match a specific intent, an LLM with
+    // full ledger context takes over — still emitting only evidence-true, gate-checked EditOps (I11).
+    if (parse.handled === false) {
+      setBusy(true)
+      try {
+        const { smartBaithak } = await import('../lib/baithak/smart')
+        parse = await smartBaithak(utterance, packet, ledger)
+      } finally {
+        setBusy(false)
+      }
+    }
     setItems((xs) => [...xs, { role: 'darzi', text: parse.reply, proposals: parse.proposals, citations: parse.citations }])
     if (parse.refused) {
-      // The refusal leaves a paper trail: the gap lands in the packet's Baithak log.
       const entry = { at: new Date().toISOString(), utterance, summary: `REFUSED: ${parse.refused.gapNote}` }
       await db.packets.put({ ...packet, baithakLog: [...(packet.baithakLog ?? []), entry] })
     }

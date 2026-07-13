@@ -155,6 +155,7 @@ export interface RubricWeights {
 
 export type LineKind =
   | 'contact'
+  | 'summary'
   | 'heading'
   | 'entry-title'
   | 'meta'
@@ -254,6 +255,8 @@ export interface Packet {
   quality?: CompileQuality
   /** Baithak decisions trail (P14): every applied conversational edit, logged. */
   baithakLog?: BaithakLogEntry[]
+  /** Professional summary on the resume (default on) — evidence-linked, Baithak-toggleable. */
+  summaryOn?: boolean
 }
 
 // ---------- Tijori (persistence vault — Session 5) ----------
@@ -299,6 +302,8 @@ export type EditOp =
   | { kind: 'set-section-order'; sectionOrder: ('education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs')[] }
   /** Runs the existing fact-drift-guarded polish pass — phrasing only, facts frozen (I1). */
   | { kind: 'polish-tone' }
+  /** Professional summary on/off — recompiled from real ledger evidence (I1). */
+  | { kind: 'set-summary'; on: boolean }
 
 export interface ProposedEdit {
   id: string
@@ -317,6 +322,8 @@ export interface BaithakParse {
   refused?: { term: string; gapNote: string }
   citations?: { title: string; url: string }[]
   by: 'deterministic' | 'dimaag'
+  /** False when no specific intent matched → the smart LLM layer may take over (owner + keyed). */
+  handled?: boolean
 }
 
 export interface BaithakLogEntry {

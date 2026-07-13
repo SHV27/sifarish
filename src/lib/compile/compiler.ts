@@ -43,6 +43,7 @@ const CHARS_PER_LINE = 88
 
 export const LINE_METRICS: Record<CompiledLine['kind'], { size: number; leading: number; before: number; bold: boolean }> = {
   contact: { size: 9.5, leading: 12.5, before: 2, bold: false },
+  summary: { size: 10, leading: 13, before: 6, bold: false },
   heading: { size: 11, leading: 14, before: 10, bold: true },
   'entry-title': { size: 10.5, leading: 13.5, before: 5, bold: true },
   meta: { size: 10, leading: 13, before: 1, bold: false },
@@ -90,6 +91,12 @@ export interface CompileInput {
     /** Ustaad archetype guide (P13): section order for THIS reviewer. Absent → default order. */
     sectionOrder?: SectionKey[]
   }
+  /**
+   * Professional summary (Session 5.2) — a targeted, evidence-dense line rendered at the top
+   * (the 6-second skim's first fixation, Ustaad ¶headline-mirrors-role). Compiled from the vision
+   * + real ledger evidence by the orchestrator, so it carries ledgerIds and mints no claim (I1).
+   */
+  summaryLine?: CompiledLine
 }
 
 export type SectionKey = 'education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs'
@@ -177,6 +184,9 @@ export function compileResume(input: CompileInput): CompiledResume {
       ledgerIds: [],
     })
     push(lines, { kind: 'contact', text: identity.location, ledgerIds: [] })
+
+    // Professional summary (top-third, first fixation) — evidence-linked, orchestrator-compiled.
+    if (input.summaryLine && input.summaryLine.text.trim()) push(lines, input.summaryLine)
 
     // Sections render in the archetype guide's order (Ustaad P13); default order otherwise.
     const sections: Record<SectionKey, () => void> = {

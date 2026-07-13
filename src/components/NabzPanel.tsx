@@ -20,14 +20,6 @@ import {
  * highlights; every untracked repo has a one-click "Add to ledger". The owner confirms every change.
  */
 
-const STATUS: Record<RepoOverview['status'], { label: string; tone: string }> = {
-  shipped: { label: 'in ledger · shipped', tone: 'stamp-shipped' },
-  in_forge: { label: 'in ledger · forge', tone: 'stamp-forge' },
-  pending: { label: 'drafted from README', tone: 'stamp-red' },
-  dismissed: { label: 'not in ledger', tone: '' },
-  untracked: { label: 'not in ledger', tone: '' },
-}
-
 export function NabzPanel() {
   const pending = useLiveQuery(() => db.suggestions.where('status').equals('pending').toArray()) ?? []
   const [overview, setOverview] = useState<RepoOverview[] | null>(null)
@@ -36,6 +28,7 @@ export function NabzPanel() {
   const [err, setErr] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [adding, setAdding] = useState<string | null>(null)
+  const [showInLedger, setShowInLedger] = useState(false)
 
   const load = async (force: boolean) => {
     setSyncing(true)
@@ -81,7 +74,11 @@ export function NabzPanel() {
     return n
   })
 
-  const untrackedCount = overview?.filter((o) => o.status === 'untracked' || o.status === 'dismissed').length ?? 0
+  // Split so the list never congests: actionable repos (not in ledger) get full cards; repos
+  // already shipped/in-forge collapse into one compact line (why waste the space).
+  const notInLedger = (overview ?? []).filter((o) => o.status !== 'shipped' && o.status !== 'in_forge')
+  const inLedger = (overview ?? []).filter((o) => o.status === 'shipped' || o.status === 'in_forge')
+  const untrackedCount = notInLedger.length
 
   // Nabz is owner-only: it watches Shaurya's real GitHub. The demo showcase never shows it.
   if (!isOwnerMode()) return null
@@ -125,28 +122,25 @@ export function NabzPanel() {
         </ul>
       )}
 
-      {/* Every repo, always, deeply read */}
+      {/* NOT in the ledger yet — the actionable repos get the full deep-read card. */}
       <div className="mt-3 space-y-2">
         {overview === null ? (
           <p className="text-xs text-ink-soft">{syncing ? 'Reading your repositories…' : 'Loading…'}</p>
+        ) : notInLedger.length === 0 ? (
+          <p className="text-xs text-ink-soft">Every public repo is already in your ledger. The truth is in sync. ✓</p>
         ) : (
-          overview.map((o) => {
+          notInLedger.map((o) => {
             const d = o.distilled
             const open = expanded.has(o.repo.name)
-            // Anything not already in the ledger can be added inline (untracked / dismissed / drafted).
-            const canAdd = o.status === 'untracked' || o.status === 'dismissed' || o.status === 'pending'
             const live = o.repo.homepage || d?.liveUrl
             return (
               <div key={o.repo.name} className="ledger-rule pt-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <a className="font-mono text-sm font-semibold text-ink underline decoration-dotted" href={o.repo.html_url} target="_blank" rel="noreferrer">{o.repo.name}</a>
-                  <span className={`stamp !text-[9px] !rotate-0 ${STATUS[o.status].tone}`}>{o.ledgerTitle ? `in ledger — ${o.ledgerTitle}` : STATUS[o.status].label}</span>
                   {o.repo.language && <span className="font-mono text-[10px] text-ink-soft">{o.repo.language}</span>}
-                  {canAdd && (
-                    <button className="ml-auto shrink-0 text-[11px] font-semibold bg-ink text-paper px-2.5 py-1 rounded disabled:opacity-50" disabled={adding === o.repo.name} onClick={() => void addOne(o)}>
-                      {adding === o.repo.name ? 'adding…' : o.status === 'pending' ? 'Add to ledger ✓' : '+ Add to ledger'}
-                    </button>
-                  )}
+                  <button className="ml-auto shrink-0 text-[11px] font-semibold bg-ink text-paper px-2.5 py-1 rounded disabled:opacity-50" disabled={adding === o.repo.name} onClick={() => void addOne(o)}>
+                    {adding === o.repo.name ? 'adding…' : '+ Add to ledger'}
+                  </button>
                 </div>
                 {d?.summary && <p className="text-[11px] text-ink-soft leading-relaxed mt-1">{d.summary}</p>}
                 {d && (d.bullets.length > 0 || d.stack.length > 0) && (
@@ -179,6 +173,30 @@ export function NabzPanel() {
         )}
       </div>
 
+      {/* Already in the ledger — collapsed to one compact line so it never congests the list. */}
+      {inLedger.length > 0 && (
+        <div className="mt-3 ledger-rule pt-2">
+          <button className="text-[11px] text-ink-soft hover:underline" onClick={() => setShowInLedger((v) => !v)}>
+            {showInLedger ? 'hide' : 'show'} {inLedger.length} repo{inLedger.length === 1 ? '' : 's'} already in your ledger ✓
+          </button>
+          {showInLedger && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {inLedger.map((o) => (
+                <a
+                  key={o.repo.name}
+                  href={o.repo.html_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-[10px] bg-paper-sunken/60 rounded px-2 py-1 text-ink hover:underline"
+                  title={o.ledgerTitle}
+                >
+                  {o.repo.name} <span className={o.status === 'shipped' ? 'text-shipped' : 'text-forge'}>{o.status === 'shipped' ? '✓' : '⋯'}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   )
 }

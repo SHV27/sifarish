@@ -8,6 +8,7 @@ import { getIntel, hookFromIntel } from './intel/client'
 import { runEditor, redTeamPass } from './darzi/editor'
 import { composeLetter, decideSignature } from './atelier/letter'
 import { estimateQuality } from './ustaad/quality'
+import { buildSummaryLine } from './darzi/summary'
 
 /**
  * The Darzi orchestrator: JD decode → evidence match → deterministic compile.
@@ -31,7 +32,9 @@ export async function buildPacketFast(job: Job): Promise<Packet> {
 
   const decode = decodeJD(job.jd)
   const coverage = matchEvidence(decode, ledger)
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id }) // deterministic, no editorial
+  const settings = await db.settings.get('app')
+  const summaryLine = buildSummaryLine({ identity, vision: settings?.visionProfile, ledger, decode, coverage }) ?? undefined
+  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, summaryLine }) // deterministic, no editorial
   const coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook)
   const outreach = compileOutreach(job, identity, ledger, decode)
   const gapNote = buildGapNote(coverage)
@@ -50,6 +53,7 @@ export async function buildPacketFast(job: Job): Promise<Packet> {
     intel,
     enhancing: true, // the Dimaag layer is still refining casting + letter in the background
     quality: estimateQuality(resume, coverage, ledger),
+    summaryOn: true,
   }
 }
 
@@ -80,9 +84,14 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     }
   }
 
+  // -- Professional summary (evidence-linked; top of the page) --
+  const settings = await db.settings.get('app')
+  const vision = settings?.visionProfile
+  const summaryLine = buildSummaryLine({ identity, vision, ledger, decode, coverage, editorial }) ?? undefined
+
   // -- Compile (v1 compiler is final authority for I1/I2/one-page) --
   onProgress?.('Compiling the one-page résumé…')
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial })
+  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial, summaryLine })
 
   // -- Pass 4: Red-Team loop (≤3 rounds). PASS required for "ready". --
   let ready = true
@@ -98,8 +107,6 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
 
   // -- Atelier (v3): composed letter with per-company Sifarish Signature decision --
   onProgress?.('Composing your cover letter…')
-  const settings = await db.settings.get('app')
-  const vision = settings?.visionProfile
   let signature: Packet['signature']
   let coverLetter
   if (editorial) {
@@ -131,7 +138,38 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     signature,
     enhancing: false, // the Dimaag layer has finished — this is the fully-reasoned packet
     quality: estimateQuality(resume, coverage, ledger),
+    summaryOn: true,
   }
+}
+
+/**
+ * Toggle / recompile the professional summary (Session 5.2). Deterministic, zero LLM budget —
+ * the summary is always compiled from real ledger evidence, so I1 holds by construction.
+ */
+export async function setSummary(packet: Packet, on: boolean): Promise<Packet> {
+  const identity = await db.identity.get('me')
+  const ledger = await db.ledger.toArray()
+  const settings = await db.settings.get('app')
+  if (!identity) return packet
+  const summaryLine = on ? buildSummaryLine({ identity, vision: settings?.visionProfile, ledger, decode: packet.decode, coverage: packet.coverage, editorial: packet.editorial }) ?? undefined : undefined
+  const order = packet.editorial?.chosen.map((c) => c.ledgerId) ?? []
+  const bullets: Record<string, string[]> = {}
+  for (const c of packet.editorial?.chosen ?? []) {
+    const p = ledger.find((e) => e.id === c.ledgerId)
+    if (p) bullets[c.ledgerId] = p.bullets.slice(0, 3).map((b) => b.id)
+  }
+  const resume = compileResume({
+    identity,
+    ledger,
+    decode: packet.decode,
+    coverage: packet.coverage,
+    jobId: packet.jobId,
+    editorial: packet.editorial ? { order, bullets, sectionOrder: packet.editorial.sectionOrder } : undefined,
+    summaryLine,
+  })
+  const updated: Packet = { ...packet, resume, summaryOn: on, quality: estimateQuality(resume, packet.coverage, ledger) }
+  await db.packets.put(updated)
+  return updated
 }
 
 /** Toggle the Sifarish Signature on a packet and recompose the letter (zero LLM budget). */
