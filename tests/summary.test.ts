@@ -18,28 +18,38 @@ function ctx() {
 }
 
 describe('professional summary — evidence-dense, never minted (I1)', () => {
-  it('compiles a strong, global, name-free summary from REAL evidence only', () => {
+  it('compiles a TRULY TIMELESS, vision-framed identity line (no tools, no numbers, no names)', () => {
     const { decode, coverage } = ctx()
     const line = buildSummaryLine({ identity: SEED_IDENTITY, vision: DEFAULT_VISION, ledger: SEED_LEDGER, decode, coverage })
     expect(line).toBeTruthy()
     expect(line!.kind).toBe('summary')
     expect(line!.text.length).toBeGreaterThan(40)
+    // Backed by real evidence (I1) even though it names nothing.
     const ids = new Set(SEED_LEDGER.map((e) => e.id))
+    expect(line!.ledgerIds.length).toBeGreaterThan(0)
     for (const id of line!.ledgerIds) expect(ids.has(id)).toBe(true)
-    // Architect-grade role framing from the vision (agentic).
+    // The director/builder identity, vision-framed.
     expect(line!.text).toMatch(/Agentic-AI engineer/i)
-    // NO project names — the summary is positioning, the projects speak for themselves below.
+    expect(line!.text).toMatch(/architects and ships/i)
+    // NO project names.
     for (const name of ['GLOAMING', 'SUTRADHAR', 'DARYA', 'MUNSHI', 'KATHA', 'YOJANA', 'BRAILLIX']) {
       expect(line!.text).not.toContain(name)
     }
-    // NO geography (he targets remote/international too).
+    // NO tool/skill names (the stack changes month to month — not timeless).
+    for (const tool of ['Python', 'Groq', 'Whisper', 'TypeScript', 'JavaScript', 'Git', 'RAG', 'LoRA', 'PyTorch', 'React']) {
+      expect(line!.text).not.toContain(tool)
+    }
+    // NO numbers (a count is a point-in-time fact).
+    expect(line!.text).not.toMatch(/\d/)
+    // NO geography, NO decaying "currently building".
     expect(line!.text).not.toMatch(/India|Indian|Punjab/i)
-    // Proof by NUMBER (a real project count), not name.
-    expect(line!.text).toMatch(/\d+ (production |shipped )?project/)
-    // TIMELESS — no forward-dated "currently building X" that would decay as he ships.
     expect(line!.text).not.toMatch(/currently|building|forge/i)
-    // AI-led capabilities (architect image) — generic tooling doesn't lead.
-    expect(line!.text).toMatch(/Agent Design|LLM|RAG|Groq|agent/i)
+  })
+
+  it('returns null when the ledger has no AI evidence to back the identity (I1)', () => {
+    const { decode, coverage } = ctx()
+    const noAi = SEED_LEDGER.filter((e) => e.kind !== 'project' && !(e.kind === 'skill'))
+    expect(buildSummaryLine({ identity: SEED_IDENTITY, vision: DEFAULT_VISION, ledger: noAi, decode, coverage })).toBeNull()
   })
 
   it('renders at the TOP of the resume (first fixation) when passed to the compiler', () => {

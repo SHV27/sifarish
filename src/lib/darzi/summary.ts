@@ -1,32 +1,24 @@
 import type { CompiledLine, CoverageReport, EditorialPlan, Identity, JDDecode, LedgerEntry, VisionProfile } from '../../types'
-import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { LEXICON } from '../jd/lexicon'
 
-/** True if a skill's tags map to an AI/ML/agentic lexicon class — these lead the capability list. */
+/**
+ * PROFESSIONAL SUMMARY (Session 5.2) — a TRULY TIMELESS, vision-framed positioning line for the top of
+ * the resume (the 6-second skim's first fixation; Ustaad ¶headline-mirrors-role). It says who he IS and
+ * how he WORKS — "I architect, I build" — never anything that decays:
+ *   • NO tool/skill names (his stack changes month to month).
+ *   • NO numbers (a count is a point-in-time fact).
+ *   • NO project names, NO geography (he targets remote/international), NO "currently building X".
+ * What remains is stable forever: a role from his vision + the director/builder identity + the domain.
+ *
+ * I1 is preserved: the line is only produced when the ledger actually backs the claim (he has shipped
+ * AI/agent work OR the AI skills to do it), and it carries the ledgerIds of that backing evidence — it
+ * simply doesn't *name* them. If there is no AI evidence at all, no summary is produced (returns null).
+ */
+
+/** True if a skill's tags map to an AI/ML/agentic lexicon class. */
 function isAiSkill(s: LedgerEntry): boolean {
   return s.tags.some((t) => LEXICON.some((l) => l.canonical === t && !!l.aiClass))
 }
-
-/** What this role "ships", derived from the vision role (keeps the head clause honest + on-target). */
-function shipsPhrase(role: string): string {
-  if (/agentic/i.test(role)) return 'production LLM and agent systems end to end'
-  if (/LLM/i.test(role)) return 'production LLM applications end to end'
-  if (/research/i.test(role)) return 'rigorous ML systems and experiments'
-  return 'production ML and LLM systems end to end'
-}
-
-/**
- * PROFESSIONAL SUMMARY (Session 5.2) — a strong, GLOBALLY-framed AI-engineer positioning line for the
- * top third of the resume (the 6-second skim's first fixation; Ustaad ¶headline-mirrors-role). By design:
- *   • Framed by his VISION (the role he's aiming at), not his geography or a project.
- *   • NO project names (the projects speak for themselves lower down; the summary is positioning).
- *   • NO geography (he targets remote/international too — the framing must travel).
- *   • TIMELESS — no "currently building X" (that decays as he ships; the app is ever-evolving, so the
- *     summary states only what stays true). The shipped-project COUNT is recompiled each tailor, so it's
- *     always current without ever being a forward-dated claim.
- * It is NOT a fluffy objective — every capability word is a REAL ledger skill and the count is a real
- * count, so it mints nothing (I1). It carries the ledgerIds it leaned on.
- */
 
 /** A strong, geography-free role phrase from the vision's target roles (or a solid default). */
 function rolePhrase(vision?: VisionProfile): string {
@@ -35,7 +27,16 @@ function rolePhrase(vision?: VisionProfile): string {
   if (/llm/.test(roles)) return 'LLM engineer'
   if (/research|residency/.test(roles)) return 'AI research engineer'
   if (/ml|machine learning/.test(roles)) return 'Machine-learning engineer'
-  return 'Applied-AI engineer'
+  return 'AI engineer'
+}
+
+/** The stable DOMAIN the role builds in (no tools, no dates) — derived from the vision role. */
+function domainPhrase(role: string): string {
+  if (/agentic/i.test(role)) return 'production LLM and agent systems'
+  if (/LLM/i.test(role)) return 'production LLM applications'
+  if (/research/i.test(role)) return 'rigorous ML systems and experiments'
+  if (/machine-learning/i.test(role)) return 'production machine-learning systems'
+  return 'production AI systems'
 }
 
 export function buildSummaryLine(args: {
@@ -46,43 +47,21 @@ export function buildSummaryLine(args: {
   coverage: CoverageReport
   editorial?: EditorialPlan
 }): CompiledLine | null {
-  const { vision, ledger, decode } = args
+  const { vision, ledger } = args
   const eligible = ledger.filter((e) => e.resumeEligible)
-  const shippedProjects = eligible.filter((e) => e.tier === 'shipped' && e.kind === 'project')
-  const shippedSkills = eligible.filter((e) => e.tier === 'shipped' && e.kind === 'skill')
-  if (shippedSkills.length === 0 && shippedProjects.length === 0) return null
+  const shippedAiProjects = eligible.filter((e) => e.tier === 'shipped' && e.kind === 'project')
+  const aiSkills = eligible.filter((e) => e.kind === 'skill' && isAiSkill(e))
 
-  const ledgerIds: string[] = []
-  const skillName = (s: LedgerEntry) => s.title.split('—')[0].split('(')[0].trim()
+  // I1 guard: only claim the builder/architect identity if the ledger backs it. No AI evidence → no summary.
+  if (shippedAiProjects.length === 0 && aiSkills.length === 0) return null
 
-  // Capability list: AI/ML skills LEAD (architect image), then any remaining JD-matched skills.
-  // Generic tooling (git etc.) only appears if there aren't enough AI skills to stand on.
-  const rankedSkills = shippedSkills
-    .map((s) => ({ s, r: bulletRelevance(s.tags, decode) + entryRelevance(s, decode) + (isAiSkill(s) ? 100 : 0) }))
-    .sort((a, b) => b.r - a.r)
-  const aiCount = shippedSkills.filter(isAiSkill).length
-  const capSkills = rankedSkills.slice(0, Math.min(4, Math.max(3, aiCount))).map((x) => x.s)
-  for (const s of capSkills) ledgerIds.push(s.id)
-  const capability = capSkills.length > 0 ? capSkills.map(skillName).join(', ') : 'modern LLM tooling'
+  // Backing evidence (linked for honesty, never named in the text).
+  const ledgerIds = [...new Set([...shippedAiProjects.map((e) => e.id), ...aiSkills.map((e) => e.id)])]
 
-  // Proof by NUMBER, not name (Ustaad ¶quantify). Clean phrasing — no redundant "1 … 1".
-  for (const p of shippedProjects) ledgerIds.push(p.id)
-  const n = shippedProjects.length
-  const live = shippedProjects.filter((p) => p.evidence?.url).length
-  let proof = ''
-  if (n > 0) {
-    proof =
-      live === n
-        ? `${n} production project${n === 1 ? '' : 's'} shipped and live`
-        : live > 0
-          ? `${n} shipped project${n === 1 ? '' : 's'}, ${live} live`
-          : `${n} shipped project${n === 1 ? '' : 's'}`
-  }
-
-  // Compose — TIMELESS, vision-framed, name-free, geography-free.
+  // TIMELESS: [Vision role] who architects and ships [domain] end to end — from first principles to live
+  // deployment.  (Identity + how he works. No tools, no numbers, no geography, no dates → never decays.)
   const role = rolePhrase(vision)
-  const head = `${role} who ships ${shipsPhrase(role)} — ${capability}`
-  const text = proof ? `${head}. ${proof}.` : `${head}.`
+  const text = `${role} who architects and ships ${domainPhrase(role)} end to end — from first principles to live deployment.`
 
-  return { kind: 'summary', text, ledgerIds: [...new Set(ledgerIds)] }
+  return { kind: 'summary', text, ledgerIds }
 }

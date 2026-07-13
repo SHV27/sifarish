@@ -230,9 +230,10 @@ This is the most instructive failure in the project — "final" had to be declar
   budgeted + keyless-degradable. Separately, a first-class **Professional Summary** feature was added — a
   **timeless, vision-framed** AI-engineer positioning line: no project names (the projects speak for
   themselves below), no geography (he targets remote/international), no "currently building X" (that decays
-  as he ships — the app is ever-evolving), AI/ML skills leading the capability list, and a recompiled
-  shipped-project *count* as quantified proof. Every clause traces to a real ledger entry (I1); parse-back
-  (I5) holds.
+  as he ships — the app is ever-evolving), and — after owner feedback that named skills and counts still *decay* — refined to a TRULY timeless identity
+  line: no tool names, no numbers, no project names, no geography ("Agentic-AI engineer who architects and
+  ships production LLM and agent systems end to end — from first principles to live deployment"). It states
+  only who he is and how he works ("I architect, I build"), backed by ledgerIds it never names (I1).
 - **Lesson:** "smart" and "safe" aren't in tension if the LLM proposes and a deterministic validator disposes.
 
 ---
