@@ -2,10 +2,20 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5 "The Pehchaan Repair" — CURED · RESEALED ✦
+## Status: Session 5.3 "The Taalmel" — CROSS-DEVICE SYNC · RESEALED ✦
 
-Live: https://sifarish-shv-s-projects.vercel.app · **291/291 gates green** · 0 console errors ·
+Live: https://sifarish-shv-s-projects.vercel.app · **302/302 gates green** · 0 console errors ·
 build warning-free · all Four Proofs (§14) executed.
+
+### Session 5.3 — open Owner Mode anywhere, your ledger follows (D54)
+The owner opened Owner Mode on his **phone** and got a fresh reset — each browser's IndexedDB is its own
+island (the local-first plan; per-device by design). His real need is multi-device, so it's cured:
+**server-blind encrypted sync**. A Vercel Blob store holds ONLY ciphertext (AES-256-GCM, key derived from
+his passcode via PBKDF2 — the server sees only SHA-256(passcode), never the AES key). `/api/vault` is
+token-gated (401) + origin-checked (403) at the choke point. **Fail-safe by construction:** any failure
+(no key / decrypt-fail / offline / empty cloud / not-provisioned) leaves LOCAL DATA UNTOUCHED — restore
+only when the cloud copy authentically decrypts AND (is newer OR local is empty). Last-write-wins.
+Owner-gated client-side (a demo/Darshak browser can never call it). 10 new gates.
 
 ### Session 5 — the disease cured (one root cause, not four)
 The owner reported: greeted as demo 'Arjun'; **owner edits vanish on reopen**; leaky modes; token-spend
@@ -107,5 +117,6 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
 > architecture guarantees is that staying current never again requires opening an editor.
 
 ## ONE next action
-→ **None for the code — the seal holds (291/291, Four Proofs green).** For the owner: open the app →
-   🔑 Owner Mode → `Vers@tile1` → you're Shaurya, your real data, auto-backed-up. Then go get the internship.
+→ **None for the code — the seal holds (302/302, Four Proofs green, sync live).** For the owner: open the
+   app on ANY device → 🔑 Owner Mode → `Vers@tile1` → your real data arrives up to date (edit on the laptop,
+   open on the phone, it's there). Settings → Darbaan shows sync status + a "Sync now" button. Go get the internship.

@@ -18,3 +18,5 @@ console-report.json
 
 lighthouse*.json
 owner-code.local.txt
+
+.env*

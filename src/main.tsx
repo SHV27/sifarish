@@ -5,6 +5,7 @@ import App from './App'
 import { seedIfEmpty, backfillV2 } from './db/seed'
 import { loadLibraryOverride } from './lib/ustaad/library'
 import { requestDurableStorage, restoreOnEmptyIfNeeded, autoBackup } from './db/tijori'
+import { pullVault, pushVault, markLocalEdit } from './lib/sync'
 import { onOwnerMutation } from './db/db'
 import { isOwnerMode } from './lib/pehchaan'
 
@@ -14,22 +15,30 @@ let booted = false
 const bootListeners = new Set<() => void>()
 
 async function boot() {
-  // Owner vault: request durable storage FIRST (the reproduced data-loss root — FIX-2), then
-  // restore from an encrypted backup if the store was evicted/emptied, before seeding.
+  // Owner vault: request durable storage FIRST (the reproduced data-loss root — FIX-2). Then, in
+  // order and each FAIL-SAFE (never wipes local): pull the cloud vault (a fresh device gets his real
+  // data instead of a reset), then a local-backup restore-on-empty, then seed only if STILL empty.
   if (isOwnerMode()) {
     await requestDurableStorage()
-    await restoreOnEmptyIfNeeded()
+    const pulled = await pullVault().catch(() => ({ restored: false }))
+    if (!pulled.restored) await restoreOnEmptyIfNeeded()
   }
   await seedIfEmpty()
   await backfillV2()
   await loadLibraryOverride() // Ustaad: an accepted Pulse library update wins over the bundled copy (I13)
 
-  // Auto-backup after owner edits (debounced) — his work is never one glitch from gone.
   if (isOwnerMode()) {
+    // Make sure the cloud has this device's latest (idempotent if we just pulled; best-effort).
+    void pushVault().catch(() => {})
+    // After owner edits (debounced): local encrypted backup + bump the sync version + push to cloud.
     let timer: ReturnType<typeof setTimeout> | undefined
     onOwnerMutation(() => {
+      markLocalEdit()
       clearTimeout(timer)
-      timer = setTimeout(() => void autoBackup(), 2500)
+      timer = setTimeout(() => {
+        void autoBackup()
+        void pushVault()
+      }, 2500)
     })
   }
 }

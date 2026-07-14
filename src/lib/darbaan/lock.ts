@@ -1,4 +1,5 @@
 import { enterOwnerMode } from '../pehchaan'
+import { establishSyncKey } from '../sync'
 
 /**
  * DARBAAN — the AUTHENTICATION + TOKEN layer only (Session 5 split; RC1/RC3 cure). "Who is here"
@@ -109,6 +110,7 @@ export async function authenticate(passcode: string, confirm?: string): Promise<
       if (d.configured !== false) {
         if (d.ok && d.token) {
           setApiToken(d.token)
+          await establishSyncKey(passcode) // cross-device sync key (server-blind) — before the reload
           enterOwnerMode() // persists unlock + reloads into sifarish_owner
           return { ok: true }
         }
@@ -122,6 +124,7 @@ export async function authenticate(passcode: string, confirm?: string): Promise<
   // Local fallback (no server secret): self-hosted users still get an owner lock.
   if (hasPasscode()) {
     if (await unlockLocal(passcode)) {
+      await establishSyncKey(passcode)
       enterOwnerMode()
       return { ok: true }
     }
@@ -130,6 +133,9 @@ export async function authenticate(passcode: string, confirm?: string): Promise<
   if (confirm === undefined) return { ok: false, reason: 'local-setup' }
   if (passcode !== confirm) return { ok: false, reason: 'Passcodes do not match.' }
   const set = await setPasscode(passcode)
-  if (set.ok) enterOwnerMode()
+  if (set.ok) {
+    await establishSyncKey(passcode)
+    enterOwnerMode()
+  }
   return set
 }

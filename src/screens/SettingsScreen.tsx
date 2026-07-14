@@ -11,6 +11,7 @@ import { GOOGLE_CLIENT_ID } from '../lib/dak/gis'
 import { saveFile } from '../lib/util/download'
 import { getApiToken } from '../lib/apiGuard'
 import { storagePersisted, autoBackup, restoreFromLatest, requestDurableStorage } from '../db/tijori'
+import { hasSyncKey, lastSyncAt, syncConfigured, pushVault, pullVault } from '../lib/sync'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -254,6 +255,7 @@ function DarbaanSection() {
             </div>
           </div>
           {note && <p className="mt-2 text-[11px] font-mono text-ink-soft">{note}</p>}
+          <SyncStatus />
           <ApiTokenField />
         </>
       )}
@@ -308,6 +310,71 @@ function TijoriVault() {
         </div>
       </div>
       {note && <p className="sm:col-span-2 text-[11px] font-mono text-ink-soft">{note}</p>}
+    </div>
+  )
+}
+
+/**
+ * CROSS-DEVICE SYNC (Session 5.3) — status + manual controls. Server-blind: the cloud holds only
+ * ciphertext (AES-256-GCM, key derived from the owner passcode the server never sees). Fully
+ * fail-safe — if sync isn't provisioned or a call fails, the app stays local-first and loses nothing.
+ */
+function SyncStatus() {
+  const [provisioned, setProvisioned] = useState<boolean | null>(null)
+  const [keyed] = useState<boolean>(hasSyncKey())
+  const [last, setLast] = useState<number>(lastSyncAt())
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState('')
+
+  useEffect(() => {
+    void syncConfigured().then(setProvisioned)
+  }, [])
+
+  const syncNow = async () => {
+    setBusy(true)
+    setNote('')
+    try {
+      const pulled = await pullVault()
+      const pushed = await pushVault()
+      setLast(lastSyncAt())
+      setNote(
+        pulled.restored
+          ? 'Pulled newer data from the cloud and merged it in.'
+          : pushed
+            ? 'This device is the latest — cloud updated.'
+            : 'Already in sync.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 ledger-rule pt-3">
+      <p className="text-xs font-medium text-ink">Cross-device sync <span className="font-devanagari text-stamp">तालमेल</span></p>
+      <p className="text-[11px] text-ink-soft mt-0.5 leading-relaxed">
+        {provisioned === false ? (
+          <>Not provisioned on this deployment — your data stays on this device (local-first, never lost).</>
+        ) : !keyed ? (
+          <>Unlock Owner Mode again (via the gate) to derive this device's sync key, then your ledger follows you everywhere.</>
+        ) : (
+          <>
+            <span className="text-shipped font-semibold">On ✓</span> — open Owner Mode from any device, anywhere,
+            and your ledger arrives up to date. The cloud stores only ciphertext it can never read
+            (server-blind, AES-256-GCM). {last > 0 ? `Last synced ${new Date(last).toLocaleString('en-IN')}.` : 'Not yet synced on this device.'}
+          </>
+        )}
+      </p>
+      {keyed && provisioned !== false && (
+        <button
+          className="mt-2 text-[11px] font-semibold bg-ink text-paper px-3 py-1.5 rounded disabled:opacity-50"
+          disabled={busy}
+          onClick={() => void syncNow()}
+        >
+          {busy ? 'syncing…' : 'Sync now'}
+        </button>
+      )}
+      {note && <p className="mt-1.5 text-[11px] font-mono text-ink-soft">{note}</p>}
     </div>
   )
 }

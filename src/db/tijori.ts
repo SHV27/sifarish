@@ -73,7 +73,7 @@ export async function storagePersisted(): Promise<boolean> {
   }
 }
 
-async function snapshotPayload(): Promise<Record<string, unknown[]>> {
+export async function snapshotPayload(): Promise<Record<string, unknown[]>> {
   const payload: Record<string, unknown[]> = {}
   for (const t of USER_TABLES) payload[t] = await tbl(t).toArray()
   return payload
@@ -115,7 +115,7 @@ async function decrypt(snap: BackupSnapshot): Promise<Record<string, unknown[]> 
   }
 }
 
-async function writePayload(payload: Record<string, unknown[]>): Promise<Record<string, number>> {
+export async function writePayload(payload: Record<string, unknown[]>): Promise<Record<string, number>> {
   const counts: Record<string, number> = {}
   await db.transaction('rw', USER_TABLES.map((t) => db[t]), async () => {
     for (const t of USER_TABLES) {

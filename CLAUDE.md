@@ -339,3 +339,20 @@ the seal was broken.
   toggleable via set-summary. (3) Nabz: in-ledger repos collapse to one compact line (no congestion).
   (4) Morcha: columns cap at 8 (score-sorted) with show-more + a clear-found bulk action. (5) CASE_STUDY.md
   written — full engineering post-mortem, every problem v1→v5.2. 291/291 gates, Four Proofs green. (D53)
+--- Session 5.3 "The Taalmel" — cross-device sync (owner-requested; seal broken deliberately, §14) ---
+- D54: THE LOCAL-FIRST GAP MADE VISIBLE. Owner opened Owner Mode on his PHONE and got a fresh reset —
+  because each browser's IndexedDB is its own island (D49's two-vault design is per-device). Not a bug,
+  the local-first plan — but his real need is multi-device. CURE: SERVER-BLIND ENCRYPTED SYNC. A new
+  Vercel Blob store (`sifarish-vault`, public, unguessable passcode-derived path) holds ONLY ciphertext:
+  the vault is AES-256-GCM encrypted with a PBKDF2 key derived from the owner passcode that the server
+  NEVER sees (the server holds only SHA-256(passcode) as the gate token — one-way, cannot derive the AES
+  key). `/api/vault` (src) is token-gated (401) + origin-checked (403) at the choke point (RC3), same
+  guard as the 7 metered functions. FAIL-SAFE BY CONSTRUCTION: no key / decrypt-fail / network-down /
+  empty-cloud / not-provisioned → returns quietly, LOCAL DATA STANDS; restore happens ONLY when the cloud
+  copy authentically decrypts (GCM auth) AND (is strictly newer OR local is empty). Last-write-wins on a
+  local edit-version clock. Client `pushVault/pullVault` are owner-gated (getMode()==='owner') so a demo/
+  Darshak browser can never call it (D44 pattern preserved). GOTCHA CAUGHT (Law 12): @vercel/blob needs
+  the NODE runtime (fails in Edge, vercel/storage#440), and on Node a bare `export default function` is
+  read as the (req,res) Express handler — so the Web Request/Response handler MUST be exported as
+  `export default { fetch }` (Vercel Node docs). 302/302 gates (10 new sync gates incl. server-blind,
+  fail-safe-no-wipe, last-write-wins, wrong-key-adversary, and the runtime-shape regression). (D54, 14-Jul-2026)
