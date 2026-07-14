@@ -356,3 +356,17 @@ the seal was broken.
   read as the (req,res) Express handler — so the Web Request/Response handler MUST be exported as
   `export default { fetch }` (Vercel Node docs). 302/302 gates (10 new sync gates incl. server-blind,
   fail-safe-no-wipe, last-write-wins, wrong-key-adversary, and the runtime-shape regression). (D54, 14-Jul-2026)
+- D55: SESSION 5.3 BUG — origin-check on GET 403'd the owner's OWN reads (RC2 recurrence: my adversary
+  proof used curl with an explicit `-H "Origin: ..."` on every call, so it never reproduced what a real
+  browser sends). Root cause: browsers omit the `Origin` header on same-origin GET (only non-GET/HEAD
+  carries it) — `api/darbaan.ts` already knew this (its origin-check is POST-only); `api/vault.ts` copied
+  the check onto every method, including GET, so the owner's own "is sync on?" status check always 403'd
+  even though the deployment WAS configured correctly. Owner caught it live from two real browsers
+  (normal open showed 74% real data / correct-looking; the Vercel prod tab showed a fresh 40% ledger with
+  "Not provisioned" — the tell). Fixed to match the proven pattern: origin-gate on POST only, bearer
+  token required on every method (the real boundary). Added a LIVE regression test that imports and
+  drives the actual handler with a crafted `Request` carrying no Origin header — not a source grep —
+  so a future edit can't silently reintroduce the gate on GET. 305/305 gates; re-verified live against
+  prod with curl omitting Origin (the previously-broken scenario), which now returns 200 instead of 403.
+  Lesson for future sessions: adversary/live-proof curl calls must mirror what the REAL client sends,
+  not the maximally-authenticated request — an over-privileged test can hide a broken default. (14-Jul-2026)

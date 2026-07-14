@@ -149,7 +149,7 @@ describe('Last-write-wins in both directions', () => {
 describe('The vault endpoint is gated at the choke point (RC3) — structural', () => {
   const src = readFileSync('api/vault.ts', 'utf8')
 
-  it('requires the owner token (401) and a trusted origin (403)', () => {
+  it('requires the owner token (401) and a trusted origin on mutations (403)', () => {
     expect(src).toMatch(/x-sifarish-token/)
     expect(src).toMatch(/401/)
     expect(src).toMatch(/originOk/)
@@ -166,5 +166,49 @@ describe('The vault endpoint is gated at the choke point (RC3) — structural', 
     // API only reaches the handler via the `{ fetch }` export, not a bare `export default function`.
     expect(src).toMatch(/export default \{ fetch:/)
     expect(src).toMatch(/runtime: 'nodejs'/)
+  })
+})
+
+describe('LIVE regression — GET must not require an Origin header (real bug, 5.3)', () => {
+  // Reproduces the actual production incident: browsers omit the Origin header on a same-origin GET
+  // (only non-GET/HEAD requests reliably carry it), so gating GET on originOk() 403'd the owner's own
+  // status checks and reads, even though the deployment WAS correctly configured. Exercises the real
+  // handler — not a source grep — so a future edit that reintroduces the gate on GET fails this test.
+  const PASSCODE = 'test-owner-passcode'
+  let token: string
+
+  beforeEach(async () => {
+    process.env.SIFARISH_OWNER_PASSCODE = PASSCODE
+    delete process.env.BLOB_READ_WRITE_TOKEN // no blob call needed to prove the gate logic
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PASSCODE))
+    token = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  })
+
+  it('a GET with a valid token but NO Origin header succeeds (the exact bug)', async () => {
+    const mod = await import('../api/vault.ts')
+    const req = new Request('https://sifarish-shv-s-projects.vercel.app/api/vault', {
+      method: 'GET',
+      headers: { 'x-sifarish-token': token }, // deliberately no Origin — what a real browser GET sends
+    })
+    const res = await mod.default.fetch(req)
+    expect(res.status).not.toBe(403)
+  })
+
+  it('a GET with no token still 401s (the bearer token remains the real gate)', async () => {
+    const mod = await import('../api/vault.ts')
+    const req = new Request('https://sifarish-shv-s-projects.vercel.app/api/vault', { method: 'GET' })
+    const res = await mod.default.fetch(req)
+    expect(res.status).toBe(401)
+  })
+
+  it('a POST with a valid token but a foreign/absent Origin is still 403 (mutation CSRF guard intact)', async () => {
+    const mod = await import('../api/vault.ts')
+    const req = new Request('https://sifarish-shv-s-projects.vercel.app/api/vault', {
+      method: 'POST',
+      headers: { 'x-sifarish-token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cipher: 'iv.ciphertext', updatedAt: Date.now() }),
+    })
+    const res = await mod.default.fetch(req)
+    expect(res.status).toBe(403)
   })
 })

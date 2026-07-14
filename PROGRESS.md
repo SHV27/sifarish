@@ -4,7 +4,7 @@
 
 ## Status: Session 5.3 "The Taalmel" — CROSS-DEVICE SYNC · RESEALED ✦
 
-Live: https://sifarish-shv-s-projects.vercel.app · **302/302 gates green** · 0 console errors ·
+Live: https://sifarish-shv-s-projects.vercel.app · **305/305 gates green** · 0 console errors ·
 build warning-free · all Four Proofs (§14) executed.
 
 ### Session 5.3 — open Owner Mode anywhere, your ledger follows (D54)
@@ -16,6 +16,13 @@ token-gated (401) + origin-checked (403) at the choke point. **Fail-safe by cons
 (no key / decrypt-fail / offline / empty cloud / not-provisioned) leaves LOCAL DATA UNTOUCHED — restore
 only when the cloud copy authentically decrypts AND (is newer OR local is empty). Last-write-wins.
 Owner-gated client-side (a demo/Darshak browser can never call it). 10 new gates.
+
+**Bug caught + fixed same session (D55):** the owner opened the real production URL from a second
+browser and saw "Not provisioned" even though sync WAS live. Root cause: browsers don't send an `Origin`
+header on same-origin GET requests, and `/api/vault` was gating GET on origin too — so the owner's own
+status check always 403'd. Fixed to match the proven `/api/darbaan` pattern (origin-gate on POST/mutations
+only; the bearer token gates every method). 3 new live regression tests drive the real handler with a
+no-Origin `Request` so this can't silently regress. Re-verified live against prod. 305/305.
 
 ### Session 5 — the disease cured (one root cause, not four)
 The owner reported: greeted as demo 'Arjun'; **owner edits vanish on reopen**; leaky modes; token-spend
@@ -117,6 +124,6 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
 > architecture guarantees is that staying current never again requires opening an editor.
 
 ## ONE next action
-→ **None for the code — the seal holds (302/302, Four Proofs green, sync live).** For the owner: open the
+→ **None for the code — the seal holds (305/305, Four Proofs green, sync live and fixed).** For the owner: open the
    app on ANY device → 🔑 Owner Mode → `Vers@tile1` → your real data arrives up to date (edit on the laptop,
    open on the phone, it's there). Settings → Darbaan shows sync status + a "Sync now" button. Go get the internship.

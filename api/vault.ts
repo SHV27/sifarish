@@ -6,9 +6,12 @@ import { put, list } from '@vercel/blob'
  * the vault is AES-256-GCM encrypted client-side with a key derived from his passcode (PBKDF2) — and the
  * server only holds SHA-256(passcode) as the token, which is one-way, so it can never derive the key.
  *
- * Access is token-gated (the same owner token the metered functions require) and origin-checked. The blob
- * lives at a passcode-derived, unguessable path. If BLOB_READ_WRITE_TOKEN isn't configured, this returns
- * {configured:false} and the client silently falls back to local-only — sync never breaks the app.
+ * Access is token-gated (the same owner token the metered functions require) on EVERY method — that
+ * bearer token is the real boundary. Origin is additionally checked on POST only (mutations), matching
+ * the proven /api/darbaan pattern: browsers omit the Origin header on same-origin GET, so gating GET on
+ * it would 403 the owner's own reads (the exact bug this comment now guards against — caught live 5.3).
+ * The blob lives at a passcode-derived, unguessable path. If BLOB_READ_WRITE_TOKEN isn't configured,
+ * this returns {configured:false} and the client silently falls back to local-only — sync never breaks the app.
  *
  * Node runtime (the @vercel/blob SDK needs Node's APIs — it can fail in Edge, vercel/storage#440).
  * On the Node runtime a bare default-export function is treated as the (req, res) Express handler, so
@@ -54,7 +57,7 @@ async function authToken(req: Request): Promise<string | null> {
 }
 
 async function handler(req: Request): Promise<Response> {
-  if (!originOk(req)) return json({ error: 'forbidden' }, 403)
+  if (req.method === 'POST' && !originOk(req)) return json({ error: 'forbidden' }, 403)
   const token = await authToken(req)
   if (!token) return json({ error: 'unauthorized' }, 401)
 
