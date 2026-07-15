@@ -10,6 +10,8 @@ import {
   overviewRepos,
   addRepoToLedger,
   refreshEntryFromRepo,
+  removeRepolessProjects,
+  repolessProjectNames,
   type RateBudget,
   type RepoOverview,
 } from '../lib/nabz/github'
@@ -32,6 +34,20 @@ export function NabzPanel() {
   const [showInLedger, setShowInLedger] = useState(false)
   const [reforging, setReforging] = useState<string | null>(null)
   const [reforgeNote, setReforgeNote] = useState<string | null>(null)
+  const [tidyNote, setTidyNote] = useState<string | null>(null)
+  const [confirmTidy, setConfirmTidy] = useState(false)
+  // Live count of projects with no linked repo — the thin ones the owner wants out for now (D91).
+  const repolessNames = useLiveQuery(() => repolessProjectNames()) ?? []
+
+  const tidyRepoless = async () => {
+    const r = await removeRepolessProjects()
+    setConfirmTidy(false)
+    setTidyNote(
+      r.removed.length > 0
+        ? `Removed ${r.removed.length} project(s) with no repo yet: ${r.removed.join(', ')}. They'll come back the moment you add their repo and re-forge.`
+        : 'Nothing to remove — every project already has a linked repo.',
+    )
+  }
 
   const load = async (force: boolean) => {
     setSyncing(true)
@@ -168,6 +184,33 @@ export function NabzPanel() {
             </button>
           </div>
           {reforgeNote && <p className="mt-2 text-[11px] text-shipped leading-relaxed">{reforgeNote}</p>}
+
+          {/* Tidy up: drop projects with no repo yet, so only real repo-backed work shows (D91). */}
+          {repolessNames.length > 0 && (
+            <div className="mt-2 pt-2 ledger-rule">
+              {!confirmTidy ? (
+                <button className="text-[11px] text-ink-soft hover:text-stamp underline decoration-dotted" onClick={() => setConfirmTidy(true)}>
+                  Tidy up — remove {repolessNames.length} project(s) with no repo yet ({repolessNames.join(', ')})
+                </button>
+              ) : (
+                <div className="text-[11px] text-ink">
+                  <p className="mb-1.5">
+                    Remove <span className="font-mono">{repolessNames.join(', ')}</span>? They render thin because Nabz has no README to
+                    forge from. They come back the instant you add their repo and re-forge — nothing is lost for good.
+                  </p>
+                  <div className="flex gap-2">
+                    <button className="text-[11px] font-semibold bg-stamp text-paper px-2.5 py-1 rounded" onClick={() => void tidyRepoless()}>
+                      Yes, remove them
+                    </button>
+                    <button className="text-[11px] text-ink-soft hover:underline" onClick={() => setConfirmTidy(false)}>
+                      Keep them
+                    </button>
+                  </div>
+                </div>
+              )}
+              {tidyNote && <p className="mt-1.5 text-[11px] text-shipped leading-relaxed">{tidyNote}</p>}
+            </div>
+          )}
         </div>
       )}
 

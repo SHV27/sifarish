@@ -482,6 +482,27 @@ export async function addRepoToLedger(repo: GhRepo): Promise<string> {
   return s.draftEntry?.id ?? ''
 }
 
+/**
+ * REMOVE REPO-LESS PROJECTS (D91) — owner-requested cleanup. Projects with no linked GitHub repo
+ * (DARYA, MUNSHI, …) can't be forged, so they render as thin one-liners and drag the resume down.
+ * He wants only real, repo-backed shipped work in the ledger for now; the thin ones come back the
+ * moment their repo exists (Nabz add + re-forge). Local-first: only he can trigger this, and it
+ * touches ONLY `kind:'project'` entries with no evidence.repo — skills/education/etc. are never
+ * removed, and any project that DID match a repo (its evidence.repo is set) is kept.
+ */
+export async function removeRepolessProjects(): Promise<{ removed: string[] }> {
+  const ledger = await db.ledger.toArray()
+  const repoless = ledger.filter((e) => e.kind === 'project' && !(e.evidence?.repo && e.evidence.repo.trim()))
+  if (repoless.length > 0) await db.ledger.bulkDelete(repoless.map((e) => e.id))
+  return { removed: repoless.map((e) => e.title.split('—')[0].trim()) }
+}
+
+/** How many projects would `removeRepolessProjects` remove — for a confirm prompt. */
+export async function repolessProjectNames(): Promise<string[]> {
+  const ledger = await db.ledger.toArray()
+  return ledger.filter((e) => e.kind === 'project' && !(e.evidence?.repo && e.evidence.repo.trim())).map((e) => e.title.split('—')[0].trim())
+}
+
 export interface RefreshResult {
   ok: boolean
   by: 'dimaag' | 'deterministic'

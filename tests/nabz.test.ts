@@ -229,3 +229,24 @@ MIT`
     expect(d.hasReadme).toBe(true)
   })
 })
+
+describe('D91 — tidy repo-less projects (owner-requested cleanup)', () => {
+  beforeEach(async () => {
+    await db.ledger.clear()
+  })
+  it('removes only projects with no linked repo; keeps repo-backed projects and non-projects', async () => {
+    const { removeRepolessProjects, repolessProjectNames } = await import('../src/lib/nabz/github')
+    await db.ledger.bulkPut([
+      { id: 'proj-darya', kind: 'project', title: 'DARYA', summary: '', bullets: [], tier: 'in_forge', forgeEta: 'x', tags: [], resumeEligible: true },
+      { id: 'proj-gloaming', kind: 'project', title: 'GLOAMING', summary: '', bullets: [], tier: 'shipped', evidence: { repo: 'https://github.com/SHV27/gloaming-game', date: '2026/07', note: '' }, tags: [], resumeEligible: true },
+      { id: 'skill-python', kind: 'skill', title: 'Python', summary: '', bullets: [], tier: 'shipped', tags: [], resumeEligible: true },
+    ] as never)
+
+    expect((await repolessProjectNames()).sort()).toEqual(['DARYA'])
+    const r = await removeRepolessProjects()
+    expect(r.removed).toEqual(['DARYA'])
+
+    const left = (await db.ledger.toArray()).map((e) => e.id).sort()
+    expect(left).toEqual(['proj-gloaming', 'skill-python']) // repo-backed project + skill survive
+  })
+})
