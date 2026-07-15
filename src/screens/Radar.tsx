@@ -54,7 +54,7 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
     if (!settings) return []
     return jobs
       .filter((j) => j.status === 'found')
-      .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company)) }))
+      .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
       .sort((a, b) => b.score.total - a.score.total)
   }, [jobs, ledger, settings, starred])
 

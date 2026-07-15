@@ -27,7 +27,8 @@ describe('Gate — Radar rubric agreement with hand labels', () => {
   it('every score part explains its WHY (Law 4)', () => {
     const score = scoreJob(fakeJob('Anthropic', 'AI Eng Intern', JD_FIXTURES[0].jd), SEED_LEDGER, DEFAULT_RUBRIC, true)
     // 6 rubric dimensions + the Freshness deduction (D65). Every one still owes the reader a WHY.
-    expect(score.parts).toHaveLength(7)
+    // 6 rubric dimensions + Freshness (D65) + Vision fit (D85). Every one owes the reader a WHY.
+    expect(score.parts).toHaveLength(8)
     for (const p of score.parts) {
       expect(p.why.length, `${p.key} missing WHY`).toBeGreaterThan(10)
       expect(p.points).toBeLessThanOrEqual(p.max)
@@ -57,6 +58,49 @@ describe('Paste Lane URL recognition (no scraping — API resolution only)', () 
   })
   it('returns null for a LinkedIn URL (paste JD text instead)', () => {
     expect(recognizeAtsUrl('https://www.linkedin.com/jobs/view/123456')).toBeNull()
+  })
+})
+
+describe('Vision fit (D85) — the top 15 must be HIS, not a generic AI list', () => {
+  const vision: import('../src/types').VisionProfile = {
+    dream: 'Become an AI/agent engineer building LLM and RAG systems — remote, international.',
+    targetRoles: ['AI Engineer', 'Machine Learning Engineer'],
+    notInterested: ['sales', 'frontend'],
+    compFloorStipend: 35000,
+    ppoFloorLpa: 16,
+    windowStart: 'Jan 2027',
+    windowEnd: 'May 2027',
+    remoteInternational: true,
+    openToOctoberStart: true,
+  }
+
+  const jd = 'Build LLM and RAG systems. Python, agents, evals. Remote.'
+
+  it('a role whose TITLE is his named target outranks the same role generically titled', () => {
+    const onVision = scoreJob(fakeJob('Acme', 'AI Engineer', jd), SEED_LEDGER, DEFAULT_RUBRIC, false, vision)
+    const offTitle = scoreJob(fakeJob('Acme', 'Software Developer', jd), SEED_LEDGER, DEFAULT_RUBRIC, false, vision)
+    expect(onVision.total).toBeGreaterThan(offTitle.total)
+    const vf = onVision.parts.find((p) => p.key === 'visionFit')!
+    expect(vf.points).toBeGreaterThan(0)
+    expect(vf.why).toMatch(/target role/i)
+  })
+
+  it('a not-interested hit is a real penalty, rendered in the WHY (L4)', () => {
+    const sales = scoreJob(fakeJob('Acme', 'AI Engineer', `${jd} This is a sales engineering role.`), SEED_LEDGER, DEFAULT_RUBRIC, false, vision)
+    const vf = sales.parts.find((p) => p.key === 'visionFit')!
+    expect(vf.why).toMatch(/not-interested/i)
+  })
+
+  it('no vision profile → neutral, nothing breaks (backward compatible)', () => {
+    const s = scoreJob(fakeJob('Acme', 'AI Engineer', jd), SEED_LEDGER, DEFAULT_RUBRIC, false)
+    const vf = s.parts.find((p) => p.key === 'visionFit')!
+    expect(vf.points).toBe(0)
+  })
+
+  it('total never exceeds 100 even with a full vision boost', () => {
+    const s = scoreJob(fakeJob('Acme', 'AI Engineer', jd), SEED_LEDGER, DEFAULT_RUBRIC, true, vision)
+    expect(s.total).toBeLessThanOrEqual(100)
+    expect(s.total).toBeGreaterThanOrEqual(0)
   })
 })
 

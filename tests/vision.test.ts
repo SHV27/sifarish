@@ -22,11 +22,16 @@ describe('deriveHunts — the hunt derives from the dream', () => {
   const hunts = deriveHunts(FIXTURE).map((h) => h.query.toLowerCase())
 
   it('produces the expected market role names', () => {
-    // From the brief's worked example.
+    // From the brief's worked example (expanded query set, D85).
     expect(hunts).toContain('forward deployed engineer')
     expect(hunts).toContain('ai solutions engineer')
-    expect(hunts).toContain('agent engineer')
+    expect(hunts.some((h) => h.includes('agent'))).toBe(true) // agentic/agent-engineer family
     expect(hunts).toContain('applied ai intern')
+  })
+
+  it('casts a wider net than the original 7 rules (D85 — kone kone se)', () => {
+    // A rich agentic-AI vision should imply many distinct on-vision queries, not a handful.
+    expect(new Set(hunts).size).toBeGreaterThanOrEqual(8)
   })
 
   it('every derived hunt has a rationale (why)', () => {

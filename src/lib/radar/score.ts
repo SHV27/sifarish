@@ -1,4 +1,4 @@
-import type { Job, LedgerEntry, RubricWeights, ScoreBreakdown, ScorePart } from '../../types'
+import type { Job, LedgerEntry, RubricWeights, ScoreBreakdown, ScorePart, VisionProfile } from '../../types'
 import { decodeJD } from '../jd/decode'
 import { matchEvidence } from '../match/evidence'
 import { LEXICON } from '../jd/lexicon'
@@ -20,19 +20,26 @@ function rubricSig(r: RubricWeights): string {
   return `${r.aiRelevance},${r.roleFit},${r.remoteIndia},${r.windowFit},${r.compSignal},${r.conviction}`
 }
 
-export function scoreJobCached(job: Job, ledger: LedgerEntry[], rubric: RubricWeights, starred: boolean): ScoreBreakdown {
+/** A short signature of the vision fields that move a score, for the cache key. */
+function visionSig(v?: VisionProfile): string {
+  if (!v) return '-'
+  return `${v.targetRoles.join(',')}|${v.notInterested.join(',')}|${v.dream.length}`
+}
+
+export function scoreJobCached(job: Job, ledger: LedgerEntry[], rubric: RubricWeights, starred: boolean, vision?: VisionProfile): ScoreBreakdown {
   // updatedAt joins the key: the staleness deduction (D65) is a function of the posting date,
   // so a re-synced job whose date moved must re-score rather than serve a stale breakdown.
-  const key = `${job.id}|${job.fetchedAt}|${job.updatedAt ?? ''}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}`
+  // visionSig joins it too (D85): the same job re-ranks when his vision changes.
+  const key = `${job.id}|${job.fetchedAt}|${job.updatedAt ?? ''}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}|${visionSig(vision)}`
   const hit = scoreCache.get(key)
   if (hit) return hit
-  const result = scoreJob(job, ledger, rubric, starred)
-  if (scoreCache.size > 800) scoreCache.clear() // simple bound; recompute is cheap after
+  const result = scoreJob(job, ledger, rubric, starred, vision)
+  if (scoreCache.size > 1200) scoreCache.clear() // simple bound; recompute is cheap after
   scoreCache.set(key, result)
   return result
 }
 
-export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights, starred: boolean): ScoreBreakdown {
+export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights, starred: boolean, vision?: VisionProfile): ScoreBreakdown {
   const decode = decodeJD(job.jd || job.title)
   const coverage = matchEvidence(decode, ledger)
   const parts: ScorePart[] = []
@@ -160,9 +167,77 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
   // like every other part — the penalty is never hidden math (L4).
   parts.push(stalenessPart(job))
 
-  // A deduction can't push a role below zero — a negative score would be noise, not information.
-  const total = Math.max(0, parts.reduce((n, p) => n + p.points, 0))
+  // 8 · Vision fit (D85) — the piece that makes the top 15 HIS, not a generic AI list.
+  //
+  // The rubric above scores what a role IS (AI-ness, ledger fit, remote, window) but never whether
+  // it is the role HE actually wants. LinkedIn ranks on his stated preferences; SIFARISH did not,
+  // so generic AI roles bubbled up and his top 15 read as "someone else's list" (D68). This scores
+  // a role against his Vision Profile: his named target role in the TITLE is the strongest signal
+  // (that is exactly what a job board ranks on), his dream themes are secondary, and a hit on his
+  // not-interested list is a real penalty. Rendered like every other part (L4). A boost + the
+  // staleness deduction together give the queue real spread toward fresh, on-vision roles.
+  parts.push(visionPart(job, vision))
+
+  // Vision can push a strong match past the rubric's 100 — cap it; a deduction can't go below 0.
+  const total = Math.max(0, Math.min(100, parts.reduce((n, p) => n + p.points, 0)))
   return { total, parts }
+}
+
+/** Salient theme words a vision dream implies (AI-role vocabulary), for secondary matching. */
+const VISION_THEMES = [
+  'agent', 'agentic', 'llm', 'rag', 'retrieval', 'multimodal', 'vision', 'voice', 'speech',
+  'fine-tun', 'fine tun', 'eval', 'guardrail', 'orchestrat', 'inference', 'serving', 'mlops',
+  'platform', 'research', 'applied', 'nlp', 'transformer', 'diffusion', 'reinforcement', 'ranking',
+  'recommendation', 'generative', 'foundation model', 'prompt', 'automation', 'tool use',
+]
+
+/**
+ * Vision fit — deterministic, inspectable, bounded. Boost for on-vision roles, penalty for
+ * off-vision ones. Absent vision → neutral (0), so nothing breaks before onboarding is done.
+ */
+export function visionPart(job: Job, vision?: VisionProfile): ScorePart {
+  if (!vision) return { key: 'visionFit', label: 'Vision fit', points: 0, max: 24, why: 'No Vision Profile yet — set one in Settings to rank roles by what YOU want.' }
+
+  const title = job.title.toLowerCase()
+  const hay = `${job.title} ${job.jd}`.toLowerCase()
+  const wordHit = (h: string, needle: string) => new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(h)
+
+  const rolePhrases = vision.targetRoles.map((r) => r.toLowerCase().trim()).filter((r) => r.length >= 3)
+  const dreamHay = `${vision.dream} ${vision.targetRoles.join(' ')}`.toLowerCase()
+  const activeThemes = VISION_THEMES.filter((t) => dreamHay.includes(t))
+
+  let pts = 0
+  const why: string[] = []
+
+  const titleRole = rolePhrases.find((r) => wordHit(title, r.split(/\s+/)[0]) && r.split(/\s+/).every((w) => title.includes(w)))
+  if (titleRole) {
+    pts += 16
+    why.push(`its title matches your target role "${titleRole}"`)
+  } else if (rolePhrases.some((r) => hay.includes(r))) {
+    pts += 8
+    why.push('a target role you named appears in the description')
+  }
+
+  const themeHits = activeThemes.filter((t) => hay.includes(t))
+  if (themeHits.length > 0) {
+    pts += Math.min(themeHits.length * 2, 8)
+    why.push(`vision themes present: ${[...new Set(themeHits.map((t) => t.replace(/-?tun$/, '-tuning')))].slice(0, 4).join(', ')}`)
+  }
+
+  const noHit = vision.notInterested.map((n) => n.toLowerCase().trim()).find((n) => n.length >= 3 && wordHit(hay, n))
+  if (noHit) {
+    pts -= 18
+    why.push(`but it hits "${noHit}" from your not-interested list`)
+  }
+
+  pts = Math.max(-20, Math.min(24, pts))
+  return {
+    key: 'visionFit',
+    label: 'Vision fit',
+    points: pts,
+    max: 24,
+    why: why.length > 0 ? why.join('; ') + '.' : 'No overlap with your stated target roles or vision themes.',
+  }
 }
 
 /** Age bands. Unknown date → no penalty: we punish evidence of staleness, never absence of it. */

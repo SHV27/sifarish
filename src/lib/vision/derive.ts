@@ -14,41 +14,62 @@ export interface DerivedHunt {
   remoteOnly: boolean
 }
 
-/** Keyphrase → canonical hunt queries. Encodes the market's role vocabulary. */
+/**
+ * Keyphrase → canonical hunt queries. Encodes the market's role vocabulary — expanded (D85) so the
+ * net catches roles from far more corners than the original 7 rules. Each matched theme adds the
+ * exact query strings a job board indexes on, which is how "kone kone se" coverage actually happens.
+ */
 const PHRASE_RULES: { test: RegExp; queries: string[] }[] = [
-  { test: /agent|agentic/i, queries: ['agent engineer', 'agentic AI intern'] },
-  { test: /architect|solution|forward.?deployed|deploy/i, queries: ['AI solutions engineer', 'forward deployed engineer'] },
-  { test: /applied|real.?world|real problem|ship|product/i, queries: ['applied AI intern'] },
-  { test: /claude|anthropic|llm|language model/i, queries: ['Claude Code engineer', 'LLM engineer intern'] },
-  { test: /research|paper|novel|model/i, queries: ['AI research intern'] },
-  { test: /voice|speech|multimodal/i, queries: ['voice AI engineer intern'] },
-  { test: /infra|platform|serving|deployment|mlops/i, queries: ['ML platform intern'] },
+  { test: /agent|agentic|tool.?use|orchestrat/i, queries: ['AI agent engineer', 'agentic AI engineer', 'agent engineer intern'] },
+  { test: /architect|solution|forward.?deployed|deploy|customer/i, queries: ['AI solutions engineer', 'forward deployed engineer', 'solutions engineer AI'] },
+  { test: /applied|real.?world|real problem|ship|product/i, queries: ['applied AI engineer', 'applied scientist intern', 'AI product engineer'] },
+  { test: /claude|anthropic|openai|gpt|llm|language model|generative|gen.?ai/i, queries: ['LLM engineer', 'generative AI engineer', 'GenAI engineer intern'] },
+  { test: /rag|retrieval|search|knowledge|vector|embedding/i, queries: ['RAG engineer', 'AI search engineer', 'retrieval engineer'] },
+  { test: /eval|guardrail|safety|alignment|trust|reliab/i, queries: ['AI evaluation engineer', 'LLM evals engineer', 'trustworthy AI intern'] },
+  { test: /research|paper|novel|model|foundation|pretrain|fine.?tun/i, queries: ['AI research intern', 'ML research engineer', 'research scientist intern'] },
+  { test: /voice|speech|asr|audio/i, queries: ['voice AI engineer', 'speech ML engineer'] },
+  { test: /multimodal|vision|image|video|cv|perception/i, queries: ['multimodal AI engineer', 'computer vision engineer intern'] },
+  { test: /nlp|text|conversational|chatbot|dialog/i, queries: ['NLP engineer', 'conversational AI engineer'] },
+  { test: /infra|platform|serving|deployment|mlops|inference|scale/i, queries: ['ML platform engineer', 'ML infrastructure engineer', 'MLOps engineer intern'] },
+  { test: /data|pipeline|feature|analytics/i, queries: ['machine learning engineer', 'ML data engineer'] },
+  { test: /recommend|ranking|personaliz|ads/i, queries: ['ML engineer recommendations', 'ranking ML engineer'] },
+  { test: /ml|machine learning|deep learning|neural/i, queries: ['machine learning engineer', 'ML engineer intern', 'deep learning engineer'] },
+  { test: /ai engineer|ai intern|artificial intelligence/i, queries: ['AI engineer', 'AI engineer intern', 'artificial intelligence engineer'] },
 ]
+
+/** Location/remote variants — how a board actually segments the same role. */
+function withLocationVariants(query: string, vision: VisionProfile): string[] {
+  const out = [query]
+  if (vision.remoteInternational) out.push(`${query} remote`)
+  out.push(`${query} India`)
+  return out
+}
 
 export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
   const haystack = `${vision.dream} ${vision.targetRoles.join(' ')}`.toLowerCase()
   const seen = new Set<string>()
   const hunts: DerivedHunt[] = []
+  const add = (query: string, why: string) => {
+    const q = query.trim()
+    if (!q || seen.has(q.toLowerCase())) return
+    seen.add(q.toLowerCase())
+    hunts.push({ query: q, why, remoteOnly: vision.remoteInternational })
+  }
 
-  for (const rule of PHRASE_RULES) {
-    if (!rule.test.test(haystack)) continue
-    for (const q of rule.queries) {
-      if (seen.has(q.toLowerCase())) continue
-      seen.add(q.toLowerCase())
-      hunts.push({
-        query: q,
-        why: `Your vision mentions "${(haystack.match(rule.test) ?? [''])[0]}" — this role type is the market's name for that work.`,
-        remoteOnly: vision.remoteInternational,
-      })
+  // The explicit target roles he named come first, each with a remote/India variant.
+  for (const r of vision.targetRoles) {
+    for (const v of withLocationVariants(r, vision)) {
+      add(v, `You named "${r}" as a target role — this is the query a job board indexes on.`)
     }
   }
 
-  // Always include the explicit target roles the user named.
-  for (const r of vision.targetRoles) {
-    const q = r.toLowerCase()
-    if (seen.has(q)) continue
-    seen.add(q)
-    hunts.push({ query: r, why: 'You named this target role directly in your Vision Profile.', remoteOnly: vision.remoteInternational })
+  // Theme-derived queries: every AI-role corner his vision implies.
+  for (const rule of PHRASE_RULES) {
+    if (!rule.test.test(haystack)) continue
+    const theme = (haystack.match(rule.test) ?? [''])[0]
+    for (const q of rule.queries) {
+      add(q, `Your vision mentions "${theme}" — this role type is a market name for that work.`)
+    }
   }
 
   return hunts
