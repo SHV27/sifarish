@@ -26,7 +26,8 @@ describe('Gate — Radar rubric agreement with hand labels', () => {
 
   it('every score part explains its WHY (Law 4)', () => {
     const score = scoreJob(fakeJob('Anthropic', 'AI Eng Intern', JD_FIXTURES[0].jd), SEED_LEDGER, DEFAULT_RUBRIC, true)
-    expect(score.parts).toHaveLength(6)
+    // 6 rubric dimensions + the Freshness deduction (D65). Every one still owes the reader a WHY.
+    expect(score.parts).toHaveLength(7)
     for (const p of score.parts) {
       expect(p.why.length, `${p.key} missing WHY`).toBeGreaterThan(10)
       expect(p.points).toBeLessThanOrEqual(p.max)

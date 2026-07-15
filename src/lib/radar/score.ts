@@ -21,7 +21,9 @@ function rubricSig(r: RubricWeights): string {
 }
 
 export function scoreJobCached(job: Job, ledger: LedgerEntry[], rubric: RubricWeights, starred: boolean): ScoreBreakdown {
-  const key = `${job.id}|${job.fetchedAt}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}`
+  // updatedAt joins the key: the staleness deduction (D65) is a function of the posting date,
+  // so a re-synced job whose date moved must re-score rather than serve a stale breakdown.
+  const key = `${job.id}|${job.fetchedAt}|${job.updatedAt ?? ''}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}`
   const hit = scoreCache.get(key)
   if (hit) return hit
   const result = scoreJob(job, ledger, rubric, starred)
@@ -148,5 +150,34 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
     why: starred ? 'Starred on your watchlist.' : 'Not a starred company.',
   })
 
-  return { total: parts.reduce((n, p) => n + p.points, 0), parts }
+  // 7 · Staleness (D65) — a deduction, not a rubric dimension.
+  //
+  // The rubric scored WHAT a role is and never WHEN it was posted, so a LangChain posting last
+  // touched 511 days ago sat at 85 and ate a slot in the top 15. A 17-month-old listing is
+  // almost certainly filled or dead: it is not a sniper target, whatever its keywords say.
+  // Implemented as a deduction so his saved rubric weights keep their meaning (no migration,
+  // no silent reweighting of the dimensions he tuned), and it renders in "why this score"
+  // like every other part — the penalty is never hidden math (L4).
+  parts.push(stalenessPart(job))
+
+  // A deduction can't push a role below zero — a negative score would be noise, not information.
+  const total = Math.max(0, parts.reduce((n, p) => n + p.points, 0))
+  return { total, parts }
+}
+
+/** Age bands. Unknown date → no penalty: we punish evidence of staleness, never absence of it. */
+export function stalenessPart(job: Job): ScorePart {
+  const stamp = job.updatedAt
+  if (!stamp) {
+    return { key: 'freshness', label: 'Freshness', points: 0, max: 0, why: 'No posting date published by this board — not penalised on a guess.' }
+  }
+  const days = Math.max(0, Math.floor((Date.now() - new Date(stamp).getTime()) / 86400000))
+  const band = days <= 30 ? 0 : days <= 60 ? -5 : days <= 120 ? -12 : days <= 240 ? -20 : -30
+  const why =
+    band === 0
+      ? `Posted ${days}d ago — live.`
+      : days > 240
+        ? `Last touched ${days}d ago. A posting this old is usually filled or abandoned; it should not hold a slot in your top 15.`
+        : `Last touched ${days}d ago — going cold, apply-through rate drops with age.`
+  return { key: 'freshness', label: 'Freshness', points: band, max: 0, why }
 }

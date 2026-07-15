@@ -24,14 +24,33 @@ export function Morcha({ onOpenPacket }: { onOpenPacket: (jobId: string) => void
   const jobs = useLiveQuery(() => db.jobs.toArray()) ?? []
   const ledger = useLiveQuery(() => db.ledger.toArray()) ?? []
   const [dossier, setDossier] = useState<InterviewDossier | null>(null)
+  const [query, setQuery] = useState('')
+
+  // One search across the whole board — "where did that Sarvam card go?" is a question the war
+  // room should answer instantly, not by scrolling five columns. Word-prefix, same as the Radar.
+  const terms = useMemo(
+    () =>
+      query
+        .toLowerCase()
+        .split(/\s+/)
+        .map((t) => t.replace(/[^a-z0-9+#.]/g, ''))
+        .filter(Boolean)
+        .map((t) => new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')),
+    [query],
+  )
+  const visibleJobs = useMemo(
+    () => (terms.length === 0 ? jobs : jobs.filter((j) => terms.every((re) => re.test(`${j.title} ${j.company} ${j.location ?? ''}`)))),
+    [jobs, terms],
+  )
 
   const byStatus = useMemo(() => {
     const map = new Map<JobStatus, Job[]>()
-    for (const j of jobs) map.set(j.status, [...(map.get(j.status) ?? []), j])
+    for (const j of visibleJobs) map.set(j.status, [...(map.get(j.status) ?? []), j])
     return map
-  }, [jobs])
+  }, [visibleJobs])
 
   const tracked = jobs.filter((j) => j.status !== 'found').length
+  const matched = visibleJobs.length
 
   return (
     <div>
@@ -46,6 +65,27 @@ export function Morcha({ onOpenPacket }: { onOpenPacket: (jobId: string) => void
       </div>
 
       {tracked > 0 && <DakPanel />}
+
+      {jobs.length > 8 && (
+        <div className="flex flex-wrap items-center gap-2 my-3">
+          <input
+            type="search"
+            className="flex-1 min-w-[14rem] text-sm border border-ink-wash rounded px-3 py-2 bg-paper text-ink placeholder:text-ink-faint"
+            placeholder="Find a card across the whole board — company, role, city…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search every card on the board"
+          />
+          {terms.length > 0 && (
+            <span className="text-xs text-ink-soft">
+              <strong className="font-mono text-ink">{matched}</strong> of {jobs.length} cards match ·{' '}
+              <button className="underline decoration-dotted" onClick={() => setQuery('')}>
+                clear
+              </button>
+            </span>
+          )}
+        </div>
+      )}
 
       {tracked === 0 ? (
         <div className="dossier p-8 text-center animate-dossier-in">
@@ -130,14 +170,33 @@ function Column({
           {clearing ? 'clearing…' : '✕ clear found'}
         </button>
       )}
-      <div className="space-y-2 min-h-16 bg-paper-sunken/30 rounded p-1.5">
+      <div className="space-y-2 min-h-16 max-h-[70vh] overflow-y-auto bg-paper-sunken/30 rounded p-1.5">
         {shown.map((job) => (
           <MorchaCard key={job.id} job={job} onOpenPacket={onOpenPacket} onDossier={() => onDossier(job)} />
         ))}
-        {jobs.length > limit && (
-          <button className="w-full text-[11px] font-mono text-ink-soft hover:text-ink py-1" onClick={() => setLimit((l) => l + PAGE)}>
-            show {Math.min(PAGE, jobs.length - limit)} more ({jobs.length - limit} hidden)
-          </button>
+        {/*
+          "8 more, 8 more" was a grind on a 996-card Found column — the cap kept the board scannable
+          but made the rest practically unreachable. One click now opens the column; one click closes
+          it. The column scrolls inside its own box so a long column can never stretch the board.
+        */}
+        {jobs.length > limit ? (
+          <div className="space-y-1">
+            <button
+              className="w-full text-[11px] font-mono text-ink-soft hover:text-ink py-1"
+              onClick={() => setLimit((l) => l + PAGE * 3)}
+            >
+              show {Math.min(PAGE * 3, jobs.length - limit)} more
+            </button>
+            <button className="w-full text-[11px] font-mono text-ink-soft hover:text-ink py-1" onClick={() => setLimit(jobs.length)}>
+              show all {jobs.length} ↓
+            </button>
+          </div>
+        ) : (
+          limit > PAGE && (
+            <button className="w-full text-[11px] font-mono text-ink-soft hover:text-ink py-1" onClick={() => setLimit(PAGE)}>
+              collapse to top {PAGE} ↑
+            </button>
+          )
         )}
       </div>
     </div>

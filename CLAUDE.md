@@ -298,6 +298,25 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   so `db.packets.put` re-renders the resume on apply. The perceived failure was the op vocabulary
   (D62), not the plumbing. Verified before touching it; no change made.
 
+- D64: THE DEPTH WAS ALREADY THERE — IT WAS LOCKED. Owner: "linkedin itne saare AI engineer role
+  dikha raha hai, sifarish kyun nahi." His radar already held 1002 scored roles; VISIBLE_CAP=15
+  showed fifteen, with no way to ask a question of the rest. D6's cap stays (an unasked-for
+  firehose IS spray) but SEARCH IS NOT SPRAY — it is the opposite: a deliberate, specific hunt.
+  So a query shows EVERY match and the cap now rules only the unfiltered default queue; plus an
+  explicit "show all N". Word-PREFIX matching, not substring — his own example ("ai" → all the AI
+  roles) is exactly what a naive .includes() breaks on ("Chain", "said"). Same search added to
+  Morcha across all columns, "+8, +8" replaced with show-24 / show-all / collapse, and each column
+  scrolls in its own box so a 996-card column can't stretch the board.
+- D65: DEAD ROLES WERE EATING THE TOP 15 (owner-caught in his own screenshot: LangChain "updated
+  511d ago" ranked #3 at 85/100 — the literal cause of "top 15 mein se kayi mere liye hote hi
+  nhi"). The rubric scored WHAT a role is and never WHEN it was posted. Fixed as a DEDUCTION
+  (`stalenessPart`), not a 7th rubric dimension: his tuned weights keep their meaning, no settings
+  migration, and the penalty renders in "why this score" like every other part (L4 — never hidden
+  math). Bands to -30 past 240d; a board that publishes NO date is never punished (we penalise
+  evidence of staleness, never its absence). 511d LangChain: 85 → 55, out of the queue.
+  NOTE (Law 12 / §14): the radar's SOURCE breadth is still 29 ATS boards + the keyed lanes — this
+  session unlocked and cleaned the existing catch; it did NOT add new discovery sources.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

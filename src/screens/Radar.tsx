@@ -8,6 +8,34 @@ import { scoreJobCached } from '../lib/radar/score'
 
 const VISIBLE_CAP = 15 // sniper, not spray — the cap is a feature (vision §P3)
 
+/**
+ * SEARCH THE FULL CATCH (Session 5.4, D64).
+ *
+ * The cap governs the DEFAULT queue — that stays: an unasked-for firehose is spray, and D6 is
+ * right that the ones below the line aren't worth his hours. But 1002 scored roles were sitting
+ * in the vault reachable only as "the top 15", with no way to ask a question of them. Search is
+ * not spray — it is the opposite: a deliberate, specific hunt ("ai", "remote", "bengaluru").
+ * So a query is treated as intent and shows EVERY match; the cap only rules the unfiltered queue.
+ *
+ * Word-prefix matching, not substring: "ai" must find "AI Engineer" without dragging in "Chain"
+ * or "said" — the reason a naive .includes() search would feel broken on exactly his example.
+ */
+function termsOf(query: string): RegExp[] {
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .map((t) => t.replace(/[^a-z0-9+#.]/g, ''))
+    .filter(Boolean)
+    .map((t) => new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i'))
+}
+
+/** Every term must hit somewhere in the role — AND semantics, so more words narrow the hunt. */
+function matchesQuery(job: Job, terms: RegExp[]): boolean {
+  if (terms.length === 0) return true
+  const hay = `${job.title} ${job.company} ${job.location ?? ''} ${job.publisher ?? ''} ${job.jd ?? ''}`
+  return terms.every((re) => re.test(hay))
+}
+
 export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
   const jobs = useLiveQuery(() => db.jobs.toArray()) ?? []
   const ledger = useLiveQuery(() => db.ledger.toArray()) ?? []
@@ -16,6 +44,8 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
   const [syncing, setSyncing] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [result, setResult] = useState<SyncResult | null>(null)
+  const [query, setQuery] = useState('')
+  const [showAll, setShowAll] = useState(false)
 
   const starred = useMemo(() => new Set(watchlist.filter((w) => w.starred).map((w) => w.company)), [watchlist])
 
@@ -26,6 +56,12 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
       .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company)) }))
       .sort((a, b) => b.score.total - a.score.total)
   }, [jobs, ledger, settings, starred])
+
+  const terms = useMemo(() => termsOf(query), [query])
+  const filtered = useMemo(() => (terms.length ? ranked.filter(({ job }) => matchesQuery(job, terms)) : ranked), [ranked, terms])
+  // A search is a deliberate hunt → show every match. The cap only rules the unfiltered queue.
+  const searching = terms.length > 0
+  const visible = searching || showAll ? filtered : filtered.slice(0, VISIBLE_CAP)
 
   const runSync = async () => {
     setSyncing(true)
@@ -87,12 +123,47 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
         <EmptyRadar synced={result !== null} onSync={runSync} />
       ) : (
         <>
-          {ranked.length > VISIBLE_CAP && (
-            <p className="text-xs text-ink-soft mb-3 flex flex-wrap items-center gap-2">
+          {/* Search the whole catch. The cap is for the queue you didn't ask for; this is asking. */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <input
+              type="search"
+              className="flex-1 min-w-[14rem] text-sm border border-ink-wash rounded px-3 py-2 bg-paper text-ink placeholder:text-ink-faint"
+              placeholder={`Search all ${ranked.length} roles — try "ai", "agent remote", "bengaluru"…`}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search every role on the radar"
+            />
+            {searching && (
+              <button className="text-xs text-ink-soft hover:underline shrink-0" onClick={() => setQuery('')}>
+                clear
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-ink-soft mb-3 flex flex-wrap items-center gap-2">
+            {searching ? (
+              <span>
+                <strong className="font-mono text-ink">{filtered.length}</strong> of {ranked.length} roles match “{query.trim()}” —
+                every one of them, ranked. A search is a hunt, not a spray.
+              </span>
+            ) : ranked.length > VISIBLE_CAP && !showAll ? (
               <span>
                 Showing the top {VISIBLE_CAP} of {ranked.length}. The cap is deliberate — the ones below the line
-                aren't worth your hours. Raise your rubric bar in Settings, not the cap.
+                aren't worth your hours. Search above to hunt the rest, or{' '}
+                <button className="font-mono text-[11px] text-ink underline decoration-dotted" onClick={() => setShowAll(true)}>
+                  show all {ranked.length} ↓
+                </button>
+                .
               </span>
+            ) : showAll ? (
+              <span>
+                Showing all {ranked.length}, best first.{' '}
+                <button className="font-mono text-[11px] text-ink underline decoration-dotted" onClick={() => setShowAll(false)}>
+                  back to the top {VISIBLE_CAP} ↑
+                </button>
+              </span>
+            ) : null}
+            {ranked.length > VISIBLE_CAP && (
               <button
                 className="font-mono text-[11px] text-ink underline decoration-dotted"
                 onClick={async () => {
@@ -103,13 +174,24 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
               >
                 clear stale finds ↻
               </button>
-            </p>
+            )}
+          </p>
+
+          {visible.length === 0 ? (
+            <div className="dossier p-6 text-center">
+              <p className="font-display text-ink">Nothing matches “{query.trim()}”.</p>
+              <p className="text-sm text-ink-soft mt-1">
+                Try a shorter word — search matches the start of words, so “agent” finds “Agentic”, and “ml” won’t
+                drag in “html”.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visible.map(({ job, score }) => (
+                <JobCard key={job.id} job={job} score={score} onTailor={() => tailor(job)} />
+              ))}
+            </div>
           )}
-          <div className="space-y-3">
-            {ranked.slice(0, VISIBLE_CAP).map(({ job, score }) => (
-              <JobCard key={job.id} job={job} score={score} onTailor={() => tailor(job)} />
-            ))}
-          </div>
         </>
       )}
     </div>
