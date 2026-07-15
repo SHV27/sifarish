@@ -142,6 +142,35 @@ export function NabzPanel() {
       {budget && <p className="mt-1 font-mono text-[10px] text-ink-soft">GitHub budget {budget.remaining}/{budget.limit} req left</p>}
       {err && <p className="mt-2 text-xs text-stamp">{err}</p>}
 
+      {/*
+        RE-FORGE, FRONT AND CENTRE (Session 5.4) — this is the single action that upgrades every
+        thin project bullet to a real, README-forged one. It used to hide behind a "show N repos"
+        toggle at the very bottom and the owner literally could not find it ("aisa koi button nahi
+        mila"). A fix nobody can reach is not a fix. It now sits at the top, always visible.
+      */}
+      {inLedger.length > 0 && (
+        <div className="mt-3 dossier border-l-4 border-l-forge p-3 bg-paper-raised/40">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex-1 min-w-[12rem]">
+              <p className="text-sm font-semibold text-ink">Make every project deep ⟳</p>
+              <p className="text-[11px] text-ink-soft leading-relaxed mt-0.5">
+                Re-reads each linked repo's full README and forges proper, evidence-true résumé
+                bullets — the difference between a one-line stub and the depth the tailor needs.
+                Your titles, tiers and hand-edits stay untouched.
+              </p>
+            </div>
+            <button
+              className="shrink-0 bg-stamp text-paper font-semibold text-xs px-4 py-2.5 rounded hover:opacity-90 disabled:opacity-50"
+              disabled={reforging !== null}
+              onClick={() => void reforgeAll(inLedger)}
+            >
+              {reforging === '*' ? 'Re-forging…' : `⟳ Re-forge all ${inLedger.length} projects`}
+            </button>
+          </div>
+          {reforgeNote && <p className="mt-2 text-[11px] text-shipped leading-relaxed">{reforgeNote}</p>}
+        </div>
+      )}
+
       {/* Highlights: promotions + link attaches — "the truth caught up" moments */}
       {highlights.length > 0 && (
         <ul className="mt-3 space-y-2">
@@ -220,19 +249,9 @@ export function NabzPanel() {
           </button>
           {showInLedger && (
             <div className="mt-1.5">
-              <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                <p className="text-[10px] text-ink-soft flex-1 min-w-[12rem]">
-                  Re-read pulls each README fresh and forges proper resume bullets from it. Your titles, tiers and edits stay exactly as you set them.
-                </p>
-                <button
-                  className="shrink-0 text-[10px] font-semibold bg-ink text-paper px-2 py-1 rounded disabled:opacity-50"
-                  disabled={reforging !== null}
-                  onClick={() => void reforgeAll(inLedger)}
-                >
-                  {reforging === '*' ? 're-forging…' : `⟳ Re-forge all ${inLedger.length}`}
-                </button>
-              </div>
-              {reforgeNote && <p className="text-[10px] text-shipped leading-relaxed mb-1.5">{reforgeNote}</p>}
+              <p className="text-[10px] text-ink-soft mb-1.5">
+                Tap ⟳ on any one repo to re-forge just it (or use “Re-forge all” above).
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {inLedger.map((o) => (
                   <span key={o.repo.name} className="inline-flex items-center gap-1 bg-paper-sunken/60 rounded px-2 py-1" title={o.ledgerTitle}>
