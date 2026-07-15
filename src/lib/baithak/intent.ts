@@ -23,14 +23,17 @@ export interface BaithakContext {
 
 const projectName = (e: LedgerEntry) => e.title.split('—')[0].trim()
 
+/** Normalize so "spark core" matches "spark-core" — hyphen vs space was a real miss (Session 5.4). */
+const normName = (s: string) => s.toLowerCase().replace(/[-_\s]+/g, ' ').trim()
+
 function findProject(utterance: string, projects: LedgerEntry[]): LedgerEntry | undefined {
-  const hay = utterance.toLowerCase()
-  return projects.find((p) => hay.includes(projectName(p).toLowerCase()))
+  const hay = normName(utterance)
+  return projects.find((p) => hay.includes(normName(projectName(p))))
 }
 
 function findAllProjects(utterance: string, projects: LedgerEntry[]): LedgerEntry[] {
-  const hay = utterance.toLowerCase()
-  return projects.filter((p) => hay.includes(projectName(p).toLowerCase()))
+  const hay = normName(utterance)
+  return projects.filter((p) => hay.includes(normName(projectName(p))))
 }
 
 const URL_RE = /(https?:\/\/[^\s"']+|[a-z0-9-]+\.(?:vercel\.app|github\.io|netlify\.app|dev|app|com|in)\/?[^\s"']*)/i
@@ -152,15 +155,22 @@ export function parseUtterance(utterance: string, ctx: BaithakContext): BaithakP
   }
 
   // --- 3 · Bench / promote (can co-occur: "SUTRADHAR hata, MUNSHI aage kar") ---
+  //
+  // "add sifarish" / "sifarish daal" for a project that IS in the ledger but benched = PROMOTE it.
+  // The old parser only treated aage/pehle/lead as promote, so "add [my flagship]" fell through to
+  // the smart layer, which — seeing an aside like "with help of Claude" — refused as if the whole
+  // project were unevidenced. But sifarish IS in his ledger; promoting a real, benched project is
+  // never a fabrication (Session 5.4, owner-reported).
   const namedAll = findAllProjects(u, projects)
-  if (namedAll.length > 0 && (CUE.bench.test(u) || CUE.promote.test(u))) {
+  if (namedAll.length > 0 && (CUE.bench.test(u) || CUE.promote.test(u) || CUE.include.test(u))) {
     for (const p of namedAll) {
       const name = projectName(p)
       // Which verb applies to THIS project? Look at the clause around its name.
-      const idx = u.toLowerCase().indexOf(name.toLowerCase())
+      const idx = normName(u).indexOf(normName(name))
       const clause = u.slice(Math.max(0, idx - 12), idx + name.length + 24)
       const benchHere = CUE.bench.test(clause)
-      const promoteHere = CUE.promote.test(clause)
+      // "add/daal/include" a benched project reads as "put it on the resume" → promote.
+      const promoteHere = CUE.promote.test(clause) || CUE.include.test(clause)
       if (benchHere && chosen.has(p.id)) {
         proposals.push(
           proposal(

@@ -108,6 +108,19 @@ describe('Baithak intent — 15-utterance fixture (incl. Hinglish) → correct E
     })
   }
 
+  // Session 5.4 owner-reported: "add sifarish" was REFUSED though sifarish is a benched ledger
+  // project. Adding/including an existing benched project must PROMOTE it, never refuse.
+  it('"add DARYA" (benched, in ledger) → promote, not a refusal', () => {
+    const r = parseUtterance('add DARYA to my resume', ctx)
+    expect(r.proposals.map((p) => p.op.kind)).toContain('promote-project')
+    expect(r.refused).toBeUndefined()
+  })
+  it('"DARYA bhi daal do" → promote (Hinglish include = put it on the page)', () => {
+    const r = parseUtterance('DARYA bhi daal do resume mein', ctx)
+    expect(r.proposals.map((p) => p.op.kind)).toContain('promote-project')
+    expect(r.refused).toBeUndefined()
+  })
+
   it('explain answers cite the Ustaad library', () => {
     const r = parseUtterance('ye bullets aise kyun likhe?', ctx)
     expect(r.citations?.length).toBeGreaterThan(0)

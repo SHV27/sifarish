@@ -103,7 +103,8 @@ export default function Baithak({ packet }: { packet: Packet }) {
                   {m.text}
                   {m.citations && m.citations.length > 0 && (
                     <span className="block mt-1 text-[10px] opacity-80">
-                      {m.citations.map((c) => (
+                      {/* Dedupe by the pattern ref — 3 sources of one pattern showed "¶xyz-formula" ×3. */}
+                      {Array.from(new Map(m.citations.map((c) => [c.title.split(':')[0], c])).values()).map((c) => (
                         <a key={c.url} className="underline decoration-dotted mr-2" href={c.url} target="_blank" rel="noreferrer">
                           {c.title.split(':')[0]}
                         </a>
