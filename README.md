@@ -51,8 +51,10 @@ harness that runs the §14 proofs. Real data, real roles, no mockups. The public
 persona; these are the owner's own screens.
 
 ### Shikaar Radar — the hunt
-Live roles from 29 keyless ATS boards plus lawful aggregator lanes (LinkedIn/Indeed/Glassdoor via
-Google-for-Jobs — never scraping). Ranked against a rubric whose arithmetic is always inspectable
+Live roles from 29 keyless ATS boards plus lawful global aggregator lanes — LinkedIn/Indeed/Glassdoor
+via Google-for-Jobs, **Adzuna across 18 country markets** (with real salaries), and keyless remote
+boards (Working Nomads, Jobicy, Arbeitnow, Remotive, RemoteOK, HN) — never scraping. Ranked against a
+rubric whose arithmetic is always inspectable
 (`why this score`), capped at 15 by design, searchable across the full catch, with hunts derived from
 the owner's own Vision Profile.
 

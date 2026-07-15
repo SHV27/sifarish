@@ -6,7 +6,7 @@ sanitized. Compiled 14-Jul-2026.*
 
 - **Live:** https://sifarish-shv-s-projects.vercel.app
 - **Code:** https://github.com/SHV27/sifarish
-- **Scale at time of writing:** ~290 automated gates, 27 test suites, 5 serverless functions, ~60 source
+- **Scale at time of writing (Session 5.5):** 393 automated gates, 36 test suites, 11 serverless functions, ~60 source
   modules, 6 product screens, single-developer build across 5 build sessions.
 
 ---
@@ -387,6 +387,55 @@ the needle (his own screenshots show Sony/Siemens via LinkedIn topping the queue
 every-corner index is a larger workstream. Naming what is *not* done is the difference between a
 status report and a sales pitch.
 
+---
+
+### 3.17 · THE REASONER WAS THINNER THAN IT LOOKED (Session 5.5)
+
+- **Symptom (owner ask):** make the tailoring "reason harder… a recruiter should say wow." Not a bug
+  report — a quality ceiling.
+- **Root cause (found by a read-only mapping agent, not by reading the diff):** the four-pass Editor's
+  Desk *looked* context-rich but the context mostly wasn't reaching the prompts. Company intel reached
+  the casting decision only as a **citation URL** — the model never read the text. The angle pass saw
+  **no JD and no intel at all** (archetype-driven only). The deep-read README (the `ProjectContext`
+  added in 3.12) was stored on the ledger entry but **`projectBrief` never included it** — the reasoner
+  cast from a one-line summary. Must-haves were **flat-weighted** regardless of how central they were
+  to the JD. And the red-team judged the resume **blind to the role** it was for.
+- **Fix (D93):** five levers, every one *emphasis/ordering/rationale only* — the v1 compiler still
+  renders only evidence-linked ledger bullets (D28), so widening what the reasoner *reads* adds **zero**
+  fact-drift surface. Intel text now flows into casting (which project leads becomes company-specific);
+  the angle gets a JD-driven option and actually shifts bullet emphasis; `projectBrief` feeds the deep
+  README; `decodeJD` emits prominence weights; the red-team knows the archetype + must-haves.
+- **Lesson:** "context-rich" is a claim to verify at the prompt boundary, not at the call site. A value
+  that is *fetched, stored, and passed to a function* can still never reach the model — trace the string
+  all the way into the payload.
+
+### 3.18 · THREE PARALLEL AUDITS FOUND WHAT 358 GATES COULDN'T (Session 5.5)
+
+The Council pattern (CLAUDE.md §6), run for real: three read-only agents audited Guru, Dak, and
+Settings/scoring in parallel while the main thread stayed lean. Between them they surfaced eight
+concrete correctness bugs a fully-green suite had never noticed — each now fixed with the regression
+test that would have caught it. The instructive cluster:
+
+- **Guru was blind to his own leadership.** `ledgerSummary` grouped every entry kind *except*
+  `position`, so his real executive/leadership roles were silently dropped from the dossier — and the
+  prompt tells Guru he may claim *only* what the dossier lists. A whole category of his truth was
+  invisible, and no test asserted its *presence* (only that skills were excluded). This is 3.13's family
+  again: a silent omission that reads as normal behaviour.
+- **The vision guardrail was a keyword filter dressed as vision-awareness.** It could be bypassed by the
+  word "deliberately" appearing *anywhere* in the reply, and it matched a hardcoded big-tech regex
+  rather than his actual `notInterested` list. "You should deliberately target Google" sailed through.
+  Rewritten sentence-aware and driven by his real avoids — with `ai` explicitly guarded, because his
+  entire vision *is* AI and treating it as an avoided lane would have flagged every good suggestion.
+- **The Vision Lens's strongest lever was un-editable.** The Radar's biggest ranking signal — a role
+  whose *title* matches a target role — reads `vision.targetRoles`, but **no Settings control ever
+  wrote it.** It was frozen at the seed. This was the mechanical root of a complaint the owner had been
+  raising for sessions ("the top 15 aren't mine"): the app ranked on preferences he had no way to set.
+
+The through-line, again: the suite tests what was *built*; only an adversarial reader (here, an agent
+told to *hunt for* the "built but not wired" pattern) tests what a user *meets*.
+
+---
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.
@@ -434,7 +483,7 @@ The honest clause: no software is literally eternal. What this guarantees is tha
 
 ## PART 6 — METRICS & OUTCOMES
 
-- **Gates:** ~290 automated tests across 27 suites (invariants I1–I13, parse-back fidelity, JD coverage,
+- **Gates:** 393 automated tests across 36 suites (invariants I1–I13, parse-back fidelity, JD coverage,
   slop/guarantee scans, chaos runs, 30-conversation Guru eval, adversary/money proofs, persistence contract).
 - **Quality bars held:** zero console errors across a scripted 3-breakpoint walkthrough; warning-free
   production build; Lighthouse desktop 99/100/100 (mobile-sim 83 = honest slow-4G SPA cold-load floor, not

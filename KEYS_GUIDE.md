@@ -10,15 +10,20 @@ never `VITE_`-prefixed and never reaches the browser bundle (there is a build-ti
 |---|---|---|
 | `GROQ_API_KEY` | Guru conversational chat + resume phrasing polish | Guru runs its deterministic router (still answers, refuses, plans); resume stays exactly as compiled |
 | `TAVILY_API_KEY` | Hiring **signals**, company **intel**, market **pulse** | Discovery via the free lanes; no signal/intel/pulse panels |
-| `JSEARCH_API_KEY` | **JSearch** (OpenWeb Ninja) — LinkedIn/Indeed/Glassdoor job aggregation | Discovery via Hacker News "Who is Hiring" + Remotive + RemoteOK (all keyless) |
+| `JSEARCH_API_KEY` | **JSearch** (OpenWeb Ninja) — LinkedIn/Indeed/Glassdoor job aggregation | Discovery via Hacker News "Who is Hiring" + Remotive + RemoteOK + Arbeitnow + Jobicy + Working Nomads (all keyless) |
+| `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` | **Adzuna** — global job aggregation across 18 country markets (US/CA/IN/GB/DE/SG/AU/…) with real salaries | Other aggregator + keyless lanes carry the sweep |
 | `GITHUB_PAT` | GitHub Nabz at 5,000 req/hr | Nabz at 60 req/hr (still fully works) |
 
 ## Where to get them (free tiers)
 
-- **Groq** — https://console.groq.com → API Keys. Free tier. Model used: `llama-3.3-70b-versatile`.
+- **Groq** — https://console.groq.com → API Keys. Free tier. Models used: `openai/gpt-oss-120b`
+  (reasoning + Guru + polish) and `openai/gpt-oss-20b` (classify). (Migrated from the deprecated
+  `llama-3.x` models per Groq's shutdown notice — see D35.)
 - **Tavily** — https://app.tavily.com → API Keys. Free dev tier includes monthly credits.
 - **JSearch / OpenWeb Ninja** — https://www.openwebninja.com → get an `ak_…` key; sent as the `X-API-Key`
   header to `api.openwebninja.com/jsearch/search`.
+- **Adzuna** — https://developer.adzuna.com → register for a free `app_id` + `app_key`; sent as query
+  params to `api.adzuna.com/v1/api/jobs/{country}/search/1` (all 18 country markets, server-side only).
 - **GitHub PAT** — https://github.com/settings/tokens → fine-grained token, **public read only** (no scopes
   needed for public repos). Optional.
 
@@ -29,6 +34,8 @@ never `VITE_`-prefixed and never reaches the browser bundle (there is a build-ti
 vercel env add GROQ_API_KEY production      # paste value when prompted
 vercel env add TAVILY_API_KEY production
 vercel env add JSEARCH_API_KEY production
+vercel env add ADZUNA_APP_ID production
+vercel env add ADZUNA_APP_KEY production
 vercel env add GITHUB_PAT production
 vercel --prod                                # redeploy to pick them up
 ```

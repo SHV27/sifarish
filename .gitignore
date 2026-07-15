@@ -20,3 +20,7 @@ lighthouse*.json
 owner-code.local.txt
 
 .env*
+
+# Session 5.5 live-proof artifacts (regenerable via scripts/s55-*.mjs)
+/shots-s55/
+/shots-s55-deploy1/

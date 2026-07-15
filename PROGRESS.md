@@ -2,10 +2,46 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5.3 "The Taalmel" — CROSS-DEVICE SYNC · RESEALED ✦
+## Status: Session 5.5 "The Duniya Update" — DISCOVERY + TAILORING + AUDIT · SEALED ✦
 
-Live: https://sifarish-shv-s-projects.vercel.app · **305/305 gates green** · 0 console errors ·
-build warning-free · all Four Proofs (§14) executed.
+Live: https://sifarish-shv-s-projects.vercel.app · **391 passed | 2 skipped (393) gates** · 0 console
+errors · build warning-free · all Four Proofs (§14) executed against the live deployment and pasted.
+
+### Session 5.5 — what shipped (D92–D98, four commits, deployed + live-verified)
+- **OPEN#1 · Infra-scale discovery (D92):** two genuinely new GLOBAL sources behind one self-contained
+  guarded edge proxy — **Adzuna** (keyed, 18 country markets, real salaries) + **Working Nomads**
+  (keyless, global remote). Live-proven on the deploy: Adzuna 20 India jobs, WN 6 AI jobs; foreign
+  origin → 403, no owner token → keyless (zero spend). Himalayas/The Muse evaluated + rejected honestly.
+- **OPEN#2 · Deeper per-JD tailoring (D93):** the Editor's Desk now reasons from the JD **and** company
+  intel **and** the deep-read README — company intel steers which project leads, a JD-driven angle
+  shifts bullet emphasis, must-haves are prominence-weighted, the red-team is JD-aware. All emphasis/
+  ordering only (I1 airtight — the compiler still renders only evidence-linked bullets). Live packet
+  proof: 5/8 must-haves, Compile Quality 100/100, `langchain` (no evidence) correctly kept OFF the resume.
+- **OPEN#3 · Deep audit (D94–D96):** three parallel read-only audits found 8 real bugs the 358 gates
+  missed. **Guru** was blind to his own leadership (position entries dropped from the dossier); the vision
+  guardrail was bypassable + ignored his real avoids; ledger truncated first. **Dak** classified a
+  rejection-after-interview as an interview; matched company domains by raw substring ('lever'⊂clever.com).
+  **Settings/score** treated a malformed date as maximally stale (NaN → −30), and the Vision Lens's
+  strongest lever (target roles) was frozen with no UI — now editable (closes D68/D85's relevance gap).
+- **Harness (D97):** vitest's default `threads` pool was silently broken under Vite 8 (Rolldown) + Node
+  24 on Windows; pinned `pool:'forks'`. **Security (D98):** owner passcode + Vercel token reached chat →
+  both must be rotated (see below).
+
+**THE FOUR PROOFS (§14) — executed live 16-Jul-2026:**
+1. Machine: 391 passed | 2 skipped · tsc clean · warning-free build.
+2. Fresh-eyes (wiped browser): owner greeted "Shaurya", a real packet built (screenshot, Compile
+   Quality 100/100), Guru dossier-grounded, **ERRORS(0)** across all screens + 3 breakpoints.
+3. Adversary (live prod): demo → Arjun + **0 metered calls**; no-Origin curl → **403** on all 8
+   metered functions; fabricated token → keyless; **wrong passcode → no token issued**; real owner →
+   full happy path. Plus a live reasoning-tier probe (gpt-oss-20b returned a real classification — D74).
+4. Money: every metered client owner-gated (meteredCallsAllowed) + server token-required (11/11
+   GUARDED) + budget-capped (I8, incl. the new `adzuna` budget).
+
+---
+
+## Prior: Session 5.3 "The Taalmel" — cross-device sync
+
+Live: **305/305 gates green** · 0 console errors · build warning-free · all Four Proofs (§14) executed.
 
 ### Session 5.3 — open Owner Mode anywhere, your ledger follows (D54)
 The owner opened Owner Mode on his **phone** and got a fresh reset — each browser's IndexedDB is its own
@@ -124,6 +160,9 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
 > architecture guarantees is that staying current never again requires opening an editor.
 
 ## ONE next action
-→ **None for the code — the seal holds (305/305, Four Proofs green, sync live and fixed).** For the owner: open the
-   app on ANY device → 🔑 Owner Mode → `Vers@tile1` → your real data arrives up to date (edit on the laptop,
-   open on the phone, it's there). Settings → Darbaan shows sync status + a "Sync now" button. Go get the internship.
+→ **ROTATE TWO SECRETS (owner, ~3 min) — the only open item.** Both reached plaintext chat this session
+   (D98): (1) in Vercel env, change `SIFARISH_OWNER_PASSCODE` to a new value + redeploy (it gates every
+   metered function — a leaked value is a spend hole); (2) revoke the Vercel deploy token in Vercel
+   account settings (it auto-revokes, but confirm). Then: open the app → 🔑 Owner Mode → new passcode →
+   Radar shows global roles (Adzuna 18 countries + Working Nomads now in the mix), tailor one, review, Send yourself.
+   Code is sealed again (393 gates, Four Proofs green, deployed + live-verified). Go get the internship.

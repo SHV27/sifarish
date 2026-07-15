@@ -519,6 +519,58 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   honestly: infra-scale discovery breadth ("literally every corner") remains larger than any one
   session; owner passcode + Vercel token still need rotation (both reached chat).
 
+--- Session 5.5 "The Duniya Update" (owner-requested OPEN items, 16-Jul-2026) ---
+- D92: INFRA-SCALE DISCOVERY (owner's #1 want, "duniya ka har corner, beat LinkedIn"). Two genuinely
+  new global sources behind ONE self-contained edge proxy (api/khabri/aggregators.ts; Vercel Hobby
+  caps functions at 12, so 10→11): Adzuna (KEYED, 18 country markets with real salaries — live US 129k
+  / CA 21k / IN 9.3k / DE / SG / AU / FR / PL / BR / MX / ES / IT / NL / ZA / BE / AT / NZ) + Working
+  Nomads (KEYLESS, no-CORS→proxied, global remote). Keys server-side only (ADZUNA_APP_ID/KEY, §10).
+  Guard at the choke point (D46): origin allowlist + owner token — foreign origin 403, no token →
+  keyless, PROVEN LIVE on the deploy. One request = one country (perRunCap 8 = 8 geographies/sweep),
+  budget-capped (I8); mergeDiscovered dedupes by construction. Himalayas (max 20/page, 2/20 AI,
+  no-CORS) + The Muse (no free-text search) evaluated and REJECTED — padding the count would be the
+  opposite of the app's ethos. +11 tests. Live sweep proof: Adzuna 20 IN jobs, WN 6 AI jobs.
+- D93: DEEPER PER-JD TAILORING. The Editor's Desk reasoned thinner than it looked: company intel
+  reached casting only as a citation URL (never read), the angle saw NO JD/intel (archetype-only),
+  the deep-read README (D58) never reached the reasoner, must-haves were flat-weighted, the red-team
+  judged blind to the role. Five I1-SAFE levers (emphasis/order/rationale only — the compiler still
+  renders only evidence-linked bullets, D28, so ZERO fact-drift surface): (1) intel TEXT → casting +
+  keyless heuristic, so which project LEADS is company-specific; (2) a JD-driven angle option + JD/
+  intel in the angle prompt, and the chosen angle now actually shifts bullet emphasis (D27); (3)
+  projectBrief feeds the deep README + 8 features; (4) decodeJD emits mustHaveWeights (2-4 by JD
+  prominence), entry/bulletRelevance weight by it (additive → flat +2 when absent, nothing regresses);
+  (5) redTeamPass(decode, arch) — JD-aware standard + keyless must-have-coverage check. +8 tests.
+- D94: GURU DEEP AUDIT (one of 3 parallel read-only audits; found real bugs the 358 gates never
+  caught). #1 `position` ledger entries were SILENTLY DROPPED from the dossier — Guru was blind to his
+  exec/leadership roles (the prompt lets him claim only what's summarized). #2/#4 the vision guardrail
+  was bypassable by ANY flag word anywhere ("you should deliberately target Google" passed) and ignored
+  his ACTUAL notInterested list; rewritten SENTENCE-AWARE (a flag must sit in the same/prior sentence)
+  + driven by his real avoids ('ai' guarded so on-vision advice is never flagged). #5 the vision scan
+  ran only at [DONE] (a misaligned pitch streamed in full first) → mid-stream tripwire, like I9. #3 the
+  ledger sat last so the server cap clipped it first → moved above briefs/pulse, cap 8000→12000. +6 tests.
+- D95: DAK MATCHER FIXES. A rejection that MENTIONS "interview" was classified as an interview
+  (STRONG_REJECT now tested BEFORE interview; a bare "unfortunately" still doesn't outrank a real
+  interview cue). Domain matching was a raw substring ('lever'⊂clever.com, 'scale'⊂scaleway.com,
+  'meta'⊂metamask.io) → label-boundary match; ATS relay list widened. The I3 send-ban grep gate gained
+  draft/insert strings (drafts.create, gmail.insert, /drafts/send…) and now walks api/, not just src/.
+  +4 tests.
+- D96: SETTINGS/SCORING FIXES. A present-but-UNPARSEABLE posting date yielded NaN → every `NaN<=n` is
+  false, so it fell through to the max -30 penalty + "Last touched NaNd ago"; an unrecognised date is
+  now treated like a missing one (penalise evidence of staleness, never a parse failure). The Vision
+  Lens's STRONGEST levers — target roles (title match, +16/+24) + not-interested lanes (−18/−20) — were
+  frozen at the seed with NO Settings UI ("built but not wired", and exactly D68/D85's relevance
+  complaint); added editable controls, so he now tunes what LinkedIn ranks on. Budget-bar %-guard on a
+  0 cap. +4 tests. (`adzuna` budget renders automatically — Settings iterates db.budgets, no hardcoded list.)
+- D97: HARNESS — vitest's default `threads` pool fails to init its worker runner under Vite 8
+  (Rolldown) + Node 24 on Windows (every file errored at describe() while each PASSED in isolation — an
+  environmental toolchain bug, not app breakage). `pool:'forks'` in vitest.config restores it and is
+  faster (8s vs 38s). Caught because `npx vitest run` showed all-red at session start; the app was fine.
+- D98: SECURITY — the owner passcode (`Vers@tile1`) and a fresh Vercel deploy token both reached
+  plaintext chat this session. Per §10 / D46 / D70: SIFARISH_OWNER_PASSCODE MUST BE ROTATED in Vercel
+  env (it gates all metered functions — a leaked value is a spend hole), and the Vercel token revoked
+  (Vercel auto-revokes). Neither was written to any file; the passcode was used only as an env var for
+  the live proofs, the token only for `vercel deploy`.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
