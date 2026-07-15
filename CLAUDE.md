@@ -339,6 +339,28 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   edits the way it proposes rubric edits. NOT attempted here — weekly budget. Do not claim the
   relevance problem is solved.
 
+- D69: THE VISION NEVER REACHED THE HUNT. `deriveHunts(vision)` has existed since the Vision
+  Engine shipped — but it lived behind a manual button in SettingsScreen and NEVER wrote to the
+  live `savedHunts`. So his queue was hunted with the GENERIC seed queries written before his
+  vision existed ("AI engineer intern India remote"), which is exactly why the top 15 read as
+  someone else's list. Same failure shape as D64/D67: the capability was BUILT, then not WIRED.
+  Now one click in the Radar's Hunt panel proposes every hunt his vision implies, each with its
+  reason, and he adds the ones he means (Nabz pattern; deterministic, zero budget, zero key).
+  STILL OPEN (do not claim otherwise): nothing auto-derives on a vision EDIT, and the Pulse does
+  not yet propose hunt edits the way it proposes rubric edits. D68's relevance problem is
+  narrowed, not closed.
+- D70: SECURITY EVENT — the owner passcode was pasted into plaintext chat (15-Jul-2026).
+  Per §10 and the D11/D20/D24 precedent, SIFARISH_OWNER_PASSCODE MUST BE ROTATED in Vercel env.
+  It is the server-side gate for all 7 metered functions (D46), so a leaked value is a spend hole,
+  not just an access one. It was never written to any file and never used by the session.
+- D71: SESSION 5.4 SCOPE HONESTY. Shipped across four commits: the Bullet Forge (D56-D60), the
+  Baithak's sight + vocabulary (D61-D63), Radar search/staleness (D64-D65), hunt freshness + the
+  hunt panel (D66-D67), vision-derived hunts (D69). 330/330 gates, warning-free build. BUT: only
+  Proof 1 of §14's Four Proofs was executed. NO live run, NO fresh-eyes walkthrough, NO adversary
+  pass, NO LLM path driven (forge, reframe, smart Baithak all unexercised against a real key), and
+  the GitHub README screenshots were NOT produced (they need a live Owner-Mode browser session).
+  This session is NOT sealed and must not be described as such.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

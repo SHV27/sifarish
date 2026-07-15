@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { Job, ScoreBreakdown } from '../types'
 import { syncRadar, ensureJd, type SyncResult } from '../lib/radar/feeds'
+import { deriveHunts, type DerivedHunt } from '../lib/vision/derive'
 import { pruneStaleFinds } from '../lib/khabri/client'
 import { scoreJobCached } from '../lib/radar/score'
 
@@ -210,13 +211,41 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
  */
 function HuntPanel() {
   const hunts = useLiveQuery(() => db.savedHunts.toArray()) ?? []
+  const settings = useLiveQuery(() => db.settings.get('app'))
   const [sweeping, setSweeping] = useState(false)
   const [step, setStep] = useState('')
   const [yieldNote, setYieldNote] = useState<string | null>(null)
   const [adding, setAdding] = useState('')
   const [open, setOpen] = useState(false)
+  const [derived, setDerived] = useState<DerivedHunt[] | null>(null)
 
   const enabled = hunts.filter((h) => h.enabled)
+
+  /**
+   * DERIVE THE HUNT FROM THE DREAM (D69) — "mere vision wali opportunities bhi aayein."
+   *
+   * `deriveHunts` has existed since the Vision Engine shipped, but it lived behind a manual button
+   * in Settings and never reached the live hunts. So his queue was hunted with the GENERIC seed
+   * queries written before his vision existed — which is why the top 15 read as someone else's.
+   * The derivation is deterministic (no budget, no key) and stays human-confirmed: it PROPOSES
+   * the hunts his vision implies, each with its reason, and he adds them (the Nabz pattern).
+   */
+  const proposeFromVision = () => {
+    if (!settings?.visionProfile) return
+    const have = new Set(hunts.map((h) => h.query.trim().toLowerCase()))
+    setDerived(deriveHunts(settings.visionProfile).filter((d) => !have.has(d.query.trim().toLowerCase())))
+  }
+
+  const acceptDerived = async (d: DerivedHunt) => {
+    await db.savedHunts.put({
+      id: `h-vision-${d.query.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      query: d.query,
+      remoteOnly: d.remoteOnly,
+      datePosted: 'week',
+      enabled: true,
+    })
+    setDerived((xs) => (xs ?? []).filter((x) => x.query !== d.query))
+  }
 
   const sweep = async () => {
     setSweeping(true)
@@ -256,6 +285,15 @@ function HuntPanel() {
         <button className="text-[11px] text-ink-soft hover:underline" onClick={() => setOpen((o) => !o)}>
           {open ? 'close' : 'edit'}
         </button>
+        {settings?.visionProfile && (
+          <button
+            className="text-[11px] text-ink underline decoration-dotted"
+            onClick={proposeFromVision}
+            title="Read your Vision Profile and propose the hunts it implies"
+          >
+            ⚡ from my vision
+          </button>
+        )}
         <button
           className="ml-auto shrink-0 bg-stamp text-paper font-semibold text-xs px-3 py-1.5 rounded disabled:opacity-50"
           disabled={sweeping || enabled.length === 0}
@@ -268,6 +306,42 @@ function HuntPanel() {
 
       {sweeping && step && <p className="mt-1.5 text-[11px] font-mono text-ink-soft">{step}</p>}
       {yieldNote && <p className="mt-1.5 text-[11px] text-shipped leading-relaxed">{yieldNote}</p>}
+
+      {/* Vision-derived proposals — each carries its reason; he adds them (Nabz pattern, forever). */}
+      {derived !== null && (
+        <div className="mt-2 ledger-rule pt-2">
+          {derived.length === 0 ? (
+            <p className="text-[11px] text-ink-soft">
+              Your vision implies nothing you aren’t already hunting. Widen the dream in Settings → Vision and ask again.
+            </p>
+          ) : (
+            <>
+              <p className="text-[11px] text-ink-soft mb-1.5">
+                Your vision implies {derived.length} hunt{derived.length === 1 ? '' : 's'} you aren’t running. Add the ones you mean:
+              </p>
+              <div className="space-y-1.5">
+                {derived.map((d) => (
+                  <div key={d.query} className="flex items-start gap-2">
+                    <button
+                      className="shrink-0 text-[10px] font-semibold bg-ink text-paper px-2 py-0.5 rounded"
+                      onClick={() => void acceptDerived(d)}
+                    >
+                      + add
+                    </button>
+                    <p className="text-[11px] text-ink leading-relaxed">
+                      <span className="font-mono">“{d.query}”</span>
+                      <span className="text-ink-soft"> — {d.why}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <button className="mt-1.5 text-[10px] text-ink-soft hover:underline" onClick={() => setDerived(null)}>
+            dismiss
+          </button>
+        </div>
+      )}
 
       {!open && (
         <p className="mt-1.5 text-[11px] text-ink-soft leading-relaxed">
