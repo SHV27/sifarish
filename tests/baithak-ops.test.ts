@@ -74,6 +74,25 @@ describe('reframe-project — wording is his, facts are frozen', () => {
     expect(detectDrift(original, 'Engineered a browser co-op board game around a hand-authored narrator fallback').ok).toBe(true)
   })
 
+  it('D81: the guard reads the whole ENTRY, so his own README words are not "inventions"', () => {
+    // Real case: "GLOAMING ko agentic angle se explain kar" → the model says "agentic AI narrator".
+    // Guarded against the single bullet, "agentic" is a new tech term and dies — technically right,
+    // practically useless, because HE wrote "agentic" about this project himself.
+    const bullet = 'Designed an AI narrator with a hand-authored fallback so the game runs with zero API keys'
+    const reframed = 'Designed an agentic AI narrator with a hand-authored fallback so the game runs with zero API keys'
+
+    // Bullet-only source → rejected (the old, broken behaviour).
+    expect(detectDrift(bullet, reframed).ok).toBe(false)
+
+    // Entry-wide source (bullets + summary + README context) → accepted, because he claimed it.
+    const entrySource = [bullet, 'An agentic AI narrator that plays the board against you.', 'agentic ai llm'].join('\n')
+    expect(detectDrift(entrySource, reframed).ok).toBe(true)
+
+    // …and a fact that appears NOWHERE in his own writing still dies.
+    expect(detectDrift(entrySource, `${bullet} on Kubernetes`).ok).toBe(false)
+    expect(detectDrift(entrySource, `${bullet}, used by 12,000 players`).ok).toBe(false)
+  })
+
   it('an override for an unknown bullet id changes nothing (no minting surface)', () => {
     const before = compile(base)
     const after = compile({ ...base, bulletOverrides: { 'ghost-bullet-id': 'Led a team of 40 engineers at Google' } })

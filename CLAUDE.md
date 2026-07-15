@@ -426,6 +426,25 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   Live-verified: "ye Python skill hata do" → set-entry{skill-python,on:false} 2/2; "add Kubernetes"
   → refuse{term,reason} 2/2 (I11 holds under real structured output).
 
+- D81: THE GUARD WAS TECHNICALLY RIGHT AND PRACTICALLY USELESS. reframeProject guarded a
+  rephrasing against ONLY its own bullet, so "GLOAMING ko agentic angle se explain kar" → "agentic
+  AI narrator" was rejected ("agentic" isn't in that one sentence) — correct by the letter, wrong
+  by the intent: GLOAMING IS agentic and he wrote so in his own README. Permitted source is now the
+  whole ENTRY (bullets + summary + tags + deep-read README context) — the same trust boundary the
+  forge already uses (D45/D56). A fact from anywhere in his own writing about his own project is
+  not an invention; a fact from nowhere still dies. I1 holds; the feature now works.
+  LESSON: an invariant scoped too narrowly reads as stupidity. The honest question is not "can I
+  prove this sentence?" but "has he already claimed this, anywhere I can verify?"
+- D82: LIVE-VERIFIED PER PATH (15-Jul, each probed separately — a passing sibling proves nothing):
+  decide 3/3 · classify 3/3 (agent-eng @0.95) · critique 2/2 (REVISE on the link-dump resume) ·
+  Baithak 2/2 (set-entry emitted; "add Kubernetes" refused) · forge 2/2 · reframe 2/2.
+- D83: THE SCREENSHOTS WERE NEVER COMMITTED — .gitignore's unanchored `screenshots/` matches that
+  dir name at ANY depth and swallowed docs/screenshots/; `git add -A` reports success while adding
+  nothing, and I reported "added" without checking `git ls-files`. All nine README images 404'd.
+  This was ONE HOUR after writing D76's lesson ("a green build proves nothing about what users are
+  served") — the same mistake in the very next commit. Anchored to /screenshots/; verified by live
+  raw.githubusercontent.com fetches (200 + byte counts), not by the command's exit code.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

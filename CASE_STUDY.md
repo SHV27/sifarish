@@ -301,11 +301,53 @@ The most instructive bug in the project's history. The owner found it **by feel*
   choke points (the client core **and** the server function holding the key). Proven by
   `tests/live-forge.test.ts` (`SIFARISH_LIVE=1`), which drives the **real prompt over the real README against
   the real model** and asserts forged bullets survive `isResumeBullet` + `detectDrift`.
-- **Honest remainder (D75):** `decide` / `critique` / `classify` still pass no schema — the entire Editor's
-  Desk is *still* on heuristics in production. Documented as open, not quietly closed.
+- **Closing it (D75/D79/D80):** every reasoning call site now passes a schema. Live-verified per path:
+  `decide` 3/3, `classify` 3/3 (agent-eng @0.95), `critique` 2/2 (it correctly returned **REVISE** on the
+  link-dump resume from 3.12), the Baithak 2/2, `forge` and `reframe` 2/2. The four-pass Editor's Desk is
+  reasoning in production for the first time since the June model migration.
+- **Two more bugs, found by the gate written for the first one:** (1) the prompt edits had silently
+  **no-op'd** — schemas added while the conflicting prose stayed, which measures as *still broken*; (2) the
+  smart Baithak posts to `/api/dimaag` **directly**, bypassing the core, so it had no schema at all — which
+  is why "baithak is bullshit" was a correct bug report. Both were invisible in the diff and would have
+  shipped as a confident "fixed".
+- **D80 — the rule that looks like model stupidity:** Groq/OpenAI `strict: true` requires **every** key in
+  `properties` to also be in `required`; an optional field must be a nullable union (`type:['string','null']`).
+  Break it and the request is rejected outright — empty output, **indistinguishable from "the LLM is dumb."**
+  `decide`/`classify`/`forge` passed *by luck* (all their properties happened to be required); the Baithak's
+  optional `refuse` made its schema invalid. Now asserted by an executable strict-validity checker, because a
+  rule this invisible cannot survive as folklore.
+- **D81 — the guard that was technically right and practically useless:** asked to *"GLOAMING ko agentic
+  angle se explain kar"*, the reframer returned "agentic AI narrator" — and the guard killed it, because
+  "agentic" wasn't in *that one bullet*. Correct by the letter, wrong by the intent: **GLOAMING is agentic,
+  and he wrote so himself in the README.** The permitted source is now the whole *entry* — its bullets,
+  summary and deep-read README context (his own words; the same boundary the forge uses). A fact from
+  anywhere in his own writing about his own project is not an invention; a fact from nowhere still dies.
 - **Lessons:** (1) **A silent fallback is a lie you tell yourself** — degradation must be *observable*; that
   is now a design requirement, not a nicety. (2) **A single sample is not a measurement.** (3) When the user
-  describes a *feeling* the metrics contradict, the metrics are measuring the wrong thing.
+  describes a *feeling* the metrics contradict, the metrics are measuring the wrong thing. (4) **An
+  invariant scoped too narrowly reads as stupidity** (D81) — the honest question is not "can I prove this
+  sentence?" but "has he already claimed this, anywhere I can verify?"
+
+---
+
+### 3.15 · THE SCREENSHOTS THAT WERE NEVER COMMITTED (Session 5.4)
+
+Small, embarrassing, and the cleanest illustration of the pattern in this whole document.
+
+- **Symptom (owner-reported, with a screenshot of a broken GitHub page):** "images mein koi dikkat hai."
+- **Root cause:** `.gitignore` contained an unanchored `screenshots/`, which matches a directory of that
+  name at **any depth** — so `docs/screenshots/` was silently swallowed along with the intended root
+  build-output directory. `git add -A` reports success while adding nothing.
+- **The actual failure:** not the ignore rule — **the report.** The commit was clean, so it was announced as
+  "screenshots added" without checking they were *tracked*. Every one of the nine images the README
+  referenced 404'd. This happened **one hour after** diagnosing 3.14 (prod was stale) and writing down the
+  lesson *"a green build proves nothing about what your users are served."* The same mistake, immediately, in
+  the next commit.
+- **Fix:** anchor the patterns to the root (`/screenshots/`); verify with `git ls-files` **and** a live fetch
+  of each `raw.githubusercontent.com` URL (200 + real byte counts).
+- **Lesson:** knowing a lesson is not the same as applying it. **Verify the artifact, not the command's exit
+  code.** Every claim in a status report should name the evidence that backs it — and if there isn't one, the
+  claim isn't ready to be made.
 
 ---
 

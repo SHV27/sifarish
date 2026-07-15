@@ -88,13 +88,36 @@ export async function reframeProject(entry: LedgerEntry, direction: string): Pro
   const overrides: Record<string, string> = {}
   const rejected: ReframeResult['rejected'] = []
 
+  /**
+   * THE TRUTH SOURCE (D81) — the entry, not the single bullet.
+   *
+   * Guarding a rephrasing against only its own bullet made the feature useless: asked to
+   * "GLOAMING ko agentic angle se explain kar", the model returns "agentic AI narrator" — and
+   * "agentic" isn't in that one bullet, so the guard killed it. The refusal was *technically*
+   * correct and *practically* wrong: GLOAMING IS agentic, and he wrote so himself in the README.
+   *
+   * So the permitted source is everything the ENTRY already claims — its bullets, its summary and
+   * its deep-read README context (his own words, D45/D56's trust boundary; the same source the
+   * forge guards against). A fact from anywhere else in his own writing about his own project is
+   * not an invention. A fact from NOWHERE in it still dies. I1 holds; the feature now works.
+   */
+  const truthSource = [
+    entry.bullets.map((b) => `${b.text} ${b.metrics ?? ''}`).join('\n'),
+    entry.summary,
+    entry.tags.join(' '),
+    entry.context?.problem ?? '',
+    entry.context?.features?.join('\n') ?? '',
+    entry.context?.stack?.join(' ') ?? '',
+    entry.context?.readme ?? '',
+  ].join('\n')
+
   for (const r of out.bullets) {
     const orig = r?.id ? byId.get(r.id) : undefined
     const text = String(r?.text ?? '').trim().replace(/^[-*•]\s*/, '').replace(/\s+/g, ' ')
     if (!orig || !text || text === orig.text) continue
 
-    // THE FREEZE: the rephrasing may only say what the original already said.
-    const drift = detectDrift(orig.text, text)
+    // THE FREEZE: the rephrasing may only say what he has already, verifiably, claimed.
+    const drift = detectDrift(truthSource, text)
     if (!drift.ok) {
       rejected.push({ original: orig.text, attempt: text, addedFacts: [...drift.addedFacts, ...drift.addedNumbers] })
       continue
