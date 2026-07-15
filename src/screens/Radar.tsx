@@ -119,6 +119,8 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
         </div>
       )}
 
+      <HuntPanel />
+
       {ranked.length === 0 ? (
         <EmptyRadar synced={result !== null} onSync={runSync} />
       ) : (
@@ -195,6 +197,140 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
         </>
       )}
     </div>
+  )
+}
+
+/**
+ * THE HUNT PANEL (Session 5.4, D67) — "khabri mein hunt feature hai, vaisa hi rakho na idhar."
+ *
+ * The hunts ARE what reach LinkedIn/Indeed/Glassdoor (via the JSearch aggregator, D18/D21) — they
+ * were just steered from another screen, so the Radar looked shallow while the machine that fills
+ * it sat elsewhere. It lives here now: what you're hunting, how fresh a window, and one button to
+ * go get it. Discovery stays API-only and human-triggered (I3/I21) — no scraping, no auto-apply.
+ */
+function HuntPanel() {
+  const hunts = useLiveQuery(() => db.savedHunts.toArray()) ?? []
+  const [sweeping, setSweeping] = useState(false)
+  const [step, setStep] = useState('')
+  const [yieldNote, setYieldNote] = useState<string | null>(null)
+  const [adding, setAdding] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const enabled = hunts.filter((h) => h.enabled)
+
+  const sweep = async () => {
+    setSweeping(true)
+    setYieldNote(null)
+    try {
+      const { runSweep } = await import('../lib/khabri/client')
+      const r = await runSweep((s) => setStep(s))
+      setYieldNote(
+        r.failed.length && r.found === 0
+          ? `Nothing came back — ${r.failed.join(', ')}.`
+          : `${r.new} new role(s) from ${r.found} found · ${r.duplicate} already had · ${r.creditsSpent} credit(s).${
+              r.keyedLanes.length ? ` Lanes: ${r.keyedLanes.join(', ')}.` : ''
+            }`,
+      )
+    } catch (e) {
+      setYieldNote(`Hunt failed: ${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setSweeping(false)
+      setStep('')
+    }
+  }
+
+  const addHunt = async () => {
+    const query = adding.trim()
+    if (!query) return
+    await db.savedHunts.put({ id: `h-${Date.now()}`, query, remoteOnly: false, datePosted: 'week', enabled: true })
+    setAdding('')
+  }
+
+  return (
+    <section className="dossier p-3 mb-4" aria-label="Hunts — what the radar goes looking for">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="font-display font-semibold text-ink text-sm">
+          Hunts <span className="text-ink-soft font-normal">— what I go looking for</span>
+        </h2>
+        <span className="font-mono text-[11px] text-ink-soft">{enabled.length} live</span>
+        <button className="text-[11px] text-ink-soft hover:underline" onClick={() => setOpen((o) => !o)}>
+          {open ? 'close' : 'edit'}
+        </button>
+        <button
+          className="ml-auto shrink-0 bg-stamp text-paper font-semibold text-xs px-3 py-1.5 rounded disabled:opacity-50"
+          disabled={sweeping || enabled.length === 0}
+          onClick={() => void sweep()}
+          title="Pulls fresh roles from the aggregator lanes (LinkedIn/Indeed/Glassdoor via JSearch) + the keyless boards"
+        >
+          {sweeping ? 'hunting…' : '🔎 Hunt now'}
+        </button>
+      </div>
+
+      {sweeping && step && <p className="mt-1.5 text-[11px] font-mono text-ink-soft">{step}</p>}
+      {yieldNote && <p className="mt-1.5 text-[11px] text-shipped leading-relaxed">{yieldNote}</p>}
+
+      {!open && (
+        <p className="mt-1.5 text-[11px] text-ink-soft leading-relaxed">
+          {enabled.length > 0 ? enabled.map((h) => `“${h.query}”`).join(' · ') : 'No live hunts — add one to reach beyond the boards.'}
+        </p>
+      )}
+
+      {open && (
+        <div className="mt-2 space-y-1.5">
+          {hunts.map((h) => (
+            <div key={h.id} className="flex flex-wrap items-center gap-2 ledger-rule pt-1.5">
+              <label className="flex items-center gap-1.5 flex-1 min-w-[10rem]">
+                <input
+                  type="checkbox"
+                  checked={h.enabled}
+                  onChange={(e) => db.savedHunts.update(h.id, { enabled: e.target.checked })}
+                  aria-label={`Hunt for ${h.query}`}
+                />
+                <span className="text-[11px] text-ink">{h.query}</span>
+              </label>
+              {/* His window choice is marked owner-set, so the freshness migration never overrides it. */}
+              <select
+                className="text-[10px] font-mono border border-ink-wash rounded px-1 py-0.5 bg-paper text-ink"
+                value={h.datePosted ?? 'week'}
+                onChange={(e) => db.savedHunts.update(h.id, { datePosted: e.target.value as typeof h.datePosted, ownerSetDate: true })}
+                aria-label={`Freshness window for ${h.query}`}
+              >
+                <option value="today">today</option>
+                <option value="3days">3 days</option>
+                <option value="week">this week</option>
+                <option value="month">this month</option>
+                <option value="all">any age</option>
+              </select>
+              <button
+                className="text-[10px] text-ink-soft hover:text-stamp"
+                onClick={() => db.savedHunts.delete(h.id)}
+                title="Remove this hunt"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <form
+            className="flex gap-2 pt-1"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void addHunt()
+            }}
+          >
+            <input
+              className="flex-1 text-xs border border-ink-wash rounded px-2 py-1.5 bg-paper text-ink placeholder:text-ink-faint"
+              placeholder="Hunt something new — “AI engineer Europe remote”…"
+              value={adding}
+              onChange={(e) => setAdding(e.target.value)}
+              aria-label="Add a hunt"
+            />
+            <button className="text-xs font-semibold bg-ink text-paper px-3 py-1.5 rounded disabled:opacity-50" disabled={!adding.trim()}>
+              + hunt
+            </button>
+          </form>
+        </div>
+      )}
+    </section>
   )
 }
 

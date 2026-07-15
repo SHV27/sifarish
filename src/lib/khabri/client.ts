@@ -15,19 +15,19 @@ import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
  */
 
 export const SEED_HUNTS: SavedHunt[] = [
-  { id: 'h1', query: 'AI engineer intern India remote', country: 'in', remoteOnly: false, datePosted: 'month', enabled: true },
-  { id: 'h2', query: 'agentic AI intern', remoteOnly: true, datePosted: 'month', enabled: true },
-  { id: 'h3', query: 'Claude Code engineer', remoteOnly: true, datePosted: 'month', enabled: true },
-  { id: 'h4', query: 'LLM engineer intern', remoteOnly: true, datePosted: 'month', enabled: true },
-  { id: 'h5', query: 'AI residency 2026', remoteOnly: false, datePosted: 'month', enabled: false },
-  { id: 'h6', query: 'prompt engineer intern remote', remoteOnly: true, datePosted: 'month', enabled: false },
+  { id: 'h1', query: 'AI engineer intern India remote', country: 'in', remoteOnly: false, datePosted: 'week', enabled: true },
+  { id: 'h2', query: 'agentic AI intern', remoteOnly: true, datePosted: 'week', enabled: true },
+  { id: 'h3', query: 'Claude Code engineer', remoteOnly: true, datePosted: 'week', enabled: true },
+  { id: 'h4', query: 'LLM engineer intern', remoteOnly: true, datePosted: 'week', enabled: true },
+  { id: 'h5', query: 'AI residency 2026', remoteOnly: false, datePosted: 'week', enabled: false },
+  { id: 'h6', query: 'prompt engineer intern remote', remoteOnly: true, datePosted: 'week', enabled: false },
   // Deeper reach (Session 5): niche / hidden-gem lanes alongside the common ones. Budget-capped
   // by I8; API-only (I3/I9). Enable more from Khabri when you want to widen the net.
-  { id: 'h7', query: 'applied AI intern startup', remoteOnly: true, datePosted: 'month', enabled: true },
-  { id: 'h8', query: 'RAG engineer intern', remoteOnly: true, datePosted: 'month', enabled: false },
-  { id: 'h9', query: 'AI evaluation intern', remoteOnly: true, datePosted: 'month', enabled: false },
-  { id: 'h10', query: 'ML research intern remote India', country: 'in', remoteOnly: true, datePosted: 'month', enabled: false },
-  { id: 'h11', query: 'developer relations AI intern', remoteOnly: true, datePosted: 'month', enabled: false },
+  { id: 'h7', query: 'applied AI intern startup', remoteOnly: true, datePosted: 'week', enabled: true },
+  { id: 'h8', query: 'RAG engineer intern', remoteOnly: true, datePosted: 'week', enabled: false },
+  { id: 'h9', query: 'AI evaluation intern', remoteOnly: true, datePosted: 'week', enabled: false },
+  { id: 'h10', query: 'ML research intern remote India', country: 'in', remoteOnly: true, datePosted: 'week', enabled: false },
+  { id: 'h11', query: 'developer relations AI intern', remoteOnly: true, datePosted: 'week', enabled: false },
 ]
 
 export const SEED_SIGNAL_QUERIES = [
@@ -174,6 +174,28 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
 
 export async function seedHuntsIfEmpty(): Promise<void> {
   if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
+}
+
+/**
+ * FRESHNESS MIGRATION (Session 5.4, D66) — "roz naye roles chahiye, LinkedIn jaise."
+ *
+ * Every seeded hunt asked JSearch for `datePosted: 'month'`, so each sweep re-requested a MONTH
+ * of postings: the same month-old listings returning day after day, while LinkedIn showed him
+ * "1 hour ago". The market moved daily; the app asked monthly. The seed default is now 'week'.
+ *
+ * But (the D59 lesson) local-first means a seed change reaches NOBODY who already has a vault.
+ * So the old 'month' default is rewritten ONCE, guarded by a flag, and only where he never chose
+ * the value himself — a hunt he deliberately set to 'month' is his call and stays untouched.
+ */
+export async function migrateHuntFreshness(): Promise<number> {
+  const FLAG = 'migrated:hunt-freshness-v1'
+  const done = await db.nabzCache.get(FLAG)
+  if (done) return 0
+
+  const stale = (await db.savedHunts.toArray()).filter((h) => h.datePosted === 'month' && !h.ownerSetDate)
+  for (const h of stale) await db.savedHunts.update(h.id, { datePosted: 'week' })
+  await db.nabzCache.put({ key: FLAG, json: 'true', fetchedAt: new Date().toISOString() })
+  return stale.length
 }
 
 /**

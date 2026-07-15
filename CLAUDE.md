@@ -317,6 +317,28 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   NOTE (Law 12 / §14): the radar's SOURCE breadth is still 29 ATS boards + the keyed lanes — this
   session unlocked and cleaned the existing catch; it did NOT add new discovery sources.
 
+- D66: THE MARKET MOVED DAILY, THE APP ASKED MONTHLY. Owner: "LinkedIn pe roz naye roles aate
+  hain, idhar bhi vaise hi hone chahiye." Root cause was one word repeated 11 times: EVERY seeded
+  hunt requested `datePosted: 'month'`, so each sweep re-pulled a month-wide window — the same
+  month-old listings returning day after day — while LinkedIn showed "1 hour ago" (his screenshot).
+  The aggregator supports today/3days/week and we never used them. Seed default → 'week', plus
+  `migrateHuntFreshness` (D59's lesson again: a seed change reaches NOBODY with an existing vault),
+  flag-guarded and skipping any hunt whose window HE set (`ownerSetDate`) — his choice outranks our
+  default, always. Combined with D65's staleness deduction, old postings now neither arrive as
+  often nor hold a top slot when they do.
+- D67: THE HUNT PANEL MOVED TO THE RADAR. The hunts ARE the lane that reaches LinkedIn/Indeed/
+  Glassdoor (JSearch aggregator, D18/D21) — they were just steered from the Khabri screen, so the
+  Radar looked shallow while the machine that fills it sat elsewhere. Hunts now live on the Radar:
+  what's being hunted, a per-hunt freshness window, add/remove, and "Hunt now". Discovery stays
+  API-only + human-triggered (I3/I21): no scraping, no auto-apply.
+- D68 (SCOPE HONESTY, unresolved): his "top 15 mein se sirf 5 kaam ki" is a RELEVANCE complaint
+  that D64-D67 only partially answer. Fresher input + staleness penalty + search + the hunt panel
+  raise the ceiling, but the queue is still ranked by a 6-dimension rubric over hunts written at
+  seed time, NOT by his vision. The untested hypothesis for a future session: derive the hunt
+  queries from `visionProfile` (the Vision Engine already exists) and let the Pulse propose hunt
+  edits the way it proposes rubric edits. NOT attempted here — weekly budget. Do not claim the
+  relevance problem is solved.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

@@ -159,6 +159,9 @@ export async function backfillV2(): Promise<void> {
   if (!s) return
   await withSeedAllowance(async () => {
     if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
+    // D66: existing vaults still ask JSearch for a MONTH of postings every sweep. Retune once.
+    const { migrateHuntFreshness } = await import('../lib/khabri/client')
+    await migrateHuntFreshness().catch(() => 0)
     if ((await db.budgets.count()) === 0) {
       const mk = monthKey()
       await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))

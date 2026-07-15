@@ -531,6 +531,11 @@ export interface SavedHunt {
   country?: string
   remoteOnly: boolean
   datePosted?: 'all' | 'today' | '3days' | 'week' | 'month'
+  /**
+   * True once HE picks the window himself — the freshness migration (D66) then leaves it alone.
+   * His deliberate choice outranks our default, always.
+   */
+  ownerSetDate?: boolean
   enabled: boolean
 }
 
