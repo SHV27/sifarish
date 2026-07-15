@@ -238,9 +238,92 @@ This is the most instructive failure in the project — "final" had to be declar
 
 ---
 
+### 3.12 · THE RESUME WAS BADLY FED, NOT BADLY FRAMED (Session 5.4)
+
+- **Symptom (owner-reported):** "the tailor is insanely dumb… my skills and projects were AI slop… it breaks
+  my heart, I spent weeks on them." The compiled resume carried, as *project bullets*:
+  `App: https://sehat-saarthi-punjab.vercel.app` · `API: …/health · Docs: /docs` · and a sentence sliced
+  mid-clause: *"…proposes human-confirmed rubric/keyword updates, so the app"*.
+- **The wrong instinct:** treat it as a *framing* problem — better prompts, a smarter Editor's Desk, more
+  Ustaad craft patterns. That would have been weeks of work on a component that was already correct.
+- **Root cause:** `distillReadme` accepted **any README list item ≥25 chars** as a resume bullet. The
+  compiler, the Editor's Desk and the Ustaad rubric were all working *perfectly* — faithfully rendering junk.
+  A second, quieter bug compounded it: a markdown list item that **wraps across physical lines** was read
+  only up to the newline, which is why a real bullet died at "so the app". It was never truncated by the
+  resume; **it was born truncated.**
+- **Fix (D56–D59):** the **Bullet Forge**. (1) `isResumeBullet` deterministically rejects what can never be a
+  bullet — link dumps, labels, fragments (the keyless core: the slop dies with zero API keys). (2) The
+  reasoning tier reshapes the surviving material into real bullets. (3) Every forged bullet is **guarded
+  against the README itself** via `detectDrift` — a number, technology or proper noun the README never
+  claimed is *discarded*. Plus `ProjectContext`: the deep-read README now rides on the ledger entry as
+  **source material the tailor reasons over**, and the Editor's Desk reads a real brief instead of the
+  one-line `p.summary` it used to cast from. And because local-first means **no migration can reach the
+  owner's vault**, the repair had to be an explicit, owner-confirmed "⟳ Re-forge all".
+- **Lesson:** **selection cannot fix supply.** The tailor chooses *which* bullets run; it cannot invent good
+  ones. When the output is slop, audit the input before you rewrite the machine.
+
+---
+
+### 3.13 · THE SILENT LLM — a dead reasoning tier that looked exactly like a healthy app (Session 5.4)
+
+The most instructive bug in the project's history. The owner found it **by feel**; no test could.
+
+- **Symptom (owner-reported):** *"dimaag hi nahi, kaise bilkul thoda sa bhi, like itna sa bhi nhi hai"* —
+  there's no brain in this, not even a little. Vague, unfalsifiable, easy to dismiss as frustration.
+- **What the gates said:** 330/330 green. Warning-free build. Every invariant enforced. Keys valid, budget
+  spending normally.
+- **Root cause:** `openai/gpt-oss-120b` **essentially cannot satisfy Groq's `json_object` response mode.**
+  Measured live, with calls spaced to exclude 429s (a fast probe rate-limits itself and poisons the reading):
+
+  | configuration | success |
+  |---|---|
+  | `json_object`, temperature 0.2 | **0/3** |
+  | `json_object`, temperature 1.0 | **0/3** (temperature is not the variable) |
+  | `json_schema`, temperature 0.2 | 2/3 |
+  | `json_schema` + prompt with **no** `Return JSON:{…}` prose | **3/3** |
+
+  Two findings hide in that table: the *mode* is the variable, and prose "return this shape" instructions
+  **conflict** with a supplied schema and reintroduce the failure.
+- **Why it survived certification — the real lesson:** every caller treats a failed LLM call as *"degrade to
+  the deterministic heuristic"*, and that fallback is **silent by design (I4)**. A dead LLM tier is therefore
+  **behaviourally indistinguishable from a healthy keyless app.** The gates asserted "the app always returns
+  a result" — and it did. It just returned the *dumb* one, every time, since the D35 model migration.
+  **I4's virtue is its blind spot: a fallback that never complains hides the thing it is falling back from.**
+- **The debugging is the story.** Two confident hypotheses died first:
+  1. *"max_tokens is too low"* — from a **single sample** (900 failed, 2500 passed). A spaced retest killed
+     it: 900 both passed *and* failed; 2500 failed twice.
+  2. *"it's flaky — add a retry"* — 3 attempts × 4 calls = **12 consecutive failures.** The failure is
+     deterministic; retrying a deterministic failure is just a slower failure.
+
+  Both would have shipped as confident fixes with plausible commit messages. Only re-probing caught them.
+- **Fix (D73/D74):** `/api/dimaag` accepts an optional JSON Schema and asks for `json_schema` output; the
+  forge and reframer pass theirs and dropped their Return-JSON prose. Retry kept as belt-and-braces at *both*
+  choke points (the client core **and** the server function holding the key). Proven by
+  `tests/live-forge.test.ts` (`SIFARISH_LIVE=1`), which drives the **real prompt over the real README against
+  the real model** and asserts forged bullets survive `isResumeBullet` + `detectDrift`.
+- **Honest remainder (D75):** `decide` / `critique` / `classify` still pass no schema — the entire Editor's
+  Desk is *still* on heuristics in production. Documented as open, not quietly closed.
+- **Lessons:** (1) **A silent fallback is a lie you tell yourself** — degradation must be *observable*; that
+  is now a design requirement, not a nicety. (2) **A single sample is not a measurement.** (3) When the user
+  describes a *feeling* the metrics contradict, the metrics are measuring the wrong thing.
+
+---
+
+### 3.14 · TWO SESSIONS OF FIXES THAT NOBODY WAS RUNNING (Session 5.4)
+
+- **Symptom:** none. Everything was green, committed and pushed.
+- **Root cause:** Vercel's last **production deploy was commit `a0fa212` (D54)**. `git push` does not deploy
+  this project. So D55 — a fix for a bug *the owner personally caught in his own browser* — had never reached
+  production, and neither had any of Session 5.4. He was using a July-14 app while reading July-15 changelogs.
+- **Caught by:** comparing the prod bundle hash against the local build. Not by a gate, not by a review.
+- **Lesson:** **a green build proves nothing about what your users are running.** Merged ≠ pushed ≠ deployed.
+  Verify the artifact actually being served.
+
+---
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
-Across every problem above, four patterns repeat. They *are* the Sentinel Protocol.
+Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.
 
 1. **A conventional guarantee mistaken for a structural one.** I1 (no orphan claims), I3 (no send), I12
    (owner-only) were all "true" in code review and *false* under an adversary until enforcement moved to the
@@ -252,6 +335,17 @@ Across every problem above, four patterns repeat. They *are* the Sentinel Protoc
    reframing. → *If it can recur, you fixed the symptom.*
 4. **Confidence outrunning verification.** "Sealed" was said three times too early. → *"Done" is earned by
    the Four Proofs, adversary pass included, pasted as evidence.*
+5. **Silent degradation — the pattern that hid the worst bug (3.13).** A fallback that never complains makes
+   a dead dependency indistinguishable from a healthy one. Every "graceful degradation" path is somewhere a
+   failure can live forever, green the whole time. → *Degradation must be observable. If the app can run in
+   two modes, it must always say which one it is in.*
+6. **Auditing the machine instead of the input (3.12).** The resume read as a framing failure and was a
+   supply failure; every component was innocent. → *When the output is slop, audit what you fed it first.*
+
+**The uncomfortable through-line:** in 3.8, 3.12 and 3.13 — the three worst bugs in this project — **the
+owner found it and the test suite did not.** The suite tests what was *built*; he tests what he *meets*. That
+gap is the entire reason §14 demands an adversary pass and a live run before the word "done" is allowed, and
+why "it feels dumb" is now triaged as a bug report with a root cause rather than dismissed as vibes.
 
 ---
 

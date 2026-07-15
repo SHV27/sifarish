@@ -44,6 +44,51 @@ It is fully functional **with zero API keys.**
 
 ---
 
+## What it actually looks like
+
+Captured from the **live deployment in Owner Mode** by `scripts/owner-smoke.mjs` — the same headless
+harness that runs the §14 proofs. Real data, real roles, no mockups. The public demo shows a fictional
+persona; these are the owner's own screens.
+
+### Shikaar Radar — the hunt
+Live roles from 29 keyless ATS boards plus lawful aggregator lanes (LinkedIn/Indeed/Glassdoor via
+Google-for-Jobs — never scraping). Ranked against a rubric whose arithmetic is always inspectable
+(`why this score`), capped at 15 by design, searchable across the full catch, with hunts derived from
+the owner's own Vision Profile.
+
+![Shikaar Radar](docs/screenshots/nav-radar.png)
+
+### Sach Ledger — the single source of truth
+Every claim the résumé can make, tiered `shipped` vs `in_forge`, each with its evidence URL and date.
+Nothing reaches a résumé that does not start here.
+
+![Sach Ledger](docs/screenshots/01-ledger.png)
+
+### Morcha Board — the war room
+Found → Tailored → Applied → Follow-up → Interview → Verdict. Tracking is a side effect of generating
+the packet; you never fill in a form.
+
+![Morcha Board](docs/screenshots/nav-morcha.png)
+
+### Guru — the counsel
+Grounded in the compiled dossier every turn, so it answers with *his* evidence and his stated vision —
+and refuses the guarantee language the rest of this category runs on (I9).
+
+![Guru](docs/screenshots/nav-guru.png)
+
+### Khabri — cited market intelligence
+Every external claim carries a source URL, or it renders as an error rather than text (I7).
+
+![Khabri](docs/screenshots/nav-khabri.png)
+
+### The Gate — ownership is server-verified
+The owner code is checked by the server and stored in no browser. A visitor gets the read-only demo on
+a fictional persona and **cannot spend a single token** — structurally, not by policy (D44/D46).
+
+![The Gate](docs/screenshots/00-gate.png)
+
+---
+
 ## The inversion: why this category dies, and the structural counter
 
 Most AI job tools are spray-and-pray résumé fabricators. Each failure mode below has a *structural*
