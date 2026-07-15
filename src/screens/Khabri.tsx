@@ -42,8 +42,9 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
             Khabri <span className="font-devanagari text-lg text-stamp">ख़बरी</span>
           </h1>
           <p className="text-sm text-ink-soft mt-1">
-            Your informant. Sweeps live job sources — including LinkedIn/Indeed-listed roles via a lawful
-            aggregator — plus a hiring-signal feed. No scraping, ever.
+            Your informant. Sweeps live job sources worldwide — LinkedIn/Indeed/Glassdoor roles via a lawful
+            aggregator, Adzuna across 18 country markets, plus keyless global-remote boards and a hiring-signal
+            feed. No scraping, ever.
           </p>
         </div>
         <div className="text-right">

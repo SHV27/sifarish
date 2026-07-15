@@ -37,6 +37,44 @@ export const SEED_SIGNAL_QUERIES = [
   'Anthropic ecosystem jobs',
 ]
 
+/**
+ * ADZUNA — the global aggregator lane (Session 5.5). One request = one country, so this set is
+ * the reach of a single sweep: India first (his home market), then the AI-hiring geographies that
+ * a remote/international candidate can realistically target. Adzuna itself indexes 18 countries;
+ * this is the default net, and perRunCap (I8) is what actually bounds how many run per sweep.
+ */
+export const ADZUNA_COUNTRIES = ['in', 'us', 'gb', 'ca', 'de', 'sg', 'au', 'nl']
+
+const ADZUNA_STOP = new Set([
+  'india', 'indian', 'usa', 'us', 'uk', 'remote', 'onsite', 'hybrid', 'worldwide', 'global',
+  'intern', 'internship', 'near', 'me', 'the', 'a', 'for', 'in', 'at', 'and', 'or', 'role', 'roles',
+  'job', 'jobs', 'position', 'hiring', 'entry', 'level', '2024', '2025', '2026', '2027',
+])
+
+/**
+ * Adzuna's `what` does an ALL-words match, so a long hunt like "AI engineer intern India remote"
+ * over-constrains and returns nothing. We keep the AI-CORE (the first ≤3 significant words) and
+ * drop location/seniority/date noise. "intern" is intentionally dropped — Adzuna carries few
+ * intern-tagged roles, so keeping it collapses the yield; the Vision Lens + staleness scoring and
+ * his own review handle seniority downstream. Deterministic + pure → unit-tested.
+ */
+export function cleanAdzunaQuery(q: string): string {
+  const words = q
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 1 && !ADZUNA_STOP.has(w))
+  const core = words.slice(0, 3).join(' ').trim()
+  return core || 'AI engineer'
+}
+
+/** The distinct AI-core queries a sweep will spread across countries (falls back to a curated set). */
+export function adzunaQueriesFromHunts(hunts: SavedHunt[]): string[] {
+  const cores = [...new Set(hunts.map((h) => cleanAdzunaQuery(h.query)))].filter(Boolean)
+  const fallback = ['AI engineer', 'machine learning engineer', 'artificial intelligence', 'LLM engineer', 'generative AI', 'data scientist']
+  return (cores.length ? cores : fallback).slice(0, 8)
+}
+
 interface JobsApiResp {
   keyless: boolean
   jobs: Job[]
@@ -85,6 +123,26 @@ async function callSignalsApi(queries: string[]): Promise<SignalsApiResp | null>
   }
 }
 
+/**
+ * Both Adzuna (keyed) and Working Nomads (keyless-but-no-CORS) are relayed by ONE proxy
+ * (/api/khabri/aggregators). Owner-gated client-side (D44) AND server-side (the proxy re-checks
+ * the token), so demo/Darshak never reaches it and the keys spend for no one but the owner.
+ */
+async function callAggregatorApi(src: 'adzuna' | 'workingnomads', body: Record<string, unknown> = {}): Promise<JobsApiResp | null> {
+  if (!meteredCallsAllowed()) return null // Darshak/demo: never spends, never proxies (D44)
+  try {
+    const res = await fetch(`/api/khabri/aggregators?src=${src}`, {
+      method: 'POST',
+      headers: meteredHeaders(),
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) return null
+    return (await res.json()) as JobsApiResp
+  } catch {
+    return null // pure vite dev (no serverless) → the browser-direct keyless lanes still run
+  }
+}
+
 export async function runSweep(onStep?: (label: string) => void): Promise<SweepYield> {
   // Darshak/demo: sweeps mutate the Radar and can spend credits — Owner Mode only (D44).
   if (!meteredCallsAllowed()) {
@@ -116,6 +174,33 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     bySource.jsearch = (bySource.jsearch ?? 0) + resp.jobs.length
   }
   if (jsearchUsed > 0) await recordSpend('jsearch', jsearchUsed)
+
+  // --- Keyed aggregator lane (Adzuna), budget-gated (I8) — the global net (Session 5.5) ---
+  // One request per country, so perRunCap bounds how many geographies a sweep reaches. The owner's
+  // enabled hunts drive the query terms (their AI-core, location noise stripped); countries are the
+  // fixed global set. This is the "duniya ka har corner" lane: India + US + UK + CA + DE + SG + AU + NL
+  // each hunt, all real postings with salaries, deduped against everything else by mergeDiscovered.
+  const adzunaBudget = await allowedThisRun('adzuna')
+  if (adzunaBudget > 0) {
+    const adzunaQueries = adzunaQueriesFromHunts(hunts)
+    let adzunaUsed = 0
+    for (let i = 0; i < ADZUNA_COUNTRIES.length; i++) {
+      if (adzunaUsed >= adzunaBudget) break
+      const country = ADZUNA_COUNTRIES[i]
+      const query = adzunaQueries[i % adzunaQueries.length]
+      onStep?.(`Adzuna ${country.toUpperCase()}: "${query}"`)
+      const resp = await callAggregatorApi('adzuna', { country, query, resultsPerPage: 20 })
+      if (!resp) continue
+      if (resp.keyless) break // no key → skip the lane, keyless lanes carry the sweep (I4)
+      if (!keyedLanes.includes('Adzuna (global · 18 countries)')) keyedLanes.push('Adzuna (global · 18 countries)')
+      adzunaUsed += resp.creditsSpent
+      creditsSpent += resp.creditsSpent
+      if (resp.error) failed.push(`Adzuna ${country.toUpperCase()}`)
+      for (const j of resp.jobs) discovered.push(j)
+      bySource.adzuna = (bySource.adzuna ?? 0) + resp.jobs.length
+    }
+    if (adzunaUsed > 0) await recordSpend('adzuna', adzunaUsed)
+  }
 
   // --- Keyless lanes (always run; I4) ---
   // Breadth fix (D88): these used to search only hunts[0], so the wider vision-derived hunt set
@@ -150,6 +235,17 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     } catch {
       failed.push(label)
     }
+  }
+
+  // --- Working Nomads (keyless, but no CORS → relayed by the aggregator proxy; Session 5.5) ---
+  // Spends no external credit; adds genuinely global remote AI roles the other lanes miss.
+  onStep?.('Working Nomads · global remote')
+  const wn = await callAggregatorApi('workingnomads')
+  if (wn && !wn.keyless) {
+    keylessLanes.push('Working Nomads · global remote')
+    for (const j of wn.jobs) discovered.push(j)
+    bySource.workingnomads = (bySource.workingnomads ?? 0) + wn.jobs.length
+    if (wn.error) failed.push('Working Nomads')
   }
 
   // --- Merge + dedupe into the Radar queue ---

@@ -101,6 +101,8 @@ export type JobSource =
   | 'remoteok'
   | 'arbeitnow'
   | 'jobicy'
+  | 'adzuna'
+  | 'workingnomads'
 
 export type JobStatus =
   | 'found'
@@ -524,7 +526,7 @@ export interface Settings {
 
 // ---------- Khabri (discovery + signals) ----------
 
-export type DiscoverySource = 'jsearch' | 'hackernews' | 'remotive' | 'remoteok'
+export type DiscoverySource = 'jsearch' | 'hackernews' | 'remotive' | 'remoteok' | 'arbeitnow' | 'jobicy' | 'adzuna' | 'workingnomads'
 export type SignalSource = 'tavily'
 
 export interface SavedHunt {

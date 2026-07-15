@@ -298,7 +298,7 @@ function HuntPanel() {
           className="ml-auto shrink-0 bg-stamp text-paper font-semibold text-xs px-3 py-1.5 rounded disabled:opacity-50"
           disabled={sweeping || enabled.length === 0}
           onClick={() => void sweep()}
-          title="Pulls fresh roles from the aggregator lanes (LinkedIn/Indeed/Glassdoor via JSearch) + the keyless boards"
+          title="Pulls fresh roles from the global aggregator lanes (LinkedIn/Indeed/Glassdoor via JSearch; Adzuna across 18 countries with salaries) + keyless remote boards (Working Nomads, Jobicy, Arbeitnow, Remotive, RemoteOK, HN)"
         >
           {sweeping ? 'hunting…' : '🔎 Hunt now'}
         </button>

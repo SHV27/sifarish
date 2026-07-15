@@ -13,6 +13,9 @@ export function monthKey(d = new Date()): string {
 
 export const BUDGET_DEFAULTS: Omit<Budget, 'used' | 'monthKey'>[] = [
   { id: 'jsearch', label: 'JSearch (job aggregation)', monthlyCap: 300, perRunCap: 10, unit: 'requests' },
+  // Adzuna aggregates 18 country markets; one request = one country per sweep, so perRunCap 8 =
+  // eight geographies covered each hunt (India→US→UK→CA→DE→SG→AU→NL). monthlyCap 300 ≈ 37 sweeps.
+  { id: 'adzuna', label: 'Adzuna (global job aggregation)', monthlyCap: 300, perRunCap: 8, unit: 'requests' },
   { id: 'tavily', label: 'Tavily (signals + intel + pulse)', monthlyCap: 1000, perRunCap: 8, unit: 'credits' },
   { id: 'groq', label: 'Groq (Guru + polish)', monthlyCap: 5000, perRunCap: 40, unit: 'calls' },
   // v3 two-tier reasoning budgets — a gpt-oss-120b reason call costs more than a gpt-oss-20b classify.
