@@ -83,7 +83,9 @@ export default async function handler(req: Request): Promise<Response> {
   if (!body?.system || !Array.isArray(body.messages)) return json({ error: 'bad request' }, 400)
 
   const messages = [
-    { role: 'system', content: body.system.slice(0, 8000) },
+    // 12000 (was 8000, Session 5.5) — the compiled dossier (vision + ledger + briefs + pulse) grows
+    // as Nabz adds work; 8000 clipped the tail. gpt-oss-120b's context is far larger, so this is safe.
+    { role: 'system', content: body.system.slice(0, 12000) },
     ...body.messages.slice(-12).map((m) => ({ role: m.role, content: String(m.content).slice(0, 4000) })),
   ]
 

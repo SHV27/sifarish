@@ -246,7 +246,15 @@ export function stalenessPart(job: Job): ScorePart {
   if (!stamp) {
     return { key: 'freshness', label: 'Freshness', points: 0, max: 0, why: 'No posting date published by this board — not penalised on a guess.' }
   }
-  const days = Math.max(0, Math.floor((Date.now() - new Date(stamp).getTime()) / 86400000))
+  // Session 5.5 (bug B1): a PRESENT-but-unparseable date used to yield NaN, and every `NaN <= n` is
+  // false, so a malformed stamp fell through to the max −30 penalty + "Last touched NaNd ago". An
+  // unrecognised date is now treated like a missing one — we penalise evidence of staleness, never a
+  // parsing failure.
+  const t = new Date(stamp).getTime()
+  if (!Number.isFinite(t)) {
+    return { key: 'freshness', label: 'Freshness', points: 0, max: 0, why: 'Posting date unrecognised — not penalised on a guess.' }
+  }
+  const days = Math.max(0, Math.floor((Date.now() - t) / 86400000))
   const band = days <= 30 ? 0 : days <= 60 ? -5 : days <= 120 ? -12 : days <= 240 ? -20 : -30
   const why =
     band === 0

@@ -227,23 +227,51 @@ export function visionCheck(vision?: VisionProfile): RoutedReply {
 }
 
 /**
- * The vision-alignment output scan (the reported-failure fix, structural): if a reply pushes
- * an avoided lane without the explicit flag, the client appends the flag. Used on LLM output.
+ * The vision-alignment output scan (the reported-failure fix, structural). If a reply PITCHES an
+ * avoided lane without an explicit flag, the reply is discarded and the router's grounded text
+ * stands (client.ts). Used on LLM output.
+ *
+ * Session 5.5 fixes two holes the audit found:
+ *  - Bug #2: the flag no longer counts if it merely appears SOMEWHERE — "you should deliberately
+ *    target Google" used to pass because 'deliberately' existed. The scan is now SENTENCE-AWARE: a
+ *    lane pitch is excused only when a real flag sits in the SAME sentence (or the one before it),
+ *    and the too-loose 'deliberately' is no longer a flag word.
+ *  - Bug #4: it now derives lanes from HIS ACTUAL notInterested list (pure frontend, non-AI QA/…),
+ *    not only a hardcoded big-tech regex — so the guard reflects his stated avoids, not a fixed set.
  */
-const MISALIGNED_LANES =
-  /\b(google|microsoft|amazon|meta|apple|tcs|infosys|wipro|accenture|cognizant|capgemini|mass placement|service compan\w*|generic sde|big.?tech pipeline)\b/i
-const SUGGESTION_VERBS = /\b(apply|target|aim (for|at)|try|consider|focus on|recommend|suggest|you should|go for|pursue|prioritize)\b/i
-const FLAG_PHRASES = /hat ke hai|off your stated|against your (vision|avoids|stated)|you said no to|outside your lane|deliberately|sirf isliye bata/i
+const MISALIGNED_LANES_ALT =
+  'google|microsoft|amazon|meta|apple|tcs|infosys|wipro|accenture|cognizant|capgemini|mass placement|service compan\\w*|generic sde|big.?tech pipeline'
+const SUGGESTION_VERBS = /\b(apply|target|aim (for|at)|try|consider|focus on|recommend|suggest|you should|go for|pursue|prioritize|opt for|lean into)\b/i
+const FLAG_PHRASES = /hat ke hai|off your stated|against your (vision|avoids|stated)|you said no to|outside your lane|not your lane|sirf isliye bata|know you avoid|despite your/i
+// Generic/dangerous tokens that must never become an avoided-lane marker — 'ai' especially (his whole
+// vision IS AI; treating it as an avoid would flag every on-vision suggestion).
+const LANE_STOP = new Set(['ai', 'non', 'pure', 'generic', 'mass', 'role', 'roles', 'work', 'the', 'and', 'for', 'with', 'into', 'your', 'you', 'job', 'jobs'])
+
+function laneRegex(vision?: VisionProfile): RegExp {
+  const userTerms = (vision?.notInterested ?? [])
+    .flatMap((t) => t.toLowerCase().match(/[a-z][a-z+.#-]{2,}/g) ?? [])
+    .filter((w) => w.length >= 3 && !LANE_STOP.has(w))
+    .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  return new RegExp(`\\b(${[MISALIGNED_LANES_ALT, ...new Set(userTerms)].join('|')})\\b`, 'gi')
+}
 
 export function visionAlignmentScan(text: string, vision?: VisionProfile): { aligned: boolean; hits: string[] } {
   if (!vision?.notInterested?.length) return { aligned: true, hits: [] }
-  // Misaligned = the reply SUGGESTS an avoided lane (company/pipeline) without the explicit flag.
-  // Naming a company as a fact or comparison is fine; pitching it as his path is not.
-  const suggests = SUGGESTION_VERBS.test(text)
-  const laneHits = text.match(new RegExp(MISALIGNED_LANES.source, 'gi')) ?? []
-  const flagged = FLAG_PHRASES.test(text)
-  const misaligned = suggests && laneHits.length > 0 && !flagged
-  return { aligned: !misaligned, hits: misaligned ? [...new Set(laneHits.map((h) => h.toLowerCase()))] : [] }
+  const re = laneRegex(vision)
+  // Sentence-aware: naming a company as a fact/comparison is fine; PITCHING an avoided lane as his
+  // path is not — and only a flag in the same sentence (or the one before) excuses it.
+  const sentences = text.split(/(?<=[.!?])\s+|\n+/)
+  const hits: string[] = []
+  for (let i = 0; i < sentences.length; i++) {
+    const s = sentences[i]
+    const laneMatches = s.match(re)
+    if (!laneMatches) continue
+    if (!SUGGESTION_VERBS.test(s)) continue // a factual mention, not a pitch
+    const window = `${sentences[i - 1] ?? ''} ${s}`
+    if (FLAG_PHRASES.test(window)) continue // properly flagged as a deliberate, off-vision aside
+    hits.push(...laneMatches.map((h) => h.toLowerCase()))
+  }
+  return { aligned: hits.length === 0, hits: [...new Set(hits)] }
 }
 
 /** The router's honesty gate — run on ANY Guru output (LLM or template) before display. */

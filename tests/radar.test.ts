@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { JD_FIXTURES } from './fixtures/jds'
 import { fakeJob, SEED_LEDGER } from './helpers'
-import { scoreJob } from '../src/lib/radar/score'
+import { scoreJob, stalenessPart } from '../src/lib/radar/score'
 import { DEFAULT_RUBRIC } from '../src/lib/radar/rubric'
 import { recognizeAtsUrl } from '../src/lib/radar/pasteLane'
 import { WATCHLIST_SEED } from '../src/lib/radar/watchlist.seed'
@@ -112,5 +112,31 @@ describe('Watchlist seed integrity', () => {
     for (const w of WATCHLIST_SEED) {
       expect(['greenhouse', 'lever', 'ashby', 'smartrecruiters']).toContain(w.source)
     }
+  })
+})
+
+// ============================================================================================
+// Session 5.5 — scoring + Settings audit fixes (bugs B1, B2)
+// ============================================================================================
+describe('Session 5.5 — staleness + Vision Lens tunability', () => {
+  it('B1: a malformed posting date is NOT treated as maximally stale (no NaN, no -30)', () => {
+    const p = stalenessPart({ ...fakeJob('X', 'AI Engineer', 'jd'), updatedAt: 'sometime-recently' })
+    expect(p.points).toBe(0)
+    expect(p.why).not.toMatch(/NaN/)
+  })
+  it('B1: a genuinely old date is still penalised (the feature still works)', () => {
+    const old = new Date(Date.now() - 300 * 86400000).toISOString()
+    const p = stalenessPart({ ...fakeJob('X', 'AI Engineer', 'jd'), updatedAt: old })
+    expect(p.points).toBeLessThan(0)
+  })
+  it('B1: a missing date is never penalised', () => {
+    const p = stalenessPart({ ...fakeJob('X', 'AI Engineer', 'jd'), updatedAt: undefined })
+    expect(p.points).toBe(0)
+  })
+  it('B2: Settings now WIRES the Vision Lens levers (targetRoles + notInterested were frozen at seed)', async () => {
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync('src/screens/SettingsScreen.tsx', 'utf8')
+    expect(src).toMatch(/save\(\{\s*targetRoles/) // the strongest ranking signal is now editable
+    expect(src).toMatch(/save\(\{\s*notInterested/)
   })
 })

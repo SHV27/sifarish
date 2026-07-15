@@ -64,7 +64,7 @@ export function SettingsScreen() {
         <p className="text-xs text-ink-soft mt-1 mb-3">Metered usage this month. Sweeps refuse to exceed the monthly cap and degrade to keyless lanes.</p>
         <div className="space-y-3">
           {budgets.map((b) => {
-            const pct = Math.min(100, Math.round((b.used / b.monthlyCap) * 100))
+            const pct = b.monthlyCap > 0 ? Math.min(100, Math.round((b.used / b.monthlyCap) * 100)) : 0 // guard 0-cap (bug B3)
             return (
               <div key={b.id}>
                 <div className="flex justify-between text-xs text-ink mb-1">
@@ -512,6 +512,28 @@ function VisionEditor({ vision }: { vision: VisionProfile }) {
         value={vision.dream}
         onChange={(e) => save({ dream: e.target.value })}
         aria-label="Dream statement"
+      />
+      {/* Session 5.5 (bug B2): the Vision Lens's STRONGEST ranking levers — the roles you actually want
+          (title match, the biggest boost) and the lanes you don't (a real penalty) — were frozen at the
+          seed with no way to edit them. This is exactly what LinkedIn ranks on; now you tune it. */}
+      <label className="block text-xs font-medium text-ink mb-1">Target roles — the titles you actually want (one per line)</label>
+      <textarea
+        className="w-full bg-paper-sunken px-3 py-2 rounded text-xs mb-1 font-mono"
+        rows={3}
+        value={(vision.targetRoles ?? []).join('\n')}
+        onChange={(e) => save({ targetRoles: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })}
+        aria-label="Target roles"
+        placeholder={'Agentic AI Engineer\nApplied AI Engineer\nLLM Engineer'}
+      />
+      <p className="text-[11px] text-ink-soft mb-3">The Radar ranks a role higher when its title matches one of these — the single biggest signal in the score.</p>
+      <label className="block text-xs font-medium text-ink mb-1">Not interested in — lanes to push DOWN (one per line)</label>
+      <textarea
+        className="w-full bg-paper-sunken px-3 py-2 rounded text-xs mb-3 font-mono"
+        rows={2}
+        value={(vision.notInterested ?? []).join('\n')}
+        onChange={(e) => save({ notInterested: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })}
+        aria-label="Not interested"
+        placeholder={'Pure frontend\nNon-AI QA / support\nGeneric SDE / mass-MNC'}
       />
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="text-xs text-ink">

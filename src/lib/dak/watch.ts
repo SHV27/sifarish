@@ -21,7 +21,14 @@ export interface MailMeta {
 
 /** Heuristics for stage suggestions — conservative on purpose; the human decides. */
 export const INTERVIEW_RE = /\b(interview|schedule a (call|chat|conversation)|availability|next (round|step|stage)|assessment|take.?home|coding (challenge|round)|phone screen)\b/i
-export const REJECT_RE = /\b(unfortunately|not (be )?(moving|going) forward|regret to inform|other candidates|position has been filled|won'?t be proceeding)\b/i
+// Session 5.5 (bug A1): a DEFINITIVE rejection outranks an interview mention, because "...after your
+// interview, unfortunately we won't be moving forward" is a no, not an invite. suggestStage tests
+// STRONG_REJECT first, then interview, then the weak 'unfortunately' (which alone shouldn't beat an
+// interview cue — "unfortunately the interview slipped to Friday" is still an interview).
+export const STRONG_REJECT_RE = /\b((not|won'?t|will not|are not|isn'?t) (be )?(moving|going|proceeding) forward|regret to inform|other candidates|position has been filled|won'?t be proceeding|decided (not )?to (proceed|move forward)|not (be )?(selected|shortlisted)|will not be moving)\b/i
+export const REJECT_RE = /\b(unfortunately|regret to inform|other candidates|position has been filled|not (be )?(selected|shortlisted))\b/i
+/** ATS relay senders — matched at a LABEL boundary so 'lever' in clever.com never counts (bug A4). */
+const ATS_RELAY_RE = /(^|[.@])(greenhouse(-mail)?|lever|ashby(hq)?|smartrecruiters|myworkday(jobs)?|workday|workable|jobvite|icims|rippling|bamboohr|teamtailor|recruitee|breezy(hr)?)\./i
 /** Bulk noise a job-hunt inbox is full of — never a card. */
 const NOISE_RE = /\b(job alert|jobs? for you|newsletter|digest|recommended jobs|new jobs posted|apply now to \d+)\b/i
 
@@ -43,18 +50,22 @@ export function matchMail(meta: MailMeta, jobs: Job[]): Job | undefined {
   return jobs.find((j) => {
     const slug = companySlug(j.company)
     if (slug.length < 3) return false
-    // Domain heuristic beats name heuristic: a mail FROM the company's domain is near-certain.
-    if (fromDomain.includes(slug)) return true
-    // ATS senders (greenhouse/lever/ashby) put the company in the display name or subject.
-    const viaAts = /(greenhouse|lever|ashby|smartrecruiters|myworkday)/.test(fromDomain)
-    return viaAts && hay.includes(slug)
+    const esc = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // Domain heuristic: a mail FROM the company's domain is near-certain — but matched at a LABEL
+    // boundary, not a raw substring (bug A4). Kills 'lever'⊂clever.com, 'scale'⊂scaleway.com,
+    // 'meta'⊂metamask.io while still matching sarvam.ai / jobs.sarvam.ai for company "Sarvam AI".
+    if (new RegExp(`(^|[.@-])${esc}([.-]|$)`).test(fromDomain)) return true
+    // ATS relay senders (greenhouse/lever/ashby/…, now a wider list) carry the company in the display
+    // name/subject — match the slug as a whole word there, again to avoid substring false positives.
+    return ATS_RELAY_RE.test(fromDomain) && new RegExp(`\\b${esc}\\b`).test(hay)
   })
 }
 
 export function suggestStage(meta: MailMeta): DakCard['stageSuggestion'] {
   const hay = `${meta.subject} ${meta.snippet}`
+  if (STRONG_REJECT_RE.test(hay)) return 'rejected' // a definitive no wins, even next to "interview"
   if (INTERVIEW_RE.test(hay)) return 'interview'
-  if (REJECT_RE.test(hay)) return 'rejected'
+  if (REJECT_RE.test(hay)) return 'rejected' // weaker cues (unfortunately/regret) only if not an interview
   return undefined
 }
 

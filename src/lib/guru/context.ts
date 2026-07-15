@@ -14,17 +14,20 @@ export function ledgerSummary(ledger: LedgerEntry[]): string {
   const line = (e: LedgerEntry) =>
     `- [${e.tier}] ${e.title}${e.summary ? ` — ${e.summary}` : ''}${e.evidence?.url ? ` (${e.evidence.url})` : e.evidence?.repo ? ` (${e.evidence.repo})` : ''}`
   const group = (kind: LedgerEntry['kind']) => eligible.filter((e) => e.kind === kind)
+  const section = (heading: string, kind: LedgerEntry['kind'], fmt: (e: LedgerEntry) => string = line) => {
+    const rows = group(kind)
+    return rows.length ? [heading, ...rows.map(fmt)] : []
+  }
   return [
-    'PROJECTS:',
-    ...group('project').map(line),
-    'SKILLS (shipped = interview-safe, in_forge = currently learning):',
-    ...group('skill').map((e) => `- [${e.tier}] ${e.title}`),
-    'EDUCATION:',
-    ...group('education').map(line),
-    'ACHIEVEMENTS:',
-    ...group('achievement').map(line),
-    'CERTIFICATIONS:',
-    ...group('certification').map(line),
+    ...section('PROJECTS:', 'project'),
+    // Session 5.5 (Guru bug #1): positions/leadership were SILENTLY DROPPED from the dossier —
+    // ledgerSummary grouped every kind except 'position', so Guru was blind to his real exec/lead
+    // roles and would omit or refuse them (the prompt says he may claim ONLY what's summarized here).
+    ...section('POSITIONS & LEADERSHIP:', 'position'),
+    ...section('SKILLS (shipped = interview-safe, in_forge = currently learning):', 'skill', (e) => `- [${e.tier}] ${e.title}`),
+    ...section('EDUCATION:', 'education'),
+    ...section('ACHIEVEMENTS:', 'achievement'),
+    ...section('CERTIFICATIONS:', 'certification'),
   ].join('\n')
 }
 
@@ -68,17 +71,21 @@ export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, job
     'every answer ends with ONE concrete next action he can take today. Admit uncertainty plainly.',
     'Cite a source URL for any claim about a company, path, or market (I7). Speak his language.',
     '',
+    // Guru bug #3 (Session 5.5): the LEDGER — "the ONLY source for claims about him" — now sits ABOVE
+    // path-briefs + pulse. The server caps the prompt (api/guru.ts), and truncation cuts from the END;
+    // with the ledger last it was the first casualty. Ledger first → pulse/briefs get clipped, not I1.
+    'LEDGER (his provable self — the ONLY source for claims about him):',
+    ledgerSummary(ledger),
+    '',
+    `CURRENT PIPELINE: ${pipeline.found} found, ${pipeline.tailored} tailored, ${pipeline.applied} awaiting reply, ${pipeline.interview} interviewing.`,
+    '',
     'HIRING-PATH BRIEFS (researched, cited — data/ustaad/library.json): when he asks how to get into a',
     'kind of company, answer with the PATH, not a job list:',
     ...pathBriefs().map((b) => `- ${b.label}: ${b.summary} Referrals: ${b.referralWeight.split('—')[0].trim()}. Emphasis: ${b.portfolioVsDsa.split('.')[0]}.`),
     '',
-    `CURRENT PIPELINE: ${pipeline.found} found, ${pipeline.tailored} tailored, ${pipeline.applied} awaiting reply, ${pipeline.interview} interviewing.`,
     pulse.length > 0
       ? `MARKET PULSE (recent, cited):\n${pulse.slice(0, 5).map((p) => `- ${p.headline} (${p.url})`).join('\n')}`
       : '',
-    '',
-    'LEDGER (his provable self — the ONLY source for claims about him):',
-    ledgerSummary(ledger),
   ]
     .filter(Boolean)
     .join('\n')

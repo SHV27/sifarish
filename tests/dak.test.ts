@@ -125,6 +125,11 @@ describe('Dak Khana — ZERO send capability (I3, proven at the source level)', 
       'gmail.send',
       'gmail.compose',
       'gmail.modify',
+      'gmail.insert', // (Session 5.5) draft/insert-based send paths — I3 defense-in-depth
+      'drafts.create',
+      '/drafts/send',
+      'settings.sendas',
+      'batchmodify',
       'mail.google.com/auth', // full-access scope
       '/messages/send',
       'smtp://',
@@ -147,5 +152,32 @@ describe('Dak Khana — ZERO send capability (I3, proven at the source level)', 
         expect(text.includes(b), `${f} contains banned send-capable reference "${b}"`).toBe(false)
       }
     }
+  })
+})
+
+// ============================================================================================
+// Session 5.5 — Dak matcher fixes (audit bugs A1 + A4)
+// ============================================================================================
+describe('Dak — matcher fixes (Session 5.5)', () => {
+  const mail = (from: string, subject: string, snippet: string): MailMeta => ({ id: 'x', from, subject, date: 'Fri, 10 Jul 2026 10:00:00 +0530', snippet })
+
+  it('A1: a rejection that MENTIONS the interview is classified rejected, not interview', () => {
+    const m = mail('careers@x.com', 'Update on your application', 'Thank you for interviewing with us. Unfortunately, we won\'t be moving forward at this time.')
+    expect(suggestStage(m)).toBe('rejected')
+  })
+  it('A1: a weak "unfortunately" next to a real interview cue stays interview', () => {
+    const m = mail('careers@x.com', 'Interview reschedule', 'Unfortunately our interviewer is out sick; let us reschedule your interview for Friday.')
+    expect(suggestStage(m)).toBe('interview')
+  })
+
+  it('A4: substring domains no longer false-match (scaleway.com ⊄ "Scale AI", clever.com ⊄ "Lever")', () => {
+    const scaleway = mail('noreply@scaleway.com', 'Your cloud invoice', 'Your Scaleway account statement is ready.')
+    expect(matchMail(scaleway, [job('Scale AI', 'applied')])).toBeUndefined()
+    const clever = mail('team@clever.com', 'Clever product update', 'Whats new this month.')
+    expect(matchMail(clever, [job('Lever', 'applied')])).toBeUndefined()
+  })
+  it('A4: the real company domain still matches at a label boundary', () => {
+    const legit = mail('jobs@lever.co', 'Your Lever application', 'Thanks for applying.')
+    expect(matchMail(legit, [job('Lever', 'applied')])?.company).toBe('Lever')
   })
 })

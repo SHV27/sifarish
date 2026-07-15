@@ -83,7 +83,7 @@ describe('Excluded skills (resumeEligible:false) never appear in any artifact', 
 })
 
 describe('I3 — No Send: the codebase contains no submission mechanism', () => {
-  it('no forbidden send APIs anywhere in src/', async () => {
+  it('no forbidden send APIs anywhere in src/ or api/', async () => {
     const { readFileSync, readdirSync, statSync } = await import('node:fs')
     const { join } = await import('node:path')
     const forbidden = [/nodemailer/i, /sendmail/i, /smtp\./i, /puppeteer/i, /playwright.*\.click\(/i]
@@ -92,7 +92,8 @@ describe('I3 — No Send: the codebase contains no submission mechanism', () => 
         const p = join(dir, f)
         return statSync(p).isDirectory() ? walk(p) : [p]
       })
-    const files = walk('src').filter((f) => /\.(ts|tsx)$/.test(f))
+    // Session 5.5: walk api/ too — the server functions were not covered by this I3 gate.
+    const files = [...walk('src'), ...walk('api')].filter((f) => /\.(ts|tsx)$/.test(f))
     for (const f of files) {
       const src = readFileSync(f, 'utf8')
       for (const pat of forbidden) {

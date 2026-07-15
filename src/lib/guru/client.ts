@@ -98,8 +98,11 @@ export async function streamGuru(history: GuruMessage[], onToken: (t: string) =>
           const delta = JSON.parse(payload)?.choices?.[0]?.delta?.content
           if (typeof delta === 'string' && delta) {
             full += delta
-            // I9 tripwire: if guarantee language appears mid-stream, abort and discard.
-            if (!honestyGate(full).ok) {
+            // Mid-stream tripwires (Session 5.5): abort + discard the moment the reply breaks I9
+            // (guarantee language) OR pitches an avoided lane without a flag — was only checked at
+            // [DONE], so a misaligned big-tech pitch streamed in full before being swapped out (bug
+            // #5). The guardrail flags the lane FIRST, so a properly-flagged aside never trips.
+            if (!honestyGate(full).ok || !visionAlignmentScan(full, settings.visionProfile).aligned) {
               await reader.cancel()
               return null
             }

@@ -12,7 +12,7 @@ import { DEFAULT_VISION } from '../src/db/seed'
 const NO_JOBS: Job[] = []
 
 /**
- * The Guru eval — 12 scripted conversations. Asserts correct intent routing, ledger-only
+ * The Guru eval — 30 scripted conversations. Asserts correct intent routing, ledger-only
  * self-claims (I1), citation discipline, and I9 refusals. The deterministic router is the
  * keyless Guru AND the honesty-critical core, so this gate is reliable (no live LLM).
  */
@@ -197,5 +197,51 @@ describe('Apply Plan — the killer feature (I3: every step human-performed)', (
     const plan = buildApplyPlan(job, undefined, SEED_LEDGER)
     const all = [...plan.steps.map((s) => s.detail), ...plan.screeningAnswers.map((a) => a.a)].join(' ')
     expect(scanGuarantee(all)).toHaveLength(0)
+  })
+})
+
+// ============================================================================================
+// Session 5.5 — Guru dossier + vision-guardrail fixes (audit bugs #1, #2, #4)
+// ============================================================================================
+
+describe('Guru dossier includes POSITIONS (bug #1 — was silently dropped)', () => {
+  it('ledgerSummary renders a resume-eligible position entry', () => {
+    const led = [
+      { id: 'pos1', kind: 'position', title: 'Executive — Saturnalia', summary: 'Ran the flagship fest ops.', tier: 'shipped', resumeEligible: true, tags: [], bullets: [] },
+      { id: 'sk1', kind: 'skill', title: 'Python', tier: 'shipped', resumeEligible: true, tags: [], bullets: [] },
+    ] as unknown as Parameters<typeof ledgerSummary>[0]
+    const out = ledgerSummary(led)
+    expect(out).toMatch(/POSITIONS & LEADERSHIP/)
+    expect(out).toMatch(/Executive — Saturnalia/)
+  })
+  it('a section with no entries is omitted (no empty headers)', () => {
+    const led = [{ id: 'sk1', kind: 'skill', title: 'Python', tier: 'shipped', resumeEligible: true, tags: [], bullets: [] }] as unknown as Parameters<typeof ledgerSummary>[0]
+    const out = ledgerSummary(led)
+    expect(out).not.toMatch(/CERTIFICATIONS/) // no cert entries → no empty CERTIFICATIONS header
+  })
+})
+
+describe('vision guardrail — the flag-word bypass is closed (bug #2)', () => {
+  it('"you should deliberately target Google/Microsoft SDE" is now MISALIGNED', () => {
+    const bad = 'You should deliberately target Google and Microsoft SDE roles for stability.'
+    expect(visionAlignmentScan(bad, DEFAULT_VISION).aligned).toBe(false)
+  })
+  it('a genuine flag in the SAME sentence still allows the deliberate aside', () => {
+    const ok = "I know you avoid MNCs, but consider Microsoft's PPO only if the window slips — sirf isliye bata raha hoon."
+    expect(visionAlignmentScan(ok, DEFAULT_VISION).aligned).toBe(true)
+  })
+})
+
+describe("vision guardrail — uses his ACTUAL notInterested list (bug #4)", () => {
+  const vision = { ...DEFAULT_VISION, notInterested: ['Pure frontend', 'Non-AI QA/support'] }
+  it('pitching an avoided lane from HIS list (pure frontend) is caught, not just big-tech', () => {
+    const bad = 'You should focus on pure frontend roles to build momentum.'
+    const scan = visionAlignmentScan(bad, vision)
+    expect(scan.aligned).toBe(false)
+    expect(scan.hits).toContain('frontend')
+  })
+  it('never treats "ai" as an avoided lane (his whole vision IS AI)', () => {
+    const good = 'You should focus on agentic AI and LLM evaluation work — right in your lane.'
+    expect(visionAlignmentScan(good, vision).aligned).toBe(true)
   })
 })
