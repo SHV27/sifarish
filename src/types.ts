@@ -99,6 +99,8 @@ export type JobSource =
   | 'hackernews'
   | 'remotive'
   | 'remoteok'
+  | 'arbeitnow'
+  | 'jobicy'
 
 export type JobStatus =
   | 'found'
@@ -600,6 +602,12 @@ export interface PulseBrief {
   insight: string
   /** Suggested rubric/keyword change; human confirms (Nabz pattern). */
   suggestion?: string
+  /**
+   * A hunt the market pulse implies (D89) — when an emerging skill/role trends, the Pulse proposes
+   * a radar hunt for it. Accepting the brief adds it to savedHunts (human-confirmed). This is the
+   * self-evolving discovery loop: Khabri sees the trend → the Radar starts hunting those roles.
+   */
+  proposedHunt?: { query: string; why: string }
   status: 'pending' | 'accepted' | 'dismissed'
 }
 

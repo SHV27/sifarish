@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { dedupeKey, mergeDiscovered, withDedupeKey } from '../src/lib/khabri/normalize'
 import type { Job } from '../src/types'
 
@@ -54,5 +54,42 @@ describe('mergeDiscovered', () => {
     const res = mergeDiscovered(discovered, existing)
     expect(res.added).toBe(0)
     expect(res.duplicate).toBe(1)
+  })
+})
+
+describe('D90 — new keyless discovery corners (Arbeitnow + Jobicy)', () => {
+  it('parses Arbeitnow into valid Jobs and filters to AI-relevant roles', async () => {
+    const { fetchArbeitnow } = await import('../src/lib/khabri/keyless')
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          data: [
+            { slug: 'a1', title: 'GenAI / Agentic AI Solutions Architect', company_name: 'Accenture', location: 'Frankfurt', remote: true, url: 'https://x/a1', description: '<p>Build agents</p>', created_at: Math.floor(Date.now() / 1000), tags: ['AI'], job_types: [] },
+            { slug: 'a2', title: 'Warehouse Packer', company_name: 'LogiCo', location: 'Kiel', remote: false, url: 'https://x/a2', description: 'lift boxes', created_at: 0, tags: [], job_types: [] },
+          ],
+        }),
+        { status: 200 },
+      ),
+    ) as typeof fetch
+    const jobs = await fetchArbeitnow()
+    expect(jobs.length).toBe(1) // only the AI role survives the relevance filter
+    expect(jobs[0].source).toBe('arbeitnow')
+    expect(jobs[0].company).toBe('Accenture')
+    expect(jobs[0].location).toMatch(/Remote/)
+    expect(jobs[0].updatedAt).toBeTruthy() // freshness stamp present (feeds staleness scoring)
+  })
+
+  it('parses Jobicy into valid Jobs', async () => {
+    const { fetchJobicy } = await import('../src/lib/khabri/keyless')
+    globalThis.fetch = vi.fn(async () =>
+      new Response(
+        JSON.stringify({ jobs: [{ id: 7, jobTitle: 'AI Engineer', companyName: 'Superside', jobGeo: 'LATAM', url: 'https://x/7', jobExcerpt: 'ex', jobDescription: '<p>ship AI</p>', pubDate: new Date().toISOString(), jobIndustry: ['AI'] }] }),
+        { status: 200 },
+      ),
+    ) as typeof fetch
+    const jobs = await fetchJobicy()
+    expect(jobs.length).toBe(1)
+    expect(jobs[0].source).toBe('jobicy')
+    expect(jobs[0].jd).not.toContain('<p>') // HTML stripped
   })
 })

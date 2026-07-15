@@ -168,3 +168,76 @@ export async function fetchRemoteOK(query: string): Promise<Job[]> {
       }),
     )
 }
+
+// ---- Arbeitnow (D90) — Europe + remote board, keyless, CORS `*` (verified live 16-Jul-2026).
+// A genuinely new corner: German/European employers the ATS + US-remote lanes never surfaced. ----
+export async function fetchArbeitnow(): Promise<Job[]> {
+  const res = await fetch('https://www.arbeitnow.com/api/job-board-api')
+  if (!res.ok) return []
+  const data = await res.json()
+  const now = new Date().toISOString()
+  return (data.data ?? [])
+    .filter((j: { title?: string; tags?: string[]; job_types?: string[] }) => relevant(`${j.title ?? ''} ${(j.tags ?? []).join(' ')} ${(j.job_types ?? []).join(' ')}`))
+    .slice(0, 25)
+    .map(
+      (j: {
+        slug: string
+        title: string
+        company_name: string
+        location: string
+        remote: boolean
+        url: string
+        description: string
+        created_at: number
+      }): Job => ({
+        id: `arbeitnow:${j.slug}`,
+        source: 'arbeitnow',
+        externalId: j.slug,
+        company: j.company_name,
+        title: j.title,
+        location: j.remote ? `${j.location || 'Europe'} (Remote)` : j.location || 'Europe',
+        url: j.url,
+        jd: stripHtml(j.description ?? ''),
+        publisher: 'Arbeitnow',
+        updatedAt: j.created_at ? new Date(j.created_at * 1000).toISOString() : now,
+        fetchedAt: now,
+        status: 'found',
+      }),
+    )
+}
+
+// ---- Jobicy (D90) — global remote board, keyless, CORS `*` (verified live 16-Jul-2026). ----
+export async function fetchJobicy(): Promise<Job[]> {
+  const res = await fetch('https://jobicy.com/api/v2/remote-jobs?count=50')
+  if (!res.ok) return []
+  const data = await res.json()
+  const now = new Date().toISOString()
+  return (data.jobs ?? [])
+    .filter((j: { jobTitle?: string; jobIndustry?: string[] }) => relevant(`${j.jobTitle ?? ''} ${(j.jobIndustry ?? []).join(' ')}`))
+    .slice(0, 25)
+    .map(
+      (j: {
+        id: number
+        jobTitle: string
+        companyName: string
+        jobGeo: string
+        url: string
+        jobExcerpt: string
+        jobDescription: string
+        pubDate: string
+      }): Job => ({
+        id: `jobicy:${j.id}`,
+        source: 'jobicy',
+        externalId: String(j.id),
+        company: j.companyName,
+        title: j.jobTitle,
+        location: j.jobGeo || 'Remote',
+        url: j.url,
+        jd: stripHtml(j.jobDescription || j.jobExcerpt || ''),
+        publisher: 'Jobicy',
+        updatedAt: j.pubDate ? new Date(j.pubDate).toISOString() : now,
+        fetchedAt: now,
+        status: 'found',
+      }),
+    )
+}

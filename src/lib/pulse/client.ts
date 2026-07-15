@@ -61,6 +61,9 @@ export async function runPulse(): Promise<{ keyless: boolean; count: number }> {
             suggestion: emerging
               ? `"${emerging.toUpperCase()}" is showing up in the market and isn't in your keyword lexicon yet — worth tracking in AI-relevance scoring?`
               : undefined,
+            // D89: an emerging skill/role becomes a proposed radar hunt — accept it and the Radar
+            // starts finding those roles. The self-evolving loop (Khabri trend → Radar hunt).
+            proposedHunt: emerging ? { query: `${emerging} engineer`, why: `"${emerging}" is trending in the market (${b.topic}) — hunt roles for it before the crowd does.` } : undefined,
             status: 'pending',
           }
           const prior = await db.pulse.get(brief.id)
@@ -113,6 +116,17 @@ export async function acceptPulse(brief: PulseBrief): Promise<void> {
     source: brief.url,
   })
   await db.settings.update('app', { rubricChangelog: changelog })
+
+  // D89: accepting a brief that carries a proposed hunt adds it to the live radar hunts — the
+  // Pulse now evolves discovery, not just the changelog. Human-confirmed (this accept IS the
+  // confirmation), deduped by query, marked ownerSetDate so the freshness migration leaves it be.
+  if (brief.proposedHunt?.query) {
+    const q = brief.proposedHunt.query.trim()
+    const existing = await db.savedHunts.toArray()
+    if (q && !existing.some((h) => h.query.toLowerCase() === q.toLowerCase())) {
+      await db.savedHunts.put({ id: `h-pulse-${q.toLowerCase().replace(/[^a-z0-9]/g, '-')}`, query: q, remoteOnly: false, datePosted: 'week', ownerSetDate: true, enabled: true })
+    }
+  }
   await db.pulse.update(brief.id, { status: 'accepted' })
 }
 

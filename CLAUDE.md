@@ -492,6 +492,19 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   the existing lanes. "Every corner of the world / one-stop / beat LinkedIn outright" remains a
   larger, unfinished ambition — do not claim it closed.
 
+- D89: THE SELF-EVOLVING DISCOVERY LOOP (closes D68's last hypothesis). The Pulse detected trending
+  market skills but only logged them to the changelog. Now a trending skill/role becomes a PROPOSED
+  radar hunt on the brief; accepting it (human-confirmed, Nabz pattern) adds the hunt to savedHunts,
+  so the Radar starts finding those roles. Khabri sees the trend -> the Radar hunts it. Deduped by
+  query, marked ownerSetDate. Gated (add/dedupe/no-hunt-backward-compat).
+- D90: TWO GENUINELY NEW DISCOVERY CORNERS (owner-requested: "duniya ke har corner se"). Added
+  Arbeitnow (Europe + remote) and Jobicy (global remote) as keyless lanes — both verified live
+  16-Jul-2026 (200 + CORS `*`), both self-filter to AI-relevant roles, zero budget. Live proof:
+  Arbeitnow surfaced "GenAI/Agentic AI Solutions Architect @ Accenture Frankfurt", Jobicy surfaced
+  LATAM/global-remote AI roles — corners the 29 ATS + US-remote lanes never reached. Himalayas was
+  evaluated and REJECTED (no CORS header — would need a proxy). This is the first NEW provider added
+  since v2; the honest "no new source" caveat from D88 is now partially closed on the keyless side.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

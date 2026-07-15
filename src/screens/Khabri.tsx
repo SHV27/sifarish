@@ -218,6 +218,12 @@ function PulseBriefRow({ brief }: { brief: PulseBrief }) {
           {brief.suggestion}
         </p>
       )}
+      {brief.proposedHunt && (
+        <p className="text-xs text-ink mt-1">
+          <span className="stamp stamp-shipped !text-[9px] mr-1">hunt</span>
+          Accept to start hunting <span className="font-mono">“{brief.proposedHunt.query}”</span> on the Radar — {brief.proposedHunt.why}
+        </p>
+      )}
       <div className="mt-1 flex items-center gap-3 text-[11px]">
         <a href={brief.url} target="_blank" rel="noreferrer" className="font-mono text-ink underline decoration-dotted">
           {(() => {
@@ -229,7 +235,7 @@ function PulseBriefRow({ brief }: { brief: PulseBrief }) {
           })()} ↗
         </a>
         <button className="ml-auto font-medium text-shipped hover:underline" onClick={() => acceptPulse(brief)}>
-          {brief.suggestion ? 'Log it ✓' : 'Got it ✓'}
+          {brief.proposedHunt ? 'Add hunt ✓' : brief.suggestion ? 'Log it ✓' : 'Got it ✓'}
         </button>
         <button className="text-ink-soft hover:underline" onClick={() => dismissPulse(brief.id)}>
           dismiss

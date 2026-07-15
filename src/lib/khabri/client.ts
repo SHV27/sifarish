@@ -1,6 +1,6 @@
 import { db } from '../../db/db'
 import type { Job, SavedHunt, Signal, SweepYield } from '../../types'
-import { fetchHackerNews, fetchRemotive, fetchRemoteOK } from './keyless'
+import { fetchHackerNews, fetchRemotive, fetchRemoteOK, fetchArbeitnow, fetchJobicy } from './keyless'
 import { mergeDiscovered } from './normalize'
 import { allowedThisRun, recordSpend } from '../budget'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
@@ -134,6 +134,10 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
       },
     ],
     ['RemoteOK', () => fetchRemoteOK(topQueries.join(' ') || 'AI')],
+    // D90 — two genuinely new keyless corners: Arbeitnow (Europe + remote) and Jobicy (global
+    // remote). Both verified live CORS `*`, both self-filter to AI-relevant roles. Zero budget.
+    ['Arbeitnow · Europe + remote', () => fetchArbeitnow()],
+    ['Jobicy · global remote', () => fetchJobicy()],
   ]
   for (const [label, run] of laneRuns) {
     onStep?.(label)
