@@ -35,7 +35,7 @@
 > travels only as an AES-256-GCM encrypted backup. **Taleem Radar** ranks the gap between market demand
 > and the ledger, with receipts. **231/231 gates. Sealed: future change = data, not code.**
 
-SIFARISH is a personal hiring agent for one candidate — a 3rd-year CSE student hunting a
+SIFARISH is a personal hiring agent for one candidate — a 4th-year CSE student hunting a
 compulsory AI-engineering internship in a market where **91% of recruiters now actively hunt
 fabricated resumes** and **pretty resumes die in ATS parsers**. It collapses hours of per-company
 tailoring into minutes without ever inventing a claim and without ever pressing Send.
