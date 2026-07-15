@@ -64,27 +64,21 @@ export async function fetchRepos(force = false): Promise<SyncNabz> {
     return { repos: cached ? JSON.parse(cached.json) : [], budget: null, fromCache: true }
   }
 
-  let res: Response
+  // Via /api/gh (D86): server-side fetch with the PAT, so the browser never touches api.github.com
+  // and can never log a GitHub 403/404. A non-ok proxy reply falls back to cache exactly as before.
+  let data: { ok?: boolean; repos?: GhRepo[]; budget?: RateBudget; rateLimited?: boolean } | null = null
   try {
-    res = await fetch(`https://api.github.com/users/${USER}/repos?sort=pushed&per_page=100`, {
-      headers: { Accept: 'application/vnd.github+json' },
-    })
+    const res = await fetch(`/api/gh?kind=repos`)
+    if (res.ok) data = await res.json()
   } catch {
-    // Offline / network error — serve cache, never throw at the user.
-    return { repos: cached ? JSON.parse(cached.json) : [], budget: null, fromCache: true }
+    /* offline / no serverless (local vite dev) — serve cache below */
   }
-  const budget: RateBudget = {
-    remaining: Number(res.headers.get('x-ratelimit-remaining') ?? '0'),
-    limit: Number(res.headers.get('x-ratelimit-limit') ?? '60'),
-    resetAt: Number(res.headers.get('x-ratelimit-reset') ?? '0') * 1000,
+  if (!data || !data.ok || !data.repos) {
+    if (data?.rateLimited) await noteRateLimit(data.budget?.resetAt ?? 0)
+    return { repos: cached ? JSON.parse(cached.json) : [], budget: data?.budget ?? null, fromCache: true }
   }
-  if (!res.ok || budget.remaining <= 0) {
-    await noteRateLimit(budget.resetAt) // back off so subsequent calls stay silent
-    return { repos: cached ? JSON.parse(cached.json) : [], budget, fromCache: true }
-  }
-  const repos: GhRepo[] = await res.json()
-  await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(repos), fetchedAt: new Date().toISOString() })
-  return { repos, budget, fromCache: false }
+  await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(data.repos), fetchedAt: new Date().toISOString() })
+  return { repos: data.repos, budget: data.budget ?? null, fromCache: false }
 }
 
 // ---------------- README deep-read (v4.1, D45) ----------------
@@ -100,29 +94,24 @@ export async function fetchReadme(repoName: string): Promise<string | null> {
   if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < README_TTL) {
     return JSON.parse(cached.json)
   }
-  // Known rate-limited → never hit the network (zero console 403s).
+  // Known rate-limited → never hit the network at all.
   if (await githubBlocked()) return cached ? JSON.parse(cached.json) : null
   try {
-    const res = await fetch(`https://api.github.com/repos/${USER}/${repoName}/readme`, {
-      headers: { Accept: 'application/vnd.github.raw+json' },
-    })
-    if (!res.ok) {
-      if (res.status === 403 || Number(res.headers.get('x-ratelimit-remaining') ?? '1') <= 0) {
-        await noteRateLimit(Number(res.headers.get('x-ratelimit-reset') ?? '0') * 1000)
-      }
-      // NEGATIVE CACHE (D72). A repo with no README is a permanent 404, not a transient failure —
-      // SHV27/demo is one. Without a tombstone we re-requested it on EVERY mount, so the browser
-      // logged a console 404 every single time the Nabz panel opened (caught by the live owner
-      // smoke, §14 Proof 2). Remembering the miss for the normal TTL costs one request per week
-      // per README-less repo instead of one per mount, and spends no rate budget re-learning it.
-      if (res.status === 404) {
-        await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(null), fetchedAt: new Date().toISOString() })
-      }
+    // Via /api/gh (D86): a no-README repo comes back as { ok:true, readme:null } — a clean 200,
+    // so the browser never logs the 404 that SHV27/demo used to throw on every Nabz mount.
+    const res = await fetch(`/api/gh?kind=readme&repo=${encodeURIComponent(repoName)}`)
+    if (!res.ok) return cached ? JSON.parse(cached.json) : null
+    const data = (await res.json()) as { ok?: boolean; readme?: string | null; rateLimited?: boolean }
+    if (!data.ok) {
+      if (data.rateLimited) await noteRateLimit(0)
       return cached ? JSON.parse(cached.json) : null
     }
-    const text = await res.text()
-    await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(text), fetchedAt: new Date().toISOString() })
-    return text
+    // NEGATIVE CACHE (D72): tombstone a null README for the TTL so a README-less repo is asked
+    // about once per week, not once per mount. The 404 no longer reaches the browser at all now
+    // (D86), but the tombstone still saves the round-trip.
+    const readme = data.readme ?? null
+    await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(readme), fetchedAt: new Date().toISOString() })
+    return readme
   } catch {
     return cached ? JSON.parse(cached.json) : null
   }

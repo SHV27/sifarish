@@ -17,12 +17,14 @@ Compiles an ATS-safe resume from an evidence ledger using RAG-style matching and
 ## License
 MIT`
 
-// Offline + deterministic: no Nabz test ever touches the real GitHub network.
+// Offline + deterministic: Nabz now fetches its own /api/gh proxy (D86), never api.github.com.
+// The mock speaks the proxy's JSON contract: { ok, readme } and { ok, repos, budget }.
 beforeEach(() => {
   globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input)
-    if (url.includes('/readme')) return new Response(MOCK_README, { status: 200, headers: { 'x-ratelimit-remaining': '55' } })
-    return new Response('{}', { status: 404, headers: { 'x-ratelimit-remaining': '55' } })
+    if (url.includes('kind=readme')) return new Response(JSON.stringify({ ok: true, readme: MOCK_README }), { status: 200 })
+    if (url.includes('kind=repos')) return new Response(JSON.stringify({ ok: true, repos: [], budget: { remaining: 55, limit: 60, resetAt: 0 } }), { status: 200 })
+    return new Response(JSON.stringify({ ok: false, status: 404 }), { status: 200 })
   }) as typeof fetch
 })
 afterAll(() => vi.restoreAllMocks())
@@ -143,15 +145,40 @@ describe('D52 — "Your GitHub, deeply read": every repo always shown + one-clic
 describe('D52.1 — rate-limit backoff: a 403 can never surface (zero console errors)', () => {
   it('once GitHub returns 403 / 0-remaining, further calls serve cache and make NO network request', async () => {
     const { fetchRepos } = await import('../src/lib/nabz/github')
-    // First call: GitHub says rate-limited (403, 0 remaining).
-    globalThis.fetch = vi.fn(async () => new Response('{}', { status: 403, headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(Math.floor(Date.now() / 1000) + 3600) } })) as typeof fetch
+    // First call: the proxy reports GitHub rate-limited (D86 contract: 200 with rateLimited flag).
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ ok: false, rateLimited: true, status: 403, budget: { remaining: 0, limit: 60, resetAt: Date.now() + 3600_000 } }), { status: 200 }),
+    ) as typeof fetch
     const r1 = await fetchRepos(true)
     expect(Array.isArray(r1.repos)).toBe(true) // never throws at the user
     // Second call must NOT hit the network at all (backoff recorded).
-    const spy = vi.fn(async () => new Response('[]', { status: 200 }))
+    const spy = vi.fn(async () => new Response(JSON.stringify({ ok: true, repos: [], budget: null }), { status: 200 }))
     globalThis.fetch = spy as unknown as typeof fetch
     await fetchRepos(true)
     expect(spy).not.toHaveBeenCalled() // structurally silent — no request, no console 403
+  })
+})
+
+describe('D86 — GitHub never touched directly from the browser (zero console 403/404)', () => {
+  it('fetchRepos and fetchReadme call ONLY the /api/gh proxy, never api.github.com', async () => {
+    const { fetchRepos, fetchReadme } = await import('../src/lib/nabz/github')
+    await db.nabzCache.clear()
+    const urls: string[] = []
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      urls.push(url)
+      if (url.includes('kind=readme')) return new Response(JSON.stringify({ ok: true, readme: '# hi\n\nsome real prose here that is long enough.' }), { status: 200 })
+      return new Response(JSON.stringify({ ok: true, repos: [], budget: { remaining: 55, limit: 60, resetAt: 0 } }), { status: 200 })
+    }) as typeof fetch
+
+    await fetchRepos(true)
+    await fetchReadme('anything')
+
+    expect(urls.length).toBeGreaterThan(0)
+    // The whole point of D86: a direct GitHub URL is what logs the console error the owner reported.
+    expect(urls.every((u) => u.includes('/api/gh'))).toBe(true)
+    expect(urls.some((u) => u.includes('api.github.com'))).toBe(false)
   })
 })
 
