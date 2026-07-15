@@ -74,6 +74,42 @@ interface CallResult {
  */
 const CALL_ATTEMPTS = 3
 
+/**
+ * D74 schemas. openai/gpt-oss measured 0/3 on json_object and 3/3 on json_schema with a prompt
+ * that does not also spell out the shape. Every reasoning call site passes one — decide, critique
+ * and classify were the last three on the broken path, which meant the whole Editor's Desk
+ * (archetype → casting → angle → red-team) silently ran on heuristics in production.
+ */
+const SCHEMA_DECIDE = {
+  type: 'object',
+  properties: {
+    choiceId: { type: 'string' },
+    ranking: { type: 'array', items: { type: 'string' } },
+    why: { type: 'string' },
+    confidence: { type: 'number' },
+  },
+  required: ['choiceId', 'ranking', 'why', 'confidence'],
+  additionalProperties: false,
+} as const
+
+const SCHEMA_CRITIQUE = {
+  type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['PASS', 'REVISE'] },
+    fixes: { type: 'array', items: { type: 'string' } },
+    smell: { type: 'string' },
+  },
+  required: ['verdict', 'fixes', 'smell'],
+  additionalProperties: false,
+} as const
+
+const SCHEMA_CLASSIFY = {
+  type: 'object',
+  properties: { labelId: { type: 'string' }, confidence: { type: 'number' } },
+  required: ['labelId', 'confidence'],
+  additionalProperties: false,
+} as const
+
 async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<CallResult | null> {
   // Darshak/demo mode is structurally keyless (D44): a locked browser never spends a token.
   if (!meteredCallsAllowed()) return { result: null, tokens: 0, keyless: true }
@@ -177,7 +213,9 @@ export async function decide(input: DecideInput): Promise<Rationale> {
     'You are a 40-year veteran career strategist reasoning about a single decision.',
     'Weigh the options strictly against the given criteria and evidence. Be honest about uncertainty.',
     'Never invent facts about the candidate; reason only from the evidence provided.',
-    'Return JSON: {"choiceId":string,"ranking":string[] (option ids best-first),"why":string (2-3 sentences, concrete, names the criteria that decided it),"confidence":number (0..1)}',
+    // D74: the schema owns STRUCTURE. Describing the shape here fights it and brings the 400s back.
+    'choiceId: the id of the winning option. ranking: every option id, best first.',
+    'why: 2-3 concrete sentences naming the criteria that decided it. confidence: 0..1.',
   ].join('\n')
   const user = JSON.stringify({
     question: input.question,
@@ -187,7 +225,7 @@ export async function decide(input: DecideInput): Promise<Rationale> {
     evidence: input.evidence,
   })
 
-  const call = await callDimaag('reasoning', system, user, 900)
+  const call = await callDimaag('reasoning', system, user, 2000, SCHEMA_DECIDE as unknown as Record<string, unknown>)
   if (!call || call.keyless || !call.result) return persistFallback(cacheKey, fallback())
 
   const r = call.result as { choiceId?: string; ranking?: string[]; why?: string; confidence?: number }
@@ -246,9 +284,11 @@ export async function critique(input: CritiqueInput): Promise<Critique> {
   const system = [
     `You are ${input.persona}. Judge the artifact against this standard: ${input.standard}.`,
     'Do a hostile 6-second skim. Flag anything inflated, generic, template-y, or misordered.',
-    'Return JSON: {"verdict":"PASS"|"REVISE","fixes":string[] (0-3, most important first),"smell":string (one phrase, or empty)}',
+    // D74: shape comes from the schema; state meaning only.
+    'verdict: PASS or REVISE. fixes: 0-3 concrete fixes, most important first.',
+    'smell: one phrase naming what is off, or an empty string.',
   ].join('\n')
-  const call = await callDimaag('reasoning', system, input.artifact.slice(0, 8000), 500)
+  const call = await callDimaag('reasoning', system, input.artifact.slice(0, 8000), 1500, SCHEMA_CRITIQUE as unknown as Record<string, unknown>)
   if (!call || call.keyless || !call.result) return persistFallback(fallback())
   const r = call.result as { verdict?: string; fixes?: string[]; smell?: string }
   const critiqueResult: Critique = {
@@ -303,8 +343,9 @@ export async function classify(input: ClassifyInput): Promise<{ label: string; c
 
   if ((await allowedThisRun('chhota')) < 1) return persistFallback(heuristic())
 
-  const system = `${input.instruction}\nReturn JSON: {"labelId":string,"confidence":number}. Valid ids: ${input.labels.map((l) => l.id).join(', ')}.`
-  const call = await callDimaag('classify', system, input.text.slice(0, 6000), 200)
+  // D74: shape from the schema; the prompt states meaning + the legal ids only.
+  const system = `${input.instruction}\nlabelId must be one of: ${input.labels.map((l) => l.id).join(', ')}. confidence: 0..1.`
+  const call = await callDimaag('classify', system, input.text.slice(0, 6000), 1200, SCHEMA_CLASSIFY as unknown as Record<string, unknown>)
   if (!call || call.keyless || !call.result) return persistFallback(heuristic())
   const r = call.result as { labelId?: string; confidence?: number }
   if (!r.labelId || !input.labels.some((l) => l.id === r.labelId)) return persistFallback(heuristic())

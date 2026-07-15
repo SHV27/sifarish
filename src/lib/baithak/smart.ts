@@ -133,8 +133,12 @@ function systemPrompt(packet: Packet, ledger: LedgerEntry[], job: { title: strin
     'answers the JD must-haves, then promote/bench/reorder to put that evidence in the first third of the',
     'page (a recruiter skims ~6 seconds). Name the specific project and the specific reason in your reply.',
     '',
-    'Return ONLY compact JSON: {"reply": string, "ops": Op[], "refuse"?: {"term": string, "reason": string}}.',
-    'The reply is warm, brief (max ~80 words), Hinglish-friendly, and specific. Prefer 1-3 ops.',
+    // D74: the schema owns the structure. Spelling the shape out here fights it and reintroduces
+    // Groq's 400 "Failed to generate JSON" — this prompt is why the smart Baithak was dead.
+    'reply: warm, brief (max ~80 words), Hinglish-friendly, specific. ops: 0-3 of the ops above.',
+    'refuse: set ONLY when he asks to claim something with no ledger evidence — give the term and an honest reason. Otherwise refuse is null.',
+    // Strict structured output requires every field on every op; irrelevant ones are null.
+    'On each op, set the fields that op uses and set every other field to null.',
     '',
     '--- THE ROLE HE IS TAILORING FOR ---',
     roleBrief(packet, job, vision),
@@ -254,7 +258,46 @@ export async function smartBaithak(utterance: string, packet: Packet, ledger: Le
         tier: 'reasoning',
         system: systemPrompt(packet, ledger, job ? { title: job.title, company: job.company } : undefined, vision),
         user,
-        maxTokens: 900,
+        maxTokens: 2000,
+        /**
+         * D74 — without this the call uses json_object, which openai/gpt-oss-120b fails on ~every
+         * attempt (measured 0/3). The smart Baithak posts here directly rather than through the
+         * dimaag core, so it needs its own schema; that omission is why "baithak is bullshit" was
+         * a correct bug report. `ops` stays loosely typed because the op union is validated
+         * against the real ledger by `validate()` below — the schema shapes it, the ledger
+         * authorises it (I11 holds regardless of what the model returns).
+         */
+        schema: {
+          type: 'object',
+          properties: {
+            reply: { type: 'string' },
+            ops: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  kind: { type: 'string' },
+                  ledgerId: { type: ['string', 'null'] },
+                  bulletId: { type: ['string', 'null'] },
+                  on: { type: ['boolean', 'null'] },
+                  url: { type: ['string', 'null'] },
+                  direction: { type: ['string', 'null'] },
+                  sectionOrder: { type: ['array', 'null'], items: { type: 'string' } },
+                },
+                required: ['kind', 'ledgerId', 'bulletId', 'on', 'url', 'direction', 'sectionOrder'],
+                additionalProperties: false,
+              },
+            },
+            refuse: {
+              type: ['object', 'null'],
+              properties: { term: { type: 'string' }, reason: { type: 'string' } },
+              required: ['term', 'reason'],
+              additionalProperties: false,
+            },
+          },
+          required: ['reply', 'ops', 'refuse'],
+          additionalProperties: false,
+        },
       }),
     })
     if (!res.ok) return keyless

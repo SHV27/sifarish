@@ -408,6 +408,24 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   BE ROTATED (§10, D46): it gates all 7 metered functions, so a leak is a spend hole. It was used
   ONLY as an env var for the live proof and written to no file.
 
+- D75 CLOSED (was the open wound): decide / critique / classify now pass schemas and dropped their
+  shape prose. Live-verified 15-Jul: decide 3/3 ("choiceId":"proj-sifarish", real reasoning),
+  classify 3/3 (agent-eng @0.95). The Editor's Desk (archetype → casting → angle → red-team) is
+  reasoning in production for the first time since the D35 migration.
+- D79: TWO BUGS THE GATE CAUGHT THAT I HAD ALREADY "FIXED". (1) My prompt edits silently no-op'd —
+  schemas were added while the conflicting "Return JSON:{…}" prose stayed, which measures as STILL
+  BROKEN. (2) The smart Baithak posts to /api/dimaag directly, bypassing the core, so it had no
+  schema at all. Both were invisible in the diff and would have shipped as a confident "fixed".
+  tests/dimaag-schema.test.ts now asserts both rules deterministically, in the keyless suite.
+- D80: STRICT MODE HAS A RULE THAT LOOKS LIKE MODEL STUPIDITY. Groq/OpenAI `strict: true` requires
+  EVERY key in `properties` to appear in `required`; an optional field must be a nullable union
+  (`type: ['string','null']`). Break it → the request is rejected outright (0/2 live, empty output),
+  which is indistinguishable from "the LLM is dumb". decide/classify/forge passed only because all
+  their properties happened to be required; the Baithak's optional `refuse` + 7-field op made its
+  schema invalid. Fixed + gated (the strict-validity checker is executable, not folklore).
+  Live-verified: "ye Python skill hata do" → set-entry{skill-python,on:false} 2/2; "add Kubernetes"
+  → refuse{term,reason} 2/2 (I11 holds under real structured output).
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
