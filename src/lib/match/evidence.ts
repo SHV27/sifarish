@@ -33,11 +33,16 @@ export function matchEvidence(decode: JDDecode, ledger: LedgerEntry[]): Coverage
   return { matched, building, missing }
 }
 
-/** Per-entry JD relevance, used to rank projects and order skills. Must-have hits count double. */
+/** A must-have's weight: its JD prominence (Session 5.5) when known, else the historic flat +2. */
+function mustWeight(kw: string, decode: JDDecode): number {
+  return decode.mustHaveWeights?.[kw] ?? 2
+}
+
+/** Per-entry JD relevance, used to rank projects and order skills. Must-haves weighted by prominence. */
 export function entryRelevance(entry: LedgerEntry, decode: JDDecode): number {
   const kws = new Set([...entry.tags, ...entry.bullets.flatMap((b) => b.keywords)])
   let score = 0
-  for (const kw of decode.mustHave) if (kws.has(kw)) score += 2
+  for (const kw of decode.mustHave) if (kws.has(kw)) score += mustWeight(kw, decode)
   for (const kw of decode.niceToHave) if (kws.has(kw)) score += 1
   return score
 }
@@ -45,7 +50,7 @@ export function entryRelevance(entry: LedgerEntry, decode: JDDecode): number {
 /** Relevance of a single bullet — for choosing which 2–3 bullets of a project make the cut. */
 export function bulletRelevance(keywords: string[], decode: JDDecode): number {
   let score = 0
-  for (const kw of decode.mustHave) if (keywords.includes(kw)) score += 2
+  for (const kw of decode.mustHave) if (keywords.includes(kw)) score += mustWeight(kw, decode)
   for (const kw of decode.niceToHave) if (keywords.includes(kw)) score += 1
   return score
 }

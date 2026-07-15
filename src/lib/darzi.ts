@@ -77,7 +77,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   let compileEditorial: CompileInput['editorial']
   if (shippedProjects.length > 0) {
     onProgress?.('Reading the role & casting your projects…')
-    const ed = await runEditor({ projects: shippedProjects, decode, jd: job.jd, intel }).catch(() => null)
+    const ed = await runEditor({ projects: shippedProjects, decode, jd: job.jd, intel, company: job.company }).catch(() => null)
     if (ed) {
       compileEditorial = { order: ed.order, bullets: ed.bullets, sectionOrder: ed.sectionOrder }
       editorial = { ...ed.plan, sectionOrder: ed.sectionOrder, redTeam: { verdict: 'PASS', fixes: [], by: 'heuristic', at: new Date().toISOString() }, redTeamRounds: 0 }
@@ -97,7 +97,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   let ready = true
   if (editorial) {
     onProgress?.('Red-teaming the draft…')
-    const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
+    const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n'), decode, editorial.archetype).catch(() => null)
     if (rt) {
       editorial.redTeam = rt
       editorial.redTeamRounds = 1

@@ -83,11 +83,30 @@ export function decodeJD(jd: string): JDDecode {
   }
   if (/\b(stipend|paid internship|compensation|salary)\b/.test(lower)) compHints.push('paid-signal')
 
+  // PROMINENCE (Session 5.5): weight each must-have by how many times its surface patterns actually
+  // appear in the JD — a requirement repeated across the posting outranks one mentioned once. Range
+  // 2–4 (2 = one mention, the historic flat weight, so nothing regresses; 4 = named ≥4 times).
+  const lexByCanonical = new Map(LEXICON.map((e) => [e.canonical, e.patterns]))
+  const hayFull = ' ' + lower.replace(/\s+/g, ' ') + ' '
+  const mustHaveWeights: Record<string, number> = {}
+  for (const kw of must) {
+    let occ = 0
+    for (const p of lexByCanonical.get(kw) ?? []) {
+      let i = hayFull.indexOf(p)
+      while (i !== -1) {
+        occ++
+        i = hayFull.indexOf(p, i + p.length)
+      }
+    }
+    mustHaveWeights[kw] = occ >= 4 ? 4 : occ >= 2 ? 3 : 2
+  }
+
   return {
     mustHave: [...must].sort(),
     niceToHave: [...nice].sort(),
     seniority,
     locationHints,
     compHints,
+    mustHaveWeights,
   }
 }

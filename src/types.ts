@@ -238,6 +238,12 @@ export interface JDDecode {
   seniority: string
   locationHints: string[]
   compHints: string[]
+  /**
+   * Per-must-have PROMINENCE weight (Session 5.5). A requirement the JD repeats or leads with
+   * matters more than one mentioned once — this weights bullet/project selection toward the JD's
+   * dominant asks. Optional + defaults to 2 when absent, so every existing caller is unchanged.
+   */
+  mustHaveWeights?: Record<string, number>
 }
 
 /** The four-pass editorial plan (Darzi v3). Every pass stores its rationale (I10). */

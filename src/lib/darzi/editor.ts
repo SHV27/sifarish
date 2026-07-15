@@ -19,8 +19,12 @@ function projectBrief(p: LedgerEntry, cap: number): string {
     p.summary,
     c?.problem && c.problem !== p.summary ? `Problem it attacks: ${c.problem}` : '',
     c?.stack?.length ? `Stack: ${c.stack.join(', ')}` : '',
-    c?.features?.length ? `What it does: ${c.features.slice(0, 5).join(' | ')}` : '',
+    c?.features?.length ? `What it does: ${c.features.slice(0, 8).join(' | ')}` : '',
     `[tags: ${p.tags.join(', ')}]`,
+    // The deep-read README prose (D58/D84) — his own words about his own work. Placed LAST so a
+    // small cap keeps the structured facts and a large cap (the angle pass) gets real substance to
+    // reason from. Read-only source material; the compiler still renders only ledger bullets (D28).
+    c?.readme ? `Deep context: ${c.readme}` : '',
   ].filter(Boolean)
   return parts.join('\n').slice(0, cap)
 }
@@ -72,18 +76,27 @@ export async function castingPass(
   }))
   const criteria = [...arch.priorities, ...decode.mustHave.slice(0, 4).map((k) => k.replace(/-/g, ' '))]
 
-  // Deterministic fallback: archetype-cue overlap + JD relevance.
+  // Company intel TEXT (Session 5.5) — the live "what this company builds & values" bullets now reach
+  // the casting reasoner, not just the letter. So which project LEADS becomes company-specific: an
+  // agent-heavy shop pulls the agentic project to the top, a data shop the ML one. Was a citation URL
+  // only (the reasoner never read it). Still emphasis-only — the compiler renders real bullets (I1).
+  const intelText = (intel?.bullets ?? []).slice(0, 3).map((b) => b.text).join(' · ')
+  const intelLower = intelText.toLowerCase()
+
+  // Deterministic fallback: archetype-cue overlap + JD relevance + a company-intel match, so the
+  // keyless path is company-aware too (a project whose tags the intel names gets a nudge up).
   const heuristic = () => {
     const scored = projects
       .map((p) => {
         const cueHits = arch.cues.filter((c) => p.tags.includes(c) || p.bullets.some((b) => b.keywords.includes(c))).length
-        return { p, score: cueHits * 2 + entryRelevance(p, decode) }
+        const intelHits = intelLower ? p.tags.filter((t) => intelLower.includes(t.replace(/-/g, ' ')) || intelLower.includes(t)).length : 0
+        return { p, score: cueHits * 2 + entryRelevance(p, decode) + intelHits }
       })
       .sort((a, b) => b.score - a.score)
     return {
       choice: scored[0]?.p.id ?? '',
       ranking: scored.map((s) => s.p.id),
-      why: `Heuristic casting for a ${arch.label}: ranked by how strongly each project's evidence matches what this reviewer scans for (${arch.priorities.slice(0, 2).join(', ')}).`,
+      why: `Heuristic casting for a ${arch.label}: ranked by how strongly each project's evidence matches what this reviewer scans for (${arch.priorities.slice(0, 2).join(', ')})${intelText ? ', and what this company is building' : ''}.`,
       confidence: 0.55,
     }
   }
@@ -93,7 +106,9 @@ export async function castingPass(
     question: `Which projects should LEAD a resume for a ${arch.label}? This reviewer scans first for: ${arch.priorities.join('; ')}.`,
     options,
     criteria,
-    context: `${arch.reviewerNote} Angle language rewarded: ${arch.angleHint}`,
+    context:
+      `${arch.reviewerNote} Angle language rewarded: ${arch.angleHint}` +
+      (intelText ? ` | What THIS company actually builds & values (live intel — lead with the project that speaks to it): ${intelText}` : ''),
     evidence: projects.map((p) => ({ ref: p.id, text: `${p.title}: ${projectBrief(p, 900)}` })),
     citations: [
       // The craft receipts (Ustaad P13): why casting optimizes the top of the page.
@@ -128,10 +143,13 @@ export async function surgeryPass(
   project: LedgerEntry,
   arch: Archetype,
   decode: JDDecode,
+  intel?: CompanyIntel,
+  company?: string,
 ): Promise<{ choice: CastChoice; bulletIds: string[] }> {
+  const title = project.title.split('—')[0].trim()
   // Candidate angles = the archetype's angle + the project's own strongest tag-framing.
   const angleOptions: DecideOption[] = [
-    { id: arch.id, label: arch.angleHint, detail: `Frame ${project.title.split('—')[0].trim()} for a ${arch.label}.` },
+    { id: arch.id, label: arch.angleHint, detail: `Frame ${title} for a ${arch.label}.` },
   ]
   // A second angle from the project's dominant non-archetype tag, so decide() has a real choice.
   const otherTag = project.tags.find((t) => !arch.cues.includes(t))
@@ -142,21 +160,38 @@ export async function surgeryPass(
       detail: `Lead with the ${otherTag.replace(/-/g, ' ')} dimension of this project.`,
     })
   }
+  // Session 5.5 — a JD-DRIVEN angle: frame the project around THIS role's own stated must-haves.
+  // Gives decide() a genuinely role-specific option (was archetype/tag-only), so the framing can
+  // reference the JD's focus. When it wins, bullets that answer the must-haves lead (below).
+  const topMust = decode.mustHave.slice(0, 4).map((k) => k.replace(/-/g, ' '))
+  if (topMust.length) {
+    angleOptions.push({
+      id: 'jd-focus',
+      label: `Lead with ${topMust.slice(0, 2).join(' & ')} — this role's stated priorities`,
+      detail: `Surface the evidence in ${title} that directly answers the JD's must-haves (${topMust.join(', ')}).`,
+    })
+  }
+
+  const intelText = (intel?.bullets ?? []).slice(0, 2).map((b) => b.text).join(' · ')
 
   let angleRationale: Rationale
   if (angleOptions.length > 1) {
     angleRationale = await decide({
       feature: 'darzi.angle',
-      question: `Which angle makes ${project.title.split('—')[0].trim()} strongest for a ${arch.label}?`,
+      question: `Which angle makes ${title} strongest for a ${arch.label}${company ? ` at ${company}` : ''}?`,
       options: angleOptions,
-      criteria: arch.priorities,
-      context: arch.reviewerNote,
-      evidence: [{ ref: project.id, text: `${project.title}: ${projectBrief(project, 1400)}` }],
+      // JD prominence + archetype priorities decide the framing (Session 5.5).
+      criteria: [...arch.priorities, ...topMust.slice(0, 3)],
+      context:
+        arch.reviewerNote +
+        (topMust.length ? ` This ${company ?? 'role'} scans first for: ${topMust.join(', ')}.` : '') +
+        (intelText ? ` What the company builds & values (live intel): ${intelText}` : ''),
+      evidence: [{ ref: project.id, text: `${project.title}: ${projectBrief(project, 2200)}` }],
       citations: citePatterns(['xyz-formula', 'verb-strength-ladder'], 2),
     })
   } else {
     angleRationale = {
-      question: `Angle for ${project.title.split('—')[0].trim()}`,
+      question: `Angle for ${title}`,
       optionsConsidered: [angleOptions[0].label],
       criteria: arch.priorities,
       choice: angleOptions[0].label,
@@ -167,12 +202,18 @@ export async function surgeryPass(
     }
   }
 
-  // Bullet plan: strongest-evidence-FIRST for this angle = bullets whose keywords hit archetype
-  // cues, then JD relevance. Evidence-true selection/order only — no rewriting, no new facts (I1).
+  const angleId = angleOptions.find((o) => o.label === angleRationale.choice)?.id ?? arch.id
+
+  // Bullet plan: strongest-evidence-FIRST for the CHOSEN angle (D27 — the angle really shifts
+  // emphasis). If the JD-focus angle won, the bullets that answer the JD's must-haves lead; else
+  // archetype-cue bullets lead. Evidence-true selection/order only — no rewriting, no new facts (I1).
+  const jdAngle = angleId === 'jd-focus'
   const bulletIds = project.bullets
     .map((b) => {
       const cueHits = arch.cues.filter((c) => b.keywords.includes(c)).length
-      return { b, score: cueHits * 2 + bulletRelevance(b.keywords, decode) }
+      const rel = bulletRelevance(b.keywords, decode)
+      const score = jdAngle ? cueHits + rel * 2 : cueHits * 2 + rel
+      return { b, score }
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
@@ -180,8 +221,8 @@ export async function surgeryPass(
 
   const choice: CastChoice = {
     ledgerId: project.id,
-    title: project.title.split('—')[0].trim(),
-    angleId: angleOptions.find((o) => o.label === angleRationale.choice)?.id ?? arch.id,
+    title,
+    angleId,
     angleLabel: angleRationale.choice,
     angleRationale,
   }
@@ -189,14 +230,29 @@ export async function surgeryPass(
 }
 
 // ---- Pass 4: Red-Team ----
-export async function redTeamPass(resumeText: string): Promise<import('../../types').Critique> {
+/**
+ * Session 5.5 — the red-team now knows the ROLE it's judging against. It used to see only the
+ * resume text, so it could not flag "this doesn't earn the JD's must-haves." Passing the decode +
+ * archetype makes the ready-gate JD-aware: the standard names the reviewer + the must-haves, and a
+ * keyless heuristic flags when the top of the page visibly hits NONE of them.
+ */
+export async function redTeamPass(
+  resumeText: string,
+  decode?: JDDecode,
+  archInfo?: { label: string; priorities: string[] },
+): Promise<import('../../types').Critique> {
+  const musts = (decode?.mustHave ?? []).slice(0, 6).map((k) => k.replace(/-/g, ' '))
+  const roleClause = archInfo ? ` Judged for a ${archInfo.label} (scans first for ${archInfo.priorities.slice(0, 3).join(', ')}).` : ''
+  const mustClause = musts.length ? ` The JD's must-haves are: ${musts.join(', ')} — REVISE if the top third of the page doesn't visibly earn them.` : ''
   return critique({
     feature: 'darzi.redteam',
     artifact: resumeText,
     persona: 'a hostile, time-starved recruiter doing a 6-second skim',
     standard:
       'A senior studio shipped this. Nothing inflated, generic, or template-y. Strongest evidence leads. ' +
-      'Every claim reads as provable. If you would not forward it, say REVISE.',
+      'Every claim reads as provable. If you would not forward it, say REVISE.' +
+      roleClause +
+      mustClause,
     heuristicChecks: (a) => {
       const fixes: string[] = []
       if (scanSlop(a).length > 0) fixes.push(`Remove slop phrasing: ${scanSlop(a).join(', ')}`)
@@ -206,6 +262,13 @@ export async function redTeamPass(resumeText: string): Promise<import('../../typ
       // Ustaad ¶action-verb-lead: weak openers fail the 6-second skim.
       const weak = bulletLines.map((l) => startsWeak(l.replace(/^\s*-\s*/, ''))).filter(Boolean)
       if (weak.length > 0) fixes.push(`Weak bullet opener(s) (${[...new Set(weak)].join(', ')}) — lead with a strong engineering verb (Ustaad ¶action-verb-lead).`)
+      // Session 5.5 — JD-coverage of the lead third (keyless too).
+      if (musts.length) {
+        const lines = a.split('\n')
+        const leadText = lines.slice(0, Math.max(3, Math.ceil(lines.length / 3))).join(' ').toLowerCase()
+        const hit = musts.some((m) => leadText.includes(m))
+        if (!hit) fixes.push(`The top of the page doesn't visibly answer any of the JD's must-haves (${musts.join(', ')}) — lead with the evidence that does.`)
+      }
       return fixes
     },
   })
@@ -216,6 +279,7 @@ export interface EditorInput {
   decode: JDDecode
   jd: string
   intel?: CompanyIntel
+  company?: string
 }
 
 /** Runs passes 1–3 and returns the plan skeleton + the compiler override. Red-team runs after compile. */
@@ -230,7 +294,7 @@ export async function runEditor(
   for (const id of chosenIds) {
     const project = input.projects.find((p) => p.id === id)
     if (!project) continue
-    const { choice, bulletIds } = await surgeryPass(project, arch, input.decode)
+    const { choice, bulletIds } = await surgeryPass(project, arch, input.decode, input.intel, input.company)
     chosen.push(choice)
     bullets[id] = bulletIds
   }
