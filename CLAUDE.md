@@ -459,6 +459,26 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   NO linked GitHub repo in the seed (Nabz has nothing to forge from) — not a code defect; his
   action item is linking a repo or writing bullets by hand for those entries.
 
+--- Session 5.4 continued: the Vision Lens + the last console error (16-Jul-2026) ---
+- D85: THE VISION LENS closes D68. His top 15 read as "someone else's list" because the rubric
+  scored what a role IS (AI-ness, ledger fit, remote, window) but never whether it is the role HE
+  wants. LinkedIn ranks on stated preferences; SIFARISH did not. Fix: `visionPart` (score.ts) — a
+  role whose TITLE matches a named target role is the strongest signal (exactly what a board ranks
+  on), dream themes are secondary, a not-interested hit is a real penalty. Bounded +24/-20, total
+  clamped to 100, rendered in "why this score" (L4). No vision → neutral (backward compatible).
+  Threaded through scoreJobCached with a vision signature in the cache key. Also: deriveHunts
+  expanded 7→15 PHRASE_RULES + remote/India variants — live it now proposes 27 vision-derived hunts
+  (was 4), so the net catches far more corners. Gated: on-vision title outranks generic; penalty
+  renders; no-vision neutral; total<=100; >=8 distinct hunts. STILL OPEN: the Pulse does not yet
+  PROPOSE hunt edits automatically (D68's last sub-hypothesis) — left for a future session.
+- D86: THE LAST CONSOLE ERROR, KILLED STRUCTURALLY. A DIRECT browser fetch to api.github.com that
+  404s (SHV27/demo has no README) or 403s (60/hr unauth) logs a red "Failed to load resource" the
+  JS cannot suppress. D72's negative cache reduced it to once-per-fresh-browser; it could not
+  remove it. Cure: /api/gh proxy — Nabz fetches GitHub SERVER-side (PAT, 5000/hr) and gets a clean
+  200 ({readme:null} / {rateLimited:true}); the browser never touches api.github.com, so it can
+  never log a GitHub 4xx. Keyless-safe (no PAT → anonymous fallback), fixed-allowlist path (not an
+  open proxy). Live owner-smoke after deploy: ERRORS (0), all 7 screens, search + 27 vision hunts.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
