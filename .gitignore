@@ -8,10 +8,10 @@ dist/
 coverage/
 test-results/
 playwright-report/
-screenshots/
+/screenshots/
 *.tsbuildinfo
 
-screenshots/
+/screenshots/
 console-report.json
 
 .vercel
