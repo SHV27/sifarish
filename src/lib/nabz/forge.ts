@@ -101,9 +101,8 @@ RULES — violating any one makes the output useless:
 - Banned register: "results-driven", "passionate about leveraging", "dynamic professional", "proven track record", "spearheaded", "utilized", "synergies". Write like an engineer describing work, not a brochure.
 - Never claim the project is used by anyone, funded, or award-winning unless the README says so.
 
-Return JSON: {"summary": string, "bullets": string[]}
-- "summary": one plain sentence (max 200 chars) saying what the project IS and what problem it attacks.
-- "bullets": 3 to 4 bullets, strongest first.`
+summary: one plain sentence (max 200 chars) saying what the project IS and what problem it attacks.
+bullets: 3 to 4 bullets, strongest first.`
 
 /**
  * Forge resume bullets for a repo. Falls back to sanitized README material on every failure
@@ -134,7 +133,14 @@ export async function forgeBullets(input: { repo: GhRepo; distilled: ReadmeDisti
     feature: 'forge',
     system: SYSTEM,
     user,
-    maxTokens: 900,
+    maxTokens: 2000,
+    // D74: without a schema this call uses json_object, which gpt-oss-120b fails on ~every attempt.
+    schema: {
+      type: 'object',
+      properties: { summary: { type: 'string' }, bullets: { type: 'array', items: { type: 'string' } } },
+      required: ['summary', 'bullets'],
+      additionalProperties: false,
+    },
   })
 
   if (!out || !Array.isArray(out.bullets) || out.bullets.length === 0) {

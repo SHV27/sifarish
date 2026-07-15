@@ -37,7 +37,7 @@ ABSOLUTE RULE: you may change WORDING ONLY. Every fact must already be in the or
 Keep each bullet one sentence, 110-190 characters, strong past-tense verb first.
 Banned register: "results-driven", "passionate about leveraging", "proven track record", "spearheaded", "utilized", "synergies".
 
-Return JSON: {"bullets": [{"id": string, "text": string}]} — reuse the EXACT ids given.`
+Re-express every bullet you are given, reusing its EXACT id.`
 
 /**
  * Rephrase a project's bullets toward `direction`. Every failure path (keyless, over budget,
@@ -63,7 +63,24 @@ export async function reframeProject(entry: LedgerEntry, direction: string): Pro
     feature: 'baithak.reframe',
     system: SYSTEM,
     user,
-    maxTokens: 900,
+    maxTokens: 2000,
+    // D74: json_schema is the only reliable structured-output mode on this model.
+    schema: {
+      type: 'object',
+      properties: {
+        bullets: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { id: { type: 'string' }, text: { type: 'string' } },
+            required: ['id', 'text'],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ['bullets'],
+      additionalProperties: false,
+    },
   })
   if (!out || !Array.isArray(out.bullets)) return { ...empty, keyless: true }
 

@@ -110,6 +110,14 @@ export async function fetchReadme(repoName: string): Promise<string | null> {
       if (res.status === 403 || Number(res.headers.get('x-ratelimit-remaining') ?? '1') <= 0) {
         await noteRateLimit(Number(res.headers.get('x-ratelimit-reset') ?? '0') * 1000)
       }
+      // NEGATIVE CACHE (D72). A repo with no README is a permanent 404, not a transient failure —
+      // SHV27/demo is one. Without a tombstone we re-requested it on EVERY mount, so the browser
+      // logged a console 404 every single time the Nabz panel opened (caught by the live owner
+      // smoke, §14 Proof 2). Remembering the miss for the normal TTL costs one request per week
+      // per README-less repo instead of one per mount, and spends no rate budget re-learning it.
+      if (res.status === 404) {
+        await db.nabzCache.put({ key: cacheKey, json: JSON.stringify(null), fetchedAt: new Date().toISOString() })
+      }
       return cached ? JSON.parse(cached.json) : null
     }
     const text = await res.text()

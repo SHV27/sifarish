@@ -361,6 +361,53 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   the GitHub README screenshots were NOT produced (they need a live Owner-Mode browser session).
   This session is NOT sealed and must not be described as such.
 
+--- Session 5.4 LIVE PROOF PASS (§14 Proofs 2-4 executed against the real deployment) ---
+- D72: NABZ LOGGED A CONSOLE 404 ON EVERY MOUNT. SHV27/demo is a real repo with NO README, so
+  fetchReadme 404'd — and misses were never cached, so it re-fired on every panel mount. Negative
+  cache (tombstone for the normal TTL) → one request per week per README-less repo instead of one
+  per mount. Found by the live owner smoke, not by any gate. Gates test what we built; only a
+  browser tests what a user meets.
+- D73/D74: THE REASONING TIER WAS SILENTLY DEAD, AND I GOT IT WRONG TWICE BEFORE GETTING IT RIGHT.
+  Measured live 15-Jul-2026 (spacing calls to exclude 429s — a fast probe rate-limits itself and
+  poisons the reading, which is exactly how hypothesis #1 fooled me):
+    * WRONG #1 "max_tokens too low": one sample showed 900 fail / 2500 pass. False. Spaced retest:
+      900 both passed AND failed; 2500 failed twice. max_tokens is not the variable.
+    * WRONG #2 "flaky → retry it": 3 attempts x 4 calls = 12 consecutive failures. The failure is
+      DETERMINISTIC, not transient. A retry alone fixes nothing.
+    * RIGHT: the response_format MODE is the variable, and the prompt fights it.
+        json_object  temp 0.2 → 0/3      json_object temp 1.0 → 0/3   (temperature irrelevant)
+        json_schema  temp 0.2 → 2/3      (short prompt)
+        json_schema + prompt WITHOUT its own "Return JSON: {…}" lines → 3/3
+      openai/gpt-oss-120b essentially cannot satisfy json_object; and prose "return this JSON shape"
+      instructions CONFLICT with a supplied schema and reintroduce the failure.
+  WHY IT SURVIVED CERTIFICATION: every caller treats a failed call as "degrade to the deterministic
+  heuristic", and that fallback is SILENT BY DESIGN (I4). A dead LLM tier is indistinguishable from
+  a healthy keyless app — 330 gates stayed green while the budget was spent on 400s. The owner
+  diagnosed it from feel ("dimaag hi nahi hai") long before any test could. I4's virtue is also its
+  blind spot: a fallback that never complains hides the thing it is falling back FROM.
+  FIX: /api/dimaag accepts an optional JSON Schema → asks for json_schema output; forge + reframe
+  pass theirs and dropped their Return-JSON prose. Retry kept as belt-and-braces at both choke
+  points (client core + the server function holding the key, RC3).
+  PROVEN: tests/live-forge.test.ts (SIFARISH_LIVE=1) drives the REAL prompt over his REAL README
+  against the REAL model and asserts forged bullets survive isResumeBullet + detectDrift. Passes.
+- D75 (OPEN, NOT SOLVED — next session's first job): decide / critique / classify still pass NO
+  schema, so they remain on the json_object path that measured 0/3. The entire Editor's Desk
+  (archetype → casting → angle → red-team) is therefore still running on heuristics in production.
+  This is the single highest-value fix left in the app. Do not describe the reasoning tier as
+  working until each of those call sites passes a schema and a live probe proves it.
+- D76: PROD WAS TWO SESSIONS STALE. Vercel's last production deploy was commit a0fa212 (D54) —
+  D55's owner-caught vault fix NEVER SHIPPED, nor did any of Session 5.4. `git push` does not
+  deploy this project (past deploys carry actor=claude-code_agent). A deploy needs the owner's
+  credentials; none are present locally (no VERCEL_TOKEN, no ~/.vercel). ALWAYS verify the prod
+  asset hash after a push — a green local build proves nothing about what users are running.
+- D77: OWNER SMOKE (scripts/owner-smoke.mjs) — the §14 Proof-2/3 harness. Drives the live
+  deployment through the Gate with SIFARISH_PASS from env (never a repo file), walks every screen,
+  and reports console/HTTP errors. Live run confirmed: server-verified owner (not local fallback),
+  greets Shaurya, zero demo-persona leak, all 7 screens render.
+- D78: SECURITY — the owner passcode reached plaintext chat (15-Jul). SIFARISH_OWNER_PASSCODE MUST
+  BE ROTATED (§10, D46): it gates all 7 metered functions, so a leak is a spend hole. It was used
+  ONLY as an env var for the live proof and written to no file.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

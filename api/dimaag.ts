@@ -26,6 +26,14 @@ interface DimaagRequest {
   system: string
   user: string
   maxTokens?: number
+  /**
+   * JSON Schema for the expected result (D74). When present we ask Groq for `json_schema`
+   * structured output instead of `json_object` — measured live 15-Jul-2026, json_object fails
+   * on openai/gpt-oss-120b with HTTP 400 "Failed to generate JSON" on ~every call (0/6 across
+   * both temperatures), while json_schema returns valid JSON ~2 of 3. Optional so a caller that
+   * has no schema still works exactly as before.
+   */
+  schema?: Record<string, unknown>
 }
 
 /**
@@ -89,21 +97,37 @@ export default async function handler(req: Request): Promise<Response> {
   const model = MODELS[body.tier] ?? MODELS.reasoning
   const maxTokens = Math.max(128, Math.min(Math.floor(Number(body.maxTokens) || 900), 2000))
 
+  /**
+   * SERVER-SIDE RETRY (D73). openai/gpt-oss-120b fails `json_object` with HTTP 400
+   * "Failed to generate JSON" on roughly 3 of 4 calls — measured live 15-Jul-2026, spaced to
+   * exclude 429s. The failure is non-deterministic, so re-asking works; a 400 yields no
+   * completion, so a retry costs no output tokens. Not every caller goes through the client's
+   * dimaag core (the smart Baithak posts here directly), so the retry has to live HERE too —
+   * the choke point is the function holding the key (RC3).
+   * A 429 is NOT retried: rate limiting means back off, not push harder.
+   */
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        temperature: body.tier === 'classify' ? 0 : 0.2,
-        max_tokens: maxTokens,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: body.system.slice(0, 8000) },
-          { role: 'user', content: body.user.slice(0, 12000) },
-        ],
-      }),
-    })
+    let res!: Response
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          temperature: body.tier === 'classify' ? 0 : 0.2,
+          max_tokens: maxTokens,
+          response_format: body.schema
+            ? { type: 'json_schema', json_schema: { name: 'result', strict: true, schema: body.schema } }
+            : { type: 'json_object' },
+          messages: [
+            { role: 'system', content: body.system.slice(0, 8000) },
+            { role: 'user', content: body.user.slice(0, 12000) },
+          ],
+        }),
+      })
+      if (res.ok || res.status === 429) break
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 200 * attempt))
+    }
     if (!res.ok) return json({ keyless: false, error: `groq ${res.status}` }, 200)
     const data = (await res.json()) as {
       choices?: { message?: { content?: string } }[]

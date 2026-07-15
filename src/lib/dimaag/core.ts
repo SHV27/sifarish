@@ -46,14 +46,53 @@ interface CallResult {
   keyless: boolean
 }
 
-async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number): Promise<CallResult | null> {
+/**
+ * STRUCTURED OUTPUT + RETRY (D73/D74) — the bug that quietly hollowed out the reasoning tier.
+ *
+ * Measured live 15-Jul-2026 against Groq, spaced to exclude 429s (a fast probe rate-limits itself
+ * and contaminates the result — my first two readings were both wrong because of this):
+ *   json_object, temperature 0.2 → 0/3
+ *   json_object, temperature 1.0 → 0/3      (temperature is NOT the variable)
+ *   json_schema, temperature 0.2 → 2/3      (the mode IS the variable)
+ *   max_tokens                    → NOT the variable (900 both passed and failed)
+ * openai/gpt-oss-120b essentially cannot satisfy `json_object`; it returns HTTP 400
+ * "Failed to generate JSON" with an empty generation. Groq's structured-output mode works.
+ *
+ * WHY NOBODY SAW IT: every caller treats a failed call as "degrade to the deterministic
+ * heuristic", and that fallback is silent BY DESIGN (I4). A dead LLM tier looks exactly like a
+ * working keyless app — the gates stayed green, the budget got spent on 400s, and the owner felt
+ * it long before any test could: "dimaag hi nahi hai" is an accurate description of a reasoning
+ * tier that fell back on nearly every call since the D35 migration to gpt-oss.
+ *
+ * THE FIX: callers pass a JSON Schema; the server then asks for `json_schema` output (D74).
+ * The retry stays as a cheap belt-and-braces for the residual ~1/3 (a 400 returns no completion,
+ * so a retry costs no output tokens) and for genuine transients. Both live at the choke point —
+ * the one function that talks to the model — so no call site can get it wrong (RC3).
+ *
+ * STILL OPEN: decide/critique/classify do not pass schemas yet, so they remain on the broken
+ * json_object path. See D74 — this is the next session's first job, not a solved problem.
+ */
+const CALL_ATTEMPTS = 3
+
+async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<CallResult | null> {
   // Darshak/demo mode is structurally keyless (D44): a locked browser never spends a token.
   if (!meteredCallsAllowed()) return { result: null, tokens: 0, keyless: true }
+  for (let attempt = 1; attempt <= CALL_ATTEMPTS; attempt++) {
+    const r = await callOnce(tier, system, user, maxTokens, schema)
+    // `keyless` is a settled answer (no key / demo browser) — retrying it would be a lie to
+    // ourselves and a waste. Only a genuine failure (null) is worth asking again.
+    if (r !== null) return r
+    if (attempt < CALL_ATTEMPTS) await new Promise((res) => setTimeout(res, 250 * attempt))
+  }
+  return null
+}
+
+async function callOnce(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<CallResult | null> {
   try {
     const res = await fetch('/api/dimaag', {
       method: 'POST',
       headers: meteredHeaders(),
-      body: JSON.stringify({ tier, system, user, maxTokens }),
+      body: JSON.stringify({ tier, system, user, maxTokens, schema }),
     })
     if (!res.ok) return null
     const data = (await res.json()) as { keyless?: boolean; result?: unknown; tokens?: number; error?: string }
@@ -283,6 +322,11 @@ export interface GenerateInput {
   user: string
   maxTokens?: number
   tier?: DimaagTier
+  /**
+   * JSON Schema of the expected result (D74). Strongly recommended: without it the call uses
+   * Groq's `json_object` mode, which openai/gpt-oss-120b fails on ~every attempt (measured live).
+   */
+  schema?: Record<string, unknown>
 }
 
 /**
@@ -305,7 +349,7 @@ export async function generate<T>(input: GenerateInput): Promise<T | null> {
     await recordUsage(input.feature, tier, 'fallback')
     return null
   }
-  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 900)
+  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 2000, input.schema)
   if (!call || call.keyless || call.result == null) {
     await recordUsage(input.feature, tier, 'fallback')
     return null
