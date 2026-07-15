@@ -479,6 +479,19 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   never log a GitHub 4xx. Keyless-safe (no PAT → anonymous fallback), fixed-allowlist path (not an
   open proxy). Live owner-smoke after deploy: ERRORS (0), all 7 screens, search + 27 vision hunts.
 
+- D87: MORCHA WAS FORWARD-ONLY — a misclick was permanent. Owner: "galti se interview button dab
+  gaya toh company promote ho gayi, demote-promote dono chahiye." Every card advanced but could
+  never walk back; a verdict (offer/rejected/ghosted) was a dead end. Added a PREV map: every card,
+  verdicts included, moves back one stage. Promote AND demote, always reversible.
+- D88: DISCOVERY BREADTH (partial — honest scope). The keyless lanes (Remotive/RemoteOK) searched
+  only hunts[0], so the wider vision-derived hunt set (D85) never reached them — now Remotive runs
+  the top 6 distinct hunts and RemoteOK matches all their keywords (free, zero budget). JSearch
+  perRunCap 6→10 + monthlyCap 200→300 so more of the LinkedIn/Indeed-class hunts run per sweep;
+  ensureBudgets now raises an existing vault's caps to a higher default (never lowers a manual one
+  — the D59 local-first lesson). NOT DONE: no NEW discovery source/provider was added; this widens
+  the existing lanes. "Every corner of the world / one-stop / beat LinkedIn outright" remains a
+  larger, unfinished ambition — do not claim it closed.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

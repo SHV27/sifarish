@@ -363,6 +363,30 @@ Small, embarrassing, and the cleanest illustration of the pattern in this whole 
 
 ---
 
+### 3.16 · THE REFORGE THAT WORKED, AND THE ASKS THAT REMAIN HONEST (Session 5.4, final pass)
+
+The turning point most worth recording: after the Bullet Forge (3.12) shipped, the owner clicked
+**⟳ Re-forge all** and it *worked* — `sehat-saarthi` went from one tagline-as-bullet to five real
+ones (bilingual UX, printable referral slip, honest ML with a stated ROC-AUC 0.957, the limitation
+in the Model Card) with 5,476 chars of deep context; `sifarish` picked up 12,000 chars. The disease
+of 3.12 was cured in production, by the owner, in one click. That is the self-strengthening resume
+doing exactly what it promised.
+
+Two concrete follow-ups shipped with it:
+- **Morcha is reversible (D87).** It was forward-only: a misclick to "Interview" or "Rejected" was
+  permanent. Now every card — verdicts included — walks back a stage. A pipeline board you cannot
+  correct is a board you stop trusting.
+- **Discovery breadth widened (D88).** The keyless lanes searched only the first hunt, so the wider
+  vision-derived hunt set never reached them; now they run the top hunts, and the paid aggregator
+  lane runs more hunts per sweep (budget still capped and visible, I8).
+
+And the honest boundary, stated plainly because §14 demands it: **"find jobs from every corner of
+the world, one-stop, beat LinkedIn outright" is not closed.** No new discovery *provider* was added
+this pass — the existing lanes were widened and the ranking was made vision-aware (D85). That moved
+the needle (his own screenshots show Sony/Siemens via LinkedIn topping the queue, fresh), but a true
+every-corner index is a larger workstream. Naming what is *not* done is the difference between a
+status report and a sales pitch.
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.

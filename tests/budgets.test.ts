@@ -17,6 +17,21 @@ describe('I8 — budgets', () => {
     expect(all.map((b) => b.id).sort()).toEqual(BUDGET_DEFAULTS.map((b) => b.id).sort())
   })
 
+  it('D88: raises an existing vault\'s cap to a higher default, but never lowers a manual one', async () => {
+    const mk = monthKey()
+    // Old vault: a JSearch row from before the widening (perRunCap 6), plus a row the owner
+    // deliberately raised ABOVE the default — that manual value must survive.
+    await db.budgets.put({ id: 'jsearch', label: 'JSearch', monthlyCap: 200, perRunCap: 6, used: 3, unit: 'requests', monthKey: mk })
+    await db.budgets.put({ id: 'tavily', label: 'Tavily', monthlyCap: 9999, perRunCap: 99, used: 1, unit: 'credits', monthKey: mk })
+    await ensureBudgets()
+
+    const js = await getBudget('jsearch')
+    expect(js!.perRunCap).toBe(10) // adopted the higher default (D88 breadth)
+    expect(js!.used).toBe(3) // his spend this month is preserved
+    const tv = await getBudget('tavily')
+    expect(tv!.perRunCap).toBe(99) // his manual raise was NOT clobbered downward
+  })
+
   it('allowedThisRun never exceeds the per-run cap', async () => {
     await ensureBudgets()
     const jsearch = await getBudget('jsearch')

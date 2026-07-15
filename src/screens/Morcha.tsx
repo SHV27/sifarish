@@ -221,9 +221,25 @@ const NEXT: Partial<Record<JobStatus, { status: JobStatus; label: string }[]>> =
   ],
 }
 
+/**
+ * PREV — one step BACK for every stage (D87). Morcha was forward-only, so a misclick ("galti se
+ * interview button dab gaya") was permanent: the card jumped ahead with no way home. Now every
+ * card, verdict cards included, can walk back a stage. Promote and demote both, always reversible.
+ */
+const PREV: Partial<Record<JobStatus, { status: JobStatus; label: string }>> = {
+  tailored: { status: 'found', label: '← Found' },
+  applied: { status: 'tailored', label: '← Tailored' },
+  followup: { status: 'applied', label: '← Applied' },
+  interview: { status: 'applied', label: '← Applied' },
+  offer: { status: 'interview', label: '← reopen' },
+  rejected: { status: 'interview', label: '← reopen' },
+  ghosted: { status: 'applied', label: '← reopen' },
+}
+
 function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: (id: string) => void; onDossier: () => void }) {
   const nudge = nudgeState(job)
   const actions = NEXT[job.status] ?? []
+  const back = PREV[job.status]
 
   return (
     <div className="dossier p-2.5 animate-dossier-in">
@@ -245,8 +261,18 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
         </button>
       )}
 
-      {actions.length > 0 && (
+      {(actions.length > 0 || back) && (
         <div className="mt-2 flex flex-wrap gap-1">
+          {/* Back one stage — a misclick is always reversible now (D87). */}
+          {back && (
+            <button
+              className="text-[10px] font-mono text-ink-soft hover:text-stamp px-1.5 py-0.5 rounded border border-paper-edge"
+              title={`Move back to ${back.status}`}
+              onClick={() => setJobStatus(job.id, back.status)}
+            >
+              {back.label}
+            </button>
+          )}
           {job.status === 'applied' && !nudge.due && (
             <button
               className="text-[10px] font-mono text-ink-soft hover:text-ink px-1.5 py-0.5 rounded border border-paper-edge"
@@ -285,15 +311,26 @@ function VerdictBucket({ label, jobs, onOpenPacket }: { label: string; jobs: Job
         <span className="font-mono text-[11px] text-ink-soft">{jobs.length}</span>
       </div>
       <div className="space-y-1.5">
-        {jobs.map((j) => (
-          <button
-            key={j.id}
-            className="dossier w-full text-left p-2 text-[11px] text-ink"
-            onClick={() => onOpenPacket(j.id)}
-          >
-            <span className="font-semibold">{j.title}</span> · {j.company}
-          </button>
-        ))}
+        {jobs.map((j) => {
+          const back = PREV[j.status]
+          return (
+            <div key={j.id} className="dossier p-2">
+              <button className="w-full text-left text-[11px] text-ink" onClick={() => onOpenPacket(j.id)}>
+                <span className="font-semibold">{j.title}</span> · {j.company}
+              </button>
+              {/* A verdict was a dead end — a wrong "rejected/offer" click is now reversible (D87). */}
+              {back && (
+                <button
+                  className="mt-1 text-[10px] font-mono text-ink-soft hover:text-stamp"
+                  title={`Move back to ${back.status}`}
+                  onClick={() => setJobStatus(j.id, back.status)}
+                >
+                  {back.label}
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

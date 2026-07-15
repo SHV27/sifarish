@@ -12,7 +12,7 @@ export function monthKey(d = new Date()): string {
 }
 
 export const BUDGET_DEFAULTS: Omit<Budget, 'used' | 'monthKey'>[] = [
-  { id: 'jsearch', label: 'JSearch (job aggregation)', monthlyCap: 200, perRunCap: 6, unit: 'requests' },
+  { id: 'jsearch', label: 'JSearch (job aggregation)', monthlyCap: 300, perRunCap: 10, unit: 'requests' },
   { id: 'tavily', label: 'Tavily (signals + intel + pulse)', monthlyCap: 1000, perRunCap: 8, unit: 'credits' },
   { id: 'groq', label: 'Groq (Guru + polish)', monthlyCap: 5000, perRunCap: 40, unit: 'calls' },
   // v3 two-tier reasoning budgets — a gpt-oss-120b reason call costs more than a gpt-oss-20b classify.
@@ -26,9 +26,16 @@ export async function ensureBudgets(): Promise<void> {
     const existing = await db.budgets.get(def.id)
     if (!existing) {
       await db.budgets.put({ ...def, used: 0, monthKey: mk })
-    } else if (existing.monthKey !== mk) {
-      // New month → reset the meter (keep caps).
-      await db.budgets.put({ ...existing, used: 0, monthKey: mk })
+      continue
+    }
+    // Local-first means a raised default cap (D88 widened JSearch for discovery breadth) never
+    // reaches an existing vault (D59's lesson). So adopt a HIGHER cap from the defaults — but only
+    // ever upward, so a value the owner deliberately lowered in Settings is never clobbered.
+    const perRunCap = Math.max(existing.perRunCap, def.perRunCap)
+    const monthlyCap = Math.max(existing.monthlyCap, def.monthlyCap)
+    const usedReset = existing.monthKey !== mk // new month → reset the meter
+    if (perRunCap !== existing.perRunCap || monthlyCap !== existing.monthlyCap || usedReset) {
+      await db.budgets.put({ ...existing, perRunCap, monthlyCap, used: usedReset ? 0 : existing.used, monthKey: mk })
     }
   }
 }

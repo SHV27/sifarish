@@ -118,11 +118,22 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   if (jsearchUsed > 0) await recordSpend('jsearch', jsearchUsed)
 
   // --- Keyless lanes (always run; I4) ---
+  // Breadth fix (D88): these used to search only hunts[0], so the wider vision-derived hunt set
+  // (D85) never reached the free lanes. Remotive now runs the top distinct hunts, RemoteOK gets
+  // all their keywords to match on — more corners at zero budget cost.
   const keywords = hunts.flatMap((h) => h.query.toLowerCase().split(/\s+/)).filter((w) => w.length > 3)
+  const topQueries = [...new Set(hunts.map((h) => h.query))].slice(0, 6)
   const laneRuns: [string, () => Promise<Job[]>][] = [
     ['Hacker News · Who is Hiring', () => fetchHackerNews(keywords)],
-    ['Remotive', () => fetchRemotive(hunts[0]?.query ?? 'AI engineer')],
-    ['RemoteOK', () => fetchRemoteOK(hunts[0]?.query ?? 'AI')],
+    [
+      'Remotive',
+      async () => {
+        const out: Job[] = []
+        for (const q of topQueries) out.push(...(await fetchRemotive(q).catch(() => [])))
+        return out
+      },
+    ],
+    ['RemoteOK', () => fetchRemoteOK(topQueries.join(' ') || 'AI')],
   ]
   for (const [label, run] of laneRuns) {
     onStep?.(label)
