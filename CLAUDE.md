@@ -240,6 +240,40 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   it. The Gate screen (Owner vs Demo) is the only door; local-passcode flow survives solely for
   self-hosted clones without the env. Lesson encoded in §14. (13-Jul-2026)
 
+--- Session 5.4 "The Bullet Forge" (owner-reported: "the resume is weak / AI slop") ---
+- D56: THE RESUME WASN'T BADLY FRAMED — IT WAS BADLY FED. Owner reported the tailor as "dumb, AI
+  slop, not Shaurya-specific". Root cause was NOT the compiler/editor/Ustaad rubric (all correct):
+  `distillReadme` treated ANY README list item ≥25 chars as a resume bullet, so `- App: https://…`
+  and `- Docs: /docs` RENDERED ON HIS RESUME as project accomplishments. Selection cannot fix
+  supply — the tailor picks which bullets run, it cannot invent good ones — so the fix belongs at
+  the source. THE BULLET FORGE (src/lib/nabz/forge.ts): (1) `isResumeBullet` deterministically
+  rejects link-dumps/labels/fragments (the keyless core — slop dies with zero API keys); (2) the
+  reasoning tier reshapes surviving material into proper bullets (verb → what → how → why); (3)
+  every forged bullet is guarded against the README via `detectDrift` — a number/tech/proper-noun
+  the README never claimed is DISCARDED. Keyless/over-budget/drift → sanitized deterministic
+  bullets. I1 holds by construction: the LLM may only re-express what he wrote about his own work
+  (D45's trust boundary), and the compiler still renders only evidence-linked ledger bullets.
+- D57: SECOND BUG, SAME FUNCTION — markdown list items that WRAP across physical lines were sliced
+  at the newline, which is why a real bullet ended mid-clause on his resume ("…updates, so the
+  app"). The distiller only ever read the matched line. Now a match consumes its continuation
+  lines. Both defects have regression tests built from the EXACT strings off his broken resume.
+- D58: PROJECT CONTEXT (types.ts `ProjectContext`) — the deep-read README is now stored on the
+  ledger entry as SOURCE MATERIAL (problem / features / stack / cleaned prose), and the Editor's
+  Desk reads a `projectBrief` instead of the one-line `p.summary` it used to cast and angle from.
+  That thinness was why framing felt generic — the reasoner had nothing specific to reach for.
+  Read-only by construction: the brief informs FRAMING (which project leads, which bullets, what
+  order); it can never become resume text (D28 — Dimaag proposes, compiler disposes), so widening
+  the reasoner's context adds ZERO fact-drift surface.
+- D59: LOCAL-FIRST MEANS NO MIGRATION CAN REACH HIS DATA. The forge fixes what Nabz drafts from
+  now on, but the entries already in his vault carry the old scraps. So the repair is an explicit,
+  owner-confirmed re-read: `refreshEntryFromRepo` + "⟳ Re-forge all" in Nabz. It replaces ONLY the
+  fields Nabz owns (summary/bullets/context/live-URL) and never touches what he curated by hand
+  (title, tier, resumeEligible, tags, dates). Nabz pattern intact: it drafts, he confirms.
+- D60: Cover letter exports as PDF + DOCX (`renderLetterPdf`/`renderLetterDocxBlob`). Portals
+  require an uploaded file; a copy-only letter was a packet that stopped one step short of the
+  actual application. Unlike the resume it PAGINATES rather than throwing on overflow — a letter
+  is prose, the one-page law is the resume's. Its own I5 parse-back gate proves the text layer.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

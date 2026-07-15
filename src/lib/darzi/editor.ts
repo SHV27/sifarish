@@ -1,6 +1,29 @@
 import type { CastChoice, CompanyIntel, EditorialPlan, JDDecode, LedgerEntry, Rationale } from '../../types'
 import { ARCHETYPES, ARCHETYPE_LABELS, archetypeById, type Archetype } from './archetypes'
 import { classify, decide, critique, type DecideOption } from '../dimaag/core'
+
+/**
+ * THE PROJECT BRIEF (D56) — what the Editor's Desk reads before it casts and angles.
+ *
+ * It used to get `p.summary` and a tag list: one thin line to decide how to FRAME weeks of work.
+ * That thinness is why the framing felt generic — the reasoner had nothing specific to reach for.
+ * Now it reads the deep-read README context Nabz stored (the problem attacked, the stack, the real
+ * feature set) so its angle can name the actual engineering. Read-only: the brief informs FRAMING
+ * (which project leads, which bullets run, in what order). It can never become resume text —
+ * the compiler still renders only evidence-linked ledger bullets (D28: Dimaag proposes, compiler
+ * disposes), so widening the reasoner's context adds zero fact-drift surface.
+ */
+function projectBrief(p: LedgerEntry, cap: number): string {
+  const c = p.context
+  const parts = [
+    p.summary,
+    c?.problem && c.problem !== p.summary ? `Problem it attacks: ${c.problem}` : '',
+    c?.stack?.length ? `Stack: ${c.stack.join(', ')}` : '',
+    c?.features?.length ? `What it does: ${c.features.slice(0, 5).join(' | ')}` : '',
+    `[tags: ${p.tags.join(', ')}]`,
+  ].filter(Boolean)
+  return parts.join('\n').slice(0, cap)
+}
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { scanSlop, scanGuarantee } from '../slop/scan'
 import { citePatterns, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
@@ -45,7 +68,7 @@ export async function castingPass(
   const options: DecideOption[] = projects.map((p) => ({
     id: p.id,
     label: p.title.split('—')[0].trim(),
-    detail: `${p.summary} [tags: ${p.tags.join(', ')}]`,
+    detail: projectBrief(p, 700),
   }))
   const criteria = [...arch.priorities, ...decode.mustHave.slice(0, 4).map((k) => k.replace(/-/g, ' '))]
 
@@ -71,7 +94,7 @@ export async function castingPass(
     options,
     criteria,
     context: `${arch.reviewerNote} Angle language rewarded: ${arch.angleHint}`,
-    evidence: projects.map((p) => ({ ref: p.id, text: `${p.title}: ${p.summary}` })),
+    evidence: projects.map((p) => ({ ref: p.id, text: `${p.title}: ${projectBrief(p, 900)}` })),
     citations: [
       // The craft receipts (Ustaad P13): why casting optimizes the top of the page.
       ...citePatterns(['six-second-skim', 'projects-are-experience'], 2),
@@ -128,7 +151,7 @@ export async function surgeryPass(
       options: angleOptions,
       criteria: arch.priorities,
       context: arch.reviewerNote,
-      evidence: [{ ref: project.id, text: `${project.title}: ${project.summary}` }],
+      evidence: [{ ref: project.id, text: `${project.title}: ${projectBrief(project, 1400)}` }],
       citations: citePatterns(['xyz-formula', 'verb-strength-ladder'], 2),
     })
   } else {

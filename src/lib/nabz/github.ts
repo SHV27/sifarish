@@ -1,6 +1,7 @@
 import { db } from '../../db/db'
 import type { LedgerEntry, NabzSuggestion } from '../../types'
 import { LEXICON } from '../jd/lexicon'
+import { buildContext, forgeBullets, sanitizeBullets, toBullets } from './forge'
 
 /**
  * GitHub Nabz — the pulse. Public REST, no key (CORS `*`, 60 req/hr unauth verified WS0).
@@ -132,6 +133,10 @@ export interface ReadmeDistilled {
   liveUrl?: string
   /** Whether a README was actually read (vs. nothing available). */
   hasReadme: boolean
+  /** The problem the project attacks — the first substantive prose, in his own words. */
+  problem: string
+  /** Cleaned README prose (capped) — the tailor's full reading material (Session 5.4). */
+  raw: string
 }
 
 const SECTION_WORDS = /^(installation|install|usage|getting started|setup|features|table of contents|contents|license|contributing|contributors|acknowledg|prerequisites|requirements|demo|screenshots?|tech stack|built with|about|overview|run it|make it yours|art direction)\b/i
@@ -184,17 +189,27 @@ export function distillReadme(md: string): ReadmeDistilled {
   summary = summary.slice(0, 320).trim()
 
   // Feature bullets: up to 5 substantive list items (what it does / how it's built).
+  //
+  // A markdown list item may WRAP across physical lines. Reading only the matched line sliced
+  // real sentences mid-clause ("…updates, so the app") and shipped the fragment to the resume.
+  // So a match consumes its continuation lines until a blank line / new item / heading.
   const bullets: string[] = []
   const seen = new Set<string>()
-  for (const raw of lines) {
-    const m = /^\s*[-*+]\s+(.*)$/.exec(raw)
+  for (let i = 0; i < lines.length && bullets.length < 5; i++) {
+    const m = /^\s*[-*+]\s+(.*)$/.exec(lines[i])
     if (!m) continue
-    const c = cleanMd(m[1])
+    let text = m[1]
+    for (let j = i + 1; j < lines.length; j++) {
+      const nxt = lines[j]
+      if (!nxt.trim() || /^\s*[-*+]\s/.test(nxt) || /^\s*\d+\.\s/.test(nxt) || /^#{1,6}\s/.test(nxt.trim()) || /^\s*\|/.test(nxt)) break
+      text += ' ' + nxt.trim()
+      i = j
+    }
+    const c = cleanMd(text)
     const key = c.toLowerCase()
-    if (c.length >= 25 && c.length <= 200 && /[a-z]/i.test(c) && !/(license|contribut|^install|clone|npm i |git clone|©|copyright)/i.test(c) && !seen.has(key)) {
+    if (c.length >= 25 && c.length <= 400 && /[a-z]/i.test(c) && !/(license|contribut|^install|clone|npm i |git clone|©|copyright)/i.test(c) && !seen.has(key)) {
       seen.add(key)
       bullets.push(c)
-      if (bullets.length >= 5) break
     }
   }
 
@@ -204,7 +219,22 @@ export function distillReadme(md: string): ReadmeDistilled {
   // Tech stack = human-readable subset of the matched keywords (languages/frameworks/tools).
   const stack = [...new Set(keywords.map((k) => k.replace(/-/g, ' ')))].slice(0, 8)
 
-  return { summary, bullets, keywords, stack, liveUrl, hasReadme: cleanMd(noCode).length > 20 }
+  // The problem statement: the first two substantive prose sentences (what it attacks and why).
+  const proseLines: string[] = []
+  for (const raw of lines) {
+    const t = raw.trim()
+    if (!t || /^#{1,6}\s/.test(t) || /^[-*+]\s/.test(t) || /^\d+\.\s/.test(t) || /^\|/.test(t)) continue
+    const c = cleanMd(t)
+    if (c.length >= 40 && /[a-z]/i.test(c) && !SECTION_WORDS.test(c)) proseLines.push(c)
+    if (proseLines.length >= 2) break
+  }
+  const problem = proseLines.join(' ').slice(0, 400).trim()
+
+  // Full cleaned reading material for the tailor. Capped so a huge README can't blow the
+  // LLM context or the IndexedDB row; 6k chars covers every real README he writes.
+  const raw = cleanMd(noCode).slice(0, 6000)
+
+  return { summary, bullets, keywords, stack, liveUrl, hasReadme: cleanMd(noCode).length > 20, problem, raw }
 }
 
 function hostOf(url: string): string {
@@ -317,10 +347,24 @@ async function buildNewEntrySuggestion(repo: GhRepo, deep = true): Promise<NabzS
   const cachedReadme = await db.nabzCache.get(cacheKey)
   const readme = deep ? await fetchReadme(repo.name).catch(() => null) : cachedReadme ? (JSON.parse(cachedReadme.json) as string) : null
   const distilled = readme ? distillReadme(readme) : null
-  const summary = distilled?.summary || repo.description || ''
   const langKw = repo.language ? [repo.language.toLowerCase()] : []
   const keywords = [...new Set([...(distilled?.keywords ?? []), ...langKw])]
-  const bulletTexts = distilled && distilled.bullets.length > 0 ? distilled.bullets : repo.description ? [repo.description] : []
+
+  // THE BULLET FORGE (D56): README material becomes resume-GRADE bullets. During a bulk sync we
+  // stay deterministic (zero budget, zero latency across ~17 repos); when the owner actually adds
+  // the repo, the reasoning tier reshapes it — guarded against the README, so no fact is minted.
+  const forged = deep
+    ? await forgeBullets({ repo, distilled }).catch(() => null)
+    : { summary: distilled?.summary || repo.description || '', bullets: sanitizeBullets(distilled?.bullets ?? []), by: 'deterministic' as const, rejected: [] }
+  const summary = forged?.summary || distilled?.summary || repo.description || ''
+  const bulletTexts =
+    forged && forged.bullets.length > 0
+      ? forged.bullets
+      : sanitizeBullets(distilled?.bullets ?? []).length > 0
+        ? sanitizeBullets(distilled?.bullets ?? [])
+        : repo.description
+          ? [repo.description]
+          : []
   return {
     id: `sug-new-${repo.name}`,
     type: 'new_entry',
@@ -334,7 +378,7 @@ async function buildNewEntrySuggestion(repo: GhRepo, deep = true): Promise<NabzS
       kind: 'project',
       title: repo.name,
       summary,
-      bullets: bulletTexts.map((text, i) => ({ id: `${repo.name}-b${i + 1}`, text, keywords })),
+      bullets: toBullets(repo.name, bulletTexts, keywords),
       tier: 'shipped',
       evidence: {
         repo: repo.html_url,
@@ -342,6 +386,8 @@ async function buildNewEntrySuggestion(repo: GhRepo, deep = true): Promise<NabzS
         date: repo.pushed_at.slice(0, 7).replace('-', '/'),
         note: 'Public GitHub repo (via Nabz).',
       },
+      // The deep-read README rides along as SOURCE MATERIAL — the tailor frames from it (D56).
+      context: buildContext(repo, distilled),
       tags: keywords.slice(0, 6),
       resumeEligible: true,
     },
@@ -428,6 +474,68 @@ export async function addRepoToLedger(repo: GhRepo): Promise<string> {
     await db.suggestions.put({ ...s, status: 'accepted' })
   })
   return s.draftEntry?.id ?? ''
+}
+
+export interface RefreshResult {
+  ok: boolean
+  by: 'dimaag' | 'deterministic'
+  bullets: number
+  rejected: string[]
+  note: string
+}
+
+/**
+ * RE-READ & RE-FORGE an entry already in the ledger (D56).
+ *
+ * The forge fixes what Nabz drafts from today onward — but the entries already in the vault were
+ * drafted by the old paste-the-README-scraps path and still carry `- App: https://…` as resume
+ * bullets. Local-first means no migration can reach them; the owner's data is his. So the repair
+ * is a one-click, owner-confirmed re-read: pull the README fresh, forge proper bullets, attach the
+ * full context, and keep everything he curated by hand (title, tier, resumeEligible, tags, dates).
+ *
+ * Only bullets / summary / context / live-URL are replaced — the fields Nabz owns. His edits stand.
+ */
+export async function refreshEntryFromRepo(repo: GhRepo): Promise<RefreshResult> {
+  const ledger = await db.ledger.toArray()
+  const entry = ledgerForRepo(repo, ledger)
+  if (!entry) return { ok: false, by: 'deterministic', bullets: 0, rejected: [], note: 'That repo has no ledger entry yet — add it first.' }
+
+  const readme = await fetchReadme(repo.name).catch(() => null)
+  const distilled = readme ? distillReadme(readme) : null
+  if (!distilled?.hasReadme) {
+    return { ok: false, by: 'deterministic', bullets: 0, rejected: [], note: `No README found for ${repo.name} — nothing to re-read. Your entry is untouched.` }
+  }
+
+  const forged = await forgeBullets({ repo, distilled }).catch(() => null)
+  const texts = forged && forged.bullets.length > 0 ? forged.bullets : sanitizeBullets(distilled.bullets)
+  if (texts.length === 0) {
+    return { ok: false, by: 'deterministic', bullets: 0, rejected: forged?.rejected ?? [], note: 'The README had no material that could honestly become a resume bullet. Your entry is untouched.' }
+  }
+
+  const langKw = repo.language ? [repo.language.toLowerCase()] : []
+  const keywords = [...new Set([...distilled.keywords, ...langKw])]
+  await db.ledger.update(entry.id, {
+    summary: forged?.summary || distilled.summary || entry.summary,
+    bullets: toBullets(repo.name, texts, keywords),
+    context: buildContext(repo, distilled),
+    evidence: {
+      ...(entry.evidence ?? { date: repo.pushed_at.slice(0, 7).replace('-', '/'), note: 'Public GitHub repo (via Nabz).' }),
+      repo: entry.evidence?.repo ?? repo.html_url,
+      url: entry.evidence?.url || repo.homepage || distilled.liveUrl || undefined,
+    },
+  })
+
+  const by = forged?.by ?? 'deterministic'
+  return {
+    ok: true,
+    by,
+    bullets: texts.length,
+    rejected: forged?.rejected ?? [],
+    note:
+      by === 'dimaag'
+        ? `Re-read ${repo.name}'s README and forged ${texts.length} resume-grade bullets${forged?.rejected.length ? ` (${forged.rejected.length} rejected by the fact guard)` : ''}.`
+        : `Re-read ${repo.name}'s README — kept ${texts.length} bullet(s) from your own words (keyless/deterministic path).`,
+  }
 }
 
 export async function acceptSuggestion(s: NabzSuggestion): Promise<void> {

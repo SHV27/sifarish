@@ -275,6 +275,46 @@ export async function classify(input: ClassifyInput): Promise<{ label: string; c
   return v
 }
 
+// ================= generate =================
+
+export interface GenerateInput {
+  feature: string
+  system: string
+  user: string
+  maxTokens?: number
+  tier?: DimaagTier
+}
+
+/**
+ * Generic structured-JSON generation on the Dimaag contract: cached by content hash (identical
+ * inputs never re-call), budgeted (over-cap → null), keyless-safe (null, never a throw).
+ *
+ * It returns `null` rather than a fabricated result on EVERY failure path, because the callers
+ * that use it (the Bullet Forge) must fall back to deterministic truth, never to invented text.
+ * Nothing this returns is trusted on its own — the caller guards it against the source (I1).
+ */
+export async function generate<T>(input: GenerateInput): Promise<T | null> {
+  const tier: DimaagTier = input.tier ?? 'reasoning'
+  const cacheKey = hash({ k: 'generate', f: input.feature, s: input.system, u: input.user })
+  const cached = await db.dimaagCache.get(cacheKey)
+  if (cached) {
+    await recordUsage(input.feature, tier, 'hit')
+    return JSON.parse(cached.json) as T
+  }
+  if ((await allowedThisRun(tier === 'reasoning' ? 'dimaag' : 'chhota')) < 1) {
+    await recordUsage(input.feature, tier, 'fallback')
+    return null
+  }
+  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 900)
+  if (!call || call.keyless || call.result == null) {
+    await recordUsage(input.feature, tier, 'fallback')
+    return null
+  }
+  await recordUsage(input.feature, tier, 'call', call.tokens)
+  await db.dimaagCache.put({ hash: cacheKey, json: JSON.stringify(call.result), at: new Date().toISOString() })
+  return call.result as T
+}
+
 // ---- helpers ----
 function labelOf(input: DecideInput, id: string): string {
   return input.options.find((o) => o.id === id)?.label ?? id

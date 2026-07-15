@@ -25,6 +25,29 @@ export interface Evidence {
   note: string
 }
 
+/**
+ * PROJECT CONTEXT (Session 5.4) — the deep-read README kept as SOURCE MATERIAL, not as output.
+ *
+ * The disease this cures: Nabz used to paste raw README list-items straight in as resume bullets,
+ * so `- App: https://…` and sentences sliced mid-word landed on the resume. Bullets are now FORGED
+ * from this context (guarded, evidence-true), and the Darzi reasons over the whole context when it
+ * decides how to FRAME the project for a given JD. Rich context in → precise framing out.
+ *
+ * Nothing in here ever renders directly on a resume; it is what the tailor reads before writing.
+ */
+export interface ProjectContext {
+  /** What problem the project attacks, in his own README words. */
+  problem?: string
+  /** How it works / what's notable — the substantive feature statements, cleaned. */
+  features: string[]
+  /** Human-readable tech stack ("React · TypeScript · Groq"). */
+  stack: string[]
+  /** Cleaned README prose (capped) — the tailor's full reading material. */
+  readme: string
+  /** Where the context came from + when, so staleness is visible (I7 spirit). */
+  source: { repo: string; readAt: string }
+}
+
 export interface LedgerEntry {
   id: string
   kind: EntryKind
@@ -37,6 +60,11 @@ export interface LedgerEntry {
   evidence?: Evidence
   /** Required when tier === 'in_forge' (Referee-enforced). */
   forgeEta?: string
+  /**
+   * Deep-read source material (Session 5.4). Present on Nabz-drafted projects; the tailor reads
+   * it to frame the project per-JD. Never rendered verbatim — bullets are forged from it.
+   */
+  context?: ProjectContext
   tags: string[]
   /** Shaurya's call: some real skills are not interview-safe; they never enter any export. */
   resumeEligible: boolean

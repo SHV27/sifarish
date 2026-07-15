@@ -9,6 +9,7 @@ import {
   dismissSuggestion,
   overviewRepos,
   addRepoToLedger,
+  refreshEntryFromRepo,
   type RateBudget,
   type RepoOverview,
 } from '../lib/nabz/github'
@@ -29,6 +30,8 @@ export function NabzPanel() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [adding, setAdding] = useState<string | null>(null)
   const [showInLedger, setShowInLedger] = useState(false)
+  const [reforging, setReforging] = useState<string | null>(null)
+  const [reforgeNote, setReforgeNote] = useState<string | null>(null)
 
   const load = async (force: boolean) => {
     setSyncing(true)
@@ -53,6 +56,42 @@ export function NabzPanel() {
   }, [])
 
   const highlights = pending.filter((s) => s.type === 'promotion' || s.type === 'attach_link')
+
+  /**
+   * Re-read a repo's README and re-forge its ledger bullets (D56). This is the repair path for
+   * entries drafted by the old paste-the-README-scraps Nabz: it replaces only what Nabz owns
+   * (summary / bullets / context / live link) and leaves every hand-curated field alone.
+   */
+  const reforgeOne = async (o: RepoOverview) => {
+    setReforging(o.repo.name)
+    setReforgeNote(null)
+    try {
+      const r = await refreshEntryFromRepo(o.repo)
+      setReforgeNote(r.note)
+    } catch (e) {
+      setReforgeNote(`Could not re-read ${o.repo.name}: ${e instanceof Error ? e.message : String(e)}. Your entry is untouched.`)
+    } finally {
+      setReforging(null)
+    }
+  }
+
+  const reforgeAll = async (repos: RepoOverview[]) => {
+    setReforging('*')
+    setReforgeNote(null)
+    let fixed = 0
+    let skipped = 0
+    for (const o of repos) {
+      try {
+        const r = await refreshEntryFromRepo(o.repo)
+        if (r.ok) fixed++
+        else skipped++
+      } catch {
+        skipped++
+      }
+    }
+    setReforging(null)
+    setReforgeNote(`Re-forged ${fixed} entr${fixed === 1 ? 'y' : 'ies'} from their READMEs${skipped ? ` · ${skipped} skipped (no README or nothing bullet-worthy)` : ''}. Your titles, tiers and edits are untouched.`)
+  }
 
   const addOne = async (o: RepoOverview) => {
     setAdding(o.repo.name)
@@ -180,19 +219,37 @@ export function NabzPanel() {
             {showInLedger ? 'hide' : 'show'} {inLedger.length} repo{inLedger.length === 1 ? '' : 's'} already in your ledger ✓
           </button>
           {showInLedger && (
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {inLedger.map((o) => (
-                <a
-                  key={o.repo.name}
-                  href={o.repo.html_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-mono text-[10px] bg-paper-sunken/60 rounded px-2 py-1 text-ink hover:underline"
-                  title={o.ledgerTitle}
+            <div className="mt-1.5">
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <p className="text-[10px] text-ink-soft flex-1 min-w-[12rem]">
+                  Re-read pulls each README fresh and forges proper resume bullets from it. Your titles, tiers and edits stay exactly as you set them.
+                </p>
+                <button
+                  className="shrink-0 text-[10px] font-semibold bg-ink text-paper px-2 py-1 rounded disabled:opacity-50"
+                  disabled={reforging !== null}
+                  onClick={() => void reforgeAll(inLedger)}
                 >
-                  {o.repo.name} <span className={o.status === 'shipped' ? 'text-shipped' : 'text-forge'}>{o.status === 'shipped' ? '✓' : '⋯'}</span>
-                </a>
-              ))}
+                  {reforging === '*' ? 're-forging…' : `⟳ Re-forge all ${inLedger.length}`}
+                </button>
+              </div>
+              {reforgeNote && <p className="text-[10px] text-shipped leading-relaxed mb-1.5">{reforgeNote}</p>}
+              <div className="flex flex-wrap gap-1.5">
+                {inLedger.map((o) => (
+                  <span key={o.repo.name} className="inline-flex items-center gap-1 bg-paper-sunken/60 rounded px-2 py-1" title={o.ledgerTitle}>
+                    <a href={o.repo.html_url} target="_blank" rel="noreferrer" className="font-mono text-[10px] text-ink hover:underline">
+                      {o.repo.name} <span className={o.status === 'shipped' ? 'text-shipped' : 'text-forge'}>{o.status === 'shipped' ? '✓' : '⋯'}</span>
+                    </a>
+                    <button
+                      className="text-[10px] text-ink-soft hover:text-ink hover:underline disabled:opacity-40"
+                      disabled={reforging !== null}
+                      title={`Re-read ${o.repo.name}'s README and re-forge its bullets`}
+                      onClick={() => void reforgeOne(o)}
+                    >
+                      {reforging === o.repo.name ? '…' : '⟳'}
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>

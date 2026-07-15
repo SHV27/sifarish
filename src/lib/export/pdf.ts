@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib'
-import type { CompiledResume } from '../../types'
+import type { CompiledDoc, CompiledResume } from '../../types'
 import { CompileError, LINE_METRICS, PAGE } from '../compile/compiler'
 
 /**
@@ -68,6 +68,49 @@ export async function renderResumePdf(resume: CompiledResume): Promise<Uint8Arra
   })
 
   doc.setTitle('Resume')
+  doc.setProducer('SIFARISH — compiled from the Sach Ledger')
+  return doc.save()
+}
+
+/**
+ * COVER LETTER PDF (Session 5.4) — companies routinely require the letter as a PDF/DOCX upload,
+ * not pasted text, so a copy-to-clipboard letter was a packet that stopped one step short.
+ *
+ * Same ATS-plain discipline as the resume (Helvetica text layer, single column, drawn strictly
+ * top-to-bottom so extracted order equals compiled order). It differs in one way: a letter has no
+ * one-page constraint, so instead of throwing on overflow it starts a new page. The letter is
+ * prose; the resume is the artifact under the one-page law.
+ */
+export async function renderLetterPdf(letter: CompiledDoc, title = 'Cover Letter'): Promise<Uint8Array> {
+  const doc = await PDFDocument.create()
+  const regular = await doc.embedFont(StandardFonts.Helvetica)
+  const maxWidth = PAGE.width - PAGE.margin * 2
+  const ink = rgb(0.05, 0.09, 0.16)
+  const SIZE = 11
+  const LEADING = 15
+  const PARA_GAP = 9
+
+  let page = doc.addPage([PAGE.width, PAGE.height])
+  let y = PAGE.height - PAGE.margin
+
+  for (const para of letter.paragraphs) {
+    const text = sanitizePdfText(para.text)
+    if (!text.trim()) {
+      y -= PARA_GAP
+      continue
+    }
+    for (const piece of wrap(regular, text, SIZE, maxWidth)) {
+      if (y - LEADING < PAGE.margin) {
+        page = doc.addPage([PAGE.width, PAGE.height])
+        y = PAGE.height - PAGE.margin
+      }
+      y -= LEADING
+      page.drawText(piece, { x: PAGE.margin, y, size: SIZE, font: regular, color: ink })
+    }
+    y -= PARA_GAP
+  }
+
+  doc.setTitle(title)
   doc.setProducer('SIFARISH — compiled from the Sach Ledger')
   return doc.save()
 }

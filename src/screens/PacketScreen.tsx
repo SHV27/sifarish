@@ -356,7 +356,7 @@ function PacketBody({
         <Baithak key={`baithak-${packet.id}`} packet={packet} />
 
         {packet.signature && <SignatureToggle packet={packet} />}
-        <CopyDoc title="Cover letter" doc={packet.coverLetter} />
+        <CopyDoc title="Cover letter" doc={packet.coverLetter} downloadAs={`Shaurya_Verma_Cover_Letter_${job.company.replace(/\W+/g, '')}`} />
         <AtelierBaithak key={`atelier-${packet.id}`} packet={packet} />
         <CopyDoc title="Outreach draft (send it yourself — SIFARISH never sends)" doc={packet.outreach} />
         <ApplyPlanPanel packet={packet} job={job} />
@@ -696,13 +696,35 @@ function ChipRow({ label, tone, hits }: { label: string; tone: 'shipped' | 'forg
   )
 }
 
-function CopyDoc({ title, doc }: { title: string; doc: CompiledDoc }) {
+function CopyDoc({ title, doc, downloadAs }: { title: string; doc: CompiledDoc; downloadAs?: string }) {
   const [copied, setCopied] = useState(false)
   const text = doc.paragraphs.map((p) => p.text).join('\n\n')
+
+  // Most portals want the letter as an uploaded PDF/DOCX, not pasted text — a copy-only letter
+  // was a packet that stopped one step short of the actual application (Session 5.4).
+  const dlPdf = async () => {
+    const { renderLetterPdf } = await import('../lib/export/pdf')
+    saveFile(await renderLetterPdf(doc, title), `${downloadAs}.pdf`, 'application/pdf')
+  }
+  const dlDocx = async () => {
+    const { renderLetterDocxBlob } = await import('../lib/export/docx')
+    saveFile(await renderLetterDocxBlob(doc), `${downloadAs}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+  }
+
   return (
     <section className="dossier p-4 mt-4" aria-label={title}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-display font-semibold text-ink text-sm">{title}</h2>
+        {downloadAs && (
+          <div className="flex items-center gap-2 ml-auto shrink-0">
+            <button className="text-xs text-ink-soft hover:underline" onClick={() => void dlPdf()}>
+              ↓ PDF
+            </button>
+            <button className="text-xs text-ink-soft hover:underline" onClick={() => void dlDocx()}>
+              ↓ DOCX
+            </button>
+          </div>
+        )}
         <button
           className="text-xs text-ink-soft hover:underline shrink-0"
           onClick={async () => {
