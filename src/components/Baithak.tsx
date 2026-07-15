@@ -42,7 +42,9 @@ export default function Baithak({ packet }: { packet: Packet }) {
       setBusy(true)
       try {
         const { smartBaithak } = await import('../lib/baithak/smart')
-        parse = await smartBaithak(utterance, packet, ledger)
+        // Recent turns travel with the request so a follow-up ("haan wahi karo") has a referent.
+        const history = items.slice(-6).map((m) => ({ role: m.role, text: m.text }))
+        parse = await smartBaithak(utterance, packet, ledger, history)
       } finally {
         setBusy(false)
       }

@@ -274,6 +274,30 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   actual application. Unlike the resume it PAGINATES rather than throwing on overflow — a letter
   is prose, the one-page law is the resume's. Its own I5 parse-back gate proves the text layer.
 
+- D61: BAITHAK WASN'T STUPID, IT WAS BLIND — the same disease as D56. Its system prompt carried a
+  ledger digest and NOTHING ELSE: not the company, not the JD, not the archetype, not the casting
+  rationale, not the vision, not the current resume — and it sliced every bullet to 50 chars, so it
+  reasoned about evidence it could not read. Asked to "aim this at the role" it had no role. Fixed:
+  full role brief (job + JD must-haves + missing/in_forge keywords + archetype + why the lineup was
+  cast) + the resume as it stands + whole bullets + deep-read context (D58) + last-6-turn memory.
+  It may also now ANSWER a question with zero ops — forcing an edit on "ye kyun chuna?" was itself
+  a source of the dumbness.
+- D62: BAITHAK CAN NOW DO THE TRUE THING HE ASKS. Owner: "sach hi bole usmein dikkat nhi, but jo
+  sach waala kaam bolun toh tailor voh karre toh sahi." The op vocabulary was select/order/link
+  only, so "ye skill hata" and "GLOAMING ko aise explain kar" hit a wall — read as stupidity, not
+  safety. Two new ops, both structurally unable to lie: (1) `set-entry` — drop/restore ANY ledger
+  entry for THIS packet (packet-scoped `excludedIds`, applied at the compiler's single eligibility
+  gate so it cannot leak through a section; his ledger is never edited — a resume is a selection of
+  the truth aimed at one reader, and hiding a true thing is honest tailoring); (2) `reframe-project`
+  (src/lib/polish/reframe.ts) — re-express a project's bullets toward his stated direction, where
+  every rephrasing must survive `detectDrift` against ITS OWN original or be DISCARDED. Wording is
+  his, facts are frozen; the override renders under the SAME evidence link, so I1 holds. The
+  guardrail he wanted removed is what makes saying yes to him safe — so the fix was widening the
+  vocabulary, never loosening the guard.
+- D63: The Baithak's live reflection already worked — PacketScreen's packets is a `useLiveQuery`,
+  so `db.packets.put` re-renders the resume on apply. The perceived failure was the op vocabulary
+  (D62), not the plumbing. Verified before touching it; no change made.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

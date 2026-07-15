@@ -55,7 +55,12 @@ async function persist(packet: Packet, utterance: string, summary: string): Prom
 /** Recompile the packet's resume with overrides; red-team + quality re-run. */
 async function recompile(
   packet: Packet,
-  overrides: { bullets?: Record<string, string[]>; sectionOrder?: NonNullable<Packet['editorial']>['sectionOrder'] },
+  overrides: {
+    bullets?: Record<string, string[]>
+    sectionOrder?: NonNullable<Packet['editorial']>['sectionOrder']
+    excludedIds?: string[]
+    bulletOverrides?: Record<string, string>
+  },
 ): Promise<Packet> {
   const identity = await db.identity.get('me')
   const ledger = await db.ledger.toArray()
@@ -66,12 +71,24 @@ async function recompile(
     bullets: overrides.bullets ?? {},
     sectionOrder: overrides.sectionOrder ?? packet.editorial?.sectionOrder,
   }
-  const resume = compileResume({ identity, ledger, decode: packet.decode, coverage, jobId: packet.jobId, editorial })
+  const resume = compileResume({
+    identity,
+    ledger,
+    decode: packet.decode,
+    coverage,
+    jobId: packet.jobId,
+    editorial,
+    // Baithak state travels with the packet, so every later recompile keeps his decisions.
+    excludedIds: overrides.excludedIds ?? packet.excludedIds,
+    bulletOverrides: overrides.bulletOverrides ?? packet.bulletOverrides,
+  })
   const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
   return {
     ...packet,
     resume,
     coverage,
+    excludedIds: overrides.excludedIds ?? packet.excludedIds,
+    bulletOverrides: overrides.bulletOverrides ?? packet.bulletOverrides,
     quality: estimateQuality(resume, coverage, ledger),
     editorial: packet.editorial
       ? { ...packet.editorial, sectionOrder: editorial.sectionOrder, redTeam: rt ?? packet.editorial.redTeam, redTeamRounds: packet.editorial.redTeamRounds + (rt ? 1 : 0) }
@@ -134,6 +151,56 @@ export async function applyEdit(packet: Packet, op: EditOp, utterance: string, p
         packet: done,
       }
     }
+    /** "ye skill hata" / "ye wali daal" — packet-scoped suppression. His ledger is never edited. */
+    case 'set-entry': {
+      const entry = await db.ledger.get(op.ledgerId)
+      if (!entry) return { ok: false, note: 'Ledger entry not found.' }
+      const current = new Set(packet.excludedIds ?? [])
+      if (op.on) current.delete(op.ledgerId)
+      else current.add(op.ledgerId)
+      const excludedIds = [...current]
+
+      const updated = await recompile(packet, { excludedIds })
+      // A resume with nothing on it is not a tailoring outcome — refuse rather than ship a husk.
+      if (updated.resume.lines.length < 4) {
+        return { ok: false, note: 'That would empty the resume. Nothing changed.' }
+      }
+      const name = entry.title.split('—')[0].trim()
+      const done = await persist(updated, utterance, `${op.on ? 'Restored' : 'Dropped'} ${op.ledgerId} for this role (Baithak)`)
+      return {
+        ok: true,
+        note: op.on
+          ? `${name} is back on this resume.`
+          : `${name} dropped from this resume. Your ledger is untouched — it still runs for other roles.`,
+        packet: done,
+      }
+    }
+
+    /** "GLOAMING ko aise explain kar" — re-express its bullets; the fact-drift guard freezes facts. */
+    case 'reframe-project': {
+      const entry = await db.ledger.get(op.ledgerId)
+      if (!entry) return { ok: false, note: 'Ledger entry not found.' }
+      const { reframeProject } = await import('../polish/reframe')
+      const r = await reframeProject(entry, op.direction)
+      if (r.keyless) {
+        return { ok: false, note: 'Keyless mode — reframing needs the owner GROQ key. The compiled bullets stand.' }
+      }
+      if (r.applied === 0) {
+        const why = r.rejected.length
+          ? `Every attempt tried to add something you haven't proved (${[...new Set(r.rejected.flatMap((x) => x.addedFacts))].slice(0, 4).join(', ')}), so I threw them out. Your bullets stand as compiled.`
+          : 'Nothing came back better than what you already have — your bullets stand.'
+        return { ok: false, note: why }
+      }
+      const bulletOverrides = { ...(packet.bulletOverrides ?? {}), ...r.overrides }
+      const updated = await recompile(packet, { bulletOverrides })
+      const done = await persist(updated, utterance, `Reframed ${op.ledgerId}: "${op.direction}" — ${r.applied} applied, ${r.rejected.length} rejected by the fact guard`)
+      return {
+        ok: true,
+        note: `Reframed ${r.applied} bullet(s)${r.rejected.length ? ` · ${r.rejected.length} rejected by the fact guard (they tried to add facts you haven't proved)` : ''}. Same facts, your framing.`,
+        packet: done,
+      }
+    }
+
     case 'set-summary': {
       const updated = await setSummary(packet, op.on)
       const done = await persist(updated, utterance, `Professional summary ${op.on ? 'added' : 'removed'}`)

@@ -273,6 +273,16 @@ export interface Packet {
   intel?: CompanyIntel
   /** The Editor's Desk reasoning (Darzi v3). Absent for v1/v2-style compiles. */
   editorial?: EditorialPlan
+  /**
+   * Baithak suppressions (Session 5.4) — ledger ids he told the tailor to drop for THIS role.
+   * Packet-scoped, never a ledger edit: his truth is untouched and other packets are unaffected.
+   */
+  excludedIds?: string[]
+  /**
+   * Baithak rephrasings (Session 5.4) — bulletId → re-expressed text that PASSED the fact-drift
+   * guard against the original. Packet-scoped for the same reason. Facts frozen; wording aimed.
+   */
+  bulletOverrides?: Record<string, string>
   /** Whether the packet passed the red-team gate — required for "ready". */
   ready?: boolean
   /** Atelier (v3): the Sifarish Signature decision + whether it's currently on. */
@@ -332,6 +342,19 @@ export type EditOp =
   | { kind: 'polish-tone' }
   /** Professional summary on/off — recompiled from real ledger evidence (I1). */
   | { kind: 'set-summary'; on: boolean }
+  /**
+   * "ye skill hata" / "ye wali daal" — drop or restore a ledger entry for THIS packet only.
+   * Suppression is packet-scoped: the ledger (his truth) is never edited, and the same entry
+   * still renders for other roles. Hiding a true thing is honest tailoring — a resume is a
+   * selection of the truth aimed at one reader, not the whole truth every time.
+   */
+  | { kind: 'set-entry'; ledgerId: string; on: boolean }
+  /**
+   * "GLOAMING ko aise explain kar" — re-express a project's bullets in a stated direction.
+   * The fact-drift guard freezes every number, technology and proper noun (I1): the wording
+   * changes, the facts cannot. A rephrasing that smuggles a new fact is discarded, not shown.
+   */
+  | { kind: 'reframe-project'; ledgerId: string; direction: string }
 
 export interface ProposedEdit {
   id: string

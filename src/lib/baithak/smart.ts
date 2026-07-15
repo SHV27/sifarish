@@ -1,4 +1,5 @@
 import type { BaithakParse, EditOp, LedgerEntry, Packet, ProposedEdit } from '../../types'
+import { db } from '../../db/db'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 import { allowedThisRun, recordSpend } from '../budget'
 
@@ -20,6 +21,7 @@ interface LlmOp {
   on?: boolean
   url?: string
   sectionOrder?: string[]
+  direction?: string
 }
 interface LlmResult {
   reply?: string
@@ -35,21 +37,80 @@ function proposal(op: EditOp, before: string, after: string, invariants: string[
 const SECTIONS = new Set(['education', 'skills', 'projects', 'forge', 'achievements', 'certs'])
 const nameOf = (e: LedgerEntry) => e.title.split('—')[0].trim()
 
+/**
+ * THE LEDGER DIGEST — what the Baithak can actually reach for.
+ *
+ * It used to slice every bullet to 50 characters, so the tailor was reasoning about evidence it
+ * could not read ("Built a browser co-op board game where the board it…"). Bullets are now given
+ * whole, and each project carries the deep-read context (D58) — the problem it attacks and its
+ * stack — so "make this more agentic" can find the actual agentic work instead of guessing.
+ */
 function ledgerDigest(ledger: LedgerEntry[]): string {
   const eligible = ledger.filter((e) => e.resumeEligible)
-  const line = (e: LedgerEntry) =>
-    `  ${e.id} [${e.tier}/${e.kind}] "${nameOf(e)}"` +
-    (e.kind === 'project' ? ` bullets: ${e.bullets.map((b) => `${b.id}="${b.text.slice(0, 50)}"`).join(' | ')}` : '')
+  const line = (e: LedgerEntry) => {
+    const head = `  ${e.id} [${e.tier}/${e.kind}] "${nameOf(e)}"${e.summary ? ` — ${e.summary.slice(0, 160)}` : ''}`
+    if (e.kind !== 'project') return head
+    const ctx = e.context
+    const extra = [
+      ctx?.problem ? `\n     problem: ${ctx.problem.slice(0, 180)}` : '',
+      ctx?.stack?.length ? `\n     stack: ${ctx.stack.join(', ')}` : '',
+      e.tags.length ? `\n     tags: ${e.tags.join(', ')}` : '',
+    ].join('')
+    const bullets = e.bullets.map((b) => `\n     - ${b.id}: "${b.text}"`).join('')
+    return head + extra + bullets
+  }
   return eligible.map(line).join('\n')
 }
 
-function systemPrompt(packet: Packet, ledger: LedgerEntry[]): string {
-  const chosen = packet.editorial?.chosen.map((c) => c.ledgerId) ?? []
+/**
+ * THE ROLE BRIEF — the context the Baithak was missing entirely.
+ *
+ * The old prompt knew the ledger and nothing else: not the company, not the JD, not the archetype,
+ * not why the Editor's Desk cast what it cast. Asked to "make this fit the role better" it had no
+ * role to fit. That is why it felt dumb — it was blind, not stupid.
+ */
+function roleBrief(packet: Packet, job: { title: string; company: string } | undefined, vision?: string): string {
+  const d = packet.decode
+  const ed = packet.editorial
   return [
-    'You are the Darzi Baithak — a resume tailor that turns a request into STRUCTURED EDIT OPS.',
+    job ? `ROLE: ${job.title} at ${job.company}.` : 'ROLE: (job record unavailable)',
+    d?.mustHave?.length ? `JD must-haves: ${d.mustHave.map((k) => k.replace(/-/g, ' ')).join(', ')}.` : '',
+    d?.niceToHave?.length ? `JD nice-to-haves: ${d.niceToHave.slice(0, 8).map((k) => k.replace(/-/g, ' ')).join(', ')}.` : '',
+    ed ? `Reviewer archetype: ${ed.archetype.label}.` : '',
+    ed?.casting?.why ? `Why the current lineup was cast: ${ed.casting.why.slice(0, 400)}` : '',
+    ed?.chosen?.length ? `LEADING now: ${ed.chosen.map((c) => `${c.ledgerId} (angle: ${c.angleLabel})`).join('; ')}.` : '',
+    ed?.benched?.length ? `BENCHED now: ${ed.benched.map((b) => `${b.ledgerId} — ${b.why.slice(0, 90)}`).join('; ')}.` : '',
+    packet.coverage?.missing?.length
+      ? `JD requirements with NO ledger evidence (never claim these — refuse if asked): ${packet.coverage.missing.map((g) => g.keyword).join(', ')}.`
+      : '',
+    packet.coverage?.building?.length
+      ? `Covered only by in_forge work (may appear ONLY in the dated "Currently Building" line, I2): ${packet.coverage.building.map((g) => g.keyword).join(', ')}.`
+      : '',
+    vision ? `His stated vision/target: ${vision.slice(0, 300)}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+/** The resume as it currently stands — so "ye kyun hai?" and "chhota karo" have a referent. */
+function currentResume(packet: Packet): string {
+  return packet.resume.lines.map((l) => `  [${l.kind}] ${l.text}`).join('\n').slice(0, 2500)
+}
+
+function systemPrompt(packet: Packet, ledger: LedgerEntry[], job: { title: string; company: string } | undefined, vision: string | undefined): string {
+  return [
+    'You are the Darzi Baithak — Shaurya\'s resume tailor. He talks to you in Hinglish. You do two things:',
+    '  (1) ANSWER questions about the resume, the casting, and the role — honestly and specifically.',
+    '  (2) Turn requests for change into STRUCTURED EDIT OPS.',
+    '',
+    'If he is ASKING rather than instructing ("ye kyun chuna?", "is role ke liye theek hai?", "kya missing hai?"),',
+    'just answer it well in "reply" with an EMPTY ops array. A good specific answer is a valid response —',
+    'do NOT force an edit. Cite the actual reason (the casting rationale, the JD must-haves, the evidence).',
+    '',
     'HARD RULE (never break): you may only SELECT, ORDER, or LINK evidence that already exists in the',
     'LEDGER below. You can NEVER invent a skill, project, number, or bullet. If the request needs a',
     'claim not in the ledger, do NOT emit an op — instead set "refuse" with the term and an honest reason.',
+    'Rephrasing is allowed ONLY via polish-tone, which freezes facts.',
     '',
     'Available ops (emit only these; use exact ledger IDs from the LEDGER):',
     '- {"kind":"set-summary","on":true|false}  — add/remove a professional summary (compiled from evidence).',
@@ -59,13 +120,29 @@ function systemPrompt(packet: Packet, ledger: LedgerEntry[]): string {
     '- {"kind":"attach-link","ledgerId":"proj-...","url":"https://..."}  — attach a live link (probe-gated).',
     '- {"kind":"set-section-order","sectionOrder":["skills","projects","forge","education","achievements","certs"]}',
     '- {"kind":"polish-tone"}  — a guarded phrasing pass (facts frozen).',
+    '- {"kind":"set-entry","ledgerId":"...","on":false}  — DROP any ledger entry (a skill, a project,',
+    '    an achievement) from THIS resume; on:true restores it. Use this for "ye skill hata do",',
+    '    "Python nikaal", "ye wali daal". It is packet-scoped and never edits his ledger.',
+    '- {"kind":"reframe-project","ledgerId":"proj-...","direction":"<what he asked for, verbatim-ish>"}',
+    '    — re-express THAT project\'s bullets toward a framing ("GLOAMING ko agentic angle se explain kar",',
+    '    "isko zyada systems-heavy dikha"). Wording changes; a fact-drift guard freezes every number,',
+    '    technology and proper noun, so it can never say something new. Use this whenever he asks for a',
+    '    project to be EXPLAINED or FRAMED differently — do not refuse that, it is honest tailoring.',
     '',
-    `Currently leading (chosen) project IDs: ${chosen.join(', ') || '(none yet)'}.`,
+    'Reasoning guidance: when he asks to aim the resume at the role, work out WHICH ledger evidence best',
+    'answers the JD must-haves, then promote/bench/reorder to put that evidence in the first third of the',
+    'page (a recruiter skims ~6 seconds). Name the specific project and the specific reason in your reply.',
     '',
     'Return ONLY compact JSON: {"reply": string, "ops": Op[], "refuse"?: {"term": string, "reason": string}}.',
-    'The reply is warm, brief, Hinglish-friendly, and explains what you propose. Prefer 1-3 ops.',
+    'The reply is warm, brief (max ~80 words), Hinglish-friendly, and specific. Prefer 1-3 ops.',
     '',
-    'LEDGER (the ONLY source of truth — every op must reference these exact IDs):',
+    '--- THE ROLE HE IS TAILORING FOR ---',
+    roleBrief(packet, job, vision),
+    '',
+    '--- THE RESUME AS IT STANDS RIGHT NOW ---',
+    currentResume(packet),
+    '',
+    '--- LEDGER (the ONLY source of truth — every op must reference these exact IDs) ---',
     ledgerDigest(ledger),
   ].join('\n')
 }
@@ -100,6 +177,33 @@ function validate(op: LlmOp, packet: Packet, ledger: LedgerEntry[]): ProposedEdi
       if (!e || !op.url || !/^https?:\/\//.test(op.url)) return null
       return proposal({ kind: 'attach-link', ledgerId: e.id, url: op.url }, `${nameOf(e)} link`, `Attach ${op.url} to ${nameOf(e)} (probe-gated)`, ['dead-link probe', 'I1'])
     }
+    /** Drop/restore any real ledger entry for this packet. The id must exist — no minting. */
+    case 'set-entry': {
+      const e = op.ledgerId ? byId.get(op.ledgerId) : undefined
+      if (!e) return null
+      const on = op.on === true
+      const excluded = new Set(packet.excludedIds ?? [])
+      if (on === !excluded.has(e.id)) return null // already in that state — not a real change
+      return proposal(
+        { kind: 'set-entry', ledgerId: e.id, on },
+        on ? `${nameOf(e)} is off this resume` : `${nameOf(e)} is on this resume`,
+        on ? `${nameOf(e)} back on this resume` : `${nameOf(e)} dropped from this resume (your ledger keeps it)`,
+        ['packet-scoped only', 'ledger untouched'],
+      )
+    }
+    /** Re-express a real project's bullets. The guard freezes the facts at apply time. */
+    case 'reframe-project': {
+      const e = op.ledgerId ? byId.get(op.ledgerId) : undefined
+      if (!e || e.kind !== 'project' || e.bullets.length === 0) return null
+      const direction = (op.direction ?? '').trim()
+      if (direction.length < 3) return null
+      return proposal(
+        { kind: 'reframe-project', ledgerId: e.id, direction },
+        `${nameOf(e)} as compiled`,
+        `${nameOf(e)} re-explained: "${direction.slice(0, 70)}" — same facts, new framing`,
+        ['I1 fact-drift guard (facts frozen)', 'packet-scoped'],
+      )
+    }
     case 'set-section-order': {
       const requested = (op.sectionOrder ?? []).filter((s) => SECTIONS.has(s))
       if (requested.length < 2) return null
@@ -111,7 +215,13 @@ function validate(op: LlmOp, packet: Packet, ledger: LedgerEntry[]): ProposedEdi
   }
 }
 
-export async function smartBaithak(utterance: string, packet: Packet, ledger: LedgerEntry[]): Promise<BaithakParse> {
+/** A turn of the conversation, so a follow-up ("haan wahi karo") has a referent. */
+export interface BaithakTurn {
+  role: 'owner' | 'darzi'
+  text: string
+}
+
+export async function smartBaithak(utterance: string, packet: Packet, ledger: LedgerEntry[], history: BaithakTurn[] = []): Promise<BaithakParse> {
   const keyless: BaithakParse = {
     reply:
       'Iske liye mujhe thoda aur samajhna hoga. Try: "professional summary daal" · "GLOAMING ko lead karao" · ' +
@@ -123,12 +233,29 @@ export async function smartBaithak(utterance: string, packet: Packet, ledger: Le
   if (!meteredCallsAllowed()) return keyless
   if ((await allowedThisRun('dimaag')) <= 0) return keyless
 
+  // The context the Baithak was missing: which job this packet is for, and his stated vision.
+  const job = await db.jobs.get(packet.jobId).catch(() => undefined)
+  const settings = await db.settings.get('app').catch(() => undefined)
+  const vision = settings?.visionProfile?.dream
+
+  // Recent turns, so "wahi karo" / "aur?" resolve instead of starting cold every message.
+  const convo = history
+    .slice(-6)
+    .map((t) => `${t.role === 'owner' ? 'SHAURYA' : 'YOU'}: ${t.text}`)
+    .join('\n')
+  const user = convo ? `Conversation so far:\n${convo}\n\nSHAURYA (now): ${utterance.slice(0, 500)}` : utterance.slice(0, 500)
+
   let data: { keyless?: boolean; result?: LlmResult; tokens?: number } | null = null
   try {
     const res = await fetch('/api/dimaag', {
       method: 'POST',
       headers: meteredHeaders(),
-      body: JSON.stringify({ tier: 'reasoning', system: systemPrompt(packet, ledger), user: utterance.slice(0, 500), maxTokens: 700 }),
+      body: JSON.stringify({
+        tier: 'reasoning',
+        system: systemPrompt(packet, ledger, job ? { title: job.title, company: job.company } : undefined, vision),
+        user,
+        maxTokens: 900,
+      }),
     })
     if (!res.ok) return keyless
     data = await res.json()

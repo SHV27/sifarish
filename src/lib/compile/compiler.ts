@@ -97,6 +97,18 @@ export interface CompileInput {
    * + real ledger evidence by the orchestrator, so it carries ledgerIds and mints no claim (I1).
    */
   summaryLine?: CompiledLine
+  /**
+   * Baithak suppressions (Session 5.4): ledger ids to leave off THIS resume ("ye skill hata").
+   * Applied at the eligibility gate, so a suppressed entry cannot leak through any section.
+   */
+  excludedIds?: string[]
+  /**
+   * Baithak rephrasings (Session 5.4): bulletId → re-expressed text. The caller is responsible
+   * for having passed each override through the fact-drift guard; the compiler still renders it
+   * under the SAME evidence link as the original bullet, so I1 holds either way (the line carries
+   * the entry's ledgerId, and the guard has already frozen the facts).
+   */
+  bulletOverrides?: Record<string, string>
 }
 
 export type SectionKey = 'education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs'
@@ -123,7 +135,10 @@ const TRIM_LEVELS: TrimLevel[] = [
 
 export function compileResume(input: CompileInput): CompiledResume {
   const { identity, ledger, decode, coverage, jobId } = input
-  const eligible = ledger.filter((e) => e.resumeEligible)
+  // Suppression is a single gate at the top: whatever he told the tailor to drop for this role
+  // cannot reappear through the project pool, the skills line, or any other section.
+  const excluded = new Set(input.excludedIds ?? [])
+  const eligible = ledger.filter((e) => e.resumeEligible && !excluded.has(e.id))
   const shipped = eligible.filter((e) => e.tier === 'shipped')
 
   // -- Project pool: the cast lineup under an editorial plan, else v1 relevance sort --
@@ -217,7 +232,9 @@ export function compileResume(input: CompileInput): CompiledResume {
           })
           if (evidenceUrl) push(lines, { kind: 'meta', text: evidenceUrl.replace(/^https?:\/\//, ''), ledgerIds: [p.id] })
           for (const b of bulletsFor(p, lv.bulletsPerProject)) {
-            push(lines, { kind: 'bullet', text: `- ${b.text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
+            // A Baithak rephrasing renders in place of the original, under the SAME evidence link.
+            const text = input.bulletOverrides?.[b.id] ?? b.text
+            push(lines, { kind: 'bullet', text: `- ${text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
           }
         }
       },
