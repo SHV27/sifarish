@@ -445,6 +445,20 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   served") — the same mistake in the very next commit. Anchored to /screenshots/; verified by live
   raw.githubusercontent.com fetches (200 + byte counts), not by the command's exit code.
 
+- D84: "LEDGER DEPTH" WAS INVISIBLE, NOT MISSING. Owner: "SUTRADHAR itni si detail? GLOAMING ki
+  README bhi toh badi thi." Root cause was two-fold: (1) distillReadme's own caps were tighter
+  than needed for SOURCE MATERIAL — problem statement 400 chars/2 sentences, features capped at 5,
+  raw README at 6k — deepened to 1200 chars/5 sentences, 8 features, 12k raw (D28 protects the
+  one-page law regardless of ledger depth, so widening the SOURCE costs nothing at compile time).
+  (2) The real gap: `entry.context` (D58's deep-read README, problem, stack, features) was stored
+  and used by the Editor's Desk but NEVER rendered anywhere — Shelf showed only entry.bullets
+  (2-3 lines), so the depth that existed was invisible and felt absent. Shelf now has a "▸ deep
+  context" disclosure per project: problem statement, stack, every captured feature, char count
+  and read-date of the source README. Read-only — editing still targets entry.bullets.
+  Separately confirmed: SUTRADHAR/DARYA/MUNSHI/KATHA/YOJANA/BRAILLIX are thin because they carry
+  NO linked GitHub repo in the seed (Nabz has nothing to forge from) — not a code defect; his
+  action item is linking a repo or writing bullets by hand for those entries.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

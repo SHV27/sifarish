@@ -87,3 +87,46 @@ A job-hunt chief of staff that refuses to lie.
     expect(sanitizeBullets(d.bullets)).toEqual([])
   })
 })
+
+describe('ledger depth (Session 5.4, D82) — the tailor needs extreme depth, not a summary', () => {
+  // Owner's founding requirement, restated mid-session: "ledger mein agar depth hogi, bahut
+  // extreme depth, tabhi tailor apne hisab se frame kar payega." A README with 8 real feature
+  // lines and a long multi-paragraph problem statement must not be trimmed down to a thin brief —
+  // that thinness is what starved the Editor's Desk's casting/angle reasoning (D58's projectBrief
+  // reads exactly these fields).
+  const bigReadme = `# darya
+
+Darya is an AI-native personal finance copilot that reasons over a user's real transaction history to
+answer plain-language money questions, catch fraud patterns banks miss, and propose a savings plan
+grounded in the actual numbers rather than a generic template. It exists because every consumer finance
+app either drowns the user in dashboards or hides behind a chatbot that can't see the ledger.
+
+## Features
+
+- Ingests bank statements via a Plaid-style connector and normalizes them into a typed transaction ledger
+- Runs an anomaly detector over the transaction stream to flag likely fraud or duplicate charges
+- Answers free-form questions ("how much did I spend on food last month") grounded in real transactions
+- Proposes a savings plan with concrete numbers pulled from the user's own spending history
+- Ships a reconciliation view that explains every number it shows, never a black-box total
+- Runs entirely client-side for sensitive data — no transaction ever leaves the device unencrypted
+- Uses a local vector index so search over months of transactions stays fast without a server round-trip
+- Exposes an audit log of every inference the model made, so a user can verify the reasoning
+`
+
+  it('captures a long problem statement, not just the first sentence', () => {
+    const d = distillReadme(bigReadme)
+    expect(d.problem.length).toBeGreaterThan(200)
+    expect(d.problem).toContain('reasons over a user')
+  })
+
+  it('captures more than 5 feature bullets when the README has them (was capped at 5)', () => {
+    const d = distillReadme(bigReadme)
+    expect(d.bullets.length).toBeGreaterThan(5)
+    expect(d.bullets.some((b) => b.includes('audit log'))).toBe(true)
+  })
+
+  it('keeps the full README as reading material well past the old 6k cap', () => {
+    const d = distillReadme(bigReadme)
+    expect(d.raw.length).toBeGreaterThan(bigReadme.length - 50) // nothing meaningful truncated for a README this size
+  })
+})

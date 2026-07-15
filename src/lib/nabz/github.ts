@@ -196,14 +196,18 @@ export function distillReadme(md: string): ReadmeDistilled {
   let summary = tagline && prose ? `${tagline.replace(/[.:]$/, '')} — ${prose}` : tagline || prose
   summary = summary.slice(0, 320).trim()
 
-  // Feature bullets: up to 5 substantive list items (what it does / how it's built).
+  // Feature bullets: up to 8 substantive list items (what it does / how it's built). Widened
+  // from 5 (owner-requested, Session 5.4) — this is SOURCE MATERIAL for the tailor's reasoning
+  // (ProjectContext.features, D58), not what renders on the page. The compiler still trims to
+  // 1-3 per project at compile time regardless of how many the ledger holds (D28's one-page
+  // law is unaffected); a deeper ledger only gives the Editor's Desk more to choose from.
   //
   // A markdown list item may WRAP across physical lines. Reading only the matched line sliced
   // real sentences mid-clause ("…updates, so the app") and shipped the fragment to the resume.
   // So a match consumes its continuation lines until a blank line / new item / heading.
   const bullets: string[] = []
   const seen = new Set<string>()
-  for (let i = 0; i < lines.length && bullets.length < 5; i++) {
+  for (let i = 0; i < lines.length && bullets.length < 8; i++) {
     const m = /^\s*[-*+]\s+(.*)$/.exec(lines[i])
     if (!m) continue
     let text = m[1]
@@ -227,20 +231,25 @@ export function distillReadme(md: string): ReadmeDistilled {
   // Tech stack = human-readable subset of the matched keywords (languages/frameworks/tools).
   const stack = [...new Set(keywords.map((k) => k.replace(/-/g, ' ')))].slice(0, 8)
 
-  // The problem statement: the first two substantive prose sentences (what it attacks and why).
+  // The problem statement: the first substantive prose paragraphs (what it attacks and why).
+  // Widened from 2 sentences/400 chars (owner-requested, Session 5.4): the tailor's angle
+  // reasoning reads this brief, and a one-liner gave it nothing specific to reach for.
   const proseLines: string[] = []
   for (const raw of lines) {
     const t = raw.trim()
     if (!t || /^#{1,6}\s/.test(t) || /^[-*+]\s/.test(t) || /^\d+\.\s/.test(t) || /^\|/.test(t)) continue
     const c = cleanMd(t)
     if (c.length >= 40 && /[a-z]/i.test(c) && !SECTION_WORDS.test(c)) proseLines.push(c)
-    if (proseLines.length >= 2) break
+    if (proseLines.length >= 5) break
   }
-  const problem = proseLines.join(' ').slice(0, 400).trim()
+  const problem = proseLines.join(' ').slice(0, 1200).trim()
 
-  // Full cleaned reading material for the tailor. Capped so a huge README can't blow the
-  // LLM context or the IndexedDB row; 6k chars covers every real README he writes.
-  const raw = cleanMd(noCode).slice(0, 6000)
+  // Full cleaned reading material for the tailor. Capped so a huge README can't blow the LLM
+  // context or the IndexedDB row. 12k chars covers even a long, detailed README with room to
+  // spare (was 6k — deepened per the owner's founding requirement that ledger depth drives
+  // framing quality). This is source material for REASONING, never rendered on a resume, so a
+  // deep cap costs nothing at the one-page law (D28: the compiler is the sole authority there).
+  const raw = cleanMd(noCode).slice(0, 12000)
 
   return { summary, bullets, keywords, stack, liveUrl, hasReadme: cleanMd(noCode).length > 20, problem, raw }
 }

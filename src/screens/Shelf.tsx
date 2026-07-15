@@ -94,6 +94,7 @@ function EntryCard({
   const [title, setTitle] = useState(entry.title)
   const [summary, setSummary] = useState(entry.summary)
   const [bullets, setBullets] = useState(entry.bullets.map((b) => b.text))
+  const [showContext, setShowContext] = useState(false)
 
   const save = async () => {
     await db.ledger.update(entry.id, {
@@ -161,6 +162,70 @@ function EntryCard({
             </li>
           ))}
         </ul>
+      )}
+
+      {/*
+        THE DEEP CONTEXT (Session 5.4, D58 made visible) — the README material the tailor actually
+        reasons from (problem, features, stack, full cleaned prose) is stored on the entry but was
+        never shown anywhere. It made the ledger FEEL thin even when it wasn't: the owner could only
+        see 2-3 resume bullets and had no way to check the depth backing them. This is read-only —
+        editing a forged bullet still edits `entry.bullets` above; this panel exists so "is there
+        really more in here?" has a visible answer instead of trust-me.
+      */}
+      {entry.context && !editing && (
+        <div className="mt-2">
+          <button
+            className="text-[10px] font-mono text-ink-soft hover:text-ink"
+            onClick={() => setShowContext((v) => !v)}
+            aria-expanded={showContext}
+          >
+            {showContext ? '▾ hide' : '▸ deep context'} · what the tailor reads (
+            {(entry.context.readme?.length ?? 0).toLocaleString()} chars from the README)
+          </button>
+          {showContext && (
+            <div className="mt-1.5 pl-2 border-l-2 border-ink-wash space-y-1.5">
+              {entry.context.problem && (
+                <p className="text-[11px] text-ink-soft leading-relaxed">
+                  <strong className="text-ink font-medium">Problem it attacks: </strong>
+                  {entry.context.problem}
+                </p>
+              )}
+              {entry.context.stack.length > 0 && (
+                <p className="text-[11px] text-ink-soft">
+                  <strong className="text-ink font-medium">Stack: </strong>
+                  {entry.context.stack.join(' · ')}
+                </p>
+              )}
+              {entry.context.features.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium text-ink">All README features found ({entry.context.features.length}):</p>
+                  <ul className="mt-0.5 space-y-0.5">
+                    {entry.context.features.map((f, i) => (
+                      <li key={i} className="text-[11px] text-ink-soft leading-relaxed">
+                        · {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <p className="text-[10px] text-ink-faint">
+                Read {new Date(entry.context.source.readAt).toLocaleDateString()} from{' '}
+                <a className="underline decoration-dotted" href={entry.context.source.repo} target="_blank" rel="noreferrer">
+                  {entry.context.source.repo.replace(/^https?:\/\/(www\.)?github\.com\//, '')}
+                </a>
+                . The Editor's Desk reads all of this — not just the 2-3 bullets above — when it
+                decides how to frame this project per job.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!entry.context && entry.kind === 'project' && !editing && (
+        <p className="mt-2 text-[10px] text-ink-faint">
+          No deep context yet — link a GitHub repo and run Nabz "⟳ Re-forge" to give the tailor the
+          full README to reason from, not just these bullets.
+        </p>
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
