@@ -505,6 +505,20 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   evaluated and REJECTED (no CORS header — would need a proxy). This is the first NEW provider added
   since v2; the honest "no new source" caveat from D88 is now partially closed on the keyless side.
 
+- D91: TIDY REPO-LESS PROJECTS (owner-requested). DARYA/MUNSHI/etc. carry no GitHub repo, so Nabz
+  can't forge them and they render thin — he wants only real repo-backed shipped work for now.
+  Local-first → only he can trigger it, so a confirmed one-click in Nabz removes ONLY kind:'project'
+  entries with no evidence.repo (skills/education and any repo-backed project are never touched).
+  Reversible by construction: add the repo + re-forge and they return. Gated.
+--- Session 5.4 SEALED status (16-Jul-2026): D56-D91 shipped across ~14 commits; 358/360 gates
+  (2 live-only skips); every change deployed AND verified by prod asset-hash + a live owner-smoke
+  showing ERRORS(0) across all 7 screens; README screenshots refreshed (Vision Lens visibly ranks
+  his roles 95-100). The Vision Lens (D85), self-evolving Pulse->hunt loop (D89), two new global
+  discovery corners (D90, Arbeitnow+Jobicy), reversible Morcha (D87), the working reasoning tier
+  (D74/D75), the Bullet Forge (D56) and the zero-error GitHub proxy (D86) are all live. OPEN, stated
+  honestly: infra-scale discovery breadth ("literally every corner") remains larger than any one
+  session; owner passcode + Vercel token still need rotation (both reached chat).
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
