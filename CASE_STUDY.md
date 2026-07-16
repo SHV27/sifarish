@@ -6,7 +6,7 @@ sanitized. Compiled 14-Jul-2026.*
 
 - **Live:** https://sifarish-shv-s-projects.vercel.app
 - **Code:** https://github.com/SHV27/sifarish
-- **Scale at time of writing (Session 5.5):** 393 automated gates, 36 test suites, 11 serverless functions, ~60 source
+- **Scale at time of writing (Session 5.5):** 408 automated gates, 37 test suites, 11 serverless functions, ~60 source
   modules, 6 product screens, single-developer build across 5 build sessions.
 
 ---
@@ -435,6 +435,43 @@ The through-line, again: the suite tests what was *built*; only an adversarial r
 told to *hunt for* the "built but not wired" pattern) tests what a user *meets*.
 
 ---
+
+---
+
+### 3.19 · THE CAPABILITY WAS BUILT, THE WIRE WAS NEVER RUN (Session 5.6)
+
+The owner's most persistent complaint — across three sessions (D68, D85) — was that the Radar's top
+roles "aren't mine." Each session moved the needle (the Vision Lens, tunable target roles) but never
+closed it. A read-only mapping agent finally found the mechanical root cause, and it was the project's
+signature failure shape one more time.
+
+- **Symptom:** the ranked queue reads like a generic AI-jobs list, not his.
+- **Root cause (two independent bugs):**
+  1. **The queue was hunted with the wrong queries.** `runSweep` reads `db.savedHunts` — seeded from
+     `SEED_HUNTS`, *static generic queries written before his Vision Profile existed*. `deriveHunts(vision)`
+     had existed since the Vision Engine shipped and produced exactly the right queries — but nothing
+     ever wrote its output to `savedHunts` except a **buried manual click**. The capability was built
+     and never wired to the default path (the same D69 shape, still live).
+  2. **Even when the right role was found, the Vision Lens couldn't lift it.** The strongest signal — a
+     title matching a named target role — required *every* word of the target, including "Intern". Real
+     postings are titled "AI Engineer", not "AI Engineer Intern", so his #1 lever scored **zero** on the
+     actual roles. And because the six-dimension rubric already saturates the 100 ceiling for strong AI
+     roles, an on-vision role and a generic one *tied at the top*.
+- **Fix (D99):** `syncVisionHunts` reconciles his vision into the live hunts on every open (additive,
+  idempotent, reversible — his hand-set hunts are never touched); the sweep hunts his queries first; the
+  title match drops the ubiquitous "Intern" token; and a tiebreaker lets vision break ceiling ties. All
+  deterministic and keyless — his vision is his instruction, executed.
+- **Lesson (again):** "we built X" is not "X runs." A feature that is coded, tested in isolation, and
+  reachable by one manual click can still be, for every practical purpose, *off*. The wire from the
+  capability to the default path is itself a deliverable — and the only proof it exists is watching the
+  default path do the thing.
+
+Shipped alongside it — the **Chief-of-Staff briefing**: the owner asked for "an actual personal
+assistant," and the app had all the assistant's *data* (ranked roles, due follow-ups, interviews, a
+next-action heuristic) scattered across five screens but never *synthesised*. The briefing is a
+read-only aggregator on the landing screen that says, in one glance, the one thing to do next and the
+roles worth his time — composed entirely from functions that already existed. The assistant's value was
+never a missing feature; it was the missing *summary*.
 
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 

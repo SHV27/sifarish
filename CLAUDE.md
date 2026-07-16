@@ -571,6 +571,37 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   (Vercel auto-revokes). Neither was written to any file; the passcode was used only as an env var for
   the live proofs, the token only for `vercel deploy`.
 
+--- Session 5.6 "The Sahayak Update" (owner-requested final pass: "mera assistant sabko outperform kare, mere liye woh opportunities laaye jo mujhe chahiye — LinkedIn se 100x behtar", 16-Jul-2026) ---
+- D99: VISION DRIVES THE QUEUE — the root-cause fix for D68/D85 ("top 15 aren't mine"). Two read-only
+  agents mapped the relevance loop and found his vision NEVER actually drove discovery: runSweep hunted
+  the STATIC seed queries (written before his vision existed), because deriveHunts(vision) reached
+  savedHunts only via a buried manual click (D69's "built, not wired", still live for the default path).
+  Fix — syncVisionHunts (khabri/client) reconciles deriveHunts(vision) into savedHunts on every open via
+  autopilot: ADDITIVE + IDEMPOTENT (the cap bounds TOTAL derived hunts, so repeated opens converge), and
+  it never touches a hunt he set/toggled by hand (D59/D88 local-first rule). runSweep hunts derived
+  queries FIRST, so the budget-limited lanes spend on HIS roles. The Vision Lens was also self-defeating
+  (score.ts): the title match required the literal word "Intern", so the real posting "AI Engineer"
+  scored ZERO on the strongest lever — now it matches the role's CORE words; plus a Radar tiebreaker so
+  an on-vision role wins when it ties a generic-AI role at the 100 ceiling. Deterministic/additive/
+  reversible/keyless. +7 tests.
+- D100: THE CHIEF-OF-STAFF BRIEFING (the "actual personal assistant" ask). A read-only section on the
+  landing screen (src/lib/briefing.ts pure core + components/Briefing.tsx): new roles ranked for HIM
+  with the reason, follow-ups due, interviews to prep, and the ONE next action (priority: interview >
+  follow-up > apply-ready > tailor #1 > sweep). Composes existing functions (scoreJobCached, nudgeState)
+  — never sweeps, never mutates, degrades to empty states, greets by identity name (Arjun in demo,
+  Shaurya in owner). +7 tests.
+- D101: GURU #6 — "should I apply to Google?" now routes to the deterministic vision_check reply (the
+  flag list covers big-tech names, guarded by the existing apply-intent requirement so a purely factual
+  mention is untouched). +2 tests.
+- D102: Session 5.6 sealed — 406/408 gates, all Four Proofs live: machine (406) + fresh-eyes (briefing
+  live, greets by name, packet compiles, ERRORS 0) + adversary (no-origin 403, fabricated token keyless,
+  demo→Arjun + 0 metered spend, reasoning tier alive) + money (my changes add NO new metered fetch — the
+  briefing + sync are pure DB; 11 functions re-verified guarded). Deployed (hash 7RzE2NXn→UlDlZQ6I),
+  briefing strings live in the served bundle. NOTE: the demo showcase renders his PUBLIC project
+  portfolio under the FICTIONAL "Arjun" identity from seed/demo.seed.json (by design — public GitHub
+  projects, scrubbed PII, read-only, 0 spend); the "Built by Shaurya Verma" text is the demo disclaimer
+  byline, not a private-vault leak. Owner still must rotate SIFARISH_OWNER_PASSCODE + the Vercel token (D98).
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

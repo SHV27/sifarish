@@ -2,10 +2,40 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5.5 "The Duniya Update" — DISCOVERY + TAILORING + AUDIT · SEALED ✦
+## Status: Session 5.6 "The Sahayak Update" — THE ASSISTANT THAT BRINGS YOU THE RIGHT ROLES · SEALED ✦
 
-Live: https://sifarish-shv-s-projects.vercel.app · **391 passed | 2 skipped (393) gates** · 0 console
+Live: https://sifarish-shv-s-projects.vercel.app · **406 passed | 2 skipped (408) gates** · 0 console
 errors · build warning-free · all Four Proofs (§14) executed against the live deployment and pasted.
+
+### Session 5.6 — your vision now DRIVES the queue, and a chief-of-staff briefs you on open (D99–D102)
+The owner's ask: "mera personal assistant sabko outperform kare, mere liye woh opportunities laaye jo
+mujhe chahiye — LinkedIn se 100x behtar." Two read-only agents mapped the relevance loop; the root
+cause of "the top 15 aren't mine" (D68/D85) was that his vision never actually drove discovery.
+- **Vision drives the queue (D99):** `syncVisionHunts` reconciles his Vision Profile into the live
+  hunts on every open (autopilot) — additive, idempotent, reversible; the sweep now hunts HIS queries
+  first. The Vision Lens title match no longer requires the literal word "Intern" (so "AI Engineer"
+  matches his target), and a Radar tiebreaker makes an on-vision role win at the score ceiling.
+- **Chief-of-Staff briefing (D100):** a read-only section on the landing screen — new roles ranked for
+  YOU with the reason, follow-ups due, interviews to prep, and the ONE next action. Pure `buildBriefing`
+  over existing functions; never sweeps, never mutates.
+- **Guru #6 (D101):** "should I apply to Google?" now gets the honest vision_check reply up front.
+
+**THE FOUR PROOFS (§14) — executed live 16-Jul-2026:**
+1. Machine: 406 passed | 2 skipped · tsc clean · warning-free build.
+2. Fresh-eyes (wiped browser): the briefing renders on open (greets by name, one next action, ranked
+   matches), a real packet compiles, **ERRORS(0)**.
+3. Adversary (live prod): no-Origin curl → **403**; fabricated token → keyless; reasoning tier alive
+   (gpt-oss-20b); demo → greets Arjun + **0 metered calls**; demo shows the fictional-persona showcase.
+4. Money: this session added NO new metered fetch (briefing + vision-sync are pure DB); all 11
+   functions re-verified guarded (403 + keyless-no-token).
+
+Deployed (hash `7RzE2NXn`→`UlDlZQ6I`); the served bundle contains the live briefing.
+
+---
+
+## Prior: Session 5.5 "The Duniya Update" — discovery + tailoring + audit
+
+Live: **391 passed | 2 skipped (393) gates** · all Four Proofs executed.
 
 ### Session 5.5 — what shipped (D92–D98, four commits, deployed + live-verified)
 - **OPEN#1 · Infra-scale discovery (D92):** two genuinely new GLOBAL sources behind one self-contained
