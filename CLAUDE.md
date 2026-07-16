@@ -602,6 +602,19 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   projects, scrubbed PII, read-only, 0 spend); the "Built by Shaurya Verma" text is the demo disclaimer
   byline, not a private-vault leak. Owner still must rotate SIFARISH_OWNER_PASSCODE + the Vercel token (D98).
 
+--- Session 5.6 addendum (owner-requested, 16-Jul-2026) ---
+- D103: RECRUITER FEATURE GALLERY + IN-FORGE CLEANUP. (1) README "What it actually looks like" rebuilt
+  as a 9-shot owner-mode gallery (retina, ERRORS 0), leading with the Chief-of-Staff briefing (ranks his
+  target roles 94-95 with the why) and a compiled packet. All 9 feat-*.png verified rendering on GitHub
+  (raw 200 + bytes — the D83 lesson applied). (2) Owner: "ye in-forge wale projects hata de, jab main inhe
+  actually banaunga toh khud sync karke re-forge kar dunga." The 6 in-forge (repo-less) placeholder
+  projects were removed from the seed AND from his LIVE vault via the app's own Tidy button
+  (removeRepolessProjects → onOwnerMutation → cloud sync) — verified a FRESH-DEVICE cloud pull shows "16
+  shipped · 8 in forge", no placeholders, GLOAMING intact. Fully reversible (add repo + re-forge). The 8
+  in-forge SKILLS (his "currently learning") were kept. The atelier uniqueness fixture now loads the four
+  projects' exact content from tests/fixtures/extra-shipped.json (self-contained, seed-independent).
+  406/408 gates, deployed (hash UlDlZQ6I→BNrza9-e), pushed. SECURITY: owner passcode still needs rotation (D98).
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
