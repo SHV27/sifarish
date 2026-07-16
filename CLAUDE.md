@@ -647,6 +647,23 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   HONEST BOUNDARY: this makes discovery + craft-knowledge market-adaptive WITHOUT code changes; but a
   deep platform shift (a new LLM provider, a changed ATS API) still needs a Law-12 maintenance touch —
   "never obsolete" is an architecture (data-driven, human-confirmed evolution), not a literal eternity.
+- D107: MAXIMUM-SCORING TRUTH — reading his own résumé as a RECRUITER would, the owner caught two
+  framing gaps the accomplishment-bullets fix (D104) didn't. (1) The compiler rendered only the project
+  TITLE + bullets — never the one-line "what it IS" — so a recruiter couldn't tell sifarish is a job-hunt
+  assistant; the bullets read as disconnected internal mechanisms. Now the compiler renders the project's
+  own description + live link under each title (never trimmed — it is the context). (2) The forge led
+  bullets with PRIVATE JARGON ("keyless core", "pillars", "PAT limits", "phase→control ordering") and
+  HEADLINED a defensive robustness feature ("runs without API keys") — which, for an AI-engineer résumé,
+  BURIES the LLM/agent/RAG wiring a recruiter is hiring for. "Poore sach ko na dikhana bhi jhooth hai" —
+  hiding his strongest true work to feature a footnote is a lie by omission; sifarish delivers the
+  maximum-SCORING truth. Fixed at the root: prompt rewritten around a READER TEST (a stranger must grasp
+  what it is + does) + a maximum-scoring-truth rule (feature the AI systems, never headline keyless); and
+  because an LLM can't be trusted to always obey, rankBullets DETERMINISTICALLY sinks any defensive-led
+  bullet to the back so the AI work leads and "keyless" is cut by the top-N. LIVE-PROVEN: "Built a job-hunt
+  chief-of-staff assistant that curates verified listings and generates evidence-backed applications",
+  "Engineered a Vision Engine… enabling LLM-driven agents to retrieve LinkedIn/Indeed listings", "Designed
+  ledger-based guardrails with RAG-backed verification" — clear, AI-forward, zero keyless headline. The
+  fix flows to the résumé, the cover letter, AND the ledger (all read the same forged bullets/summary).
 
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
