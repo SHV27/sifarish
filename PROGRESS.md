@@ -2,7 +2,25 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5.9 "The Boutique Firm" — the Darzi studied hundreds of résumés and can now use it ✦
+## Status: Session 5.10 "The Final Verification Pass" — nothing dead, nothing blind, nothing unwired ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **~490 gates green** (see table) · tsc clean ·
+warning-free build · **8/8 reasoning paths probed alive against prod** (D126) · security re-verified
+(no-Origin → 403 on every metered function, fabricated token → keyless, secret grep clean).
+- **Closed postings leave the queue (D122):** a posting the board delisted is closed (never a
+  filter artifact — openIds computed pre-cap), reopens if relisted; pipeline cards untouched;
+  dormant boards flagged. 18/18 Adzuna markets live-confirmed with real roles + salaries.
+- **The vision retires hunts it outgrew (D123):** Pulse proposes retirements on vision edits —
+  human-confirmed, hand-set hunts never touched. D68 is fully closed.
+- **The context audit (D124):** 7 payload-boundary fixes, headlined by the Baithak's ledger being
+  truncated at the old 8k cap and api/polish silently dead on json_object since D35. All fixed,
+  all gated.
+- **The wiring audit (D125):** applyLibraryUpdate/checkUniqueness/scanHonesty/clearSyncKey wired
+  onto real paths; 4 dead exports deleted.
+- Honest probe result: his LinkedIn-feed companies (Weekday, Wingify, Teradata, …17 total) expose
+  NO lawful public ATS feed — they arrive via the aggregator lanes, which is the correct door.
+
+## Prior: Session 5.9 "The Boutique Firm" — the Darzi studied hundreds of résumés and can now use it ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **454 passed | 2 skipped (456) gates** · tsc clean ·
 warning-free build. The addendum's mental model — a résumé firm he paid for — shipped (D118–D121):

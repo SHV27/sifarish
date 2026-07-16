@@ -783,6 +783,62 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   device). His data is safe in his browser; he should open Owner Mode there and let the auto-push
   provision the cloud copy. Not a code defect; recorded so nobody "fixes" sync that isn't broken.
 
+--- Session 5.10 "The Final Verification Pass" (owner: nothing dead, nothing blind, nothing
+  unwired — wiring audit + context audit + per-path brain probes, then ship. 16-Jul-2026) ---
+- D122: CLOSED POSTINGS LEAVE THE QUEUE ("jisne hiring band kar di wo company na aaye"). fetchBoard
+  now returns a BoardScan { jobs, openIds } where openIds is computed BEFORE the title filter and
+  cap — so a known posting missing from openIds really is closed, never a filter artifact.
+  reconcileClosures (pure, gated) closes untouched 'found' discoveries the board delisted and
+  REOPENS relisted ones; pipeline statuses are HIS record and are never closed by a scan. The
+  ranked queue and the briefing both exclude closed. Dormant boards (feed live, zero open roles)
+  wear a DORMANT chip in the watchlist — token kept, attention not. Adzuna: all 18 markets probed
+  live through the prod proxy — 18/18 returned real AI roles (agentic roles in DE/FR, NZ$200-300k
+  in NZ). HONEST PROBE RESULT: all 17 remaining companies from his LinkedIn screenshot
+  (weekday/wingify/quantumloopai/qubrid/teradata/learntube/growhut/habyt/adit/digile/nians/
+  codeninja/flexton/techblocks/papigen/techmahindra/rexzone) 404 on Greenhouse+Lever+Ashby — they
+  use Workday/custom ATSes with no lawful public feed; their postings arrive via the JSearch/
+  Adzuna aggregator lanes instead. Jooble/Careerjet/Findwork rejected (key-required, none held).
+- D123: THE PULSE NOW RETIRES HUNTS THE VISION OUTGREW (the other half of D99 — D68 closed).
+  syncVisionHunts only ever ADDED, so an edited vision left obsolete derived hunts running
+  forever. proposeHuntEdits (deterministic, zero budget) turns every derived-and-untouched hunt
+  the current vision no longer implies into a Pulse RETIREMENT brief; accepting DISABLES the hunt
+  (never deletes; marked ownerSetDate so nothing flips it back), dismissing stands forever, and a
+  hand-set hunt is never proposed (D59/D88). Wired to the same debounced vision-edit path as the
+  additions.
+- D124: THE CONTEXT AUDIT (payload boundary, CASE_STUDY 3.17 applied to every reasoner) found and
+  fixed 7 truncation/blindness defects: (1) the Baithak's ledger digest — "the ONLY source of
+  truth", every op must cite its exact ids — sat LAST in a system prompt measuring ~7-8k against
+  an 8k server cap: the truth was the first thing truncated. Server system cap → 16k AND the
+  ledger moved above the resume echo (the Guru D94 ordering rule, finally applied to the tailor).
+  (2) archetypePass put the JD first, so a >4k JD pushed the extracted keywords + ALL company
+  intel off the payload — keywords/intel now lead. (3) the angle pass's evidence cap 2200→4000 so
+  real README substance survives. (4) decide() serialized craft LAST (first cut on big ledgers) —
+  now criteria/craft lead, evidence is the sacrificial tail. (5) api/polish.ts was the LAST call
+  site on json_object — the exact D73/D74 combination measured ~0/3 — with no schema and no
+  retry: the polish pass was silently dead in production. Migrated to json_schema + retry, prose
+  shape line removed (D79). (6) the reframer never saw the project's problem statement (guard-only)
+  — a 300-char context line now rides along, guard unchanged. (7) forgeSystem's studied-craft
+  addendum had ~1.1k headroom under the old 8k cap — the 16k cap clears it.
+- D125: THE WIRING AUDIT (D69/D85/D99/D52 pattern hunt) found 5 built-but-unreachable capabilities
+  and 4 corpses. WIRED: applyLibraryUpdate — the WRITE half of the I13 library loop had NO door
+  (loadLibraryOverride ran at boot with nothing to load, ever) → Settings/Ustaad gains a
+  validate-and-apply control; checkUniqueness (D29) ran ONLY in tests → buildPacket now compares
+  each letter against the 5 most recent and pushes an honest similarity note into the gap note
+  (advisory, never a block); scanHonesty → red-team heuristics; clearSyncKey → a "forget sync key
+  on this device" control. DELETED (dead code lies): reasonedDerivation, seedHuntsIfEmpty,
+  contentTokens, getBootState. Confirmed-wired-by-default: autopilot, vision sync both halves,
+  all migrations via backfillV2 at boot, sync push/pull + auto-backup on owner mutation, Dak sweep
+  on panel mount. /api/gh's missing origin gate re-examined and kept: a fixed-allowlist read proxy
+  over his own public repos (D86), gated GETs would 403 the owner's own reads (D55) — designed.
+- D126: THE BRAIN, PROBED PATH BY PATH AGAINST PROD (D82's law): decide ✓ (real ranking + why),
+  classify ✓ (agent-eng @0.95), critique ✓ (REVISE + 6 fixes on a link-dump résumé), forge ✓
+  (4 reader-test bullets), reframe ✓ (drift-safe re-expression), Baithak ops ✓ (set-entry
+  {skill-python}), Guru stream ✓, polish ✓ — 8/8, where the FIRST probe run scored 4/8 by
+  rate-limiting ITSELF (the D73 trap, again): 8 back-to-back calls tripped the free-tier TPM and
+  read as a dead brain. The probe harness (scripts/live-brain-probe.mts) now spaces calls and
+  waits out 429s — a rate limit is not a dead brain, and a probe that doesn't know that will
+  always find one.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
