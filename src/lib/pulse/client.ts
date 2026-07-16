@@ -14,18 +14,54 @@ import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 export const PULSE_TOPICS = [
   'agentic AI hiring trends 2026',
-  'AI intern skills in demand',
-  'Claude Code adoption enterprises',
+  'AI engineer skills in demand',
+  'new AI engineering roles emerging',
   // v4: the Ustaad library stays evergreen — craft trends become proposed library diffs (I13).
   'resume ATS parsing best practices 2026',
 ]
 
-/** Emerging terms worth watching in JDs — if a brief mentions one absent from the lexicon, suggest it. */
-const WATCH_TERMS = ['mcp', 'agentic', 'rag', 'evals', 'fine-tuning', 'multi-agent', 'vector', 'guardrails', 'ollama', 'langgraph', 'inference', 'context window']
+/**
+ * Vision-tracked topics (Session 5.6): the sweep also watches HIS market — the roles he actually
+ * wants — so a shift in demand for his target roles surfaces here, not a generic AI feed. Capped so
+ * the Tavily spend stays bounded (I8). This is how the pulse tracks his lane, not the whole field.
+ */
+export function pulseTopicsFor(targetRoles: string[] = []): string[] {
+  const visionTopics = [...new Set(targetRoles.map((r) => r.replace(/\bintern\b/gi, '').trim()).filter((r) => r.length > 2))]
+    .slice(0, 2)
+    .map((r) => `${r} hiring demand 2026`)
+  return [...PULSE_TOPICS, ...visionTopics].slice(0, 6)
+}
+
+/** Emerging terms worth watching in JDs — the HIGH-CONFIDENCE seed; the dynamic detector adds more. */
+const WATCH_TERMS = ['mcp', 'agentic', 'rag', 'evals', 'fine-tuning', 'multi-agent', 'vector', 'guardrails', 'ollama', 'langgraph', 'inference', 'context window', 'computer use', 'reasoning model', 'tool use', 'a2a']
 
 function knownInLexicon(term: string): boolean {
   const t = term.toLowerCase()
   return LEXICON.some((l) => l.canonical.includes(t) || l.patterns.some((p) => p.includes(t)))
+}
+
+// Never propose these as "emerging" — common words + noise that would clutter the radar.
+const EMERGING_STOP = new Set(['ai', 'ml', 'the', 'and', 'for', 'llm', 'api', 'aws', 'gcp', 'sql', 'ceo', 'cto', 'usa', 'inc', 'ltd', 'new', 'top', 'job', 'jobs', 'now', 'get'])
+
+/**
+ * DYNAMIC EMERGING-TERM DETECTION (Session 5.6, "the app must evolve with the market"). A hardcoded
+ * WATCH_TERMS list ages the moment the field moves. So ALSO mine the live market brief for terms that
+ * look like a new AI role or technology and aren't in the lexicon yet — capitalized acronyms and
+ * "<adjective> AI"/"<X> Engineer" role phrases. The owner still confirms every proposal (Nabz pattern),
+ * so noise is filtered by a human and never auto-applied. This is what keeps discovery current without
+ * a code change: the market names a new thing → the pulse surfaces it → he adds the hunt.
+ */
+export function emergingFromBrief(text: string): string | undefined {
+  const t = text.toLowerCase()
+  // New AI-role phrases the market coins ("agentic ai", "generative ai engineer", "physical ai"…).
+  const phrase = t.match(/\b(agentic|generative|multimodal|autonomous|reasoning|retrieval|physical|embodied|voice|world[- ]model)[- ]?(ai|ml)\b/g)?.[0]
+  if (phrase && !knownInLexicon(phrase.replace(/[- ]/g, ''))) return phrase
+  // Capitalized acronyms (MCP, A2A, RLHF…) in an AI-context brief that the lexicon doesn't know yet.
+  for (const m of text.match(/\b[A-Z][A-Z0-9]{1,5}\b/g) ?? []) {
+    const term = m.toLowerCase()
+    if (!EMERGING_STOP.has(term) && !/^\d/.test(term) && !knownInLexicon(term)) return term
+  }
+  return undefined
 }
 
 export async function runPulse(): Promise<{ keyless: boolean; count: number }> {
@@ -33,11 +69,13 @@ export async function runPulse(): Promise<{ keyless: boolean; count: number }> {
   if (!meteredCallsAllowed()) return { keyless: true, count: 0 }
   let keyless = true
   let count = 0
+  const settings = await db.settings.get('app').catch(() => undefined)
+  const topics = pulseTopicsFor(settings?.visionProfile?.targetRoles ?? [])
   try {
     const res = await fetch('/api/pulse', {
       method: 'POST',
       headers: meteredHeaders(),
-      body: JSON.stringify({ topics: PULSE_TOPICS }),
+      body: JSON.stringify({ topics }),
     })
     if (res.ok) {
       const data = (await res.json()) as {
@@ -49,8 +87,10 @@ export async function runPulse(): Promise<{ keyless: boolean; count: number }> {
       if (!data.keyless) {
         if (data.creditsSpent) await recordSpend('tavily', data.creditsSpent)
         for (const b of data.briefs) {
-          const text = `${b.headline} ${b.insight}`.toLowerCase()
-          const emerging = WATCH_TERMS.find((t) => text.includes(t) && !knownInLexicon(t))
+          const raw = `${b.headline} ${b.insight}`
+          const text = raw.toLowerCase()
+          // High-confidence seed first, then the dynamic detector for terms the market just coined.
+          const emerging = WATCH_TERMS.find((t) => text.includes(t) && !knownInLexicon(t)) ?? emergingFromBrief(raw)
           const brief: PulseBrief = {
             id: `pulse-${b.url.slice(-24)}`,
             at: new Date().toISOString(),

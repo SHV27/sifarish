@@ -30,6 +30,7 @@ const PHRASE_RULES: { test: RegExp; queries: string[] }[] = [
   { test: /voice|speech|asr|audio/i, queries: ['voice AI engineer', 'speech ML engineer'] },
   { test: /multimodal|vision|image|video|cv|perception/i, queries: ['multimodal AI engineer', 'computer vision engineer intern'] },
   { test: /nlp|text|conversational|chatbot|dialog/i, queries: ['NLP engineer', 'conversational AI engineer'] },
+  { test: /prompt|context engineer|instruction/i, queries: ['prompt engineer', 'AI prompt engineer', 'prompt engineering'] },
   { test: /infra|platform|serving|deployment|mlops|inference|scale/i, queries: ['ML platform engineer', 'ML infrastructure engineer', 'MLOps engineer intern'] },
   { test: /data|pipeline|feature|analytics/i, queries: ['machine learning engineer', 'ML data engineer'] },
   { test: /recommend|ranking|personaliz|ads/i, queries: ['ML engineer recommendations', 'ranking ML engineer'] },
