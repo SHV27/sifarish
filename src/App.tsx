@@ -11,6 +11,7 @@ import { SettingsScreen } from './screens/SettingsScreen'
 import { Onboarding } from './screens/Onboarding'
 import { HeaderStrip } from './components/HeaderStrip'
 import DarbaanControl, { DarshakBanner } from './components/DarbaanControl'
+import DimaagPulse from './components/DimaagPulse'
 import GateScreen from './components/GateScreen'
 import { usePehchaan, chooseDemoMode } from './lib/pehchaan'
 
@@ -117,6 +118,7 @@ export default function App() {
           <div className="flex-1 min-w-0">
             <HeaderStrip />
           </div>
+          <DimaagPulse />
           <DarbaanControl />
         </div>
         <main id="main" className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">

@@ -12,6 +12,7 @@ import { saveFile } from '../lib/util/download'
 import { getApiToken } from '../lib/apiGuard'
 import { storagePersisted, autoBackup, restoreFromLatest, requestDurableStorage } from '../db/tijori'
 import { hasSyncKey, lastSyncAt, syncConfigured, pushVault, pullVault } from '../lib/sync'
+import { syncVisionHunts } from '../lib/khabri/client'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -497,8 +498,22 @@ function DimaagLedger() {
   )
 }
 
+// Session 5.8 — an edited vision used to re-rank the queue immediately (live query) but the NEW
+// hunt queries it implies waited for the next app open (syncVisionHunts only ran in autopilot).
+// Now every vision edit re-reconciles hunts after a short debounce. Additive + idempotent by
+// construction (syncVisionHunts never touches a hunt he set by hand), so firing it on keystrokes
+// is safe; deterministic + zero budget, zero key.
+let visionHuntTimer: ReturnType<typeof setTimeout> | undefined
+
 function VisionEditor({ vision }: { vision: VisionProfile }) {
-  const save = (patch: Partial<VisionProfile>) => db.settings.update('app', { visionProfile: { ...vision, ...patch } })
+  const save = async (patch: Partial<VisionProfile>) => {
+    const next = { ...vision, ...patch }
+    await db.settings.update('app', { visionProfile: next })
+    clearTimeout(visionHuntTimer)
+    visionHuntTimer = setTimeout(() => {
+      syncVisionHunts(next).catch(() => {})
+    }, 1500)
+  }
   return (
     <section className="dossier p-4 mb-5" aria-label="Vision profile">
       <h2 className="font-display font-semibold text-lg text-ink">Vision Profile</h2>

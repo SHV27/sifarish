@@ -39,12 +39,30 @@ export const SEED_SIGNAL_QUERIES = [
 ]
 
 /**
- * ADZUNA — the global aggregator lane (Session 5.5). One request = one country, so this set is
- * the reach of a single sweep: India first (his home market), then the AI-hiring geographies that
- * a remote/international candidate can realistically target. Adzuna itself indexes 18 countries;
- * this is the default net, and perRunCap (I8) is what actually bounds how many run per sweep.
+ * ADZUNA — the global aggregator lane (Session 5.5). One request = one country, so perRunCap (I8)
+ * bounds how many geographies a single sweep reaches.
+ *
+ * Session 5.8 — ALL 18 Adzuna markets, rotated. The old fixed 8-country list meant the same 8
+ * geographies forever and 10 markets ("duniya ke kone") never got hunted at all. Now: India is
+ * ALWAYS first (his home market, every sweep), and the remaining 17 rotate through a persistent
+ * window — same budget per sweep, the whole index covered every ~3 sweeps.
  */
-export const ADZUNA_COUNTRIES = ['in', 'us', 'gb', 'ca', 'de', 'sg', 'au', 'nl']
+export const ADZUNA_COUNTRIES = [
+  'in', 'us', 'gb', 'ca', 'de', 'sg', 'au', 'nl', 'fr',
+  'es', 'it', 'pl', 'br', 'mx', 'za', 'be', 'at', 'nz',
+]
+
+/**
+ * The countries one sweep will hit: 'in' pinned first, then a rotating window over the other 17.
+ * Pure + deterministic (offset in, list out) → unit-tested; the caller persists the next offset.
+ */
+export function adzunaCountriesForSweep(offset: number, cap = 8): string[] {
+  const rest = ADZUNA_COUNTRIES.filter((c) => c !== 'in')
+  const start = ((offset % rest.length) + rest.length) % rest.length
+  const window: string[] = []
+  for (let i = 0; i < Math.min(cap - 1, rest.length); i++) window.push(rest[(start + i) % rest.length])
+  return ['in', ...window]
+}
 
 const ADZUNA_STOP = new Set([
   'india', 'indian', 'usa', 'us', 'uk', 'remote', 'onsite', 'hybrid', 'worldwide', 'global',
@@ -129,7 +147,7 @@ async function callSignalsApi(queries: string[]): Promise<SignalsApiResp | null>
  * (/api/khabri/aggregators). Owner-gated client-side (D44) AND server-side (the proxy re-checks
  * the token), so demo/Darshak never reaches it and the keys spend for no one but the owner.
  */
-async function callAggregatorApi(src: 'adzuna' | 'workingnomads', body: Record<string, unknown> = {}): Promise<JobsApiResp | null> {
+async function callAggregatorApi(src: 'adzuna' | 'workingnomads' | 'weworkremotely', body: Record<string, unknown> = {}): Promise<JobsApiResp | null> {
   if (!meteredCallsAllowed()) return null // Darshak/demo: never spends, never proxies (D44)
   try {
     const res = await fetch(`/api/khabri/aggregators?src=${src}`, {
@@ -188,10 +206,16 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   const adzunaBudget = await allowedThisRun('adzuna')
   if (adzunaBudget > 0) {
     const adzunaQueries = adzunaQueriesFromHunts(hunts)
+    // Rotating window (Session 5.8): persist the offset so every sweep hunts a DIFFERENT slice of
+    // the 18 markets ('in' always included) — all corners covered every ~3 sweeps, same budget.
+    const offsetRow = await db.nabzCache.get('adzuna:rotation')
+    const offset = Number(offsetRow?.json ?? 0) || 0
+    const sweepCountries = adzunaCountriesForSweep(offset, adzunaBudget)
+    await db.nabzCache.put({ key: 'adzuna:rotation', json: String(offset + sweepCountries.length - 1), fetchedAt: new Date().toISOString() })
     let adzunaUsed = 0
-    for (let i = 0; i < ADZUNA_COUNTRIES.length; i++) {
+    for (let i = 0; i < sweepCountries.length; i++) {
       if (adzunaUsed >= adzunaBudget) break
-      const country = ADZUNA_COUNTRIES[i]
+      const country = sweepCountries[i]
       const query = adzunaQueries[i % adzunaQueries.length]
       onStep?.(`Adzuna ${country.toUpperCase()}: "${query}"`)
       const resp = await callAggregatorApi('adzuna', { country, query, resultsPerPage: 20 })
@@ -251,6 +275,18 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     for (const j of wn.jobs) discovered.push(j)
     bySource.workingnomads = (bySource.workingnomads ?? 0) + wn.jobs.length
     if (wn.error) failed.push('Working Nomads')
+  }
+
+  // --- We Work Remotely (keyless RSS, no CORS → proxied; Session 5.8) ---
+  // The oldest large remote board; its programming feed carries global AI roles the other lanes
+  // miss. Same guarded proxy, zero external credits.
+  onStep?.('We Work Remotely · global remote')
+  const wwr = await callAggregatorApi('weworkremotely')
+  if (wwr && !wwr.keyless) {
+    keylessLanes.push('We Work Remotely · global remote')
+    for (const j of wwr.jobs) discovered.push(j)
+    bySource.weworkremotely = (bySource.weworkremotely ?? 0) + wwr.jobs.length
+    if (wwr.error) failed.push('We Work Remotely')
   }
 
   // --- Merge + dedupe into the Radar queue ---

@@ -169,3 +169,27 @@ export async function confirmStage(card: DakCard): Promise<void> {
 export async function dismissCard(id: string): Promise<void> {
   await db.dak.update(id, { status: 'dismissed' })
 }
+
+/**
+ * "I know this one" (Session 5.8) — he'll apply a lot, so lots of replies will be ones he already
+ * handled in Gmail. Acking hides the card from the active list on reload and forever (sweepMail
+ * dedupes by message id, so an acked mail can never resurface as pending). Distinct from dismiss
+ * in intent — dismiss says "not relevant", ack says "seen and handled" — and both persist.
+ */
+export async function ackCard(id: string): Promise<void> {
+  await db.dak.update(id, { status: 'acked' })
+}
+
+/**
+ * Action-first ordering (Session 5.8) — at high volume, what needs him must sit on top:
+ * interviews first (act now), rejections second (close the loop), generic replies last;
+ * newest first within each band. Pure → unit-tested.
+ */
+export function sortCards(cards: DakCard[]): DakCard[] {
+  const band = (c: DakCard) => (c.stageSuggestion === 'interview' ? 0 : c.stageSuggestion === 'rejected' ? 1 : 2)
+  const when = (c: DakCard) => {
+    const t = new Date(c.date).getTime()
+    return isNaN(t) ? new Date(c.fetchedAt).getTime() || 0 : t
+  }
+  return [...cards].sort((a, b) => band(a) - band(b) || when(b) - when(a))
+}

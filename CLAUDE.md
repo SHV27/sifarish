@@ -686,6 +686,63 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   master key — it can read every env var and deploy to prod — so it lives in `.env.local` (covered by
   `.gitignore`'s `.env*`) and NEVER in a tracked file, however convenient that would be. (16-Jul-2026)
 
+--- Session 5.8 "The Duniya-Depth Pass" (mega-brief WS-1…9; 4 read-only agents mapped what was
+  ALREADY built before anything was edited — most of WS-2/3/5/7/9 shipped in 5.4–5.7; the confirmed
+  gaps below are what this session actually closed. 16-Jul-2026) ---
+- D110: SALARY WAS DEAD DATA. "Achi salary" is his stated rubric, and Adzuna/JSearch/Remotive/
+  RemoteOK all set `Job.salary` — but no component rendered it and `score.ts` compSignal read only
+  JD-text compHints, so a posting with a clean structured salary and no comp prose scored "No
+  compensation signal". Now: 💰 salary renders on Radar + Morcha cards, and compSignal falls back
+  to the structured field (currency-banded like compHints, rendered in "why this score" — L4).
+  JD comp language still outranks it (a PPO/conversion line is a stronger signal than a board's
+  est. figure). Same "captured but never consumed" disease as D64/D69/D85/D99.
+- D111: ADZUNA NOW ROTATES ALL 18 MARKETS. The fixed 8-country list meant the same 8 geographies
+  forever — 10 of Adzuna's markets were never hunted once. `adzunaCountriesForSweep(offset)` pins
+  'in' first every sweep (his home market) and rotates the other 17 through a persistent window
+  (offset in nabzCache); same per-sweep budget (I8 perRunCap unchanged), whole index covered every
+  ~3 sweeps. Pure + unit-tested (3 sweeps → 18 distinct countries).
+- D112: WE WORK REMOTELY is the session's genuinely new provider — public RSS (remote-programming
+  feed), probed live 16-Jul (200; NO CORS header → proxied by the same guarded aggregators function
+  as Working Nomads, D92 pattern; deterministic edge-side RSS parser exported + fixture-tested;
+  AI-filtered; zero credits). Watchlist grew from HIS LinkedIn screenshot, each token probed live:
+  +Netomi (Lever, 31 postings), +Kantiv (Ashby), +Writer (Ashby) — via `migrateWatchlistV58`,
+  additive + flag-once so a board he later deletes never returns uninvited (D59 rule). REJECTED at
+  probe time, honestly: Findwork (401, key we don't hold), Greenhouse netomi/teradata/wingify (404 —
+  not their ATS), Jooble/Careerjet (key-required). "Har corner" remains an ever-growing index, not
+  a one-shot — breadth widened, not finished.
+- D113: RADAR SEARCH RESULTS SCROLL IN THEIR OWN BOX. D64 uncapped search but left the results in
+  an unbounded div — ~1000 matches stretched the page (Morcha's columns already knew better). The
+  results list gets max-h + overflow-y only when searching/show-all; the default top-15 view is
+  untouched.
+- D114: DAK KHANA — "✓ I know this one". He'll apply a lot; most replies will already be handled in
+  Gmail. New `acked` card status (distinct in intent from dismiss — "seen and handled", not "not
+  relevant"), persisted in Dexie; sweepMail's message-id dedupe means an acked mail can never
+  resurface. Cards are now action-first (`sortCards`: interview → rejected → generic, newest first;
+  unparseable dates fall back to fetchedAt — the D96 NaN lesson), interview/rejection cards carry
+  distinct stamps + border colors, and the list scrolls in its own box with a "N replies need you"
+  count. Read-only scope untouched; the I3 send-ban grep gate still walks src/ + api/.
+- D115: THE REASONING TIER WEARS ITS STATE (D74's blind spot, closed structurally). A dead LLM tier
+  was indistinguishable from a healthy keyless app because every caller silently degrades (I4's
+  virtue = its blindness); the owner diagnosed D73 from feel. `dimaagHealth()` (pure, tested) folds
+  the existing per-month usage rows into one verdict — live / DEGRADED (fallbacks ≥3× calls at real
+  volume, the exact D73 signature) / keyless / quiet — and a header badge (owner-only, hidden when
+  quiet) shows it at a glance, with the Settings Dimaag Ledger as the drill-down.
+- D116: VISION EDITS NOW RE-DERIVE HUNTS IMMEDIATELY. Editing target-roles/not-interested re-ranked
+  the queue reactively (live query) but the NEW hunt queries the vision implies waited for the next
+  app open (syncVisionHunts ran only in autopilot — the D69 wiring pattern again). VisionEditor now
+  debounce-fires syncVisionHunts after every edit; safe by construction (additive + idempotent +
+  never touches a hand-set hunt). Also: the ineffective dynamic-import warnings (incl. one
+  pre-existing) were fixed by making khabri/client + watchlist.seed statically imported everywhere —
+  the build is genuinely warning-free again.
+- D117: LAW-12 RE-VERIFY (16-Jul): openai/gpt-oss-120b + 20b have NO deprecation date on Groq's
+  deprecations page (they are the recommended replacement targets), so the D35 migration remains
+  current. The forge SYSTEM gained a HUMAN STAKES clause ("I build emotions" — keep the person the
+  project serves visible in the bullet, never manufacture a beneficiary the README doesn't name);
+  drift guard + rankBullets unchanged, so it can only re-emphasize what he wrote. NOTE (found this
+  session): all sensitive Vercel env values pull as EMPTY via `vercel env pull` — they are stored
+  as Sensitive (write-only). D109's "pull, never paste" still holds for deploys, but live LLM
+  proofs must drive the PROD endpoints (owner token) rather than call Groq directly.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

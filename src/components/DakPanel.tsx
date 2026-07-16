@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { connectGmail, disconnectGmail, isConnected } from '../lib/dak/gis'
-import { sweepMail, confirmStage, dismissCard } from '../lib/dak/watch'
+import { sweepMail, confirmStage, dismissCard, ackCard, sortCards } from '../lib/dak/watch'
 import { useDarbaan } from './DarbaanControl'
 
 /**
@@ -11,7 +11,8 @@ import { useDarbaan } from './DarbaanControl'
  * via the deep link. Stage moves are suggestions the owner confirms.
  */
 export default function DakPanel() {
-  const cards = useLiveQuery(() => db.dak.where('status').equals('pending').toArray()) ?? []
+  // Action-first (Session 5.8): interviews on top, rejections next, generic replies last.
+  const cards = sortCards(useLiveQuery(() => db.dak.where('status').equals('pending').toArray()) ?? [])
   const owner = useDarbaan()
   const [connected, setConnected] = useState(isConnected())
   const [busy, setBusy] = useState(false)
@@ -80,35 +81,61 @@ export default function DakPanel() {
       {note && <p className="mt-1.5 text-[11px] font-mono text-ink-soft">{note}</p>}
 
       {cards.length > 0 && (
-        <ul className="mt-3 space-y-2">
-          {cards.map((c) => (
-            <li key={c.id} className="dossier p-3 border-l-4 border-l-shipped animate-dossier-in">
-              <p className="text-xs font-semibold text-ink">📬 {c.company} ne jawab diya</p>
-              <p className="text-xs text-ink mt-0.5">{c.subject}</p>
-              <p className="text-[11px] text-ink-soft mt-0.5 leading-relaxed">{c.snippet}</p>
-              <p className="font-mono text-[10px] text-ink-soft mt-1">
-                {c.from} · {c.date}
-              </p>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                <a className="text-[11px] font-semibold text-ink underline decoration-dotted" href={c.gmailUrl} target="_blank" rel="noreferrer">
-                  open in Gmail ↗
-                </a>
-                {c.stageSuggestion && (
+        <>
+          <p className="mt-2 text-[11px] font-mono text-ink-soft">
+            <strong className="text-ink">{cards.length}</strong> repl{cards.length === 1 ? 'y' : 'ies'} need you —
+            interviews first. “✓ I know this one” clears what you already handled in Gmail.
+          </p>
+          <ul className="mt-2 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+            {cards.map((c) => (
+              <li
+                key={c.id}
+                className={`dossier p-3 border-l-4 animate-dossier-in ${
+                  c.stageSuggestion === 'interview'
+                    ? 'border-l-shipped'
+                    : c.stageSuggestion === 'rejected'
+                      ? 'border-l-stamp'
+                      : 'border-l-paper-edge'
+                }`}
+              >
+                <p className="text-xs font-semibold text-ink flex items-center gap-2">
+                  📬 {c.company} ne jawab diya
+                  {c.stageSuggestion === 'interview' && <span className="stamp !text-[9px] text-shipped border-shipped">INTERVIEW?</span>}
+                  {c.stageSuggestion === 'rejected' && <span className="stamp stamp-red !text-[9px]">REJECTION?</span>}
+                </p>
+                <p className="text-xs text-ink mt-0.5">{c.subject}</p>
+                <p className="text-[11px] text-ink-soft mt-0.5 leading-relaxed">{c.snippet}</p>
+                <p className="font-mono text-[10px] text-ink-soft mt-1">
+                  {c.from} · {c.date}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <a className="text-[11px] font-semibold text-ink underline decoration-dotted" href={c.gmailUrl} target="_blank" rel="noreferrer">
+                    open in Gmail ↗
+                  </a>
+                  {c.stageSuggestion && (
+                    <button
+                      className="text-[11px] font-semibold bg-ink text-paper px-2.5 py-1 rounded"
+                      onClick={() => void confirmStage(c)}
+                      title="Heuristic suggestion — you confirm, it never moves itself"
+                    >
+                      ✓ move to {c.stageSuggestion}
+                    </button>
+                  )}
                   <button
-                    className="text-[11px] font-semibold bg-ink text-paper px-2.5 py-1 rounded"
-                    onClick={() => void confirmStage(c)}
-                    title="Heuristic suggestion — you confirm, it never moves itself"
+                    className="text-[11px] font-semibold text-ink border border-paper-edge px-2.5 py-1 rounded hover:border-ink"
+                    onClick={() => void ackCard(c.id)}
+                    title="Seen and handled — hides this card for good (it can never resurface)"
                   >
-                    ✓ move to {c.stageSuggestion}
+                    ✓ I know this one
                   </button>
-                )}
-                <button className="text-[11px] text-ink-soft hover:underline" onClick={() => void dismissCard(c.id)}>
-                  dismiss
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                  <button className="text-[11px] text-ink-soft hover:underline" onClick={() => void dismissCard(c.id)}>
+                    dismiss
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </section>
   )

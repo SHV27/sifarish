@@ -1,39 +1,30 @@
-# PLAN.md — SIFARISH v2 "The Jasoos Update" (08-Jul-2026)
+# PLAN — Session 5.8 "The Duniya-Depth Pass" (16-Jul-2026)
 
-v1 is live and green (65/65). v2 gives the app eyes, ears, and a voice — WITHOUT breaking the Design Law:
-*Compile truth. Draft everything. Send nothing.* Regression is the enemy; the v1 suite stays green.
+Read-only investigation (4 parallel agents) confirmed most of the mega-brief's WS-2/3/5/7/9 already
+ships (D64/D87/D99/D103/D104-D107). The CONFIRMED gaps — reproduced in code, not assumed:
 
-## WS0 verified live (08-Jul-2026)
+| # | Gap (confirmed at) | Fix |
+|---|---|---|
+| 1 | `Job.salary` captured (Adzuna/JSearch/Remotive/RemoteOK) but rendered NOWHERE and never scored (`score.ts` compSignal reads only JD-text compHints) | Render salary on Radar + Morcha cards; compSignal uses structured `job.salary` when JD text has no comp language |
+| 2 | Adzuna sweeps the same 8 of 18 markets forever (`ADZUNA_COUNTRIES` fixed, perRunCap 8) | Full 18-market list + persistent per-sweep rotation ('in' always first) — same budget, whole world over ~3 sweeps |
+| 3 | No new provider since D90; watchlist missing the AI-first companies from his own LinkedIn feed | Add We Work Remotely (RSS via the existing guarded aggregator proxy — probed live 200); watchlist +Netomi (Lever, 31 jobs live), +Kantiv (Ashby), +Writer (Ashby) with an additive once-only migration |
+| 4 | Radar search results render in an unbounded div — 1000 matches stretch the page (`Radar.tsx:195`) | Scroll container when searching/show-all |
+| 5 | Dak Khana has no "I know this one" — dismiss is the only exit; no action-first ordering; interview vs rejection cards look identical | `acked` status + ✓ button; sort interview → rejected → generic, newest first; distinct stage badges |
+| 6 | D74's blind spot still open: no global signal when the reasoning tier silently degrades | `dimaagHealth()` over `db.dimaagUsage` + a small owner-only badge in the app header (live / degraded / keyless) |
+| 7 | Vision edit re-ranks immediately but new hunts wait for next app open (`syncVisionHunts` only in autopilot) | Debounced `syncVisionHunts` after vision edits in Settings (additive + idempotent, so safe) |
+| 8 | Radar-sanity gate has no fixture from his real LinkedIn feed | Hand-labeled fixture (Agentic Engineer @ Netomi, GenAI @ Wingify, etc.) asserting vision ranks them top |
 
-| Fact | Result |
-|---|---|
-| Tavily | ✅ `POST https://api.tavily.com/search` (api_key in body); returns `results[]`, `response_time` |
-| Groq | ✅ `llama-3.3-70b-versatile` — function-calling + streaming confirmed; also gpt-oss-120b/20b, llama-3.1-8b-instant, qwen3-32b |
-| **JSearch** | ✅ it's **OpenWeb Ninja** (`ak_` key, `X-API-Key` header): `GET https://api.openwebninja.com/jsearch/search?query=&page=&num_pages=&date_posted=&country=`; surfaces LinkedIn/Indeed/Glassdoor listings; 40+ fields |
-| GitHub PAT | ✅ 200 (raises Nabz to 5000/hr) |
-| HN Algolia | ✅ keyless; latest "Who is hiring? (July 2026)" = objectID 48747976; comments via `/api/v1/items/{id}` |
-| Remotive | ✅ keyless `GET https://remotive.com/api/remote-jobs?search=` |
-| RemoteOK | ✅ keyless `GET https://remoteok.com/api?tags=` (row 0 is metadata) |
+Law-12 re-verified live 16-Jul: gpt-oss-120b/20b have NO deprecation date (they are Groq's
+recommended replacements). WWR RSS 200; Lever/netomi 200 (31 jobs); Ashby/kantiv + writer 200.
+Rejected honestly: Findwork (401, needs a key we don't hold), Greenhouse netomi/teradata/wingify
+(404 — not their ATS), Jooble/Careerjet (key-required, not held).
 
-All keys server-side only (Vercel env: GROQ/TAVILY/JSEARCH/GITHUB_PAT set; local `.env` gitignored). Never VITE_.
+Constraint discovered: all sensitive Vercel env values pull EMPTY (stored as Sensitive — unreadable
+by design), so live proofs run against PROD endpoints using the local owner-code file (never printed),
+not direct Groq calls.
 
-## v2 architecture
+Process: every fix ships with its regression test → full gates + tsc + warning-free build → docs
+(D110+) → commit + gh push → vercel deploy → served-hash verify → live owner smoke + adversary curl.
 
-- **Serverless functions (`api/`)** — all metered keys stay here:
-  - `api/polish.ts` (v1, Groq) · `api/khabri/jobs.ts` (JSearch) · `api/khabri/signals.ts` (Tavily) ·
-    `api/intel.ts` (Tavily, 7-day cache) · `api/guru.ts` (Groq streaming + tools) · `api/pulse.ts` (Tavily).
-  - Every function: reads key from `process.env`; if absent → 200 with `{keyless:true}` and the client uses a
-    keyless/deterministic path (I4). Enforces per-run caps + returns `creditsSpent` (I8).
-- **Keyless discovery** runs browser-direct (CORS-permitting) or via a keyless passthrough: HN Algolia
-  (CORS `*`), Remotive, RemoteOK.
-- **New Dexie tables:** `signals`, `intel`, `budgets`, `pulse`, `guruThreads`, `savedHunts`; extend `settings`
-  with `visionProfile` + `rubricChangelog`.
-- **New invariants I7 (cited intelligence), I8 (budget honesty), I9 (no guarantee language)** — Referee-enforced.
-
-## Workstreams
-WS1 Khabri · WS2 Darzi v2 Intel · WS3 Guru · WS4 Pulse + Ledger QoL · WS5 Budgets + keys panel ·
-WS6 Certification v2 · WS7 Ship.
-
-## Gate commands (unchanged + additive)
-`npm run gates` (Vitest: v1 65 + new I7/I8/I9/Khabri/Guru/Intel) · `npm run build` · `npm run screenshots`.
-Live-integration checks are opt-in via `SIFARISH_LIVE=1` (reads `.env`) so CI stays keyless-deterministic.
+---
+(Prior plans are preserved in git history; this file describes the current session only.)

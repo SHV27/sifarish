@@ -6,8 +6,8 @@ import { db, withSeedAllowance } from './db'
 import demoSeed from '../../seed/demo.seed.json'
 import type { Identity, LedgerEntry, Settings, VisionProfile, VoiceBank } from '../types'
 import { DEFAULT_RUBRIC } from '../lib/radar/rubric'
-import { WATCHLIST_SEED } from '../lib/radar/watchlist.seed'
-import { SEED_HUNTS } from '../lib/khabri/client'
+import { WATCHLIST_SEED, WATCHLIST_ADDITIONS_V58 } from '../lib/radar/watchlist.seed'
+import { SEED_HUNTS, migrateHuntFreshness } from '../lib/khabri/client'
 import { BUDGET_DEFAULTS, monthKey } from '../lib/budget'
 import { getMode } from '../lib/pehchaan'
 
@@ -160,12 +160,31 @@ export async function backfillV2(): Promise<void> {
   await withSeedAllowance(async () => {
     if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
     // D66: existing vaults still ask JSearch for a MONTH of postings every sweep. Retune once.
-    const { migrateHuntFreshness } = await import('../lib/khabri/client')
     await migrateHuntFreshness().catch(() => 0)
     if ((await db.budgets.count()) === 0) {
       const mk = monthKey()
       await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
     }
     if (!s.visionProfile) await db.settings.update('app', { visionProfile: DEFAULT_VISION })
+    // Session 5.8 — additive watchlist migration (the D59 lesson: a seed change reaches nobody
+    // with an existing vault). Flag-guarded so it runs ONCE: if he later deletes one of these
+    // boards, it never comes back uninvited.
+    await migrateWatchlistV58().catch(() => 0)
   })
+}
+
+export async function migrateWatchlistV58(): Promise<number> {
+  const FLAG = 'migrated:watchlist-v58'
+  if (await db.nabzCache.get(FLAG)) return 0
+  let added = 0
+  for (const id of WATCHLIST_ADDITIONS_V58) {
+    if (await db.watchlist.get(id)) continue
+    const row = WATCHLIST_SEED.find((w) => w.id === id)
+    if (row) {
+      await db.watchlist.put(row)
+      added++
+    }
+  }
+  await db.nabzCache.put({ key: FLAG, json: 'true', fetchedAt: new Date().toISOString() })
+  return added
 }

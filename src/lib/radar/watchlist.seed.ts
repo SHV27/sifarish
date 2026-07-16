@@ -37,7 +37,17 @@ const seed: Array<[WatchlistCompany['source'], string, string, boolean]> = [
   ['ashby', 'Browserbase', 'browserbase', false],
   ['ashby', 'Modal', 'modal', false],
   ['ashby', 'Baseten', 'baseten', false],
+  // Session 5.8 — from the owner's own LinkedIn feed (the roles he screenshotted), each token
+  // probed live 16-Jul-2026: Netomi (Lever, 31 postings — agentic-AI CX platform, India+US),
+  // Kantiv (Ashby — agentic systems), Writer (Ashby — enterprise GenAI). Greenhouse tokens for
+  // netomi/teradata/wingify 404'd (not their ATS) and were rejected at probe time.
+  ['lever', 'Netomi', 'netomi', true],
+  ['ashby', 'Kantiv', 'kantiv', false],
+  ['ashby', 'Writer', 'writer', false],
 ]
+
+/** The Session 5.8 additions alone — used by the once-only additive vault migration. */
+export const WATCHLIST_ADDITIONS_V58 = ['lever:netomi', 'ashby:kantiv', 'ashby:writer']
 
 export const WATCHLIST_SEED: WatchlistCompany[] = seed.map(([source, company, token, starred]) => ({
   id: `${source}:${token}`,

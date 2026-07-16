@@ -139,6 +139,13 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
   } else if (decode.compHints.includes('paid-signal')) {
     compFrac = 0.6
     compWhy = 'Mentions stipend/pay without numbers.'
+  } else if (job.salary) {
+    // Session 5.8 — the structured salary the provider itself published (Adzuna/JSearch/Remotive/
+    // RemoteOK set Job.salary) was captured but never scored: a posting with a clean salary field
+    // and no comp language in the JD body sat at "No compensation signal". A stated salary from
+    // the board is at least as strong a signal as comp language buried in JD prose.
+    compFrac = /[$€£]/.test(job.salary) ? 0.9 : /₹|inr|lpa|lakh/i.test(job.salary) ? 0.7 : 0.6
+    compWhy = `Posting states salary: ${job.salary.slice(0, 60)}.`
   }
   parts.push({
     key: 'compSignal',

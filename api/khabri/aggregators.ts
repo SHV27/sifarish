@@ -8,6 +8,10 @@
  *                       the client bundle even though Adzuna sends CORS `*`). No key → keyless.
  *   ?src=workingnomads  KEYLESS, global remote. workingnomads.com has NO CORS header, so the
  *                       browser can't read it — the proxy relays it. Costs no external credits.
+ *   ?src=weworkremotely KEYLESS, global remote (Session 5.8). weworkremotely.com publishes a
+ *                       public RSS feed of remote programming jobs (probed live 16-Jul-2026:
+ *                       200, no CORS header → must be proxied like Working Nomads). Parsed
+ *                       server-side, AI-filtered. Lawful public feed, zero credits.
  *
  * Guard (D46, the choke point — RC1/RC3): Origin must be this app AND, when a passcode env is
  * set, x-sifarish-token must equal SHA-256(passcode). A raw curl / foreign site is refused before
@@ -201,6 +205,71 @@ async function handleWorkingNomads(): Promise<Response> {
   }
 }
 
+// ---- We Work Remotely (keyless RSS; no CORS → must be proxied; Session 5.8) ----
+
+/**
+ * Deterministic RSS parser (edge runtime has no DOMParser). WWR item titles are
+ * "Company: Job Title"; region/category/pubDate are plain child tags. Exported for the
+ * keyless gate suite — the parser is testable without the network.
+ */
+export function parseWwrRss(xml: string): Array<Record<string, unknown>> {
+  const items = xml.match(/<item>[\s\S]*?<\/item>/g) ?? []
+  const tag = (block: string, name: string): string => {
+    const m = block.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`, 'i'))
+    let v = m?.[1] ?? ''
+    const cdata = v.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
+    if (cdata) v = cdata[1]
+    return stripHtml(v)
+  }
+  const now = new Date().toISOString()
+  const jobs: Array<Record<string, unknown>> = []
+  for (const block of items) {
+    const rawTitle = tag(block, 'title')
+    const link = tag(block, 'link')
+    if (!link || !rawTitle) continue
+    const sep = rawTitle.indexOf(':')
+    const company = sep > 0 ? rawTitle.slice(0, sep).trim() : 'Unknown'
+    const title = sep > 0 ? rawTitle.slice(sep + 1).trim() : rawTitle
+    const desc = tag(block, 'description')
+    const category = tag(block, 'category')
+    if (!AI_RE.test(`${title} ${category} ${desc.slice(0, 600)}`)) continue
+    let pub: string | undefined = tag(block, 'pubDate') || undefined
+    if (pub) {
+      const d = new Date(pub)
+      pub = isNaN(d.getTime()) ? undefined : d.toISOString()
+    }
+    jobs.push({
+      id: `weworkremotely:${link}`,
+      source: 'weworkremotely',
+      externalId: link,
+      company,
+      title,
+      location: tag(block, 'region') || 'Remote',
+      url: link,
+      jd: desc.slice(0, 8000),
+      publisher: 'We Work Remotely · global remote',
+      updatedAt: pub,
+      fetchedAt: now,
+      status: 'found',
+    })
+    if (jobs.length >= 25) break
+  }
+  return jobs
+}
+
+async function handleWeWorkRemotely(): Promise<Response> {
+  try {
+    const res = await fetch('https://weworkremotely.com/categories/remote-programming-jobs.rss', {
+      headers: { Accept: 'application/rss+xml, application/xml, text/xml' },
+    })
+    if (!res.ok) return json({ keyless: false, jobs: [], creditsSpent: 0, error: `weworkremotely ${res.status}` })
+    const xml = await res.text()
+    return json({ keyless: false, jobs: parseWwrRss(xml), creditsSpent: 0 })
+  } catch (e) {
+    return json({ keyless: false, jobs: [], creditsSpent: 0, error: String(e).slice(0, 100) })
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   const guarded = await guardRequest(req)
@@ -208,5 +277,6 @@ export default async function handler(req: Request): Promise<Response> {
   const src = new URL(req.url).searchParams.get('src')
   if (src === 'adzuna') return handleAdzuna(req)
   if (src === 'workingnomads') return handleWorkingNomads()
+  if (src === 'weworkremotely') return handleWeWorkRemotely()
   return json({ error: 'unknown src' }, 400)
 }

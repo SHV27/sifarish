@@ -246,6 +246,8 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
       <button className="text-left w-full" onClick={() => onOpenPacket(job.id)}>
         <p className="text-xs font-semibold text-ink leading-snug">{job.title}</p>
         <p className="text-[11px] text-ink-soft">{job.company}</p>
+        {/* Session 5.8 — provider-stated salary, previously captured but rendered nowhere. */}
+        {job.salary && <p className="font-mono text-[10px] text-shipped mt-0.5">💰 {job.salary}</p>}
       </button>
 
       {nudge.due && (

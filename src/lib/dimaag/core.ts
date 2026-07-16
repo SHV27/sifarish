@@ -69,8 +69,8 @@ interface CallResult {
  * so a retry costs no output tokens) and for genuine transients. Both live at the choke point —
  * the one function that talks to the model — so no call site can get it wrong (RC3).
  *
- * STILL OPEN: decide/critique/classify do not pass schemas yet, so they remain on the broken
- * json_object path. See D74 — this is the next session's first job, not a solved problem.
+ * (Resolved: decide/critique/classify all pass schemas now — see SCHEMA_DECIDE/CRITIQUE/CLASSIFY
+ * below and D75-CLOSED. Every reasoning call site is on the json_schema path, live-verified.)
  */
 const CALL_ATTEMPTS = 3
 

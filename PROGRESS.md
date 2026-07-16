@@ -2,7 +2,24 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5.7 "The Bullet Forge Rebuild" — the résumé the tailor writes ✦
+## Status: Session 5.8 "The Duniya-Depth Pass" — salary visible, world rotated, mail acknowledged ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **439 passed | 2 skipped (441) gates** · tsc clean ·
+warning-free build (incl. a pre-existing bundler warning fixed at the root). Four read-only agents
+mapped the app before any edit; the confirmed gaps (D110–D117) are closed:
+- **Salary finally reaches him (D110):** 💰 on Radar + Morcha cards; the score's compSignal now reads
+  the provider's structured salary when the JD has no comp prose (rendered in "why", L4).
+- **The whole Adzuna world (D111):** all 18 markets, rotated per sweep ('in' pinned first), same budget.
+- **New corner + his companies (D112):** We Work Remotely (RSS, proxied, keyless) + watchlist adds
+  Netomi/Kantiv/Writer — each probed live from his own LinkedIn feed. Findwork/Jooble/Careerjet
+  rejected honestly (keys we don't hold).
+- **Search scrolls (D113)** · **Dak "✓ I know this one" + interviews-first (D114)** ·
+  **reasoning-tier health badge (D115, D74 closed)** · **vision edits re-derive hunts live (D116)** ·
+  **Law-12 re-verified: gpt-oss models current, no deprecation (D117).**
+- **Relevance fixture from his real LinkedIn screenshot:** Netomi/Weekday/Wingify/QuantumLoopAi/
+  Kantiv/Teradata role-types rank top-6 of a 10-role labeled set — gate-asserted.
+
+## Prior: Session 5.7 "The Bullet Forge Rebuild" — the résumé the tailor writes ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **417 passed | 2 skipped (419) gates** · 0 console
 errors · warning-free build. The tailor was producing feature-doc bullets copied from READMEs ("GitHub
@@ -211,5 +228,6 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
    (D98): (1) in Vercel env, change `SIFARISH_OWNER_PASSCODE` to a new value + redeploy (it gates every
    metered function — a leaked value is a spend hole); (2) revoke the Vercel deploy token in Vercel
    account settings (it auto-revokes, but confirm). Then: open the app → 🔑 Owner Mode → new passcode →
-   Radar shows global roles (Adzuna 18 countries + Working Nomads now in the mix), tailor one, review, Send yourself.
-   Code is sealed again (393 gates, Four Proofs green, deployed + live-verified). Go get the internship.
+   Radar shows global roles (Adzuna 18 countries rotating + Working Nomads + We Work Remotely in the
+   mix, salaries visible), tailor one, review, Send yourself.
+   Code is sealed again (441 gates, deployed + live-verified). Go get the internship.

@@ -103,6 +103,7 @@ export type JobSource =
   | 'jobicy'
   | 'adzuna'
   | 'workingnomads'
+  | 'weworkremotely'
 
 export type JobStatus =
   | 'found'
@@ -335,7 +336,9 @@ export interface DakCard {
   gmailUrl: string
   /** Heuristic stage suggestion — the owner confirms (Nabz pattern), never auto-applied. */
   stageSuggestion?: 'interview' | 'rejected'
-  status: 'pending' | 'confirmed' | 'dismissed'
+  /** 'acked' (Session 5.8) = "I know this one" — seen and handled outside the app; hidden from
+   *  the active list forever (the message-id dedupe in sweepMail keeps it from resurfacing). */
+  status: 'pending' | 'confirmed' | 'dismissed' | 'acked'
   fetchedAt: string
 }
 
@@ -532,7 +535,7 @@ export interface Settings {
 
 // ---------- Khabri (discovery + signals) ----------
 
-export type DiscoverySource = 'jsearch' | 'hackernews' | 'remotive' | 'remoteok' | 'arbeitnow' | 'jobicy' | 'adzuna' | 'workingnomads'
+export type DiscoverySource = 'jsearch' | 'hackernews' | 'remotive' | 'remoteok' | 'arbeitnow' | 'jobicy' | 'adzuna' | 'workingnomads' | 'weworkremotely'
 export type SignalSource = 'tavily'
 
 export interface SavedHunt {

@@ -4,7 +4,7 @@ import { db } from '../db/db'
 import type { Job, ScoreBreakdown } from '../types'
 import { syncRadar, ensureJd, type SyncResult } from '../lib/radar/feeds'
 import { deriveHunts, type DerivedHunt } from '../lib/vision/derive'
-import { pruneStaleFinds } from '../lib/khabri/client'
+import { pruneStaleFinds, runSweep as runKhabriSweep } from '../lib/khabri/client'
 import { scoreJobCached } from '../lib/radar/score'
 
 const VISIBLE_CAP = 15 // sniper, not spray — the cap is a feature (vision §P3)
@@ -192,7 +192,9 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            /* Session 5.8 — a search/show-all can surface ~1000 matches; they scroll in their own
+               box (the Morcha-column pattern, D64) so the page itself never stretches unbounded. */
+            <div className={`space-y-3 ${searching || showAll ? 'max-h-[75vh] overflow-y-auto pr-1' : ''}`}>
               {visible.map(({ job, score }) => (
                 <JobCard key={job.id} job={job} score={score} onTailor={() => tailor(job)} />
               ))}
@@ -254,8 +256,7 @@ function HuntPanel() {
     setSweeping(true)
     setYieldNote(null)
     try {
-      const { runSweep } = await import('../lib/khabri/client')
-      const r = await runSweep((s) => setStep(s))
+      const r = await runKhabriSweep((s) => setStep(s))
       setYieldNote(
         r.failed.length && r.found === 0
           ? `Nothing came back — ${r.failed.join(', ')}.`
@@ -458,6 +459,13 @@ function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; on
               </span>
             )}
           </p>
+          {/* Session 5.8 — "achi salary" is his stated rubric; the provider's own salary figure
+              was captured on Job.salary but never rendered anywhere. Now it's on the card. */}
+          {job.salary && (
+            <p className="font-mono text-[11px] text-shipped mt-0.5" title="Salary as stated by the job board">
+              💰 {job.salary}
+            </p>
+          )}
         </div>
         <button
           className="shrink-0 bg-stamp text-paper font-semibold text-sm px-4 py-2 rounded hover:opacity-90"
