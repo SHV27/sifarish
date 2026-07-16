@@ -1,13 +1,13 @@
 # SIFARISH — Engineering Case Study
 
-*A full, honest post-mortem of every significant problem faced building SIFARISH, from v1 to v5.2 —
+*A full, honest post-mortem of every significant problem faced building SIFARISH, from v1 to v5.7 —
 the symptom, the root cause (down to the code), the fix, and the lesson. Written for analysis; nothing
-sanitized. Compiled 14-Jul-2026.*
+sanitized. Compiled 14-Jul-2026; last extended 16-Jul-2026 (Session 5.7).*
 
 - **Live:** https://sifarish-shv-s-projects.vercel.app
 - **Code:** https://github.com/SHV27/sifarish
-- **Scale at time of writing (Session 5.5):** 408 automated gates, 37 test suites, 11 serverless functions, ~60 source
-  modules, 6 product screens, single-developer build across 5 build sessions.
+- **Scale at time of writing (Session 5.7):** ~410 automated gates, 37+ test suites, 11 serverless functions, ~60 source
+  modules, 7 product screens, single-developer build across 6+ build sessions.
 
 ---
 
@@ -473,6 +473,58 @@ read-only aggregator on the landing screen that says, in one glance, the one thi
 roles worth his time — composed entirely from functions that already existed. The assistant's value was
 never a missing feature; it was the missing *summary*.
 
+---
+
+### 3.20 · THE FORGE PRODUCED FEATURE-DOCS, NOT ACCOMPLISHMENTS — and the three framings it took to fix (Session 5.7)
+
+The Bullet Forge (3.12) stopped the *link-dumps*. But the owner came back sharper: *"resume AI sloppy
+shit, poorly performing."* The bullets were now real sentences — and still wrong, in three distinct
+ways he named one at a time. Each fix was correct and still incomplete, which is the lesson.
+
+- **Framing 1 — the bullets read as internal mechanisms, not accomplishments (D104).** The
+  deterministic fallback still shipped raw README list items (*"GitHub is the database"*, *"Pulse Loop
+  — a weekly sweep"*) because `isResumeBullet` had no *accomplishment* gate, and — worse — `detectDrift`
+  was **nuking the LLM's good bullets** over acronyms the README itself defines by expansion (RAG ⟵
+  *retrieval-augmented generation*), forcing the raw fallback to win. Fix: rewrote the forge `SYSTEM`
+  prompt into a rigorous few-shot *training* (strong verb → system + tech → the hard part → real
+  impact, 15–25 words, with reshaping examples and real hired-résumé exemplars); taught `detectDrift`
+  to accept source-spelled-out acronyms (invented facts/numbers still die); `preferAccomplishments`
+  surfaces verb-led fallback lines. Live-proven: *"Engineered a keyless core… so every pillar runs
+  without API keys"*, *"Engineered a git-backed content system… immutable audit history without a
+  separate database."* Résumé strength 40% → 100%.
+- **Framing 2 — a recruiter still couldn't tell what the app *is* (D107, part 1).** The owner: *"these
+  are not app descriptions, man — what will a normal person or recruiter understand about my app?"* The
+  compiler rendered only the project *title* + bullets, never the one-line "what it IS", so the bullets
+  read as disconnected internals. Fix: the compiler now renders the project's own description + live
+  link under each title (never trimmed — it *is* the context) and the forge prompt gained a **reader
+  test**: a stranger must grasp what it is and does.
+- **Framing 3 — it was hiding his strongest true work (D107, part 2), the sharpest note in the whole
+  project.** The owner: *"sifarish ko keyless kyun promote kar rahe ho? Recruiters for an AI engineer
+  will look for API wiring — poore sach ko na dikhana bhi jhooth hai, and sifarish never lies, it
+  delivers maximum-scoring truth."* The forge was *headlining* a defensive robustness feature ("runs
+  without API keys") on an AI-engineer résumé — burying the LLM/agent/RAG wiring a recruiter is
+  actually hiring for. This is a profound reframing of the honesty invariant: **withholding a strong
+  truth to feature a weak one is itself a lie.** Fix at the root: the prompt was rewritten around a
+  *maximum-scoring-truth* rule (feature the AI systems; never headline keyless/offline), and — because
+  an LLM cannot be trusted to always obey — `rankBullets` **deterministically sinks any
+  defensive-led bullet to the back** so the AI work leads and "keyless" is cut by the top-N. The fix
+  flows to the résumé, the cover letter, and the ledger (all read the same forged bullets).
+- **The architecture note worth keeping (D105).** The forge fed the raw ~14k README (~4000 tokens) to
+  the model on every call, burning Groq's free-tier TPM and dropping to the very keyless path the owner
+  forbade. The decoupling: the model now reads a compact **`forgeBrief`** (~700 tokens — problem +
+  feature notes + stack) while the drift guard still validates against the **full** README. Same
+  quality, 5× cheaper, free-tier-safe. Plus 429 resilience: the server signals `rateLimited`, the
+  client **backs off (8–16s) and retries on the LLM path** rather than degrading — honest degradation
+  made a *last* resort, not a first one.
+- **Lessons:** (1) *Slop* has more than one cause — supply (3.12), then framing (accomplishment vs
+  mechanism), then *positioning* (what leads). Fixing one exposes the next. (2) **Honesty is not just
+  "don't add false facts" — it's "don't bury true ones."** Maximum-scoring truth is a stronger, harder
+  invariant than no-fabrication, and it needed a *deterministic* enforcer because a prompt rule alone
+  can't guarantee ordering. (3) The owner reads his own résumé as a recruiter would; when he says it's
+  weak, there is a nameable framing gap — find it, don't reassure him.
+
+---
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.
@@ -520,8 +572,9 @@ The honest clause: no software is literally eternal. What this guarantees is tha
 
 ## PART 6 — METRICS & OUTCOMES
 
-- **Gates:** 393 automated tests across 36 suites (invariants I1–I13, parse-back fidelity, JD coverage,
-  slop/guarantee scans, chaos runs, 30-conversation Guru eval, adversary/money proofs, persistence contract).
+- **Gates:** ~410 automated tests across 37+ suites (invariants I1–I13, parse-back fidelity, JD coverage,
+  slop/guarantee scans, forge accomplishment + drift-guard + maximum-scoring-truth ordering, chaos runs,
+  30-conversation Guru eval, adversary/money proofs, persistence contract).
 - **Quality bars held:** zero console errors across a scripted 3-breakpoint walkthrough; warning-free
   production build; Lighthouse desktop 99/100/100 (mobile-sim 83 = honest slow-4G SPA cold-load floor, not
   gamed); typecheck clean; 100% parse-back fidelity (the PDF text layer equals the compiled content, in
