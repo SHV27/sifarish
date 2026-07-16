@@ -127,7 +127,8 @@ with the demo persona, identity as a boolean flag; durable storage never request
    Shaurya + edit survives reopen**.
 4. Money: every metered client owner-gated (source-scan) + server token-required (7/7) + budget-capped (I8).
 
-Owner code: `Vers@tile1` (Vercel env `SIFARISH_OWNER_PASSCODE`; change there + redeploy anytime).
+Owner code: set in the Vercel env as `SIFARISH_OWNER_PASSCODE` (change there + redeploy anytime).
+The value is never recorded in this repo — read it with `vercel env pull` if you need it locally.
 
 ## Version history
 - **v1 — honesty.** Five pillars (Sach Ledger, Nabz, Radar, Darzi, Morcha), I1–I6, evidence-compiled +
@@ -193,7 +194,8 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
    default (public-safe); set `VITE_GOOGLE_CLIENT_ID` only if it changes. In-app: Morcha → Connect Gmail
    (proceed through the "unverified app" Testing-mode warning).
 2. **Owner code:** the app opens to a Gate — Owner Mode is verified against `SIFARISH_OWNER_PASSCODE`
-   (set in the Vercel env, currently `Vers@tile1`; change there + redeploy anytime). On first owner unlock
+   (set in the Vercel env; change there + redeploy anytime — the value is never written in this repo).
+   On first owner unlock
    the owner vault **auto-seeds from the real profile** (Session 5 — no manual "load owner seed" step), and
    an encrypted auto-backup runs after every edit. Optionally export one manual backup from Settings → Darbaan.
 3. Rotate API keys when convenient (they touched plaintext chat in earlier sessions — KEYS_GUIDE.md).

@@ -28,3 +28,7 @@ owner-code.local.txt
 /shots-s56b/
 forge-preview.json
 /shots-s57/
+
+# private handoff / working prompts — never tracked (they carry live tokens)
+FABLE5_MEGA_PROMPT.md
+*_MEGA_PROMPT.md

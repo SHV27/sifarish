@@ -565,7 +565,7 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   (Rolldown) + Node 24 on Windows (every file errored at describe() while each PASSED in isolation — an
   environmental toolchain bug, not app breakage). `pool:'forks'` in vitest.config restores it and is
   faster (8s vs 38s). Caught because `npx vitest run` showed all-red at session start; the app was fine.
-- D98: SECURITY — the owner passcode (`Vers@tile1`) and a fresh Vercel deploy token both reached
+- D98: SECURITY — the owner passcode (value redacted; see D108) and a fresh Vercel deploy token both reached
   plaintext chat this session. Per §10 / D46 / D70: SIFARISH_OWNER_PASSCODE MUST BE ROTATED in Vercel
   env (it gates all metered functions — a leaked value is a spend hole), and the Vercel token revoked
   (Vercel auto-revokes). Neither was written to any file; the passcode was used only as an env var for
@@ -664,6 +664,27 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   "Engineered a Vision Engine… enabling LLM-driven agents to retrieve LinkedIn/Indeed listings", "Designed
   ledger-based guardrails with RAG-backed verification" — clear, AI-forward, zero keyless headline. The
   fix flows to the résumé, the cover letter, AND the ledger (all read the same forged bullets/summary).
+
+- D108: THE SECURITY NOTE *WAS* THE BREACH. D98 was written to warn that the owner passcode had
+  reached plaintext chat — and, in warning, it wrote the literal value into `CLAUDE.md`, which is
+  committed to a **PUBLIC** repo. `PROGRESS.md` carried it twice more (an operator convenience). So a
+  credential that gates every metered function (D46) **and** derives the vault's AES key + Blob path
+  (D54 — i.e. it decrypts his entire personal vault) sat world-readable on GitHub for a day, findable
+  by the credential-harvesting bots that continuously scrape public repos for known key prefixes.
+  Nobody hacked anything; the leak was authored, by a diligent security note. NEW RULE (§10): a
+  decision log records that a secret must rotate — **never its value.** All three occurrences
+  redacted; the repo now points to `vercel env pull` instead of restating the secret. Redaction does
+  NOT clean git history (the value lives in prior commits forever), so **rotation remains the only
+  real fix** and is owner-pending. Same shape as D44/D46 (RC1): the boundary was correct in code, and
+  documentation walked around it. (16-Jul-2026)
+- D109: SECRETS ARE PULLED, NEVER PASTED. The next session needs zero secrets in chat: ONE Vercel
+  token in gitignored `.env.local` → `vercel env pull` yields every other credential
+  (SIFARISH_OWNER_PASSCODE, GROQ_API_KEY, GITHUB_PAT, ADZUNA_*, TAVILY_API_KEY, JSEARCH_API_KEY,
+  BLOB_READ_WRITE_TOKEN) straight from Vercel, which is already the single source of truth (§10).
+  Verified live 16-Jul-2026. This is strictly safer AND less work than pasting: fewer secrets touch
+  plaintext, and rotation happens in one place (Vercel) with no repo edit. A `vcp_` token is the
+  master key — it can read every env var and deploy to prod — so it lives in `.env.local` (covered by
+  `.gitignore`'s `.env*`) and NEVER in a tracked file, however convenient that would be. (16-Jul-2026)
 
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
