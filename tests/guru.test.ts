@@ -245,3 +245,13 @@ describe("vision guardrail — uses his ACTUAL notInterested list (bug #4)", () 
     expect(visionAlignmentScan(good, vision).aligned).toBe(true)
   })
 })
+
+describe('Guru #6 (Session 5.6) — "should I apply to Google?" gets the flagged vision_check reply', () => {
+  it('a big-tech apply question routes to vision_check, not a default yes', () => {
+    expect(detectIntent('should I apply to Google SDE roles?', SEED_LEDGER)).toBe('vision_check')
+    expect(detectIntent('kya main Microsoft join karun?', SEED_LEDGER)).toBe('vision_check')
+  })
+  it('a FACTUAL big-tech question is NOT a vision_check (no apply intent)', () => {
+    expect(detectIntent('does Google use agentic AI in production?', SEED_LEDGER)).not.toBe('vision_check')
+  })
+})

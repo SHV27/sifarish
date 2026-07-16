@@ -120,7 +120,7 @@ export default function App() {
           <DarbaanControl />
         </div>
         <main id="main" className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
-          {screen === 'shelf' && <Shelf />}
+          {screen === 'shelf' && <Shelf onNav={setScreen} onTailor={openPacket} />}
           {screen === 'khabri' && <Khabri onOpenRadar={() => setScreen('radar')} />}
           {screen === 'radar' && <Radar onTailor={openPacket} />}
           {screen === 'packet' && <PacketScreen jobId={activeJobId} onPickJob={openPacket} />}

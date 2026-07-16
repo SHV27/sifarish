@@ -1,5 +1,5 @@
 import { db } from '../db/db'
-import { runSweep } from './khabri/client'
+import { runSweep, syncVisionHunts } from './khabri/client'
 import { runPulse, pulseDue } from './pulse/client'
 
 /**
@@ -21,6 +21,11 @@ export async function runAutopilot(): Promise<void> {
 
   const settings = await db.settings.get('app').catch(() => undefined)
   if (!settings?.onboarded) return
+
+  // Vision drives the queue (Session 5.6, D68/D85): reconcile his Vision Profile into the hunts on
+  // every open BEFORE the sweep — additive + idempotent, so a vision edit made last session takes
+  // effect now and his manual hunts are never touched. Then the sweep hunts his queries first.
+  await syncVisionHunts(settings.visionProfile).catch(() => {})
 
   // Stagger so we never fire two credit-spending sweeps at the same instant.
   const sweepStale = !settings.lastSweepAt || Date.now() - new Date(settings.lastSweepAt).getTime() > SWEEP_STALE_MS

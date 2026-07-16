@@ -1,5 +1,6 @@
 import { db } from '../../db/db'
-import type { Job, SavedHunt, Signal, SweepYield } from '../../types'
+import type { Job, SavedHunt, Signal, SweepYield, VisionProfile } from '../../types'
+import { deriveHunts } from '../vision/derive'
 import { fetchHackerNews, fetchRemotive, fetchRemoteOK, fetchArbeitnow, fetchJobicy } from './keyless'
 import { mergeDiscovered } from './normalize'
 import { allowedThisRun, recordSpend } from '../budget'
@@ -148,7 +149,11 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   if (!meteredCallsAllowed()) {
     return { found: 0, new: 0, duplicate: 0, bySource: {}, creditsSpent: 0, keylessLanes: [], keyedLanes: [], failed: ['Owner Mode required — the showcase never sweeps'] }
   }
-  const hunts = (await db.savedHunts.toArray()).filter((h) => h.enabled)
+  // His vision-derived hunts are hunted FIRST (Session 5.6) — the budget-limited lanes (JSearch,
+  // Adzuna) spend on the roles he actually wants before any generic seed query.
+  const hunts = (await db.savedHunts.toArray())
+    .filter((h) => h.enabled)
+    .sort((a, b) => Number(b.derived ?? false) - Number(a.derived ?? false))
   const existing = await db.jobs.toArray()
   const bySource: Record<string, number> = {}
   const failed: string[] = []
@@ -285,6 +290,46 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
 
 export async function seedHuntsIfEmpty(): Promise<void> {
   if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
+}
+
+/**
+ * VISION → HUNTS (Session 5.6 — closes D68/D85, "the top 15 aren't mine"). His vision IS his
+ * instruction: the queries the Radar goes looking for should BE the roles he named plus the market
+ * names his dream implies. `deriveHunts(vision)` has always produced these — but nothing wrote them
+ * to the live hunts except a buried manual click, so by default the queue was hunted with the
+ * generic seed queries written before his vision existed (D69's "built, then not wired").
+ *
+ * This reconciles his vision into `savedHunts` on every open (via autopilot). It is ADDITIVE and
+ * IDEMPOTENT: it only PUTs queries not already present (deduped by lowercase query), marks them
+ * `derived:true` so the sweep hunts them first, and NEVER removes or disables a hunt he set or
+ * toggled by hand (the D59/D88 local-first rule). Capped so the hunt panel stays readable. Zero
+ * budget, zero key — pure DB. Owner-gated by its caller (autopilot is owner-only).
+ */
+export async function syncVisionHunts(vision?: VisionProfile, cap = 14): Promise<number> {
+  if (!vision) return 0
+  const existing = await db.savedHunts.toArray()
+  const seen = new Set(existing.map((h) => h.query.trim().toLowerCase()))
+  // `cap` bounds the TOTAL number of derived hunts, not this run — so repeated opens are idempotent
+  // once the cap is reached, and the hunt panel never grows unbounded as the vision is re-derived.
+  const budget = cap - existing.filter((h) => h.derived).length
+  if (budget <= 0) return 0
+  let added = 0
+  for (const d of deriveHunts(vision)) {
+    if (added >= budget) break
+    const key = d.query.trim().toLowerCase()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    await db.savedHunts.put({
+      id: `vh-${key.replace(/[^a-z0-9]+/g, '-').slice(0, 48)}`,
+      query: d.query,
+      remoteOnly: d.remoteOnly,
+      datePosted: 'week',
+      enabled: true,
+      derived: true,
+    })
+    added++
+  }
+  return added
 }
 
 /**

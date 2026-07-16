@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { JD_FIXTURES } from './fixtures/jds'
 import { fakeJob, SEED_LEDGER } from './helpers'
-import { scoreJob, stalenessPart } from '../src/lib/radar/score'
+import { scoreJob, stalenessPart, visionPart } from '../src/lib/radar/score'
 import { DEFAULT_RUBRIC } from '../src/lib/radar/rubric'
 import { recognizeAtsUrl } from '../src/lib/radar/pasteLane'
 import { WATCHLIST_SEED } from '../src/lib/radar/watchlist.seed'
@@ -138,5 +138,31 @@ describe('Session 5.5 — staleness + Vision Lens tunability', () => {
     const src = readFileSync('src/screens/SettingsScreen.tsx', 'utf8')
     expect(src).toMatch(/save\(\{\s*targetRoles/) // the strongest ranking signal is now editable
     expect(src).toMatch(/save\(\{\s*notInterested/)
+  })
+})
+
+// ============================================================================================
+// Session 5.6 — Vision Lens title match relaxed so real titles top the queue (D85 fix)
+// ============================================================================================
+describe('Vision Lens — a real title matches his target even without "Intern"', () => {
+  const vision: import('../src/types').VisionProfile = {
+    dream: 'Agentic-AI engineer building LLM and agent systems.',
+    targetRoles: ['AI Engineer Intern', 'Applied AI Intern'],
+    notInterested: ['sales'],
+    compFloorStipend: 35000, ppoFloorLpa: 16, windowStart: 'Jan 2027', windowEnd: 'May 2027',
+    remoteInternational: true, openToOctoberStart: true,
+  }
+  it('the posting "AI Engineer" now hits the target "AI Engineer Intern" (intern dropped)', () => {
+    const vp = visionPart(fakeJob('Acme', 'AI Engineer', 'build LLM agent systems'), vision)
+    expect(vp.points).toBeGreaterThanOrEqual(16) // the strong title-match award, previously 0
+    expect(vp.why).toMatch(/target role/i)
+  })
+  it('an off-target title ("Data Analyst") does not earn the title award', () => {
+    const vp = visionPart(fakeJob('Acme', 'Data Analyst', 'excel dashboards'), vision)
+    expect(vp.points).toBeLessThan(16)
+  })
+  it('a not-interested lane is still penalised', () => {
+    const vp = visionPart(fakeJob('Acme', 'AI Engineer', 'this is a sales engineering role'), vision)
+    expect(vp.why).toMatch(/not-interested|sales/i)
   })
 })

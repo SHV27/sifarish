@@ -209,7 +209,16 @@ export function visionPart(job: Job, vision?: VisionProfile): ScorePart {
   let pts = 0
   const why: string[] = []
 
-  const titleRole = rolePhrases.find((r) => wordHit(title, r.split(/\s+/)[0]) && r.split(/\s+/).every((w) => title.includes(w)))
+  // Session 5.6 (D85 fix): match on the role's CORE words, dropping the ubiquitous seniority tokens
+  // a real title almost never carries. "AI Engineer Intern" used to require the literal word "Intern"
+  // in the title, so the actual posting "AI Engineer" scored ZERO on the strongest lever — the exact
+  // reason his named roles didn't top the queue. Now the core ("ai", "engineer") is what must match.
+  const GENERIC_TITLE_WORDS = new Set(['intern', 'interns', 'internship', 'internships', 'co-op', 'coop', 'trainee', 'fellow', 'fellowship'])
+  const coreOf = (r: string) => r.split(/\s+/).filter((w) => !GENERIC_TITLE_WORDS.has(w))
+  const titleRole = rolePhrases.find((r) => {
+    const core = coreOf(r)
+    return core.length > 0 && wordHit(title, core[0]) && core.every((w) => title.includes(w))
+  })
   if (titleRole) {
     pts += 16
     why.push(`its title matches your target role "${titleRole}"`)

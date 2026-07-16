@@ -547,6 +547,12 @@ export interface SavedHunt {
    */
   ownerSetDate?: boolean
   enabled: boolean
+  /**
+   * True when this hunt was auto-derived from his Vision Profile (Session 5.6). The sweep hunts
+   * derived queries FIRST (his vision gets budget priority), and the sync only ever ADDS them —
+   * a hunt he created or toggled by hand is never touched.
+   */
+  derived?: boolean
 }
 
 /** A hiring signal — news/announcement, not a posting. Every one carries a source URL (I7). */

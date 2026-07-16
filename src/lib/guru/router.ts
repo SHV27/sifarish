@@ -77,7 +77,9 @@ export function detectIntent(text: string, ledger: LedgerEntry[]): Intent {
   if (/\b(vision|dream|derive|hunt for|what.*hunt|roles?.*(match|fit).*vision|based on my (vision|dream|goals))\b/.test(t)) return 'derive_hunts'
   // Vision-alignment check: "should I apply/go for" an avoided lane → flagged answer, never a default.
   if (/\b(should i|worth|kya main)\b.*\b(apply|join|go|try|target)\b/.test(t) &&
-      /\b(tcs|infosys|wipro|accenture|cognizant|mass (placement|recruit)|mnc|service compan)/.test(t)) {
+      /\b(google|microsoft|amazon|meta|apple|tcs|infosys|wipro|accenture|cognizant|capgemini|mass (placement|recruit)|mnc|service compan|big.?tech)/.test(t)) {
+    // Session 5.6 (Guru #6): the deterministic flag now covers big-tech names too — "should I apply to
+    // Google?" gets the honest vision-aligned answer up front, not a default yes that leans on the scan.
     return 'vision_check'
   }
   // Angle / casting explanation.

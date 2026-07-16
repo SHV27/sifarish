@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { createHash } from 'node:crypto'
 import { dedupeKey, mergeDiscovered, withDedupeKey } from '../src/lib/khabri/normalize'
-import { cleanAdzunaQuery, adzunaQueriesFromHunts, ADZUNA_COUNTRIES } from '../src/lib/khabri/client'
+import { cleanAdzunaQuery, adzunaQueriesFromHunts, ADZUNA_COUNTRIES, syncVisionHunts } from '../src/lib/khabri/client'
+import { db } from '../src/db/db'
+import { DEFAULT_VISION } from '../src/db/seed'
 import aggregatorsHandler from '../api/khabri/aggregators'
 import type { Job, SavedHunt } from '../src/types'
 
@@ -258,5 +260,35 @@ describe('aggregator proxy — normalization, guard, budget shape (Session 5.5)'
     const data = (await res.json()) as { keyless: boolean; jobs: Job[] }
     expect(data.keyless).toBe(true)
     expect(data.jobs).toHaveLength(0)
+  })
+})
+
+// ============================================================================================
+// Session 5.6 — vision drives the hunts (closes D68/D85)
+// ============================================================================================
+describe('syncVisionHunts — his vision reconciles into the live hunts (additive, safe)', () => {
+  it('adds vision-derived hunts marked derived+enabled, never touching a hand-set hunt', async () => {
+    await db.savedHunts.clear()
+    await db.savedHunts.put({ id: 'manual', query: 'my custom niche hunt', remoteOnly: false, enabled: false })
+    const added = await syncVisionHunts(DEFAULT_VISION, 6)
+    expect(added).toBeGreaterThan(0)
+    const all = await db.savedHunts.toArray()
+    const manual = all.find((h) => h.id === 'manual')!
+    expect(manual.enabled).toBe(false) // his deliberate toggle is preserved
+    expect(manual.derived).toBeUndefined()
+    const derived = all.filter((h) => h.derived)
+    expect(derived.length).toBeGreaterThan(0)
+    expect(derived.every((h) => h.enabled)).toBe(true) // vision hunts run
+  })
+  it('is idempotent — a second run adds nothing (deduped by query)', async () => {
+    await db.savedHunts.clear()
+    await syncVisionHunts(DEFAULT_VISION, 6)
+    expect(await syncVisionHunts(DEFAULT_VISION, 6)).toBe(0)
+  })
+  it('respects the cap and no-ops on an absent vision', async () => {
+    await db.savedHunts.clear()
+    const n = await syncVisionHunts(DEFAULT_VISION, 3)
+    expect(n).toBeLessThanOrEqual(3)
+    expect(await syncVisionHunts(undefined)).toBe(0)
   })
 })

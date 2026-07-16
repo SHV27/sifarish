@@ -52,10 +52,13 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
 
   const ranked = useMemo(() => {
     if (!settings) return []
+    // Session 5.6: a strong generic-AI role and an on-vision role both saturate the 100 ceiling, so
+    // vision breaks the tie — his target-role matches surface ABOVE an equally-scored generic role.
+    const visionPts = (s: ScoreBreakdown) => s.parts.find((p) => p.key === 'visionFit')?.points ?? 0
     return jobs
       .filter((j) => j.status === 'found')
       .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
-      .sort((a, b) => b.score.total - a.score.total)
+      .sort((a, b) => b.score.total - a.score.total || visionPts(b.score) - visionPts(a.score))
   }, [jobs, ledger, settings, starred])
 
   const terms = useMemo(() => termsOf(query), [query])
