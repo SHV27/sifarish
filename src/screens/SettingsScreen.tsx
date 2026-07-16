@@ -5,14 +5,14 @@ import type { RubricWeights, VisionProfile } from '../types'
 import { ensureBudgets, monthKey } from '../lib/budget'
 import { deriveHunts, deriveArchetypes, type DerivedHunt } from '../lib/vision/derive'
 import { useState, useEffect } from 'react'
-import { getLibrary, staleSources } from '../lib/ustaad/library'
+import { getLibrary, staleSources, applyLibraryUpdate } from '../lib/ustaad/library'
 import { useDarbaan } from '../components/DarbaanControl'
 import { GOOGLE_CLIENT_ID } from '../lib/dak/gis'
 import { saveFile } from '../lib/util/download'
 import { getApiToken } from '../lib/apiGuard'
 import { storagePersisted, autoBackup, restoreFromLatest, requestDurableStorage } from '../db/tijori'
-import { hasSyncKey, lastSyncAt, syncConfigured, pushVault, pullVault } from '../lib/sync'
-import { syncVisionHunts } from '../lib/khabri/client'
+import { hasSyncKey, lastSyncAt, syncConfigured, pushVault, pullVault, clearSyncKey } from '../lib/sync'
+import { syncVisionHunts, proposeHuntEdits } from '../lib/khabri/client'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -165,6 +165,13 @@ export function SettingsScreen() {
               />
               <span className="truncate">{w.company}</span>
               <span className="font-mono text-[10px] text-ink-soft">{w.source}</span>
+              {/* S5.10 — a company whose feed returned ZERO open roles is DORMANT: visibly so,
+                  token kept (they may reopen), and with no jobs it can never eat a queue slot. */}
+              {w.lastChecked && w.lastJobCount === 0 && (
+                <span className="stamp !text-[8px] text-ink-soft border-paper-edge" title={`No open roles on last scan (${new Date(w.lastChecked).toLocaleDateString()}). Token kept — they may reopen.`}>
+                  DORMANT
+                </span>
+              )}
               <button
                 className={`ml-auto ${w.starred ? 'text-forge' : 'text-ink-faint'}`}
                 onClick={() => db.watchlist.update(w.id, { starred: !w.starred })}
@@ -367,13 +374,26 @@ function SyncStatus() {
         )}
       </p>
       {keyed && provisioned !== false && (
-        <button
-          className="mt-2 text-[11px] font-semibold bg-ink text-paper px-3 py-1.5 rounded disabled:opacity-50"
-          disabled={busy}
-          onClick={() => void syncNow()}
-        >
-          {busy ? 'syncing…' : 'Sync now'}
-        </button>
+        <span className="flex items-center gap-3">
+          <button
+            className="mt-2 text-[11px] font-semibold bg-ink text-paper px-3 py-1.5 rounded disabled:opacity-50"
+            disabled={busy}
+            onClick={() => void syncNow()}
+          >
+            {busy ? 'syncing…' : 'Sync now'}
+          </button>
+          {/* S5.10 wiring audit: clearSyncKey existed with no path to it — a shared/borrowed
+              device needs a way to forget the derived key without touching the vault. */}
+          <button
+            className="mt-2 text-[11px] text-ink-soft hover:underline"
+            onClick={() => {
+              clearSyncKey()
+              setNote('Sync key forgotten on this device — local data untouched. Unlock Owner Mode again to re-derive it.')
+            }}
+          >
+            forget sync key on this device
+          </button>
+        </span>
       )}
       {note && <p className="mt-1.5 text-[11px] font-mono text-ink-soft">{note}</p>}
     </div>
@@ -410,6 +430,17 @@ function ApiTokenField() {
 function UstaadSection() {
   const lib = getLibrary()
   const stale = staleSources()
+  const [updateJson, setUpdateJson] = useState('')
+  const [updateNote, setUpdateNote] = useState('')
+  const applyUpdate = async () => {
+    // S5.10 wiring audit: applyLibraryUpdate was the WRITE half of the I13 loop and no UI ever
+    // called it — loadLibraryOverride at boot had nothing to load. This is the owner-confirmed
+    // door: paste a Pulse-proposed (or hand-authored) library JSON; it applies only if it
+    // validates AND is strictly newer.
+    const r = await applyLibraryUpdate(updateJson)
+    setUpdateNote(r.ok ? 'Library updated ✓ — the new patterns reach every reasoning pass immediately.' : `Rejected: ${r.reason}.`)
+    if (r.ok) setUpdateJson('')
+  }
   return (
     <section className="dossier p-4 mb-5" aria-label="Ustaad library">
       <h2 className="font-display font-semibold text-lg text-ink">
@@ -439,6 +470,21 @@ function UstaadSection() {
           <span className="text-stamp">{stale.length} source(s) stale (&gt;12 months) — flagged, never silently trusted. Pulse has proposed a review.</span>
         )}
       </p>
+      <details className="mt-2">
+        <summary className="text-[11px] text-ink-soft cursor-pointer hover:text-ink">▸ apply a library update (version-checked, cited-only)</summary>
+        <textarea
+          className="mt-2 w-full bg-paper-sunken px-2 py-1.5 rounded font-mono text-[10px]"
+          rows={4}
+          value={updateJson}
+          onChange={(e) => setUpdateJson(e.target.value)}
+          placeholder='Paste a full library JSON (version must be newer; every pattern must cite a source) — Pulse review proposals point here.'
+          aria-label="Library update JSON"
+        />
+        <button className="mt-1 text-[11px] font-semibold bg-ink text-paper px-3 py-1 rounded disabled:opacity-50" disabled={!updateJson.trim()} onClick={() => void applyUpdate()}>
+          Validate & apply
+        </button>
+        {updateNote && <p className="mt-1 text-[11px] font-mono text-ink-soft">{updateNote}</p>}
+      </details>
     </section>
   )
 }
@@ -511,7 +557,11 @@ function VisionEditor({ vision }: { vision: VisionProfile }) {
     await db.settings.update('app', { visionProfile: next })
     clearTimeout(visionHuntTimer)
     visionHuntTimer = setTimeout(() => {
-      syncVisionHunts(next).catch(() => {})
+      // Add what the new vision implies AND propose retiring what it no longer does (S5.10 —
+      // both halves of D99; the retirement is a Pulse brief he confirms, never a silent change).
+      syncVisionHunts(next)
+        .then(() => proposeHuntEdits(next))
+        .catch(() => {})
     }, 1500)
   }
   return (

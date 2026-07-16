@@ -120,7 +120,11 @@ export default async function handler(req: Request): Promise<Response> {
             ? { type: 'json_schema', json_schema: { name: 'result', strict: true, schema: body.schema } }
             : { type: 'json_object' },
           messages: [
-            { role: 'system', content: body.system.slice(0, 8000) },
+            // 16k (was 8k, Session 5.10): the Baithak carries its ENTIRE context in system —
+            // instructions + role brief + current resume + the ledger digest ("the ONLY source of
+            // truth") — and measured ~7-8k BEFORE the ledger, so the 8k cap truncated exactly the
+            // ids every op must reference. Same class of bug as the user-cap fix below.
+            { role: 'system', content: body.system.slice(0, 16000) },
             // 16k (was 12k): the forge sends the full distilled README (≤14k) as the model's source
             // material AND the drift-guard source; truncating it here made the model reason from less
             // than the guard checks against, wrongly flagging real facts. (Session 5.6)

@@ -147,6 +147,12 @@ export interface Job {
   packetId?: string
   /** Dead-link probe result. */
   linkAlive?: boolean
+  /**
+   * Session 5.10 — the posting's own board no longer lists it (closed/filled). A closed posting
+   * is pulled OUT of the ranked queue entirely (not deprioritized); it reopens if the board
+   * relists it. Pipeline statuses are his record and are never closed by a scan.
+   */
+  closed?: boolean
   notes?: string
   /** Fuzzy company+title+location key for cross-source dedupe (Khabri). */
   dedupeKey?: string
@@ -336,7 +342,7 @@ export interface DakCard {
   gmailUrl: string
   /** Heuristic stage suggestion — the owner confirms (Nabz pattern), never auto-applied. */
   stageSuggestion?: 'interview' | 'rejected'
-  /** 'acked' (Session 5.8) = "I know this one" — seen and handled outside the app; hidden from
+  /** DakCard status — 'acked' (Session 5.8) = "I know this one" — seen and handled outside the app; hidden from
    *  the active list forever (the message-id dedupe in sweepMail keeps it from resurfacing). */
   status: 'pending' | 'confirmed' | 'dismissed' | 'acked'
   fetchedAt: string
@@ -631,6 +637,12 @@ export interface PulseBrief {
    * self-evolving discovery loop: Khabri sees the trend → the Radar starts hunting those roles.
    */
   proposedHunt?: { query: string; why: string }
+  /**
+   * Session 5.10 (closes D68 fully): when the VISION changes, derived hunts it no longer implies
+   * are proposed for RETIREMENT — human-confirmed (accept disables the hunt; it is never deleted,
+   * and a hunt he set or touched by hand is never proposed — D59/D88).
+   */
+  proposedHuntRemoval?: { huntId: string; query: string; why: string }
   status: 'pending' | 'accepted' | 'dismissed'
 }
 

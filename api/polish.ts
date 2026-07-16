@@ -91,26 +91,47 @@ export default async function handler(req: Request): Promise<Response> {
     '- Keep every proper noun and technology exactly as written.',
     '- Match this writing voice (terse, concrete, no corporate filler):',
     voice || '(no samples; default to plain, concrete, active voice)',
-    'Return a JSON object {"lines": string[]} with one rephrased line per input line, same order, same count.',
+    // D74/D79: the schema owns the STRUCTURE — spelling the JSON shape out in prose here fights
+    // the json_schema response_format and reintroduces the 400s. Content rule only:
+    'Rephrase every input line, same order, same count.',
   ].join('\n')
 
   const user = JSON.stringify({ lines })
 
   try {
-    const res = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: MODEL,
-        temperature: 0.3,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-      }),
-    })
-    if (!res.ok) return json({ polished: null, reason: `groq ${res.status}` }, 200)
+    // D74 applied here too (Session 5.10 context audit): openai/gpt-oss-120b measured ~0/3 on
+    // json_object — this function was the last call site on the broken mode, so the polish pass
+    // was silently degrading to "keep as compiled" on most calls. json_schema + one retry.
+    let res: Response | undefined
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      res = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: MODEL,
+          temperature: 0.3,
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'result',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: { lines: { type: 'array', items: { type: 'string' } } },
+                required: ['lines'],
+                additionalProperties: false,
+              },
+            },
+          },
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+        }),
+      })
+      if (res.ok || res.status === 429) break
+    }
+    if (!res || !res.ok) return json({ polished: null, reason: `groq ${res?.status ?? 'no-response'}` }, 200)
     const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
     const content = data.choices?.[0]?.message?.content ?? '{}'
     const parsed = JSON.parse(content)

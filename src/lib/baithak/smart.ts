@@ -153,11 +153,14 @@ function systemPrompt(packet: Packet, ledger: LedgerEntry[], job: { title: strin
     '--- THE ROLE HE IS TAILORING FOR ---',
     roleBrief(packet, job, vision),
     '',
-    '--- THE RESUME AS IT STANDS RIGHT NOW ---',
-    currentResume(packet),
-    '',
+    // The LEDGER sits ABOVE the resume snapshot (Session 5.10 — the Guru D94 ordering rule):
+    // server truncation cuts from the END, and the ledger is the ONLY source of truth every op
+    // must reference by exact id. If anything is clipped, it must be the resume echo, never the ids.
     '--- LEDGER (the ONLY source of truth — every op must reference these exact IDs) ---',
     ledgerDigest(ledger),
+    '',
+    '--- THE RESUME AS IT STANDS RIGHT NOW ---',
+    currentResume(packet),
   ].join('\n')
 }
 

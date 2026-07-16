@@ -57,9 +57,6 @@ const BOOT: BootState = resolveBoot()
 export function getMode(): Mode {
   return BOOT === 'owner' ? 'owner' : 'darshak'
 }
-export function getBootState(): BootState {
-  return BOOT
-}
 export function isOwnerMode(): boolean {
   return getMode() === 'owner'
 }

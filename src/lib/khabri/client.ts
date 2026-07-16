@@ -324,10 +324,6 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   }
 }
 
-export async function seedHuntsIfEmpty(): Promise<void> {
-  if ((await db.savedHunts.count()) === 0) await db.savedHunts.bulkPut(SEED_HUNTS)
-}
-
 /**
  * VISION → HUNTS (Session 5.6 — closes D68/D85, "the top 15 aren't mine"). His vision IS his
  * instruction: the queries the Radar goes looking for should BE the roles he named plus the market
@@ -366,6 +362,44 @@ export async function syncVisionHunts(vision?: VisionProfile, cap = 14): Promise
     added++
   }
   return added
+}
+
+/**
+ * VISION → HUNT RETIREMENTS (Session 5.10 — the other half of D99; closes D68 fully).
+ * syncVisionHunts only ADDS, so a vision edit left the OLD derived hunts running forever —
+ * the queue kept hunting roles he no longer wants. This proposes retirements as Pulse briefs
+ * (human-confirmed, Nabz pattern): only hunts the app itself derived (`derived:true`, never
+ * `ownerSetDate`) whose query the CURRENT vision no longer implies. Accepting DISABLES the hunt
+ * (reversible; never deleted). Deterministic, zero budget, zero key. Deduped by hunt id.
+ */
+export async function proposeHuntEdits(vision?: VisionProfile): Promise<number> {
+  if (!vision) return 0
+  const implied = new Set(deriveHunts(vision).map((d) => d.query.trim().toLowerCase()))
+  const hunts = await db.savedHunts.toArray()
+  const stale = hunts.filter(
+    (h) => h.derived && !h.ownerSetDate && h.enabled && !implied.has(h.query.trim().toLowerCase()),
+  )
+  let proposed = 0
+  for (const h of stale) {
+    const id = `pulse-huntedit-${h.id}`
+    if (await db.pulse.get(id)) continue // proposed once; his accept/dismiss stands (D59)
+    await db.pulse.put({
+      id,
+      at: new Date().toISOString(),
+      topic: 'vision',
+      headline: `Retire hunt: "${h.query}"?`,
+      url: '',
+      insight: 'Your edited vision no longer implies this derived hunt.',
+      proposedHuntRemoval: {
+        huntId: h.id,
+        query: h.query,
+        why: 'It was derived from your earlier vision; the current vision does not name this lane. Accepting disables it (never deletes — re-enable anytime in the Hunt panel).',
+      },
+      status: 'pending',
+    })
+    proposed++
+  }
+  return proposed
 }
 
 /**

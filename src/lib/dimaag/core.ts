@@ -235,11 +235,13 @@ export async function decide(input: DecideInput): Promise<Rationale> {
   ].join('\n')
   const user = JSON.stringify({
     question: input.question,
-    options: input.options,
     criteria: input.criteria,
-    context: input.context,
-    evidence: input.evidence,
     craft: input.craft, // studied library rules — in the payload, not just the UI (Session 5.9)
+    context: input.context,
+    options: input.options,
+    // Evidence LAST (Session 5.10): the server slices user to 16k from the END, so on the largest
+    // ledgers the sacrificial field must be the evidence tail — never the craft or the criteria.
+    evidence: input.evidence,
   })
 
   const call = await callDimaag('reasoning', system, user, 2000, SCHEMA_DECIDE as unknown as Record<string, unknown>)

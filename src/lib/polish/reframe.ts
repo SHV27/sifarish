@@ -57,6 +57,9 @@ export async function reframeProject(entry: LedgerEntry, direction: string): Pro
 
   const user = [
     `Project: ${entry.title}`,
+    // S5.10 — the model can now SEE what it reframes toward: the project's own problem statement
+    // (context only; the drift guard against the whole entry still kills any smuggled fact).
+    entry.context?.problem ? `What it attacks (context only — never a source of new bullet facts): ${entry.context.problem.slice(0, 300)}` : '',
     entry.context?.stack?.length ? `Stack (context only — do not add these to bullets unless already present): ${entry.context.stack.join(', ')}` : '',
     '',
     `HOW HE WANTS IT FRAMED: ${direction}`,

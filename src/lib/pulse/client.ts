@@ -167,6 +167,13 @@ export async function acceptPulse(brief: PulseBrief): Promise<void> {
       await db.savedHunts.put({ id: `h-pulse-${q.toLowerCase().replace(/[^a-z0-9]/g, '-')}`, query: q, remoteOnly: false, datePosted: 'week', ownerSetDate: true, enabled: true })
     }
   }
+
+  // Session 5.10: accepting a retirement DISABLES the derived hunt (reversible — never deleted;
+  // marked ownerSetDate so no future sync/derive path flips it back without him).
+  if (brief.proposedHuntRemoval?.huntId) {
+    const h = await db.savedHunts.get(brief.proposedHuntRemoval.huntId)
+    if (h) await db.savedHunts.update(h.id, { enabled: false, ownerSetDate: true })
+  }
   await db.pulse.update(brief.id, { status: 'accepted' })
 }
 

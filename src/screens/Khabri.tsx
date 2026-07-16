@@ -225,18 +225,26 @@ function PulseBriefRow({ brief }: { brief: PulseBrief }) {
           Accept to start hunting <span className="font-mono">“{brief.proposedHunt.query}”</span> on the Radar — {brief.proposedHunt.why}
         </p>
       )}
+      {brief.proposedHuntRemoval && (
+        <p className="text-xs text-ink mt-1">
+          <span className="stamp stamp-red !text-[9px] mr-1">retire</span>
+          Accept to stop hunting <span className="font-mono">“{brief.proposedHuntRemoval.query}”</span> — {brief.proposedHuntRemoval.why}
+        </p>
+      )}
       <div className="mt-1 flex items-center gap-3 text-[11px]">
-        <a href={brief.url} target="_blank" rel="noreferrer" className="font-mono text-ink underline decoration-dotted">
-          {(() => {
-            try {
-              return new URL(brief.url).hostname.replace(/^www\./, '')
-            } catch {
-              return 'source'
-            }
-          })()} ↗
-        </a>
+        {brief.url && (
+          <a href={brief.url} target="_blank" rel="noreferrer" className="font-mono text-ink underline decoration-dotted">
+            {(() => {
+              try {
+                return new URL(brief.url).hostname.replace(/^www\./, '')
+              } catch {
+                return 'source'
+              }
+            })()} ↗
+          </a>
+        )}
         <button className="ml-auto font-medium text-shipped hover:underline" onClick={() => acceptPulse(brief)}>
-          {brief.proposedHunt ? 'Add hunt ✓' : brief.suggestion ? 'Log it ✓' : 'Got it ✓'}
+          {brief.proposedHuntRemoval ? 'Retire hunt ✓' : brief.proposedHunt ? 'Add hunt ✓' : brief.suggestion ? 'Log it ✓' : 'Got it ✓'}
         </button>
         <button className="text-ink-soft hover:underline" onClick={() => dismissPulse(brief.id)}>
           dismiss

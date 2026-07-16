@@ -56,7 +56,8 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
     // vision breaks the tie — his target-role matches surface ABOVE an equally-scored generic role.
     const visionPts = (s: ScoreBreakdown) => s.parts.find((p) => p.key === 'visionFit')?.points ?? 0
     return jobs
-      .filter((j) => j.status === 'found')
+      // A closed posting cannot occupy a slot — "jisne hiring band kar di wo company na aaye" (S5.10).
+      .filter((j) => j.status === 'found' && !j.closed)
       .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
       .sort((a, b) => b.score.total - a.score.total || visionPts(b.score) - visionPts(a.score))
   }, [jobs, ledger, settings, starred])

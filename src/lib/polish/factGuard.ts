@@ -37,11 +37,6 @@ export function extractNumbers(text: string): string[] {
   )
 }
 
-/** Content tokens (lowercased, meaningful) — used to describe originals, not to gate. */
-export function contentTokens(text: string): Set<string> {
-  return new Set((text.toLowerCase().match(/[a-z0-9₹$€£]+/g) ?? []).filter((w) => w.length > 2))
-}
-
 export interface DriftResult {
   ok: boolean
   addedFacts: string[]

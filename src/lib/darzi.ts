@@ -125,6 +125,26 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   const outreach = compileOutreach(job, identity, ledger, decode)
   const gapNote = buildGapNote(coverage)
 
+  // D29 uniqueness, WIRED (Session 5.10 wiring audit — it only ever ran in tests): this letter's
+  // substantive body is compared against his recent letters; too-similar → an honest, visible
+  // note. Advisory, never a block (a letter is his to send).
+  try {
+    const { checkUniqueness } = await import('./atelier/uniqueness')
+    const others = (await db.packets.orderBy('createdAt').reverse().limit(5).toArray())
+      .filter((p) => p.jobId !== job.id)
+      .map((p) => p.coverLetter.paragraphs.join('\n'))
+    if (others.length > 0) {
+      const u = checkUniqueness([coverLetter.paragraphs.join('\n'), ...others])
+      if (!u.ok) {
+        gapNote.push(
+          `This letter's body is ${Math.round(u.maxSimilarity * 100)}% similar to a recent one — a recruiter comparing notes would notice. Ask the Baithak to sharpen the company-specific hook.`,
+        )
+      }
+    }
+  } catch {
+    /* advisory only */
+  }
+
   return {
     id: `packet-${job.id}-${Date.now()}`,
     jobId: job.id,

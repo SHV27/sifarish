@@ -32,7 +32,7 @@ const visionPoints = (s: ScoreBreakdown) => s.parts.find((p) => p.key === 'visio
 
 export function buildBriefing(jobs: Job[], ledger: LedgerEntry[], settings: Settings, starred: Set<string> = new Set()): BriefingData {
   const ranked = jobs
-    .filter((j) => j.status === 'found')
+    .filter((j) => j.status === 'found' && !j.closed) // closed postings never brief him (S5.10)
     .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
     // Vision breaks ties at the score ceiling — his target-role matches surface above generic AI.
     .sort((a, b) => b.score.total - a.score.total || visionPoints(b.score) - visionPoints(a.score))

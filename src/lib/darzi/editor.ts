@@ -29,7 +29,7 @@ function projectBrief(p: LedgerEntry, cap: number): string {
   return parts.join('\n').slice(0, cap)
 }
 import { entryRelevance, bulletRelevance } from '../match/evidence'
-import { scanSlop, scanGuarantee } from '../slop/scan'
+import { scanHonesty } from '../slop/scan'
 import { citePatterns, craftClauses, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
 
 /**
@@ -45,7 +45,10 @@ import { citePatterns, craftClauses, sectionOrderFor, startsWeak, type SectionKe
 // ---- Pass 1: Archetype ----
 export async function archetypePass(decode: JDDecode, jd: string, intel?: CompanyIntel) {
   const intelText = intel?.bullets.map((b) => b.text).join(' ') ?? ''
-  const text = `${jd}\n\nKeywords: ${decode.mustHave.join(', ')}\n\nCompany intel: ${intelText}`.slice(0, 4000)
+  // Keywords + intel FIRST (Session 5.10): the slice cuts from the END, and a >4000-char JD used
+  // to push the extracted must-haves and the entire intel block off the payload — the archetype
+  // was then decided on raw JD prose alone. The signal-dense fields now always survive.
+  const text = `Keywords: ${decode.mustHave.join(', ')}\n\nCompany intel: ${intelText}\n\n${jd}`.slice(0, 4000)
   const res = await classify({
     feature: 'darzi.archetype',
     text,
@@ -203,7 +206,10 @@ export async function surgeryPass(
         arch.reviewerNote +
         (topMust.length ? ` This ${company ?? 'role'} scans first for: ${topMust.join(', ')}.` : '') +
         (intelText ? ` What the company builds & values (live intel): ${intelText}` : ''),
-      evidence: [{ ref: project.id, text: `${project.title}: ${projectBrief(project, 2200)}` }],
+      // 4000 (was 2200, S5.10): the structured preamble alone runs ~1000-1500 chars, so only a
+      // paragraph of the deep README survived 2200. The angle pass is the one place the README's
+      // substance matters most; a single-project evidence payload has ample headroom at 4000.
+      evidence: [{ ref: project.id, text: `${project.title}: ${projectBrief(project, 4000)}` }],
       citations: citePatterns(['xyz-formula', 'verb-strength-ladder'], 2),
       craft: craftClauses('surgery', arch.id), // Session 5.9 — studied rules reach the model
     })
@@ -292,8 +298,11 @@ export async function redTeamPass(
       mustClause,
     heuristicChecks: (a) => {
       const fixes: string[] = []
-      if (scanSlop(a).length > 0) fixes.push(`Remove slop phrasing: ${scanSlop(a).join(', ')}`)
-      if (scanGuarantee(a).length > 0) fixes.push('Remove guarantee language (I9).')
+      // scanHonesty = slop + guarantee in one pass (S5.10 wiring audit: the combined scanner
+      // existed and ran only in tests; the red-team is exactly where it belongs).
+      const honesty = scanHonesty(a)
+      if (honesty.slop.length > 0) fixes.push(`Remove slop phrasing: ${honesty.slop.join(', ')}`)
+      if (honesty.guarantee.length > 0) fixes.push('Remove guarantee language (I9).')
       const bulletLines = a.split('\n').filter((l) => l.trim().startsWith('-'))
       if (bulletLines[0] && bulletLines[0].length < 40) fixes.push('Lead bullet is thin — open with your strongest, most concrete evidence.')
       // Ustaad ¶action-verb-lead: weak openers fail the 6-second skim.
