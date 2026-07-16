@@ -28,8 +28,15 @@
       "summary": "2023–2027 · CGPA 7.7",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "07/2023", "note": "Enrolled; CGPA from official transcript." },
-      "tags": ["education", "cse", "thapar"],
+      "evidence": {
+        "date": "07/2023",
+        "note": "Enrolled; CGPA from official transcript."
+      },
+      "tags": [
+        "education",
+        "cse",
+        "thapar"
+      ],
       "resumeEligible": true
     },
     {
@@ -39,8 +46,13 @@
       "summary": "2023",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "05/2023", "note": "CBSE board result." },
-      "tags": ["education"],
+      "evidence": {
+        "date": "05/2023",
+        "note": "CBSE board result."
+      },
+      "tags": [
+        "education"
+      ],
       "resumeEligible": true
     },
     {
@@ -50,11 +62,15 @@
       "summary": "2021",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "07/2021", "note": "CBSE board result." },
-      "tags": ["education"],
+      "evidence": {
+        "date": "07/2021",
+        "note": "CBSE board result."
+      },
+      "tags": [
+        "education"
+      ],
       "resumeEligible": true
     },
-
     {
       "id": "proj-gloaming",
       "kind": "project",
@@ -64,17 +80,35 @@
         {
           "id": "gloaming-b1",
           "text": "Built a browser co-op board game where the board itself is the antagonist — Dread tide, hidden traitor, hunting Stalker — using boardgame.io, Vite, and serverless functions",
-          "keywords": ["typescript", "react", "game", "serverless", "vite", "boardgame.io"]
+          "keywords": [
+            "typescript",
+            "react",
+            "game",
+            "serverless",
+            "vite",
+            "boardgame.io"
+          ]
         },
         {
           "id": "gloaming-b2",
           "text": "Designed an AI narrator with a hand-authored fallback so the full game runs with zero API keys — the LLM amplifies, never gates",
-          "keywords": ["llm", "ai", "fallback", "degradation", "narrative", "agent"]
+          "keywords": [
+            "llm",
+            "ai",
+            "fallback",
+            "degradation",
+            "narrative",
+            "agent"
+          ]
         },
         {
           "id": "gloaming-b3",
           "text": "Shipped live to Vercel with the AI layer keyless-degradable end to end",
-          "keywords": ["vercel", "deployment", "shipped"]
+          "keywords": [
+            "vercel",
+            "deployment",
+            "shipped"
+          ]
         }
       ],
       "tier": "shipped",
@@ -84,137 +118,15 @@
         "date": "07/2026",
         "note": "Public repo + live deployment, verified 07-Jul-2026."
       },
-      "tags": ["agentic-ai", "game", "typescript", "serverless", "llm"],
-      "resumeEligible": true
-    },
-    {
-      "id": "proj-darya",
-      "kind": "project",
-      "title": "DARYA — Village-Level Flood Intelligence for Rupnagar",
-      "summary": "Dam, gauge, and IMD data fused into per-village Punjabi alerts delivered through a trusted human relay, with a replayable evaluation timeline of the 2025 Punjab floods.",
-      "bullets": [
-        {
-          "id": "darya-b1",
-          "text": "Fusing dam-release, river-gauge, and IMD forecast data into village-level flood risk for Rupnagar district, delivered as Punjabi-language alerts through a trusted human relay",
-          "keywords": ["data-pipeline", "python", "civic-tech", "geospatial", "alerts", "multilingual"]
-        },
-        {
-          "id": "darya-b2",
-          "text": "Building a replayable evaluation timeline of the 2025 Punjab floods so every alert threshold is backtested against a real disaster, not a synthetic benchmark",
-          "keywords": ["evaluation", "backtesting", "evals", "time-series"]
-        }
+      "tags": [
+        "agentic-ai",
+        "game",
+        "typescript",
+        "serverless",
+        "llm"
       ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
-      "tags": ["civic-tech", "data-pipeline", "python", "evals", "voice"],
       "resumeEligible": true
     },
-    {
-      "id": "proj-munshi",
-      "kind": "project",
-      "title": "MUNSHI — AI Exam Scribe for Blind Students",
-      "summary": "Zero-network, browser-first exam scribe whose trust mechanism is a tamper-evident hash chain.",
-      "bullets": [
-        {
-          "id": "munshi-b1",
-          "text": "Building a zero-network, browser-first AI exam scribe for blind students — nothing leaves the machine during an exam",
-          "keywords": ["accessibility", "assistive-tech", "offline-first", "browser", "speech"]
-        },
-        {
-          "id": "munshi-b2",
-          "text": "Designing a tamper-evident hash chain as the trust mechanism, so invigilators can verify the session log cryptographically instead of trusting the software",
-          "keywords": ["security", "hash-chain", "integrity", "cryptography"]
-        }
-      ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
-      "tags": ["assistive-tech", "accessibility", "security", "voice"],
-      "resumeEligible": true
-    },
-    {
-      "id": "proj-katha",
-      "kind": "project",
-      "title": "KATHA VAULT — Voice AI Archive of Elder Folklore",
-      "summary": "A voice agent that records elders telling folk stories in native dialects, with an elder-tuned turn-taking engine and a geo-tagged story atlas.",
-      "bullets": [
-        {
-          "id": "katha-b1",
-          "text": "Building a voice AI agent that archives elder folklore in native dialects, with an elder-tuned turn-taking engine — extended patience windows and verbal backchannels instead of interruptions",
-          "keywords": ["voice", "asr", "conversation-design", "agent", "speech", "turn-taking"]
-        },
-        {
-          "id": "katha-b2",
-          "text": "Designing a geo-tagged story atlas so every recorded tale is pinned to the village that told it",
-          "keywords": ["geospatial", "archive", "culture", "maps"]
-        }
-      ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
-      "tags": ["voice", "agentic-ai", "culture", "asr"],
-      "resumeEligible": true
-    },
-    {
-      "id": "proj-yojana",
-      "kind": "project",
-      "title": "YOJANA SETU — Voice-First Welfare-Scheme Eligibility Agent",
-      "summary": "\"LLM talks, rules decide\": deterministic rules-JSON verdicts, a live entitlement counter, and a pre-filled print packet, with Punjabi ASR via Groq Whisper large-v3.",
-      "bullets": [
-        {
-          "id": "yojana-b1",
-          "text": "Building a voice-first welfare-scheme eligibility agent on the principle 'LLM talks, rules decide' — every verdict comes from deterministic rules-JSON, never from the model",
-          "keywords": ["agent", "llm", "guardrails", "rules-engine", "deterministic", "voice"]
-        },
-        {
-          "id": "yojana-b2",
-          "text": "Wiring Punjabi speech recognition through Groq Whisper large-v3 with a live entitlement counter and a pre-filled print packet as the output",
-          "keywords": ["asr", "whisper", "groq", "punjabi", "speech", "api-integration"]
-        }
-      ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
-      "tags": ["voice", "agentic-ai", "civic-tech", "guardrails", "groq"],
-      "resumeEligible": true
-    },
-    {
-      "id": "proj-sutradhar",
-      "kind": "project",
-      "title": "SUTRADHAR — Cinema Intelligence Platform",
-      "summary": "A market-permission graph between films, a band-based box-office verdict engine, and Natya-Shastra-grounded craft guidance for Indian storytellers.",
-      "bullets": [
-        {
-          "id": "sutradhar-b1",
-          "text": "Building a cinema intelligence platform: a market-permission graph between films and a band-based box-office verdict engine where every verdict shows its comparable films",
-          "keywords": ["knowledge-graph", "prediction", "knn", "typescript", "data"]
-        },
-        {
-          "id": "sutradhar-b2",
-          "text": "Grounding craft guidance in Natya-Shastra rasa theory, with every note backed by named films and real performances from the corpus",
-          "keywords": ["rag", "corpus", "citations", "nlp"]
-        }
-      ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
-      "tags": ["agentic-ai", "data", "typescript", "knowledge-graph"],
-      "resumeEligible": true
-    },
-    {
-      "id": "proj-braillix",
-      "kind": "project",
-      "title": "Braillix — Math OCR on Raspberry Pi for Assistive Use",
-      "summary": "Math OCR running on a Raspberry Pi for assistive reading.",
-      "bullets": [
-        {
-          "id": "braillix-b1",
-          "text": "Building math OCR on a Raspberry Pi for assistive use — on-device recognition, no cloud dependency",
-          "keywords": ["ocr", "raspberry-pi", "edge", "accessibility", "computer-vision"]
-        }
-      ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
-      "tags": ["assistive-tech", "computer-vision", "edge"],
-      "resumeEligible": true
-    },
-
     {
       "id": "ach-ntse",
       "kind": "achievement",
@@ -222,8 +134,14 @@
       "summary": "National Talent Search Examination scholarship, Government of India (2021).",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "06/2021", "note": "NCERT NTSE scholarship award." },
-      "tags": ["scholarship", "national"],
+      "evidence": {
+        "date": "06/2021",
+        "note": "NCERT NTSE scholarship award."
+      },
+      "tags": [
+        "scholarship",
+        "national"
+      ],
       "resumeEligible": true
     },
     {
@@ -233,8 +151,15 @@
       "summary": "Won first place at a generative-AI hackathon hosted at IIT Ropar.",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "Hackathon result, IIT Ropar." },
-      "tags": ["hackathon", "genai", "win"],
+      "evidence": {
+        "date": "2025",
+        "note": "Hackathon result, IIT Ropar."
+      },
+      "tags": [
+        "hackathon",
+        "genai",
+        "win"
+      ],
       "resumeEligible": true
     },
     {
@@ -244,8 +169,14 @@
       "summary": "Core organizing team of Thapar's techno-cultural fest.",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "TIET fest organizing role." },
-      "tags": ["leadership", "organizing"],
+      "evidence": {
+        "date": "2025",
+        "note": "TIET fest organizing role."
+      },
+      "tags": [
+        "leadership",
+        "organizing"
+      ],
       "resumeEligible": true
     },
     {
@@ -255,8 +186,14 @@
       "summary": "Organizing committee of Thapar's sports fest.",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "TIET fest organizing role." },
-      "tags": ["leadership", "organizing"],
+      "evidence": {
+        "date": "2025",
+        "note": "TIET fest organizing role."
+      },
+      "tags": [
+        "leadership",
+        "organizing"
+      ],
       "resumeEligible": true
     },
     {
@@ -266,11 +203,16 @@
       "summary": "Community volunteering.",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "2024", "note": "Volunteer service." },
-      "tags": ["volunteering", "community"],
+      "evidence": {
+        "date": "2024",
+        "note": "Volunteer service."
+      },
+      "tags": [
+        "volunteering",
+        "community"
+      ],
       "resumeEligible": true
     },
-
     {
       "id": "cert-launched-global",
       "kind": "certification",
@@ -278,8 +220,15 @@
       "summary": "Certificate ID LEDCC4828.",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "Certificate ID LEDCC4828." },
-      "tags": ["ai", "mentorship", "certification"],
+      "evidence": {
+        "date": "2025",
+        "note": "Certificate ID LEDCC4828."
+      },
+      "tags": [
+        "ai",
+        "mentorship",
+        "certification"
+      ],
       "resumeEligible": true
     },
     {
@@ -289,20 +238,44 @@
       "summary": "Guided project series on predictive analytics.",
       "bullets": [],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "TIET × LinkedIn Learning program." },
-      "tags": ["ml", "analytics", "certification"],
+      "evidence": {
+        "date": "2025",
+        "note": "TIET × LinkedIn Learning program."
+      },
+      "tags": [
+        "ml",
+        "analytics",
+        "certification"
+      ],
       "resumeEligible": true
     },
-
     {
       "id": "skill-python",
       "kind": "skill",
       "title": "Python",
       "summary": "Primary language for data work and ML coursework.",
-      "bullets": [{ "id": "skill-python-b1", "text": "Python", "keywords": ["python", "pandas", "numpy", "scikit-learn"] }],
+      "bullets": [
+        {
+          "id": "skill-python-b1",
+          "text": "Python",
+          "keywords": [
+            "python",
+            "pandas",
+            "numpy",
+            "scikit-learn"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "repo": "https://github.com/SHV27/UCS761-Deep-Learning", "date": "2025", "note": "Deep-learning coursework repos, analytics projects." },
-      "tags": ["python", "ml"],
+      "evidence": {
+        "repo": "https://github.com/SHV27/UCS761-Deep-Learning",
+        "date": "2025",
+        "note": "Deep-learning coursework repos, analytics projects."
+      },
+      "tags": [
+        "python",
+        "ml"
+      ],
       "resumeEligible": true
     },
     {
@@ -310,10 +283,27 @@
       "kind": "skill",
       "title": "JavaScript / TypeScript (working)",
       "summary": "Working proficiency across shipped browser projects.",
-      "bullets": [{ "id": "skill-jsts-b1", "text": "JavaScript/TypeScript", "keywords": ["javascript", "typescript", "node"] }],
+      "bullets": [
+        {
+          "id": "skill-jsts-b1",
+          "text": "JavaScript/TypeScript",
+          "keywords": [
+            "javascript",
+            "typescript",
+            "node"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "repo": "https://github.com/SHV27/gloaming-game", "date": "07/2026", "note": "GLOAMING and other browser projects." },
-      "tags": ["typescript", "javascript"],
+      "evidence": {
+        "repo": "https://github.com/SHV27/gloaming-game",
+        "date": "07/2026",
+        "note": "GLOAMING and other browser projects."
+      },
+      "tags": [
+        "typescript",
+        "javascript"
+      ],
       "resumeEligible": true
     },
     {
@@ -321,10 +311,26 @@
       "kind": "skill",
       "title": "Git & GitHub",
       "summary": "Version control across 13 public repos.",
-      "bullets": [{ "id": "skill-git-b1", "text": "Git/GitHub", "keywords": ["git", "github", "version-control"] }],
+      "bullets": [
+        {
+          "id": "skill-git-b1",
+          "text": "Git/GitHub",
+          "keywords": [
+            "git",
+            "github",
+            "version-control"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "url": "https://github.com/SHV27", "date": "07/2026", "note": "13 public repositories." },
-      "tags": ["git"],
+      "evidence": {
+        "url": "https://github.com/SHV27",
+        "date": "07/2026",
+        "note": "13 public repositories."
+      },
+      "tags": [
+        "git"
+      ],
       "resumeEligible": true
     },
     {
@@ -332,10 +338,31 @@
       "kind": "skill",
       "title": "Prompt & Agent Design (Claude Code)",
       "summary": "Designing agentic workflows, constitutions, and guardrailed LLM systems with Claude Code.",
-      "bullets": [{ "id": "skill-agent-b1", "text": "Prompt & agent design (Claude Code)", "keywords": ["agents", "agentic", "prompt-engineering", "claude", "llm", "guardrails"] }],
+      "bullets": [
+        {
+          "id": "skill-agent-b1",
+          "text": "Prompt & agent design (Claude Code)",
+          "keywords": [
+            "agents",
+            "agentic",
+            "prompt-engineering",
+            "claude",
+            "llm",
+            "guardrails"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "repo": "https://github.com/SHV27/gloaming-game", "date": "07/2026", "note": "Agent-built shipped projects with keyless-degradable AI layers." },
-      "tags": ["agentic-ai", "llm", "claude"],
+      "evidence": {
+        "repo": "https://github.com/SHV27/gloaming-game",
+        "date": "07/2026",
+        "note": "Agent-built shipped projects with keyless-degradable AI layers."
+      },
+      "tags": [
+        "agentic-ai",
+        "llm",
+        "claude"
+      ],
       "resumeEligible": true
     },
     {
@@ -343,22 +370,55 @@
       "kind": "skill",
       "title": "Groq / Whisper API Integration",
       "summary": "Speech and LLM inference over Groq's OpenAI-compatible endpoints, including Whisper large-v3 ASR.",
-      "bullets": [{ "id": "skill-groq-b1", "text": "Groq/Whisper API integration", "keywords": ["groq", "whisper", "asr", "api", "openai-compatible", "speech"] }],
+      "bullets": [
+        {
+          "id": "skill-groq-b1",
+          "text": "Groq/Whisper API integration",
+          "keywords": [
+            "groq",
+            "whisper",
+            "asr",
+            "api",
+            "openai-compatible",
+            "speech"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "date": "2026", "note": "Working integrations in YOJANA SETU prototype and coursework." },
-      "tags": ["groq", "whisper", "asr"],
+      "evidence": {
+        "date": "2026",
+        "note": "Working integrations in YOJANA SETU prototype and coursework."
+      },
+      "tags": [
+        "groq",
+        "whisper",
+        "asr"
+      ],
       "resumeEligible": true
     },
-
     {
       "id": "skill-lora",
       "kind": "skill",
       "title": "LoRA Fine-Tuning",
       "summary": "Parameter-efficient fine-tuning of open models.",
-      "bullets": [{ "id": "skill-lora-b1", "text": "LoRA fine-tuning", "keywords": ["lora", "fine-tuning", "peft", "training"] }],
+      "bullets": [
+        {
+          "id": "skill-lora-b1",
+          "text": "LoRA fine-tuning",
+          "keywords": [
+            "lora",
+            "fine-tuning",
+            "peft",
+            "training"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["ml", "fine-tuning"],
+      "tags": [
+        "ml",
+        "fine-tuning"
+      ],
       "resumeEligible": true
     },
     {
@@ -366,10 +426,24 @@
       "kind": "skill",
       "title": "Transformers Internals",
       "summary": "Attention, tokenization, and architecture from first principles.",
-      "bullets": [{ "id": "skill-tfm-b1", "text": "Transformers internals", "keywords": ["transformers", "attention", "deep-learning", "pytorch"] }],
+      "bullets": [
+        {
+          "id": "skill-tfm-b1",
+          "text": "Transformers internals",
+          "keywords": [
+            "transformers",
+            "attention",
+            "deep-learning",
+            "pytorch"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["ml", "transformers"],
+      "tags": [
+        "ml",
+        "transformers"
+      ],
       "resumeEligible": true
     },
     {
@@ -377,10 +451,25 @@
       "kind": "skill",
       "title": "LangGraph / MCP Multi-Agent Systems",
       "summary": "Multi-agent orchestration and the Model Context Protocol.",
-      "bullets": [{ "id": "skill-lg-b1", "text": "LangGraph/MCP multi-agent systems", "keywords": ["langgraph", "mcp", "multi-agent", "orchestration", "agents"] }],
+      "bullets": [
+        {
+          "id": "skill-lg-b1",
+          "text": "LangGraph/MCP multi-agent systems",
+          "keywords": [
+            "langgraph",
+            "mcp",
+            "multi-agent",
+            "orchestration",
+            "agents"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["agentic-ai", "orchestration"],
+      "tags": [
+        "agentic-ai",
+        "orchestration"
+      ],
       "resumeEligible": true
     },
     {
@@ -388,10 +477,26 @@
       "kind": "skill",
       "title": "RAG + Guardrails + Evals",
       "summary": "Retrieval pipelines with output guardrails and evaluation harnesses.",
-      "bullets": [{ "id": "skill-rag-b1", "text": "RAG, guardrails & evals", "keywords": ["rag", "retrieval", "embeddings", "guardrails", "evals", "evaluation"] }],
+      "bullets": [
+        {
+          "id": "skill-rag-b1",
+          "text": "RAG, guardrails & evals",
+          "keywords": [
+            "rag",
+            "retrieval",
+            "embeddings",
+            "guardrails",
+            "evals",
+            "evaluation"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["rag", "evals"],
+      "tags": [
+        "rag",
+        "evals"
+      ],
       "resumeEligible": true
     },
     {
@@ -399,10 +504,24 @@
       "kind": "skill",
       "title": "Model Deployment / Hugging Face",
       "summary": "Serving and sharing models on Hugging Face infrastructure.",
-      "bullets": [{ "id": "skill-hf-b1", "text": "Deployment/Hugging Face", "keywords": ["deployment", "huggingface", "serving", "mlops"] }],
+      "bullets": [
+        {
+          "id": "skill-hf-b1",
+          "text": "Deployment/Hugging Face",
+          "keywords": [
+            "deployment",
+            "huggingface",
+            "serving",
+            "mlops"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["mlops", "deployment"],
+      "tags": [
+        "mlops",
+        "deployment"
+      ],
       "resumeEligible": true
     },
     {
@@ -410,10 +529,23 @@
       "kind": "skill",
       "title": "Local LLMs / Ollama",
       "summary": "Running and integrating local open-weight models.",
-      "bullets": [{ "id": "skill-ollama-b1", "text": "Local LLMs (Ollama)", "keywords": ["ollama", "local-llm", "llama", "quantization"] }],
+      "bullets": [
+        {
+          "id": "skill-ollama-b1",
+          "text": "Local LLMs (Ollama)",
+          "keywords": [
+            "ollama",
+            "local-llm",
+            "llama",
+            "quantization"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["local-llm"],
+      "tags": [
+        "local-llm"
+      ],
       "resumeEligible": true
     },
     {
@@ -421,10 +553,22 @@
       "kind": "skill",
       "title": "System Design Foundations",
       "summary": "Scalability, storage, and API design fundamentals.",
-      "bullets": [{ "id": "skill-sd-b1", "text": "System design foundations", "keywords": ["system-design", "architecture", "scalability"] }],
+      "bullets": [
+        {
+          "id": "skill-sd-b1",
+          "text": "System design foundations",
+          "keywords": [
+            "system-design",
+            "architecture",
+            "scalability"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["system-design"],
+      "tags": [
+        "system-design"
+      ],
       "resumeEligible": true
     },
     {
@@ -432,22 +576,48 @@
       "kind": "skill",
       "title": "ML Math — Linear Algebra, Probability, Statistics",
       "summary": "The mathematical core under the models.",
-      "bullets": [{ "id": "skill-mlmath-b1", "text": "ML math: linear algebra, probability, statistics", "keywords": ["linear-algebra", "probability", "statistics", "math"] }],
+      "bullets": [
+        {
+          "id": "skill-mlmath-b1",
+          "text": "ML math: linear algebra, probability, statistics",
+          "keywords": [
+            "linear-algebra",
+            "probability",
+            "statistics",
+            "math"
+          ]
+        }
+      ],
       "tier": "in_forge",
       "forgeEta": "July 2026",
-      "tags": ["math", "ml"],
+      "tags": [
+        "math",
+        "ml"
+      ],
       "resumeEligible": true
     },
-
     {
       "id": "skill-firebase",
       "kind": "skill",
       "title": "Firebase",
       "summary": "Used in projects; excluded from resume by Shaurya's call — not interview-safe.",
-      "bullets": [{ "id": "skill-fb-b1", "text": "Firebase", "keywords": ["firebase"] }],
+      "bullets": [
+        {
+          "id": "skill-fb-b1",
+          "text": "Firebase",
+          "keywords": [
+            "firebase"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "Project usage." },
-      "tags": ["excluded"],
+      "evidence": {
+        "date": "2025",
+        "note": "Project usage."
+      },
+      "tags": [
+        "excluded"
+      ],
       "resumeEligible": false
     },
     {
@@ -455,10 +625,24 @@
       "kind": "skill",
       "title": "React",
       "summary": "Used across projects; excluded from resume by Shaurya's call — not interview-safe.",
-      "bullets": [{ "id": "skill-react-b1", "text": "React", "keywords": ["react"] }],
+      "bullets": [
+        {
+          "id": "skill-react-b1",
+          "text": "React",
+          "keywords": [
+            "react"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "repo": "https://github.com/SHV27/galactic-battle-simulator", "date": "2026", "note": "Project usage." },
-      "tags": ["excluded"],
+      "evidence": {
+        "repo": "https://github.com/SHV27/galactic-battle-simulator",
+        "date": "2026",
+        "note": "Project usage."
+      },
+      "tags": [
+        "excluded"
+      ],
       "resumeEligible": false
     },
     {
@@ -466,10 +650,23 @@
       "kind": "skill",
       "title": "Netlify",
       "summary": "Used for deploys; excluded from resume by Shaurya's call.",
-      "bullets": [{ "id": "skill-nl-b1", "text": "Netlify", "keywords": ["netlify"] }],
+      "bullets": [
+        {
+          "id": "skill-nl-b1",
+          "text": "Netlify",
+          "keywords": [
+            "netlify"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "Project deploys." },
-      "tags": ["excluded"],
+      "evidence": {
+        "date": "2025",
+        "note": "Project deploys."
+      },
+      "tags": [
+        "excluded"
+      ],
       "resumeEligible": false
     },
     {
@@ -477,10 +674,24 @@
       "kind": "skill",
       "title": "HTML / CSS",
       "summary": "Used everywhere; excluded from resume by Shaurya's call.",
-      "bullets": [{ "id": "skill-hc-b1", "text": "HTML/CSS", "keywords": ["html", "css"] }],
+      "bullets": [
+        {
+          "id": "skill-hc-b1",
+          "text": "HTML/CSS",
+          "keywords": [
+            "html",
+            "css"
+          ]
+        }
+      ],
       "tier": "shipped",
-      "evidence": { "date": "2025", "note": "Project usage." },
-      "tags": ["excluded"],
+      "evidence": {
+        "date": "2025",
+        "note": "Project usage."
+      },
+      "tags": [
+        "excluded"
+      ],
       "resumeEligible": false
     }
   ]

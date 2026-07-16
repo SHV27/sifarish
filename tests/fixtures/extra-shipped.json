@@ -1,0 +1,177 @@
+[
+  {
+    "id": "proj-darya",
+    "kind": "project",
+    "title": "DARYA — Village-Level Flood Intelligence for Rupnagar",
+    "summary": "Dam, gauge, and IMD data fused into per-village Punjabi alerts delivered through a trusted human relay, with a replayable evaluation timeline of the 2025 Punjab floods.",
+    "bullets": [
+      {
+        "id": "darya-b1",
+        "text": "Fusing dam-release, river-gauge, and IMD forecast data into village-level flood risk for Rupnagar district, delivered as Punjabi-language alerts through a trusted human relay",
+        "keywords": [
+          "data-pipeline",
+          "python",
+          "civic-tech",
+          "geospatial",
+          "alerts",
+          "multilingual"
+        ]
+      },
+      {
+        "id": "darya-b2",
+        "text": "Building a replayable evaluation timeline of the 2025 Punjab floods so every alert threshold is backtested against a real disaster, not a synthetic benchmark",
+        "keywords": [
+          "evaluation",
+          "backtesting",
+          "evals",
+          "time-series"
+        ]
+      }
+    ],
+    "tier": "shipped",
+    "tags": [
+      "civic-tech",
+      "data-pipeline",
+      "python",
+      "evals",
+      "voice"
+    ],
+    "resumeEligible": true,
+    "evidence": {
+      "repo": "https://github.com/SHV27/darya",
+      "date": "06/2026",
+      "note": "shipped and live"
+    }
+  },
+  {
+    "id": "proj-yojana",
+    "kind": "project",
+    "title": "YOJANA SETU — Voice-First Welfare-Scheme Eligibility Agent",
+    "summary": "\"LLM talks, rules decide\": deterministic rules-JSON verdicts, a live entitlement counter, and a pre-filled print packet, with Punjabi ASR via Groq Whisper large-v3.",
+    "bullets": [
+      {
+        "id": "yojana-b1",
+        "text": "Building a voice-first welfare-scheme eligibility agent on the principle 'LLM talks, rules decide' — every verdict comes from deterministic rules-JSON, never from the model",
+        "keywords": [
+          "agent",
+          "llm",
+          "guardrails",
+          "rules-engine",
+          "deterministic",
+          "voice"
+        ]
+      },
+      {
+        "id": "yojana-b2",
+        "text": "Wiring Punjabi speech recognition through Groq Whisper large-v3 with a live entitlement counter and a pre-filled print packet as the output",
+        "keywords": [
+          "asr",
+          "whisper",
+          "groq",
+          "punjabi",
+          "speech",
+          "api-integration"
+        ]
+      }
+    ],
+    "tier": "shipped",
+    "tags": [
+      "voice",
+      "agentic-ai",
+      "civic-tech",
+      "guardrails",
+      "groq"
+    ],
+    "resumeEligible": true,
+    "evidence": {
+      "repo": "https://github.com/SHV27/yojana",
+      "date": "06/2026",
+      "note": "shipped and live"
+    }
+  },
+  {
+    "id": "proj-katha",
+    "kind": "project",
+    "title": "KATHA VAULT — Voice AI Archive of Elder Folklore",
+    "summary": "A voice agent that records elders telling folk stories in native dialects, with an elder-tuned turn-taking engine and a geo-tagged story atlas.",
+    "bullets": [
+      {
+        "id": "katha-b1",
+        "text": "Building a voice AI agent that archives elder folklore in native dialects, with an elder-tuned turn-taking engine — extended patience windows and verbal backchannels instead of interruptions",
+        "keywords": [
+          "voice",
+          "asr",
+          "conversation-design",
+          "agent",
+          "speech",
+          "turn-taking"
+        ]
+      },
+      {
+        "id": "katha-b2",
+        "text": "Designing a geo-tagged story atlas so every recorded tale is pinned to the village that told it",
+        "keywords": [
+          "geospatial",
+          "archive",
+          "culture",
+          "maps"
+        ]
+      }
+    ],
+    "tier": "shipped",
+    "tags": [
+      "voice",
+      "agentic-ai",
+      "culture",
+      "asr"
+    ],
+    "resumeEligible": true,
+    "evidence": {
+      "repo": "https://github.com/SHV27/katha",
+      "date": "06/2026",
+      "note": "shipped and live"
+    }
+  },
+  {
+    "id": "proj-sutradhar",
+    "kind": "project",
+    "title": "SUTRADHAR — Cinema Intelligence Platform",
+    "summary": "A market-permission graph between films, a band-based box-office verdict engine, and Natya-Shastra-grounded craft guidance for Indian storytellers.",
+    "bullets": [
+      {
+        "id": "sutradhar-b1",
+        "text": "Building a cinema intelligence platform: a market-permission graph between films and a band-based box-office verdict engine where every verdict shows its comparable films",
+        "keywords": [
+          "knowledge-graph",
+          "prediction",
+          "knn",
+          "typescript",
+          "data"
+        ]
+      },
+      {
+        "id": "sutradhar-b2",
+        "text": "Grounding craft guidance in Natya-Shastra rasa theory, with every note backed by named films and real performances from the corpus",
+        "keywords": [
+          "rag",
+          "corpus",
+          "citations",
+          "nlp"
+        ]
+      }
+    ],
+    "tier": "shipped",
+    "tags": [
+      "agentic-ai",
+      "data",
+      "typescript",
+      "knowledge-graph"
+    ],
+    "resumeEligible": true,
+    "evidence": {
+      "repo": "https://github.com/SHV27/sutradhar",
+      "date": "06/2026",
+      "note": "shipped and live"
+    }
+  }
+]

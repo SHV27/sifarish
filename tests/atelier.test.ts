@@ -7,17 +7,16 @@ import { matchEvidence } from '../src/lib/match/evidence'
 import { scanSlop, scanGuarantee } from '../src/lib/slop/scan'
 import { DEFAULT_VISION } from '../src/db/seed'
 import type { CompanyIntel, LedgerEntry } from '../src/types'
+import EXTRA_SHIPPED from './fixtures/extra-shipped.json'
 
 /**
- * A realistic near-future ledger: Shaurya has promoted several projects to shipped (the seed
- * ships only GLOAMING today). Uniqueness is only exercisable when there are multiple projects to
- * cast differently per role — so the gate tests that state.
+ * A realistic near-future ledger: the seed ships only GLOAMING today. Uniqueness is only
+ * exercisable when there are multiple SHIPPED projects to cast differently per role, so the gate
+ * builds that state itself. `extra-shipped.json` is the exact content of four projects (promoted to
+ * shipped) — kept in the test fixture, so the gate never depends on which placeholder projects the
+ * seed happens to carry (they were removed once Shaurya asked to drop the in-forge stubs).
  */
-const MULTI_LEDGER: LedgerEntry[] = SEED_LEDGER.map((e) =>
-  ['proj-darya', 'proj-yojana', 'proj-katha', 'proj-sutradhar'].includes(e.id)
-    ? { ...e, tier: 'shipped' as const, forgeEta: undefined, evidence: { repo: `https://github.com/SHV27/${e.id.replace('proj-', '')}`, date: '06/2026', note: 'promoted' } }
-    : e,
-)
+const MULTI_LEDGER: LedgerEntry[] = [...SEED_LEDGER, ...(EXTRA_SHIPPED as LedgerEntry[])]
 
 // Company-specific intel hooks (real letters get distinct hooks; that is the point).
 const INTEL: Record<string, string> = {
