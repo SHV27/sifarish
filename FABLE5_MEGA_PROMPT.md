@@ -1,17 +1,32 @@
 # SIFARISH — MEGA BRIEF FOR FABLE 5 (paste this whole file as your first message)
 
-> **Paste your secrets at the very top of your first message, replacing the four slots below.**
-> They live in the shell / env only, never in a committed file (CLAUDE.md §10). After this session
-> is done I (Shaurya) will **revoke the Vercel token** and **rotate the owner passcode**.
+> **Paste your secrets at the very top of your first message, replacing the slots below.**
+> They live in the shell / env only, never in a committed file (CLAUDE.md §10).
 >
 > ```
-> VERCEL_TOKEN      = «PASTE_VERCEL_DEPLOY_TOKEN_HERE»
-> SIFARISH_OWNER_PASSCODE = «PASTE_OWNER_PASSCODE_HERE»   (also set in Vercel env)
-> GROQ_API_KEY      = «PASTE_GROQ_KEY_HERE»               (for SIFARISH_LIVE=1 proofs)
-> GITHUB_PAT        = «PASTE_GH_PAT_HERE»                 (optional, higher rate limit + gh push)
+> SIFARISH_OWNER_PASSCODE = «PASTE_THE_NEW_ROTATED_PASSCODE»   (must match Vercel env)
+> VERCEL_TOKEN            = «PASTE_VERCEL_DEPLOY_TOKEN»        (Shaurya revokes it after DONE)
+> GROQ_API_KEY            = «PASTE_EXISTING_GROQ_KEY»          (only for SIFARISH_LIVE=1 proofs)
 > ```
-> Use the Vercel token ONLY as `--token` on `vercel deploy` and as an env var. Use the passcode
-> ONLY as an env var for the live owner-smoke. Never write any of them into a file.
+> Use the Vercel token ONLY as `--token` on `vercel deploy`. Use the passcode ONLY as an env var
+> for the live owner-smoke. **Never write any of them into a file.**
+>
+> **You do NOT need a GitHub PAT pasted.** `gh` is already authenticated in the keyring (account
+> `SHV27`, scopes incl. `repo`) — push with `git -c credential.helper= -c credential.helper='!gh
+> auth git-credential' push origin main`. Note the plain `git push` hangs here: the Windows Git
+> Credential Manager prompts interactively and blocks in a non-interactive shell, so clear the
+> helper list as shown. Nabz's higher-rate-limit PAT already lives server-side in Vercel env
+> (`/api/gh` proxy, D86). A local `GITHUB_PAT` only matters if `tests/live-forge.test.ts` hits
+> GitHub's 60/hr unauth limit — ask Shaurya only if that actually happens.
+>
+> **Why the passcode is new (read this — it is a live incident, not hygiene):** the old passcode
+> was committed in plaintext to the **PUBLIC** repo (`CLAUDE.md` D98, `PROGRESS.md` ×2). It gates
+> every metered function (D46) **and** — because the vault's AES key is PBKDF2-derived from it and
+> the Blob path is passcode-derived (D54) — it decrypts his entire personal vault. Rotation is the
+> real fix; scrubbing the files does not clean git history. **If those files still contain a live
+> passcode value when you read them, stop and tell Shaurya immediately.** The lesson worth keeping:
+> the D98 line written to *warn* about the leak *was* the leak — never write a secret's value into
+> a decision log, only the fact that it must rotate.
 
 ---
 
@@ -280,11 +295,19 @@ project with emotion** while staying a compiler (truth in, truth out).
 ## 4 · SECRETS & SECURITY (§10)
 
 - Secrets live in env / `--token` only. **Never** write the Vercel token, owner passcode, or any key
-  into a committed file, and never `VITE_`-prefix a secret.
-- `SIFARISH_OWNER_PASSCODE` is the server gate for all metered functions (D46). It reached chat, so
-  Shaurya will rotate it after this session — set the NEW value in Vercel env and use that.
-- The Vercel token is single-use for this session's deploy; Shaurya revokes it after "done".
-- Adzuna keys (`ADZUNA_APP_ID`/`ADZUNA_APP_KEY`) and Groq key are Vercel env, server-side only.
+  into a committed file, and never `VITE_`-prefix a secret. **Never write a secret's *value* into a
+  decision log or status doc** — record only that it must rotate. (D98 published the passcode into a
+  public repo by documenting it. Do not repeat that.)
+- `SIFARISH_OWNER_PASSCODE` — 🔴 the old value leaked **publicly** (see the header). Use only the NEW
+  rotated value, matching Vercel env. It gates every metered function (D46) *and* derives the vault's
+  encryption key + Blob path (D54), so it is both a spend credential and a privacy credential.
+- `VERCEL_TOKEN` — 🟠 deploy-capable (can ship code to production). Single-use for this session;
+  Shaurya revokes it after DONE.
+- `GROQ_API_KEY` / `GITHUB_PAT` — 🟡 these reached a *private chat transcript* in an earlier session
+  (D11/D24) and are flagged as rotation **debt**, not an active incident. The existing values work
+  fine; do not treat them as an emergency and do not conflate them with the public leak above. If
+  Shaurya wants to clear the debt, rotating them is cheap — but it is his call, not a blocker.
+- Adzuna keys (`ADZUNA_APP_ID`/`ADZUNA_APP_KEY`) and the server-side Groq key live in Vercel env only.
 
 ---
 
