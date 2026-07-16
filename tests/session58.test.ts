@@ -106,6 +106,14 @@ const WWR_FIXTURE = `<?xml version="1.0" encoding="UTF-8"?>
   <description><![CDATA[<p>ML role with a broken feed entry.</p>]]></description>
   <link></link>
 </item>
+<item>
+  <title><![CDATA[Chemin: Product Translation Reviewer (Mandarin - English)]]></title>
+  <region><![CDATA[Anywhere in the World]]></region>
+  <category><![CDATA[Programming]]></category>
+  <description><![CDATA[<p>Review translations used to train AI models. LLM output rating.</p>]]></description>
+  <link>https://weworkremotely.com/remote-jobs/chemin-translation-reviewer</link>
+  <pubDate>Tue, 15 Jul 2026 09:00:00 +0000</pubDate>
+</item>
 </channel></rss>`
 
 describe('We Work Remotely (S5.8) — new provider, deterministic parser', () => {
@@ -131,6 +139,12 @@ describe('We Work Remotely (S5.8) — new provider, deterministic parser', () =>
 
   it('non-AI roles never enter the radar (the lane self-filters like Working Nomads)', () => {
     expect(jobs.some((j) => (j as Record<string, string>).company === 'Acme Corp')).toBe(false)
+  })
+
+  it('a description-only AI mention is NOT an AI role (live-caught: translation-reviewer noise)', () => {
+    // The exact live string that slipped through the first filter — the blurb says "train AI
+    // models" but the JOB is a Mandarin translation review. Filter reads title/company/category only.
+    expect(jobs.some((j) => (j as Record<string, string>).company === 'Chemin')).toBe(false)
   })
 })
 

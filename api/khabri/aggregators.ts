@@ -232,7 +232,11 @@ export function parseWwrRss(xml: string): Array<Record<string, unknown>> {
     const title = sep > 0 ? rawTitle.slice(sep + 1).trim() : rawTitle
     const desc = tag(block, 'description')
     const category = tag(block, 'category')
-    if (!AI_RE.test(`${title} ${category} ${desc.slice(0, 600)}`)) continue
+    // Filter on what the job IS (title/company/category), never the description — a translation
+    // gig whose blurb mentions "AI training data" is not an AI role (live-caught 16-Jul: the
+    // desc-inclusive filter admitted a Mandarin translation reviewer and a pen-tester). Same
+    // discipline as the Working Nomads lane. Sniper, not spray (D6).
+    if (!AI_RE.test(`${rawTitle} ${category}`)) continue
     let pub: string | undefined = tag(block, 'pubDate') || undefined
     if (pub) {
       const d = new Date(pub)
