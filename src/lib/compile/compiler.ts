@@ -243,7 +243,13 @@ export function compileResume(input: CompileInput): CompiledResume {
             text: `${p.title}${p.evidence?.date ? ` (${p.evidence.date})` : ''}`,
             ledgerIds: [p.id],
           })
-          if (evidenceUrl) push(lines, { kind: 'meta', text: evidenceUrl.replace(/^https?:\/\//, ''), ledgerIds: [p.id] })
+          // Session 5.7 (owner: "these are not app descriptions") — a project's bullets are engineering
+          // ACHIEVEMENTS; without a one-line "what it IS" a recruiter can't tell that sifarish is a
+          // job-hunt assistant. Render the project's own summary (its product description) + the live
+          // link on one line, so the achievements below have context. Never trimmed away (it IS the point).
+          const desc = (p.summary ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)
+          const metaText = [desc, evidenceUrl.replace(/^https?:\/\//, '')].filter(Boolean).join(' · ')
+          if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [p.id] })
           for (const b of bulletsFor(p, lv.bulletsPerProject)) {
             // A Baithak rephrasing renders in place of the original, under the SAME evidence link.
             const text = input.bulletOverrides?.[b.id] ?? b.text

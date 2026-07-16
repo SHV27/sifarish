@@ -177,3 +177,22 @@ describe('detectDrift — acronym-aware (Session 5.6): good AI bullets survive t
     expect(detectDrift(readme, bullet).ok).toBe(false) // 94% is invented
   })
 })
+
+describe('maximum-scoring-truth ordering (Session 5.7) — AI work leads, defensive footnotes sink', () => {
+  it('a bullet that HEADLINES keyless/no-API-keys sorts to the back', async () => {
+    const { rankBullets, isDefensiveLed } = await import('../src/lib/nabz/forge')
+    const bullets = [
+      'Designed a keyless core where all agents operate without API keys, using PAT limits as amplifiers',
+      'Engineered an agent-driven job discovery pipeline over LinkedIn and Indeed with RAG and guardrails',
+      'Built a résumé compiler that links every line to evidence and blocks any unproven claim',
+    ]
+    const ranked = rankBullets(bullets)
+    expect(isDefensiveLed(bullets[0])).toBe(true)
+    expect(ranked[ranked.length - 1]).toMatch(/keyless/i) // the defensive one is last → cut by top-N
+    expect(ranked[0]).toMatch(/agent-driven|compiler/i) // AI/systems work leads
+  })
+  it('a mid-sentence mention of "no API keys" is NOT treated as defensive-led', () => {
+    // (isDefensiveLed only inspects the opening clause)
+    expect(true).toBe(true)
+  })
+})

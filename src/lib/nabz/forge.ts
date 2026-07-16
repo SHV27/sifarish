@@ -66,6 +66,23 @@ export function isResumeBullet(s: string): boolean {
   return true
 }
 
+/**
+ * MAXIMUM-SCORING-TRUTH ORDERING (Session 5.7, owner: "sifarish ko keyless kyun promote kar rahe ho").
+ * For an AI/ML-engineer résumé the AI/systems work must LEAD; a bullet that headlines a defensive
+ * robustness feature ("keyless", "runs without API keys", "offline-first", "PAT limits") undersells the
+ * exact wiring a recruiter screens for. Such bullets stay (still true) but sort to the BACK, so the
+ * compiler's top-N cut drops them first and the AI engineering leads. Deterministic — the LLM can't be
+ * trusted to never do it, so the guard makes it structural. A bullet is "defensive-led" only when the
+ * robustness term appears in its opening clause (first ~60 chars); a mid-sentence mention is fine.
+ */
+const DEFENSIVE_LEAD = /\b(keyless|(with|runs?|works?|operat\w*)\s+(fully\s+)?(without|no)\s+(any\s+)?api\s*keys?|no\s+api\s*keys?|zero\s+api\s*keys?|offline[- ]first|pat\s+limits?)\b/i
+export function isDefensiveLed(bullet: string): boolean {
+  return DEFENSIVE_LEAD.test(bullet.replace(/^[-*•]\s*/, '').slice(0, 60))
+}
+export function rankBullets(bullets: string[]): string[] {
+  return bullets.map((b, i) => ({ b, i })).sort((x, y) => Number(isDefensiveLed(x.b)) - Number(isDefensiveLed(y.b)) || x.i - y.i).map((o) => o.b)
+}
+
 /** Keep only the material that could honestly render, in order, de-duplicated. */
 export function sanitizeBullets(raw: string[]): string[] {
   const out: string[] = []
@@ -129,15 +146,22 @@ export function forgeBrief(repo: GhRepo, distilled: ReadmeDistilled): string {
 
 export const SYSTEM = `You are a senior engineering-résumé editor writing bullets for a strong early-career AI/ML engineer, from the README he wrote about his OWN shipped project. A senior AI-lab recruiter must respect every line.
 
-YOUR WHOLE JOB: turn the README into 3-4 ACCOMPLISHMENT bullets. A README sentence that merely states a fact, a config detail, or lists a feature ("X is the database", "Has offline support", "Pulse Loop — a weekly sweep") is NOT a bullet — reshape it into an accomplishment, or drop it. Never copy a feature-list line onto the résumé.
+YOUR WHOLE JOB: turn the README into 3-4 ACCOMPLISHMENT bullets a recruiter INSTANTLY UNDERSTANDS.
 
-EVERY BULLET, NO EXCEPTIONS — the five-part shape:
-1. STARTS with a strong past-tense engineering verb: Built, Architected, Engineered, Designed, Shipped, Implemented, Automated, Orchestrated, Instrumented, Integrated, Reduced, Cut, Scaled. NEVER start with a system name, a noun, or a config fact. NEVER "Responsible for", "Worked on", "Helped", "Utilized", "Used".
-2. Names WHAT he built + the KEY TECH in the object — specific, not a buzzword dump ("a git-backed content system", "a RAG pipeline over the corpus", "a deterministic line-by-line PDF renderer").
-3. Surfaces the HARD PART — the constraint solved, the architecture, the tradeoff ("so the whole app runs with zero API keys", "a parse-back-verified text layer", "an invariant that makes orphan claims structurally impossible").
-4. ENDS with IMPACT woven into the sentence — NOT a label. Convey magnitude through the real detail: the scale (data volume, corpus size, #screens/services), a failure class eliminated, the hard constraint solved, or a named mechanism/eval/guardrail he built. Use a NUMBER only if that EXACT number appears in the README — never invent, round, or infer one. A credible concrete outcome beats a fabricated number.
-   CRITICAL: never end a bullet with a bare category word like "SCALE", "RELIABILITY", "NOVELTY", "DIFFICULTY", or "IMPACT" — those are internal categories, not résumé words. Write the actual detail, in normal prose.
-5. 15-25 words, one idea. Descriptive but tight — never a terse fragment, never rambling past two lines. Do NOT append an em-dash tag or a bracketed label at the end.
+THE READER TEST (rule zero): a recruiter who has NEVER seen this project must, from your bullets alone, understand (a) WHAT the project is, (b) WHAT it does for a user or system, and (c) why the engineering is impressive. If a bullet only makes sense to the person who built it, it FAILS. Compare:
+  ✗ "Engineered a keyless core using agents, LLM, and PAT limits so every pillar runs without API keys" — a recruiter has NO IDEA what this app is or does; "keyless core", "pillars", "PAT limits" are private jargon; and it HEADLINES a defensive footnote instead of the AI work.
+  ✓ "Built a personal AI job-hunt agent that compiles evidence-backed résumés and finds roles, powered by a two-tier LLM reasoning core (Groq) with agentic tailoring and fact-drift guardrails."
+The second names WHAT IT IS, WHAT IT DOES, and features the real AI engineering.
+
+MAXIMUM-SCORING TRUTH (the strategy — every fact true, but you choose WHICH true facts to feature): lead with the most impressive, ROLE-RELEVANT engineering. This candidate is an AI/ML engineer, so FEATURE the AI systems he built — LLM integration and orchestration, agents and tool-use, RAG and retrieval, evals and guardrails, reasoning pipelines, model routing, prompt/context engineering. That is the work a recruiter is hiring for; that is what must lead.
+  Do NOT headline defensive or robustness asides — "runs offline", "no API keys", "keyless", "works without a server". A recruiter hiring an AI engineer wants to SEE the API/LLM/agent WIRING; leading with "keyless" UNDERSELLS exactly the skill they screen for. Such details may appear briefly, at most once, and NEVER as the lead of a bullet or the summary. Hiding his strongest true work to feature a footnote is a failure — show the maximum-scoring truth.
+
+EVERY BULLET:
+1. LEADS WITH A STRONG PAST-TENSE VERB (Built, Architected, Engineered, Designed, Shipped, Implemented, Automated, Scaled) — then names, in PLAIN LANGUAGE, WHAT HE BUILT AND WHAT IT DOES for a real user or system ("a co-op board game where the board is the antagonist", "a flood-alert system for villages", "a résumé compiler"). The FIRST bullet of each project MUST establish what the whole project IS and its core purpose — someone reading only that line should get it.
+2. BAN PRIVATE JARGON AND COINED NAMES the reader won't know — "keyless core", "the forge", "pillars", "phase→control ordering", "orphan-claim guardrail", "Pulse Loop", "the Dimaag". Describe the REAL-WORLD EFFECT instead: "runs with zero API keys", "prevents illegal moves", "blocks any unproven claim from the résumé". Name concrete, well-known tech (React, TypeScript, LLMs, RAG, agents) — that a recruiter recognizes — but in service of explaining what was built, never as a buzzword dump.
+3. States the HARD PART as an OUTCOME a non-builder grasps ("so a game runs entirely in the browser with no server", "so fabricated claims are impossible", "cutting export failures to zero").
+4. ENDS with IMPACT woven into the sentence — never a bare label. A NUMBER only if that exact number is in the README (never invent/round/infer); otherwise the real scale, the failure class eliminated, or the user value. Never end with a category word ("SCALE", "RELIABILITY") or a bracketed tag.
+5. 15-28 words, plain and clear — a smart non-engineer should follow it. Never a terse fragment, never private jargon, never rambling past two lines.
 
 HARD TRUTH RULES (breaking any makes the output useless — the app discards drifting bullets):
 - State ONLY facts present in the README. Re-express, compress, sharpen — but NEVER add a number, metric, model name, company, or technology the README does not contain.
@@ -156,8 +180,8 @@ STYLE REFERENCE — the shape and register of real bullets that got AI/ML engine
 - "Cut inference cost per document via prompt caching and model routing, keeping quality while collapsing spend."
 Notice: strong verb first, the specific system + tech named, the hard part surfaced, an outcome at the end — that is the target for HIS bullets, in his own facts.
 
-summary: one plain sentence (max 200 chars) — what the project IS and the problem it attacks, in his own words.
-bullets: 3 to 4 bullets, strongest first, each obeying the five-part shape.`
+summary: one plain, JARGON-FREE sentence (max 200 chars) that tells a stranger exactly what the project IS and who it is for — e.g. "A personal job-hunt assistant that compiles truthful, evidence-linked résumés and finds AI roles." No private/coined terms.
+bullets: 3-4 bullets, strongest first, EACH passing the READER TEST — a recruiter with no context understands what it is, what it does, and why it's impressive.`
 
 /**
  * Forge resume bullets for a repo. Falls back to sanitized README material on every failure
@@ -219,7 +243,8 @@ export async function forgeBullets(input: { repo: GhRepo; distilled: ReadmeDisti
   const summaryRaw = String(out.summary ?? '').trim()
   const summary = summaryRaw && detectDrift(source, summaryRaw).ok ? summaryRaw.slice(0, 240) : fallbackSummary
 
-  return { summary, bullets: kept.slice(0, 4), by: 'dimaag', rejected }
+  // AI/systems bullets lead; defensive-robustness bullets sink to the back (maximum-scoring truth).
+  return { summary, bullets: rankBullets(kept).slice(0, 4), by: 'dimaag', rejected }
 }
 
 /** Build the stored reading material the Darzi frames from (never rendered verbatim). */
