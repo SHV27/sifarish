@@ -46,48 +46,69 @@ It is fully functional **with zero API keys.**
 
 ## What it actually looks like
 
-Captured from the **live deployment in Owner Mode** by `scripts/owner-smoke.mjs` — the same headless
-harness that runs the §14 proofs. Real data, real roles, no mockups. The public demo shows a fictional
-persona; these are the owner's own screens.
+Captured live from **Owner Mode on the real deployment** (headless, zero console errors) — real data,
+real roles, no mockups. The public demo runs a fictional persona; every screen below is the owner's own.
 
-### Shikaar Radar — the hunt
-Live roles from 29 keyless ATS boards plus lawful global aggregator lanes — LinkedIn/Indeed/Glassdoor
-via Google-for-Jobs, **Adzuna across 18 country markets** (with real salaries), and keyless remote
-boards (Working Nomads, Jobicy, Arbeitnow, Remotive, RemoteOK, HN) — never scraping. Ranked against a
-rubric whose arithmetic is always inspectable
-(`why this score`), capped at 15 by design, searchable across the full catch, with hunts derived from
-the owner's own Vision Profile.
+### The Chief-of-Staff briefing — open the app, know your next move
+Every time you open it, SIFARISH tells you the one thing to do next and the roles worth your time —
+ranked by **your** vision, each with the reason it matched. New roles found while you were away are
+stamped; one click tailors any of them. A personal assistant, not a dashboard.
 
-![Shikaar Radar](docs/screenshots/nav-radar.png)
+![The Chief-of-Staff briefing](docs/screenshots/feat-briefing.png)
+
+### A compiled Application Packet — the résumé is *compiled*, never written
+JD decoded → evidence matched from the ledger → a one-page ATS-safe résumé + cover letter + outreach
+draft. Every must-have is proven against real evidence (the **Alignment Map**) or shown as an honest
+gap — and a must-have with **no** evidence is kept *off* the résumé (I1). Compile Quality is a rubric
+over craft execution, never a fake "ATS score" (I9); the PDF's text layer is parse-back-tested to equal
+exactly what was compiled (I5).
+
+![A compiled application packet](docs/screenshots/feat-packet.png)
+
+### Shikaar Radar — the hunt, ranked by what YOU want
+Live roles from 29 keyless ATS boards + lawful global aggregators — LinkedIn/Indeed/Glassdoor via
+Google-for-Jobs, **Adzuna across 18 country markets** (with real salaries), and keyless remote boards
+(Working Nomads, Jobicy, Arbeitnow, Remotive, RemoteOK, HN) — never scraping. Your Vision Profile drives
+both the hunt queries *and* the ranking, so your target roles top the queue instead of a generic AI
+list. Every score is inspectable (`why this score`).
+
+![Shikaar Radar](docs/screenshots/feat-radar.png)
 
 ### Sach Ledger — the single source of truth
-Every claim the résumé can make, tiered `shipped` vs `in_forge`, each with its evidence URL and date.
-Nothing reaches a résumé that does not start here.
+Every claim the résumé can make, tiered `shipped` vs `in_forge`, each with its evidence URL. Nothing
+reaches a résumé that does not start here.
 
-![Sach Ledger](docs/screenshots/01-ledger.png)
+![Sach Ledger](docs/screenshots/feat-ledger.png)
 
 ### Morcha Board — the war room
-Found → Tailored → Applied → Follow-up → Interview → Verdict. Tracking is a side effect of generating
-the packet; you never fill in a form.
+Found → Tailored → Applied → Follow-up → Interview → Verdict, fully reversible. Tracking is a side
+effect of generating the packet; you never fill in a form.
 
-![Morcha Board](docs/screenshots/nav-morcha.png)
+![Morcha Board](docs/screenshots/feat-morcha.png)
 
-### Guru — the counsel
-Grounded in the compiled dossier every turn, so it answers with *his* evidence and his stated vision —
-and refuses the guarantee language the rest of this category runs on (I9).
+### Guru — counsel grounded in your evidence
+A compiled dossier every turn, so it answers with *your* ledger and your stated vision — and refuses
+the guarantee language the rest of this category runs on (I9).
 
-![Guru](docs/screenshots/nav-guru.png)
+![Guru](docs/screenshots/feat-guru.png)
 
 ### Khabri — cited market intelligence
-Every external claim carries a source URL, or it renders as an error rather than text (I7).
+Multi-source discovery + a hiring-signal feed. Every external claim carries a source URL or renders as
+an error, not text (I7). Lawful aggregator APIs only — never scraping.
 
-![Khabri](docs/screenshots/nav-khabri.png)
+![Khabri](docs/screenshots/feat-khabri.png)
+
+### Settings — tune what "relevant" means
+Your Vision Profile — the target roles you want and the lanes you don't — is what the ranking runs on.
+Every metered API budget is visible (I8); nothing spends silently, and the whole app works with zero keys.
+
+![Settings — Vision Profile and budgets](docs/screenshots/feat-settings.png)
 
 ### The Gate — ownership is server-verified
 The owner code is checked by the server and stored in no browser. A visitor gets the read-only demo on
 a fictional persona and **cannot spend a single token** — structurally, not by policy (D44/D46).
 
-![The Gate](docs/screenshots/00-gate.png)
+![The Gate](docs/screenshots/feat-gate.png)
 
 ---
 
