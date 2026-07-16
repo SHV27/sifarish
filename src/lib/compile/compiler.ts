@@ -121,16 +121,27 @@ interface TrimLevel {
   maxAchievements: number
   includePositions: boolean
   includeCerts: boolean
+  skillsCap: number
 }
+/**
+ * Session 5.6 (owner: "resume mein kanjoosi kyun") — the résumé was collapsing to ONE bullet per
+ * project under page pressure because bulletsPerProject was the FIRST thing dropped. Research says
+ * 2-4 bullets/project is the density recruiters expect; 1 reads as thin. So bullet richness is now
+ * protected: the trim shrinks the (untrimmed-before) SKILLS line, then achievements, positions,
+ * certs, and project COUNT — and only drops to 2, then 1 bullet as the last resorts. A strong résumé
+ * with 3 fewer skills beats a sparse one with a wall of skills.
+ */
 const TRIM_LEVELS: TrimLevel[] = [
-  { bulletsPerProject: 3, maxProjects: 4, maxAchievements: 99, includePositions: true, includeCerts: true },
-  { bulletsPerProject: 3, maxProjects: 3, maxAchievements: 3, includePositions: true, includeCerts: true },
-  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 3, includePositions: true, includeCerts: true },
-  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 2, includePositions: false, includeCerts: true },
-  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 2, includePositions: false, includeCerts: false },
-  { bulletsPerProject: 1, maxProjects: 3, maxAchievements: 1, includePositions: false, includeCerts: false },
-  { bulletsPerProject: 1, maxProjects: 2, maxAchievements: 1, includePositions: false, includeCerts: false },
-  { bulletsPerProject: 1, maxProjects: 1, maxAchievements: 0, includePositions: false, includeCerts: false },
+  { bulletsPerProject: 3, maxProjects: 4, maxAchievements: 99, includePositions: true, includeCerts: true, skillsCap: 99 },
+  { bulletsPerProject: 3, maxProjects: 4, maxAchievements: 4, includePositions: true, includeCerts: true, skillsCap: 99 },
+  { bulletsPerProject: 3, maxProjects: 3, maxAchievements: 3, includePositions: true, includeCerts: true, skillsCap: 18 },
+  { bulletsPerProject: 3, maxProjects: 3, maxAchievements: 2, includePositions: false, includeCerts: true, skillsCap: 16 },
+  { bulletsPerProject: 3, maxProjects: 3, maxAchievements: 2, includePositions: false, includeCerts: false, skillsCap: 14 },
+  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 2, includePositions: false, includeCerts: false, skillsCap: 14 },
+  { bulletsPerProject: 2, maxProjects: 3, maxAchievements: 1, includePositions: false, includeCerts: false, skillsCap: 12 },
+  { bulletsPerProject: 2, maxProjects: 2, maxAchievements: 1, includePositions: false, includeCerts: false, skillsCap: 12 },
+  { bulletsPerProject: 1, maxProjects: 3, maxAchievements: 1, includePositions: false, includeCerts: false, skillsCap: 10 },
+  { bulletsPerProject: 1, maxProjects: 2, maxAchievements: 0, includePositions: false, includeCerts: false, skillsCap: 10 },
 ]
 
 export function compileResume(input: CompileInput): CompiledResume {
@@ -214,10 +225,12 @@ export function compileResume(input: CompileInput): CompiledResume {
         }
       },
       skills: () => {
-        // Shipped only (I2 keeps in_forge out of here)
+        // Shipped only (I2 keeps in_forge out of here). Capped per trim level (relevance-sorted, so
+        // the JD-relevant skills survive) so the skills line can shrink before project bullets do.
         if (skills.length === 0) return
-        push(lines, { kind: 'heading', text: 'SKILLS', ledgerIds: skills.map((e) => e.id) })
-        push(lines, { kind: 'skills', text: skills.map((e) => e.title).join(' | '), ledgerIds: skills.map((e) => e.id) })
+        const shown = skills.slice(0, lv.skillsCap)
+        push(lines, { kind: 'heading', text: 'SKILLS', ledgerIds: shown.map((e) => e.id) })
+        push(lines, { kind: 'skills', text: shown.map((e) => e.title).join(' | '), ledgerIds: shown.map((e) => e.id) })
       },
       projects: () => {
         const projects = projectPool.slice(0, lv.maxProjects)

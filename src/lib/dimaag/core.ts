@@ -110,11 +110,20 @@ const SCHEMA_CLASSIFY = {
   additionalProperties: false,
 } as const
 
+type OnceResult = CallResult | 'ratelimit' | null
+
 async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<CallResult | null> {
   // Darshak/demo mode is structurally keyless (D44): a locked browser never spends a token.
   if (!meteredCallsAllowed()) return { result: null, tokens: 0, keyless: true }
   for (let attempt = 1; attempt <= CALL_ATTEMPTS; attempt++) {
     const r = await callOnce(tier, system, user, maxTokens, schema)
+    // A tokens-per-minute rate limit (free tier) needs REAL back-off, not a 250ms retry — otherwise
+    // a multi-project re-forge silently degrades to the deterministic (raw-README) path. Wait long
+    // enough for the per-minute window to refill, then try again. (Session 5.6)
+    if (r === 'ratelimit') {
+      if (attempt < CALL_ATTEMPTS) await new Promise((res) => setTimeout(res, 8000 * attempt))
+      continue
+    }
     // `keyless` is a settled answer (no key / demo browser) — retrying it would be a lie to
     // ourselves and a waste. Only a genuine failure (null) is worth asking again.
     if (r !== null) return r
@@ -123,7 +132,7 @@ async function callDimaag(tier: DimaagTier, system: string, user: string, maxTok
   return null
 }
 
-async function callOnce(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<CallResult | null> {
+async function callOnce(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<OnceResult> {
   try {
     const res = await fetch('/api/dimaag', {
       method: 'POST',
@@ -131,7 +140,8 @@ async function callOnce(tier: DimaagTier, system: string, user: string, maxToken
       body: JSON.stringify({ tier, system, user, maxTokens, schema }),
     })
     if (!res.ok) return null
-    const data = (await res.json()) as { keyless?: boolean; result?: unknown; tokens?: number; error?: string }
+    const data = (await res.json()) as { keyless?: boolean; result?: unknown; tokens?: number; error?: string; rateLimited?: boolean }
+    if (data.rateLimited) return 'ratelimit' // free-tier TPM hit — the caller backs off, not degrades
     if (data.keyless) return { result: null, tokens: 0, keyless: true }
     if (data.error || data.result == null) return null
     return { result: data.result, tokens: data.tokens ?? 0, keyless: false }

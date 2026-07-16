@@ -238,7 +238,11 @@ export function distillReadme(md: string): ReadmeDistilled {
   // spare (was 6k — deepened per the owner's founding requirement that ledger depth drives
   // framing quality). This is source material for REASONING, never rendered on a resume, so a
   // deep cap costs nothing at the one-page law (D28: the compiler is the sole authority there).
-  const raw = cleanMd(noCode).slice(0, 12000)
+  // 14k (was 12k, Session 5.6): the forge feeds this to the model AND uses it as the drift-guard
+  // source, so a real number the model correctly used ("29 boards", "18 markets") must be inside the
+  // cap or the guard wrongly flags it as invented and nukes a good bullet. 14k holds his READMEs'
+  // substance while keeping each forge call within Groq's free-tier per-minute token budget.
+  const raw = cleanMd(noCode).slice(0, 14000)
 
   return { summary, bullets, keywords, stack, liveUrl, hasReadme: cleanMd(noCode).length > 20, problem, raw }
 }

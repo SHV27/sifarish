@@ -96,17 +96,25 @@ export function NabzPanel() {
     setReforgeNote(null)
     let fixed = 0
     let skipped = 0
+    let degraded = 0 // ok, but the smart path was rate-limited and the deterministic path was used
     for (const o of repos) {
       try {
         const r = await refreshEntryFromRepo(o.repo)
-        if (r.ok) fixed++
-        else skipped++
+        if (r.ok) {
+          fixed++
+          if (r.by === 'deterministic') degraded++
+        } else skipped++
       } catch {
         skipped++
       }
     }
     setReforging(null)
-    setReforgeNote(`Re-forged ${fixed} entr${fixed === 1 ? 'y' : 'ies'} from their READMEs${skipped ? ` · ${skipped} skipped (no README or nothing bullet-worthy)` : ''}. Your titles, tiers and edits are untouched.`)
+    setReforgeNote(
+      `Re-forged ${fixed} entr${fixed === 1 ? 'y' : 'ies'} from their READMEs${skipped ? ` · ${skipped} skipped (no README or nothing bullet-worthy)` : ''}. Your titles, tiers and edits are untouched.` +
+        (degraded > 0
+          ? ` ${degraded} used the keyless path (Groq's per-minute token limit was hit) — click "Re-forge all" again in a minute to upgrade ${degraded === 1 ? 'it' : 'them'} with the smart path; the already-forged ones are cached and instant.`
+          : ''),
+    )
   }
 
   const addOne = async (o: RepoOverview) => {

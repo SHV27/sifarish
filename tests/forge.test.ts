@@ -130,3 +130,50 @@ app either drowns the user in dashboards or hides behind a chatbot that can't se
     expect(d.raw.length).toBeGreaterThan(bigReadme.length - 50) // nothing meaningful truncated for a README this size
   })
 })
+
+// ============================================================================================
+// Session 5.6 — the forge produces accomplishment bullets, not feature-doc (owner: "AI sloppy shit")
+// ============================================================================================
+import { preferAccomplishments } from '../src/lib/nabz/forge'
+import { detectDrift } from '../src/lib/polish/factGuard'
+
+describe('preferAccomplishments — the fallback prefers verb-led lines over feature-doc', () => {
+  it('surfaces action-verb bullets ahead of copula-led feature-doc lines', () => {
+    const bullets = [
+      'GitHub is the database and manifest.json holds all curation for the whole app',
+      'Built a git-backed content system that uses the repository itself as the datastore',
+      'Architected an offline-first keyless core so every feature runs with zero API keys',
+      'Pulse Loop is a weekly cited news sweep that proposes rubric updates for the app',
+    ]
+    const out = preferAccomplishments(bullets)
+    expect(out[0]).toMatch(/^(Built|Architected)/)
+    expect(out).not.toContain('GitHub is the database and manifest.json holds all curation for the whole app')
+  })
+  it('keeps everything when too few are verb-led (an entry with bullets beats an empty one)', () => {
+    const feature = ['GitHub is the database', 'It has offline support and no API key needed']
+    expect(preferAccomplishments(feature)).toEqual(feature)
+  })
+})
+
+describe('detectDrift — acronym-aware (Session 5.6): good AI bullets survive the guard', () => {
+  it('ACCEPTS an acronym the README spells out by expansion (RAG ⟵ retrieval augmented generation)', () => {
+    const readme = 'The app uses retrieval augmented generation over a corpus of documents to answer questions.'
+    const bullet = 'Built a RAG pipeline over the document corpus so answers stay grounded in real sources'
+    expect(detectDrift(readme, bullet).ok).toBe(true)
+  })
+  it('ACCEPTS MCP when the README says model context protocol', () => {
+    const readme = 'Exposes tools to the agent through the model context protocol server.'
+    const bullet = 'Engineered an MCP server that exposes tools to the agent over a typed interface'
+    expect(detectDrift(readme, bullet).ok).toBe(true)
+  })
+  it('still REJECTS an acronym the README never supports (a genuinely invented fact)', () => {
+    const readme = 'A simple to-do list app built with React and local browser storage.'
+    const bullet = 'Built a to-do app that is fully HIPAA compliant for hospital deployment'
+    expect(detectDrift(readme, bullet).ok).toBe(false) // HIPAA is not derivable from the README
+  })
+  it('still REJECTS an invented NUMBER (numbers are never relaxed)', () => {
+    const readme = 'A retrieval augmented generation demo over some documents.'
+    const bullet = 'Built a RAG system reaching 94% precision across the corpus'
+    expect(detectDrift(readme, bullet).ok).toBe(false) // 94% is invented
+  })
+})

@@ -1,6 +1,7 @@
 import type { Bullet, ProjectContext } from '../../types'
 import { generate } from '../dimaag/core'
 import { detectDrift } from '../polish/factGuard'
+import { startsStrong } from '../ustaad/library'
 import type { GhRepo, ReadmeDistilled } from './github'
 
 /**
@@ -80,6 +81,18 @@ export function sanitizeBullets(raw: string[]): string[] {
   return out
 }
 
+/**
+ * When the deterministic fallback must ship (keyless / over-budget / the LLM drifted), prefer the
+ * lines that at least READ like accomplishments — a strong engineering verb up front (Ustaad
+ * verb-strength-ladder) — over copula-led feature-doc lines ("X is the database"). If too few are
+ * verb-led we keep everything (an entry with some bullets beats an empty one). The real fix is the
+ * LLM reshaper above; this only stops the WORST feature-doc lines leading when it can't run.
+ */
+export function preferAccomplishments(bullets: string[]): string[] {
+  const strong = bullets.filter((b) => startsStrong(b.replace(/^[-*•]\s*/, '')))
+  return strong.length >= 2 ? strong : bullets
+}
+
 export interface ForgeResult {
   summary: string
   bullets: string[]
@@ -89,20 +102,62 @@ export interface ForgeResult {
   rejected: string[]
 }
 
-const SYSTEM = `You are a resume editor for a strong early-career AI/ML engineer. You are given the README the engineer wrote about his OWN project, plus repo metadata.
+/**
+ * THE FORGE BRIEF (Session 5.6) — the token-efficiency innovation. The model does NOT need the whole
+ * README (install steps, badges, TOC, license, decision logs); it needs the SUBSTANCE: the problem,
+ * the feature notes to reshape, and the stack. This compact brief is ~700 tokens vs ~4000 for the raw
+ * 14k README — 5× cheaper, so a multi-project re-forge stays inside Groq's free-tier per-minute budget
+ * and never falls back to the keyless path. Quality is preserved because (a) the reasoning model still
+ * runs, and (b) the drift guard still validates every bullet against the FULL README (see forgeBullets)
+ * — so nothing the model can honestly say is lost, only the noise the model didn't need is dropped.
+ */
+export function forgeBrief(repo: GhRepo, distilled: ReadmeDistilled): string {
+  return [
+    `Project: ${repo.name}`,
+    repo.description ? `What it is: ${repo.description}` : '',
+    repo.language ? `Primary language: ${repo.language}` : '',
+    distilled.stack.length ? `Stack: ${distilled.stack.join(', ')}` : '',
+    '',
+    distilled.problem ? `PROBLEM IT ATTACKS (his own words):\n${distilled.problem}` : '',
+    '',
+    'WHAT IT DOES (his own feature notes — RESHAPE each into an accomplishment bullet per the rules; never copy verbatim):',
+    ...sanitizeBullets(distilled.bullets).slice(0, 10).map((f) => `- ${f}`),
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
 
-Rewrite the project into resume bullets of the quality a senior FAANG/AI-lab recruiter respects.
+export const SYSTEM = `You are a senior engineering-résumé editor writing bullets for a strong early-career AI/ML engineer, from the README he wrote about his OWN shipped project. A senior AI-lab recruiter must respect every line.
 
-RULES — violating any one makes the output useless:
-- Every bullet must state a FACT that is present in the README. You may re-express, compress, and sharpen. You may NOT add numbers, technologies, companies, or outcomes the README does not contain. If the README gives no metric, give no metric — do NOT invent one.
-- Shape: strong past-tense action verb → what he built → how / with what → why it mattered technically. One sentence, 110-190 characters.
-- Lead with engineering substance (architecture, constraint solved, tradeoff made), not marketing.
-- Never write a bullet that is a link, a label ("App:", "Docs:"), an install step, or a list of URLs.
-- Banned register: "results-driven", "passionate about leveraging", "dynamic professional", "proven track record", "spearheaded", "utilized", "synergies". Write like an engineer describing work, not a brochure.
-- Never claim the project is used by anyone, funded, or award-winning unless the README says so.
+YOUR WHOLE JOB: turn the README into 3-4 ACCOMPLISHMENT bullets. A README sentence that merely states a fact, a config detail, or lists a feature ("X is the database", "Has offline support", "Pulse Loop — a weekly sweep") is NOT a bullet — reshape it into an accomplishment, or drop it. Never copy a feature-list line onto the résumé.
 
-summary: one plain sentence (max 200 chars) saying what the project IS and what problem it attacks.
-bullets: 3 to 4 bullets, strongest first.`
+EVERY BULLET, NO EXCEPTIONS — the five-part shape:
+1. STARTS with a strong past-tense engineering verb: Built, Architected, Engineered, Designed, Shipped, Implemented, Automated, Orchestrated, Instrumented, Integrated, Reduced, Cut, Scaled. NEVER start with a system name, a noun, or a config fact. NEVER "Responsible for", "Worked on", "Helped", "Utilized", "Used".
+2. Names WHAT he built + the KEY TECH in the object — specific, not a buzzword dump ("a git-backed content system", "a RAG pipeline over the corpus", "a deterministic line-by-line PDF renderer").
+3. Surfaces the HARD PART — the constraint solved, the architecture, the tradeoff ("so the whole app runs with zero API keys", "a parse-back-verified text layer", "an invariant that makes orphan claims structurally impossible").
+4. ENDS with IMPACT woven into the sentence — NOT a label. Convey magnitude through the real detail: the scale (data volume, corpus size, #screens/services), a failure class eliminated, the hard constraint solved, or a named mechanism/eval/guardrail he built. Use a NUMBER only if that EXACT number appears in the README — never invent, round, or infer one. A credible concrete outcome beats a fabricated number.
+   CRITICAL: never end a bullet with a bare category word like "SCALE", "RELIABILITY", "NOVELTY", "DIFFICULTY", or "IMPACT" — those are internal categories, not résumé words. Write the actual detail, in normal prose.
+5. 15-25 words, one idea. Descriptive but tight — never a terse fragment, never rambling past two lines. Do NOT append an em-dash tag or a bracketed label at the end.
+
+HARD TRUTH RULES (breaking any makes the output useless — the app discards drifting bullets):
+- State ONLY facts present in the README. Re-express, compress, sharpen — but NEVER add a number, metric, model name, company, or technology the README does not contain.
+- Use the README's OWN tokens for technologies (if he wrote "RAG"/"LLM"/"agents"/"MCP", use those exact words — do not introduce new tech names).
+- No superlatives you can't back ("100% accuracy", "best-in-class"). No brochure register ("passionate about leveraging", "results-driven", "proven track record", "spearheaded synergies").
+- For AI/agent projects, prefer bullets that show DEPTH where the README supports it: the agent architecture (tools/orchestration/MCP), an eval or guardrail he built, or a cost/production concern.
+
+RESHAPING EXAMPLES — a README fact → a bullet:
+- "GitHub is the database. manifest.json holds curation." → "Architected a git-backed content system that uses the repository itself as the datastore, with a manifest.json curation layer — no server or DB to run, versioned and diffable by design."
+- "Has offline support and works without an API key." → "Engineered an offline-first, keyless architecture so every feature runs with zero API keys — deterministic core logic with the LLM as an optional amplifier, never a dependency."
+- "The resume is compiled from a ledger, not written." → "Built a compiler-style résumé engine that compiles single-source-of-truth ledger data into ATS-safe PDF and DOCX, enforcing that every rendered line links to verifiable evidence."
+
+STYLE REFERENCE — the shape and register of real bullets that got AI/ML engineers hired (EMULATE the structure and specificity; NEVER copy their facts — use only HIS README):
+- "Shipped a production retrieval system over 220k support tickets with hybrid retrieval and a reranker, lifting Recall@10 from 0.61 to 0.87 at p95 < 400ms."
+- "Built an MCP server exposing 14 internal tools to a customer-facing agent, replacing 3 bespoke integration layers."
+- "Cut inference cost per document via prompt caching and model routing, keeping quality while collapsing spend."
+Notice: strong verb first, the specific system + tech named, the hard part surfaced, an outcome at the end — that is the target for HIS bullets, in his own facts.
+
+summary: one plain sentence (max 200 chars) — what the project IS and the problem it attacks, in his own words.
+bullets: 3 to 4 bullets, strongest first, each obeying the five-part shape.`
 
 /**
  * Forge resume bullets for a repo. Falls back to sanitized README material on every failure
@@ -110,30 +165,22 @@ bullets: 3 to 4 bullets, strongest first.`
  */
 export async function forgeBullets(input: { repo: GhRepo; distilled: ReadmeDistilled | null }): Promise<ForgeResult> {
   const { repo, distilled } = input
-  const deterministic = sanitizeBullets(distilled?.bullets ?? (repo.description ? [repo.description] : []))
+  const deterministic = preferAccomplishments(sanitizeBullets(distilled?.bullets ?? (repo.description ? [repo.description] : [])))
   const fallbackSummary = distilled?.summary || repo.description || ''
 
   if (!distilled?.hasReadme || !distilled.raw) {
     return { summary: fallbackSummary, bullets: deterministic, by: 'deterministic', rejected: [] }
   }
 
-  const user = [
-    `Project: ${repo.name}`,
-    repo.description ? `Repo description: ${repo.description}` : '',
-    repo.language ? `Primary language: ${repo.language}` : '',
-    distilled.stack.length ? `Detected stack: ${distilled.stack.join(', ')}` : '',
-    '',
-    'README (his own words — the ONLY source of facts you may use):',
-    distilled.raw,
-  ]
-    .filter(Boolean)
-    .join('\n')
+  // Token-efficiency (Session 5.6): the model reads the compact BRIEF, not the raw 14k README. The
+  // guard below still checks against the full README, so facts aren't lost — only tokens are saved.
+  const user = forgeBrief(repo, distilled)
 
   const out = await generate<{ summary?: string; bullets?: string[] }>({
     feature: 'forge',
     system: SYSTEM,
     user,
-    maxTokens: 2000,
+    maxTokens: 1400, // summary + 4 bullets need ~350 tokens; smaller output keeps calls under free-tier TPM
     // D74: without a schema this call uses json_object, which gpt-oss-120b fails on ~every attempt.
     schema: {
       type: 'object',

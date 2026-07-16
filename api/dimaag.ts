@@ -121,13 +121,19 @@ export default async function handler(req: Request): Promise<Response> {
             : { type: 'json_object' },
           messages: [
             { role: 'system', content: body.system.slice(0, 8000) },
-            { role: 'user', content: body.user.slice(0, 12000) },
+            // 16k (was 12k): the forge sends the full distilled README (≤14k) as the model's source
+            // material AND the drift-guard source; truncating it here made the model reason from less
+            // than the guard checks against, wrongly flagging real facts. (Session 5.6)
+            { role: 'user', content: body.user.slice(0, 16000) },
           ],
         }),
       })
       if (res.ok || res.status === 429) break
       if (attempt < 3) await new Promise((r) => setTimeout(r, 200 * attempt))
     }
+    // A 429 is a tokens-per-minute limit — surface it distinctly so the client backs off and retries
+    // rather than silently degrading to the deterministic fallback (which ships raw README lines).
+    if (res.status === 429) return json({ keyless: false, error: 'groq 429', rateLimited: true }, 200)
     if (!res.ok) return json({ keyless: false, error: `groq ${res.status}` }, 200)
     const data = (await res.json()) as {
       choices?: { message?: { content?: string } }[]

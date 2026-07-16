@@ -48,11 +48,35 @@ export interface DriftResult {
   addedNumbers: string[]
 }
 
+/**
+ * An all-caps acronym is a legitimate re-expression (not an invention) when the source spells it
+ * out — "RAG" for "retrieval-augmented generation", "MCP" for "model context protocol". So before
+ * flagging an acronym as drift, check whether consecutive source words' initials spell it. This is
+ * exact and safe: an acronym literally derivable from the author's own words is his fact, not a new
+ * one. (Session 5.6 — the forge's good AI bullets were being nuked over acronyms the README itself
+ * defined by expansion, forcing a fallback to raw feature-doc README lines.)
+ */
+function acronymDerivable(acr: string, sourceWords: string[]): boolean {
+  const letters = acr.toLowerCase().split('')
+  for (let i = 0; i + letters.length <= sourceWords.length; i++) {
+    let match = true
+    for (let j = 0; j < letters.length; j++) {
+      if ((sourceWords[i + j]?.[0] ?? '') !== letters[j]) {
+        match = false
+        break
+      }
+    }
+    if (match) return true
+  }
+  return false
+}
+
 export function detectDrift(original: string, polished: string): DriftResult {
   const origNums = new Set(extractNumbers(original))
   const addedNumbers = extractNumbers(polished).filter((n) => !origNums.has(n))
 
-  const origWords = new Set(original.toLowerCase().match(/[a-z0-9₹$€£]+/g) ?? [])
+  const origWordList = original.toLowerCase().match(/[a-z0-9₹$€£]+/g) ?? []
+  const origWords = new Set(origWordList)
   const addedFacts: string[] = []
   const words = polished.split(/\s+/)
 
@@ -63,12 +87,17 @@ export function detectDrift(original: string, polished: string): DriftResult {
     const norm = normWord(w)
     if (origWords.has(lower) || origWords.has(norm)) return // already a fact in the original
 
+    // An acronym the author spelled out by EXPANSION is his own fact, not an invention (RAG ⟵
+    // retrieval-augmented generation, MCP ⟵ model context protocol). Accept it BEFORE the tech-term
+    // check below — otherwise a lexicon acronym like RAG/MCP is flagged even when the README defines it.
+    if (/^[A-Z]{2,6}$/.test(w) && acronymDerivable(w, origWordList)) return
+
     // (2) a known technology/skill term the original never claimed
     if (norm.length > 1 && TECH_VOCAB.has(norm)) {
       addedFacts.push(lower)
       return
     }
-    // (3a) an all-caps acronym (RAG, LLM, API, ASR…)
+    // (3a) an all-caps acronym (RAG, LLM, API, ASR…) the source does NOT spell out → an added fact
     if (/^[A-Z]{2,6}$/.test(w)) {
       addedFacts.push(w)
       return
