@@ -30,7 +30,7 @@ function projectBrief(p: LedgerEntry, cap: number): string {
 }
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { scanSlop, scanGuarantee } from '../slop/scan'
-import { citePatterns, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
+import { citePatterns, craftClauses, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
 
 /**
  * THE EDITOR'S DESK (Darzi v3, P10). Four passes, each rationaled (I10):
@@ -115,6 +115,8 @@ export async function castingPass(
       ...citePatterns(['six-second-skim', 'projects-are-experience'], 2),
       ...(intel?.bullets.slice(0, 2).map((b) => ({ title: 'company intel', url: b.url })) ?? []),
     ],
+    // Session 5.9 — the library's casting rules IN the payload (citations above are display-only).
+    craft: craftClauses('casting', arch.id),
     heuristic,
   })
 
@@ -138,6 +140,20 @@ export async function castingPass(
   return { casting, chosenIds, benched }
 }
 
+/**
+ * FRAMING DIRECTION (Session 5.9) — the chosen angle, expressed as an instruction the guarded
+ * reframer can act on. Same ledger + two different JDs → two materially different directions →
+ * two materially different (drift-clean) framings. Pure + exported → unit-tested.
+ */
+export function framingDirection(angleLabel: string, archLabel: string, decode: JDDecode, company?: string): string {
+  const topMust = decode.mustHave.slice(0, 4).map((k) => k.replace(/-/g, ' '))
+  return (
+    `Re-express for a ${archLabel} reviewer${company ? ` at ${company}` : ''}. Chosen angle: ${angleLabel}.` +
+    (topMust.length ? ` This role scans first for: ${topMust.join(', ')} — surface the evidence that answers those, in plain language.` : '') +
+    ' Keep every fact his; vary the sentence shapes.'
+  )
+}
+
 // ---- Pass 3: Surgery (angle + bullet plan) ----
 export async function surgeryPass(
   project: LedgerEntry,
@@ -145,7 +161,8 @@ export async function surgeryPass(
   decode: JDDecode,
   intel?: CompanyIntel,
   company?: string,
-): Promise<{ choice: CastChoice; bulletIds: string[] }> {
+  withFraming = true,
+): Promise<{ choice: CastChoice; bulletIds: string[]; bulletOverrides?: Record<string, string> }> {
   const title = project.title.split('—')[0].trim()
   // Candidate angles = the archetype's angle + the project's own strongest tag-framing.
   const angleOptions: DecideOption[] = [
@@ -188,6 +205,7 @@ export async function surgeryPass(
         (intelText ? ` What the company builds & values (live intel): ${intelText}` : ''),
       evidence: [{ ref: project.id, text: `${project.title}: ${projectBrief(project, 2200)}` }],
       citations: citePatterns(['xyz-formula', 'verb-strength-ladder'], 2),
+      craft: craftClauses('surgery', arch.id), // Session 5.9 — studied rules reach the model
     })
   } else {
     angleRationale = {
@@ -226,7 +244,26 @@ export async function surgeryPass(
     angleLabel: angleRationale.choice,
     angleRationale,
   }
-  return { choice, bulletIds }
+
+  // Session 5.9 — THE FRAMING REWRITE. Selection/order alone cannot express one true fact five
+  // different ways; the boutique-firm move is re-expressing the chosen bullets TOWARD this reader.
+  // reframeProject guards every rewritten line with detectDrift against the WHOLE entry (his own
+  // writing — D81), so wording moves and facts cannot. Keyless / over-budget / drift-reject-all →
+  // no overrides, the evidence-true selection stands (I4). Cache-first, so re-tailoring the same
+  // JD costs nothing (D26).
+  let bulletOverrides: Record<string, string> | undefined
+  if (withFraming) {
+    try {
+      const { reframeProject } = await import('../polish/reframe')
+      const direction = framingDirection(angleRationale.choice, arch.label, decode, company)
+      const r = await reframeProject(project, direction)
+      if (!r.keyless && r.applied > 0) bulletOverrides = r.overrides
+    } catch {
+      /* framing is an amplifier, never a dependency */
+    }
+  }
+
+  return { choice, bulletIds, bulletOverrides }
 }
 
 // ---- Pass 4: Red-Team ----
@@ -285,21 +322,33 @@ export interface EditorInput {
 /** Runs passes 1–3 and returns the plan skeleton + the compiler override. Red-team runs after compile. */
 export async function runEditor(
   input: EditorInput,
-): Promise<{ plan: Omit<EditorialPlan, 'redTeam' | 'redTeamRounds'>; order: string[]; bullets: Record<string, string[]>; sectionOrder: SectionKey[] }> {
+): Promise<{
+  plan: Omit<EditorialPlan, 'redTeam' | 'redTeamRounds'>
+  order: string[]
+  bullets: Record<string, string[]>
+  sectionOrder: SectionKey[]
+  bulletOverrides?: Record<string, string>
+}> {
   const { arch, confidence, by } = await archetypePass(input.decode, input.jd, input.intel)
   const { casting, chosenIds, benched } = await castingPass(input.projects, arch, input.decode, input.intel)
 
   const chosen: CastChoice[] = []
   const bullets: Record<string, string[]> = {}
+  // Framing rewrites (Session 5.9): only the top 2 leading projects get the reframe call — the
+  // 6-second skim lands there, and the budget stays disciplined (I8).
+  let overrides: Record<string, string> | undefined
   for (const id of chosenIds) {
     const project = input.projects.find((p) => p.id === id)
     if (!project) continue
-    const { choice, bulletIds } = await surgeryPass(project, arch, input.decode, input.intel, input.company)
+    const wantFraming = chosenIds.indexOf(id) < 2
+    const { choice, bulletIds, bulletOverrides } = await surgeryPass(project, arch, input.decode, input.intel, input.company, wantFraming)
     chosen.push(choice)
     bullets[id] = bulletIds
+    if (bulletOverrides) overrides = { ...overrides, ...bulletOverrides }
   }
 
   return {
+    bulletOverrides: overrides,
     plan: {
       archetype: { id: arch.id, label: arch.label, priorities: arch.priorities, confidence, by, reviewerNote: arch.reviewerNote },
       casting,

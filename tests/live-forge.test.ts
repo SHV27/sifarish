@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { distillReadme } from '../src/lib/nabz/github'
-import { isResumeBullet, sanitizeBullets, SYSTEM, forgeBrief } from '../src/lib/nabz/forge'
+import { isResumeBullet, sanitizeBullets, forgeSystem, forgeBrief } from '../src/lib/nabz/forge'
 import type { GhRepo } from '../src/lib/nabz/github'
 import { detectDrift } from '../src/lib/polish/factGuard'
 
@@ -77,7 +77,7 @@ d('live forge over a REAL repo README', () => {
       const user = forgeBrief(repo, distilled)
       console.log(`brief chars: ${user.length} (vs raw README ${distilled.raw.length})`)
 
-      const out = await groq(SYSTEM, user)
+      const out = await groq(forgeSystem(), user)
       const bullets: string[] = (out.bullets ?? []).map((b: string) => String(b).trim())
 
       console.log('\n--- LIVE FORGE OUTPUT (sifarish) ---')

@@ -165,6 +165,12 @@ export interface DecideInput {
   context?: string
   evidence?: { ref: string; text: string }[]
   citations?: { title: string; url: string }[]
+  /**
+   * Craft rules from the Ustaad library, AS TEXT FOR THE MODEL (Session 5.9). `citations` above
+   * is display receipts only and never enters the payload; a value that isn't in the request
+   * body doesn't exist to the model — this field is the one that does.
+   */
+  craft?: string[]
   /** Optional domain heuristic for the fallback; if absent, a generic keyword scorer is used. */
   heuristic?: (input: DecideInput) => { choice: string; ranking: string[]; why: string; confidence: number }
 }
@@ -193,7 +199,7 @@ function genericHeuristic(input: DecideInput): { choice: string; ranking: string
 }
 
 export async function decide(input: DecideInput): Promise<Rationale> {
-  const cacheKey = hash({ k: 'decide', q: input.question, o: input.options, c: input.criteria, ctx: input.context, e: input.evidence })
+  const cacheKey = hash({ k: 'decide', q: input.question, o: input.options, c: input.criteria, ctx: input.context, e: input.evidence, cr: input.craft })
   const cached = await db.dimaagCache.get(cacheKey)
   if (cached) {
     await recordUsage(input.feature, 'reasoning', 'hit')
@@ -233,6 +239,7 @@ export async function decide(input: DecideInput): Promise<Rationale> {
     criteria: input.criteria,
     context: input.context,
     evidence: input.evidence,
+    craft: input.craft, // studied library rules — in the payload, not just the UI (Session 5.9)
   })
 
   const call = await callDimaag('reasoning', system, user, 2000, SCHEMA_DECIDE as unknown as Record<string, unknown>)

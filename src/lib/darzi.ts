@@ -75,12 +75,16 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   const shippedProjects = ledger.filter((e) => e.resumeEligible && e.tier === 'shipped' && e.kind === 'project')
   let editorial: EditorialPlan | undefined
   let compileEditorial: CompileInput['editorial']
+  // Session 5.9 — JD-picked framing rewrites from the Editor's Desk (drift-guarded in
+  // reframeProject; render under the same evidence link — compiler.ts keeps ledgerIds).
+  let bulletOverrides: Record<string, string> | undefined
   if (shippedProjects.length > 0) {
     onProgress?.('Reading the role & casting your projects…')
     const ed = await runEditor({ projects: shippedProjects, decode, jd: job.jd, intel, company: job.company }).catch(() => null)
     if (ed) {
       compileEditorial = { order: ed.order, bullets: ed.bullets, sectionOrder: ed.sectionOrder }
       editorial = { ...ed.plan, sectionOrder: ed.sectionOrder, redTeam: { verdict: 'PASS', fixes: [], by: 'heuristic', at: new Date().toISOString() }, redTeamRounds: 0 }
+      bulletOverrides = ed.bulletOverrides
     }
   }
 
@@ -91,7 +95,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
 
   // -- Compile (v1 compiler is final authority for I1/I2/one-page) --
   onProgress?.('Compiling the one-page résumé…')
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial, summaryLine })
+  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial, summaryLine, bulletOverrides })
 
   // -- Pass 4: Red-Team loop (≤3 rounds). PASS required for "ready". --
   let ready = true
@@ -139,6 +143,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     enhancing: false, // the Dimaag layer has finished — this is the fully-reasoned packet
     quality: estimateQuality(resume, coverage, ledger),
     summaryOn: true,
+    bulletOverrides, // Session 5.9: framing rewrites survive later Baithak recompiles
   }
 }
 

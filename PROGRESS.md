@@ -2,7 +2,23 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5.8 "The Duniya-Depth Pass" — salary visible, world rotated, mail acknowledged ✦
+## Status: Session 5.9 "The Boutique Firm" — the Darzi studied hundreds of résumés and can now use it ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **454 passed | 2 skipped (456) gates** · tsc clean ·
+warning-free build. The addendum's mental model — a résumé firm he paid for — shipped (D118–D121):
+- **The library reaches the model (D118):** the Ustaad library's studied patterns now ride IN the
+  reasoning payload (`craft` in decide(), `forgeSystem()`/`reframeSystem()`); before, citations were
+  display-only receipts and the model never saw the research. Library v1.1.0: 55 sources, 28 patterns,
+  +10 new framing patterns from live research into résumés that got AI engineers hired.
+- **Same truth, many framings (D119):** the chosen angle becomes a drift-guarded framing REWRITE of
+  the leading projects' bullets — same evidence links, JD-picked expression. Live-proven on two real
+  Netomi postings: different archetype, different section order, different framings, 0 drift failures.
+- **"Poora resume is angle se frame kar" (D120):** the Baithak's rewrite-angle op reframes every
+  leading project in one ask, guarded per project.
+- **For the owner (D121):** the cloud vault is EMPTY at the current passcode path — open Owner Mode in
+  the browser that holds your data so auto-push provisions it. Data is safe locally.
+
+## Prior: Session 5.8 "The Duniya-Depth Pass" — salary visible, world rotated, mail acknowledged ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **439 passed | 2 skipped (441) gates** · tsc clean ·
 warning-free build (incl. a pre-existing bundler warning fixed at the root). Four read-only agents

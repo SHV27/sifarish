@@ -1,6 +1,7 @@
 import type { LedgerEntry } from '../../types'
 import { generate } from '../dimaag/core'
 import { detectDrift } from './factGuard'
+import { craftClauses } from '../ustaad/library'
 
 /**
  * THE REFRAMER (Session 5.4, D61) — "GLOAMING ko aise explain kar."
@@ -39,6 +40,13 @@ Banned register: "results-driven", "passionate about leveraging", "proven track 
 
 Re-express every bullet you are given, reusing its EXACT id.`
 
+/** The system prompt AS SENT — static rules + the library's studied reframe craft (Session 5.9, I13). */
+export function reframeSystem(): string {
+  const craft = craftClauses('reframe', undefined, 5)
+  if (craft.length === 0) return SYSTEM
+  return `${SYSTEM}\n\nSTUDIED CRAFT (patterns from résumés that got AI engineers hired — cited in-app):\n${craft.map((c) => `- ${c}`).join('\n')}`
+}
+
 /**
  * Rephrase a project's bullets toward `direction`. Every failure path (keyless, over budget,
  * malformed JSON, guard rejection) yields fewer or zero overrides — never invented text.
@@ -61,7 +69,7 @@ export async function reframeProject(entry: LedgerEntry, direction: string): Pro
 
   const out = await generate<{ bullets?: { id?: string; text?: string }[] }>({
     feature: 'baithak.reframe',
-    system: SYSTEM,
+    system: reframeSystem(),
     user,
     maxTokens: 2000,
     // D74: json_schema is the only reliable structured-output mode on this model.

@@ -201,6 +201,41 @@ export async function applyEdit(packet: Packet, op: EditOp, utterance: string, p
       }
     }
 
+    /** "poora resume is angle se frame kar" — every leading project, one direction (Session 5.9). */
+    case 'rewrite-angle': {
+      const chosen = packet.editorial?.chosen.map((c) => c.ledgerId) ?? []
+      const entries = (await Promise.all(chosen.map((id) => db.ledger.get(id)))).filter(
+        (e): e is NonNullable<typeof e> => !!e && e.bullets.length > 0,
+      )
+      if (entries.length === 0) return { ok: false, note: 'No leading projects to reframe.' }
+      const { reframeProject } = await import('../polish/reframe')
+      let applied = 0
+      let rejectedCount = 0
+      const addedFacts = new Set<string>()
+      let overrides: Record<string, string> = { ...(packet.bulletOverrides ?? {}) }
+      for (const entry of entries) {
+        const r = await reframeProject(entry, op.direction)
+        if (r.keyless) return { ok: false, note: 'Keyless mode — reframing needs the owner GROQ key. The compiled bullets stand.' }
+        applied += r.applied
+        rejectedCount += r.rejected.length
+        for (const x of r.rejected) for (const f of x.addedFacts) addedFacts.add(f)
+        overrides = { ...overrides, ...r.overrides }
+      }
+      if (applied === 0) {
+        const why = rejectedCount
+          ? `Every attempt tried to add something you haven't proved (${[...addedFacts].slice(0, 4).join(', ')}), so I threw them out. Your bullets stand as compiled.`
+          : 'Nothing came back better than what you already have — your bullets stand.'
+        return { ok: false, note: why }
+      }
+      const updated = await recompile(packet, { bulletOverrides: overrides })
+      const done = await persist(updated, utterance, `Rewrote the résumé angle: "${op.direction}" — ${applied} bullet(s) across ${entries.length} project(s), ${rejectedCount} rejected by the fact guard`)
+      return {
+        ok: true,
+        note: `Reframed ${applied} bullet(s) across ${entries.length} leading project(s)${rejectedCount ? ` · ${rejectedCount} rejected by the fact guard` : ''}. Same facts, one framing.`,
+        packet: done,
+      }
+    }
+
     case 'set-summary': {
       const updated = await setSummary(packet, op.on)
       const done = await persist(updated, utterance, `Professional summary ${op.on ? 'added' : 'removed'}`)

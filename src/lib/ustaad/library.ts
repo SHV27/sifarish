@@ -20,7 +20,7 @@ export interface UstaadSource {
   accessed: string // YYYY-MM-DD
 }
 
-export type UstaadPass = 'archetype' | 'casting' | 'surgery' | 'redteam' | 'estimator'
+export type UstaadPass = 'archetype' | 'casting' | 'surgery' | 'redteam' | 'estimator' | 'forge' | 'reframe'
 
 export interface UstaadPattern {
   id: string
@@ -164,6 +164,19 @@ export function citePatterns(ids: string[], cap = 3): { title: string; url: stri
     }
   }
   return out
+}
+
+/**
+ * CRAFT CLAUSES (Session 5.9) — the library's rules AS PROMPT TEXT, so the studied patterns
+ * actually reach the model. Before this, citePatterns() produced display receipts that decide()
+ * silently dropped from the payload: the firm had a library it never opened at the desk.
+ * Knowledge stays DATA (I13 — a Pulse library update changes the model's craft with zero code).
+ * Capped for token discipline (D105).
+ */
+export function craftClauses(pass: UstaadPass, archetypeId?: string, cap = 5): string[] {
+  return patternsFor(pass, archetypeId)
+    .slice(0, cap)
+    .map((p) => `¶${p.id}: ${p.rule} (shape: ${p.exemplar})`)
 }
 
 /** Sources not re-verified in >12 months — flagged in Settings, never silently trusted. */

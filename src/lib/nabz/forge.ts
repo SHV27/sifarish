@@ -1,7 +1,7 @@
 import type { Bullet, ProjectContext } from '../../types'
 import { generate } from '../dimaag/core'
 import { detectDrift } from '../polish/factGuard'
-import { startsStrong } from '../ustaad/library'
+import { craftClauses, startsStrong } from '../ustaad/library'
 import type { GhRepo, ReadmeDistilled } from './github'
 
 /**
@@ -186,6 +186,17 @@ summary: one plain, JARGON-FREE sentence (max 200 chars) that tells a stranger e
 bullets: 3-4 bullets, strongest first, EACH passing the READER TEST — a recruiter with no context understands what it is, what it does, and why it's impressive.`
 
 /**
+ * The system prompt AS SENT (Session 5.9): the static rules above + the Ustaad library's studied
+ * forge patterns, so the researched craft actually reaches the model. The library is versioned,
+ * cited DATA (I13) — a Pulse-accepted update deepens this prompt with zero code change.
+ */
+export function forgeSystem(): string {
+  const craft = craftClauses('forge', undefined, 6)
+  if (craft.length === 0) return SYSTEM
+  return `${SYSTEM}\n\nSTUDIED CRAFT (patterns from résumés that got AI engineers hired — cited in-app):\n${craft.map((c) => `- ${c}`).join('\n')}`
+}
+
+/**
  * Forge resume bullets for a repo. Falls back to sanitized README material on every failure
  * path (keyless, over budget, malformed JSON, guard rejection) — never to invented text.
  */
@@ -204,7 +215,9 @@ export async function forgeBullets(input: { repo: GhRepo; distilled: ReadmeDisti
 
   const out = await generate<{ summary?: string; bullets?: string[] }>({
     feature: 'forge',
-    system: SYSTEM,
+    // Session 5.9 — the Ustaad library's studied patterns ride in the payload (data, not code:
+    // a Pulse library update upgrades the forge's craft with zero code change, I13).
+    system: forgeSystem(),
     user,
     maxTokens: 1400, // summary + 4 bullets need ~350 tokens; smaller output keeps calls under free-tier TPM
     // D74: without a schema this call uses json_object, which gpt-oss-120b fails on ~every attempt.

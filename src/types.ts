@@ -368,6 +368,12 @@ export type EditOp =
    * changes, the facts cannot. A rephrasing that smuggles a new fact is discarded, not shown.
    */
   | { kind: 'reframe-project'; ledgerId: string; direction: string }
+  /**
+   * "poora resume agentic angle se frame kar" — reframe EVERY currently-leading project toward
+   * one stated direction (Session 5.9). Same drift guard per project as reframe-project; a
+   * whole-résumé ask should not require him to name each project one by one.
+   */
+  | { kind: 'rewrite-angle'; direction: string }
 
 export interface ProposedEdit {
   id: string

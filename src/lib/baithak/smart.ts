@@ -134,6 +134,10 @@ function systemPrompt(packet: Packet, ledger: LedgerEntry[], job: { title: strin
     '    "isko zyada systems-heavy dikha"). Wording changes; a fact-drift guard freezes every number,',
     '    technology and proper noun, so it can never say something new. Use this whenever he asks for a',
     '    project to be EXPLAINED or FRAMED differently — do not refuse that, it is honest tailoring.',
+    '- {"kind":"rewrite-angle","direction":"<the framing he asked for>"}  — reframe EVERY leading',
+    '    project toward one direction ("poora resume agentic angle se frame kar", "sab kuch product',
+    '    impact ki taraf le ja"). Same fact-drift guard, per project. Use this for whole-résumé asks;',
+    '    reframe-project when he names one project.',
     '',
     'Reasoning guidance: when he asks to aim the resume at the role, work out WHICH ledger evidence best',
     'answers the JD must-haves, then promote/bench/reorder to put that evidence in the first third of the',
@@ -212,6 +216,19 @@ function validate(op: LlmOp, packet: Packet, ledger: LedgerEntry[]): ProposedEdi
         `${nameOf(e)} as compiled`,
         `${nameOf(e)} re-explained: "${direction.slice(0, 70)}" — same facts, new framing`,
         ['I1 fact-drift guard (facts frozen)', 'packet-scoped'],
+      )
+    }
+    /** Whole-résumé reframe (Session 5.9): every leading project, one direction, guarded per project. */
+    case 'rewrite-angle': {
+      const direction = (op.direction ?? '').trim()
+      if (direction.length < 3) return null
+      const leading = ledger.filter((e) => chosen.has(e.id) && e.bullets.length > 0)
+      if (leading.length === 0) return null
+      return proposal(
+        { kind: 'rewrite-angle', direction },
+        'Résumé as compiled',
+        `Every leading project re-explained: "${direction.slice(0, 70)}" — same facts, one framing`,
+        ['I1 fact-drift guard (facts frozen, per project)', 'packet-scoped'],
       )
     }
     case 'set-section-order': {

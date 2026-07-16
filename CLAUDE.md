@@ -743,6 +743,46 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   as Sensitive (write-only). D109's "pull, never paste" still holds for deploys, but live LLM
   proofs must drive the PROD endpoints (owner token) rather than call Groq directly.
 
+--- Session 5.9 "The Boutique Firm" (addendum: the Darzi must be a résumé firm he paid for —
+  deeper LIBRARY + fuller CONTEXT, not a bigger model. 16-Jul-2026) ---
+- D118: THE LIBRARY NEVER REACHED THE MODEL. Investigation before editing (2 read-only agents):
+  `citePatterns()` produced display receipts that `decide()` silently DROPPED from the request
+  body, and the forge/reframe system prompts were hardcoded prose — the firm had a library it
+  never opened at the desk (the D93/CASE_STUDY-3.17 disease again: stored ≠ in the payload).
+  Fixed at the root: `craftClauses(pass)` renders pattern rules+exemplars AS PROMPT TEXT;
+  `decide()` gains a `craft` field serialized into the user payload (and into the cache key, so a
+  library update busts stale reasoning); casting + surgery pass their craft; the forge and the
+  reframer send `forgeSystem()`/`reframeSystem()` = static rules + studied library patterns.
+  LIBRARY GROWN AS DATA (I13): v1.0.0 → v1.1.0 — +13 sources (each live-fetched 16-Jul) and +10
+  patterns (plain-language identity line, name-the-model-and-eval, shipped-not-notebook,
+  context→built→consequence, honest non-numeric impact, varied bullet rhythm, cost/latency/eval
+  dimensions, validation-over-description, project-block anatomy, honest keyword mirroring), 3
+  existing patterns re-receipted. 55 sources · 28 patterns; a Pulse library update now upgrades
+  the model's actual craft with zero code change.
+- D119: THE SAME TRUTH, MANY FRAMINGS — JD-PICKED, DRIFT-GUARDED. Selection/order alone cannot
+  express one fact five ways; surgeryPass now finishes with a FRAMING REWRITE: the chosen angle
+  becomes a `framingDirection` (pure, tested) and `reframeProject` re-expresses the top-2 leading
+  projects' bullets toward that reader — every line surviving `detectDrift` against his own whole
+  entry (D81) or dying. Threaded `bulletOverrides` through runEditor → buildPacket → compiler
+  (renders under the SAME evidence link; I1 by construction); stored on the packet so Baithak
+  recompiles keep them. Keyless/429/drift-reject-all → the evidence-true selection stands (I4).
+  LIVE-PROVEN against prod /api/dimaag over his real seed ledger + two REAL Netomi postings
+  (scripts/live-tailor-proof.mts, the tailor's §14 harness): Agentic Engineer → applied-ai
+  archetype, skills-first, 2 drift-clean rewrites, red-team PASS; Forward Deployment Lead →
+  forward-deployed archetype, PROJECTS-FIRST order, different angle, 0 identical framing lines
+  across the JDs; 9 real reasoning calls, quality 100/100, slop 0, I9 0, independent drift
+  re-check 0 failures. One reframe call rate-limited to fallback and the compiled truth stood —
+  the guard is what makes the freedom safe.
+- D120: BAITHAK `rewrite-angle` — "poora resume is angle se frame kar" is now one op: every
+  currently-leading project reframed toward one direction, guarded per project, packet-scoped,
+  merged into bulletOverrides, recompiled through the same I1/I5/one-page gates. Refusal stays
+  ONLY for unevidenced claims (D62's law: widen the vocabulary, never loosen the guard).
+- D121: FOUND DURING THE LIVE PROOF, for the owner: /api/vault reports the cloud vault EMPTY at
+  the current passcode-derived path — his cross-device sync is not currently holding his data
+  (likely the D54 path moved when the passcode changed, or it was never re-pushed after D103's
+  device). His data is safe in his browser; he should open Owner Mode there and let the auto-push
+  provision the cloud copy. Not a code defect; recorded so nobody "fixes" sync that isn't broken.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
