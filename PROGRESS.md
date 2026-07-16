@@ -2,7 +2,22 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5.6 "The Sahayak Update" — THE ASSISTANT THAT BRINGS YOU THE RIGHT ROLES · SEALED ✦
+## Status: Session 5.7 "The Bullet Forge Rebuild" — the résumé the tailor writes ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **417 passed | 2 skipped (419) gates** · 0 console
+errors · warning-free build. The tailor was producing feature-doc bullets copied from READMEs ("GitHub
+is the database"); it now writes real accomplishment bullets, trained on research into resumes that got
+AI/ML engineers hired, and reasons over a token-efficient brief (5× cheaper — never falls to keyless).
+- **Forge rebuilt (D104):** strong-verb → system+tech → hard part → real impact bullets; the drift guard
+  no longer nukes good bullets over acronyms the README defines; compiler keeps 2-3 bullets/project.
+  LIVE-PROVEN by re-forging his ledger: résumé strength 40%→**100%**, Compile Quality 92/100, JD 12/13.
+- **Token-efficient + resilient (D105):** the model reads a ~700-tok distilled brief, the guard checks
+  the full README; a 429 backs off and stays on the LLM path instead of degrading.
+- **Self-evolving (D106):** the Pulse mines live market news for new AI roles/acronyms (not a hardcoded
+  list) and tracks his target roles — the field moves, discovery follows, he confirms. Craft knowledge
+  evolves via the Pulse-refreshable Ustaad library (I13).
+
+## Prior: Session 5.6 "The Sahayak Update" — the assistant that brings you the right roles
 
 Live: https://sifarish-shv-s-projects.vercel.app · **406 passed | 2 skipped (408) gates** · 0 console
 errors · build warning-free · all Four Proofs (§14) executed against the live deployment and pasted.

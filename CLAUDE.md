@@ -615,6 +615,39 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   projects' exact content from tests/fixtures/extra-shipped.json (self-contained, seed-independent).
   406/408 gates, deployed (hash UlDlZQ6I→BNrza9-e), pushed. SECURITY: owner passcode still needs rotation (D98).
 
+--- Session 5.7 "The Bullet Forge Rebuild" (owner: "resume AI sloppy shit / poorly performing", 16-Jul-2026) ---
+- D104: THE FORGE PRODUCED FEATURE-DOC, NOT ACCOMPLISHMENTS — root-caused by two read-only agents +
+  web research into resumes that actually got AI/ML engineers hired. The deterministic fallback shipped
+  RAW README list items ("GitHub is the database", "Pulse Loop — a weekly sweep") because isResumeBullet
+  had no accomplishment gate, and detectDrift NUKED the LLM's good bullets over acronyms the README
+  itself defines by expansion (RAG ⟵ retrieval-augmented generation), forcing the raw fallback. Fixes:
+  (1) rewrote the forge SYSTEM prompt into a rigorous few-shot "training" — strong verb → system+tech →
+  hard part → real impact, 15-25 words, reshaping examples + real hired-résumé exemplars; (2) detectDrift
+  accepts source-spelled-out acronyms (invented facts/numbers still rejected); (3) preferAccomplishments
+  surfaces verb-led fallback lines; (4) compiler trim keeps 3 bullets/project, shrinking skills/achievements
+  FIRST (the "kanjoosi"). LIVE-PROVEN: re-forged his ledger → "Engineered a keyless core… so every pillar
+  runs without API keys", "Engineered a git-backed content system… immutable audit history without a
+  separate database" — 2/project, resume strength 40%→100%, Compile Quality 92/100, JD 12/13, ERRORS 0.
+- D105: TOKEN-EFFICIENT ARCHITECTURE (owner: "token efficient bhi rahe, innovate"). The forge fed the raw
+  14k README (~4000 tok) to the model on every call — burning Groq's free-tier TPM and dropping to the
+  keyless path he explicitly forbade. THE DECOUPLING: the model now reads a compact distilled BRIEF
+  (forgeBrief — problem + feature notes + stack, ~700 tok, 5× cheaper) while the drift guard still
+  validates against the FULL README. Same quality, free-tier-safe. Plus 429 RESILIENCE: /api/dimaag
+  signals a rate-limit (rateLimited), the client BACKS OFF (8-16s) and retries ON THE LLM PATH rather
+  than degrading; reforgeAll tells him to re-click if the per-minute cap was hit (cached entries skip).
+  Server user-cap 12k→16k so model + guard see the same source.
+- D106: SELF-EVOLVING DISCOVERY (owner: "app should evolve with the market, not obsolete in 6 months").
+  The Pulse already proposed keyword/hunt/library updates from a weekly market sweep, but a HARDCODED
+  WATCH_TERMS list ages the moment the field moves. Added emergingFromBrief — mines the LIVE market brief
+  for new "<adjective> AI" role phrases (physical/embodied/reasoning AI…) and novel acronyms (A2A, RLHF)
+  absent from the lexicon, stopword-filtered; the market names a thing → the pulse surfaces it → he
+  confirms the hunt (Nabz pattern, no auto-apply). pulseTopicsFor tracks HIS target roles' market (capped
+  6, I8). The craft "training data" evolves the same way already — the Ustaad library is versioned, cited,
+  Pulse-flagged-stale-at-12-months DATA (I13). deriveHunts gained a prompt-engineering rule.
+  HONEST BOUNDARY: this makes discovery + craft-knowledge market-adaptive WITHOUT code changes; but a
+  deep platform shift (a new LLM provider, a changed ATS API) still needs a Law-12 maintenance touch —
+  "never obsolete" is an architecture (data-driven, human-confirmed evolution), not a literal eternity.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
