@@ -2,7 +2,29 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 5.10 "The Final Verification Pass" — nothing dead, nothing blind, nothing unwired ✦
+## Status: Session 6 "The Final Form" — the last session; the app is finished ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **533 passed | 2 skipped (535) gates** · tsc clean ·
+warning-free build · deployed + served-hash verified · Four Proofs executed (see the session report).
+D127–D138 shipped:
+- **The résumé, final form:** numbered bullets win their seat in BOTH selectors + the forge's NUMBERS
+  RULE is mandatory (D127); honest keyword mirroring reaches the forge with a stem-tolerant drift
+  guard (D128); typesetting rebuilt — word-safe truncation, one-line education, positions un-crammed
+  (D129); Ustaad library v1.2.0 — 69 sources, 33 patterns, every forge pattern in the payload.
+- **Speed with zero IQ traded:** red-team heuristic fast-path (a mechanical REVISE needs no model),
+  surgery passes parallel, red-team ∥ signature, casting payload dedup, smart-Baithak metered (D130).
+- **Discovery — age ≠ death:** board-verified-open postings keep their rank (lastSeenOpenAt, cap −8,
+  why rendered — D131); the watchlist grows itself from aggregator apply-links (Pulse-proposed,
+  human-confirmed — D132); JSearch hunt rotation + per-hunt employment types, Adzuna 19 markets +
+  date-sorted, SimplifyJobs intern index, dream-company hunts (D133); "naya, tumhare vision ka"
+  briefing flag + weekly hunt-state line (D134).
+- **Sahayak (beat the human agents, lawfully):** follow-up drafts at the day-7/14 nudge, referral-ask
+  drafts, post-rejection retro, all deterministic + I9-scanned (D135).
+- **The Baithak's genuine-ask contract:** whole-entry evidence (summary + README context), 22-utterance
+  fixture, 0 false refusals gated (D136). **App voice de-slopped** (D137). **One home per capability +
+  six heavy-week QoL wins** (D138).
+
+## Prior: Session 5.10 "The Final Verification Pass" — nothing dead, nothing blind, nothing unwired ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **~490 gates green** (see table) · tsc clean ·
 warning-free build · **8/8 reasoning paths probed alive against prod** (D126) · security re-verified
@@ -258,10 +280,9 @@ slow-4G SPA cold-load floor, stated honestly, D42) · screenshots ×3 breakpoint
 > architecture guarantees is that staying current never again requires opening an editor.
 
 ## ONE next action
-→ **ROTATE TWO SECRETS (owner, ~3 min) — the only open item.** Both reached plaintext chat this session
-   (D98): (1) in Vercel env, change `SIFARISH_OWNER_PASSCODE` to a new value + redeploy (it gates every
-   metered function — a leaked value is a spend hole); (2) revoke the Vercel deploy token in Vercel
-   account settings (it auto-revokes, but confirm). Then: open the app → 🔑 Owner Mode → new passcode →
-   Radar shows global roles (Adzuna 18 countries rotating + Working Nomads + We Work Remotely in the
-   mix, salaries visible), tailor one, review, Send yourself.
-   Code is sealed again (441 gates, deployed + live-verified). Go get the internship.
+→ **ROTATE TWO SECRETS (owner, ~3 min) — the only human step left.** (1) In Vercel env, change
+   `SIFARISH_OWNER_PASSCODE` to a new value + redeploy (it gates every metered function and derives
+   the vault key — it has touched plaintext chat; D70/D98/D108); (2) revoke the Session 6 Vercel
+   deploy token in account settings. Then: open the app → Owner Mode → the briefing greets you with
+   your ranked matches (fresh on-vision roles flagged), tailor one, review, Send yourself.
+   Code is sealed (533 gates, deployed + served-hash verified). Go get the internship.

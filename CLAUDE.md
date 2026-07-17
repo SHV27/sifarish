@@ -839,6 +839,102 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   waits out 429s — a rate limit is not a dead brain, and a probe that doesn't know that will
   always find one.
 
+--- Session 6 "The Final Form" (the last session — owner: 110% complete, no edits left for me.
+  17-Jul-2026) ---
+- D127: THE NUMBERS WERE THERE, THE SELECTOR WAS BLIND (his screenshot: Quantification 0/25
+  while the panel itself said the ledger HELD the numbers). Neither the surgery pass's bullet
+  score nor the compiler's fallback sort ever looked at digits — a bullet carrying ROC-AUC 0.957
+  lost its seat to a numberless keyword-heavy sibling, and the rubric then honestly reported the
+  miss. A digit-bearing bullet now scores +2 (one must-have hit's weight) in BOTH selectors, and
+  the forge SYSTEM's number rule went from opt-in ("only if") to MANDATORY ("you MUST carry that
+  exact figure") — the drift guard always permitted README numbers; the prompt just never demanded
+  them. Selection only; no number is ever minted (I1).
+- D128: HONEST KEYWORD MIRRORING NOW REACHES THE ONE STAGE THAT WRITES LEDGER WORDING. His
+  screenshot: evidence existed for "embeddings"/"orchestration"/"prompt-engineering"/"sql" but the
+  ledger's wording never said the terms, so I1 blocked the compiler. Three-part root cause:
+  ¶honest-keyword-mirroring lacked `forge` in its passes (the library rule existed and never
+  reached the forge prompt — the D118 disease, one pattern deep); forge rule "README's OWN tokens
+  only" actively FORBADE market vocabulary; and detectDrift would nuke stem variants anyway. Fixed
+  at all three: the pattern rides the forge pass, the prompt permits the market's standard term
+  when the README truthfully describes the concept, and the drift guard accepts morphological
+  stems of words the source already contains (embedding→embeddings, orchestrator→orchestration —
+  stemOf, ≥4-char stems so short words can't collide). A tech term with no stem-relative in his
+  own writing still dies. Translation, never invention.
+- D129: TYPESETTING REBUILT ("ek line mein kahin kuch kahin kuch"). The compiler's `.slice(0,160)`
+  cut the project description MID-WORD ("…hand-authored fallba"); education rendered as a bold
+  degree line + an orphan meta year ("2021" floating alone); positions crammed into one
+  semicolon run-on; cert summaries wrapped a trailing period in parens. Now: truncateAtWord
+  (word-boundary + ellipsis), education as ONE coherent line per qualification (title · year ·
+  score), one position per bullet (the trim ladder still drops them under page pressure), cert
+  period stripped. I5 parse-back untouched and green.
+- D130: RED-TEAM FAST-PATH (Defect 5, "he watches it spin"). The deterministic heuristicChecks
+  ran only in critique()'s FALLBACK — on the happy path the 120b was consulted even when the
+  mechanical checks had already found fixes. A heuristic REVISE needs no model: checks now run
+  FIRST on every call, short-circuit to REVISE (recorded as a zero-spend hit, NOT a fallback —
+  D115's health verdict must never read a deliberate fast path as degradation), and the LLM runs
+  only when they pass. Plus: the 3 surgery passes run CONCURRENTLY (independent projects;
+  Promise.all, merge in casting order — a 429 backs off and retries on the LLM path, D105);
+  red-team ∥ signature decision; castingPass stopped serializing near-identical project briefs
+  twice (options.detail 700 + evidence 900 → slim tag refs); the smart Baithak is finally metered
+  (recordUsage 'baithak.smart' — it was invisible in the Dimaag Ledger).
+- D131: AGE ≠ DEATH, PROVEN BY THE BOARD (his rule: "3-month-old post marked actively reviewing
+  is MINE"). D65's staleness deduction punished posting age even when D122's own scan had just
+  SEEN the posting still listed. syncRadar now stamps lastSeenOpenAt on every posting in the
+  scan's openIds (computed pre-filter, so it's real), and stalenessPart caps the deduction at −8
+  when the stamp is ≤10 days old — with the why rendered ("its own board still listed it 2d ago —
+  verified open"). An equally old aggregator ghost (no board to verify against) keeps the full
+  penalty: soften on proof of life, never on hope. Cache key gains the stamp so a re-verify
+  re-scores. The Radar card wears "✓ board-verified open".
+- D132: THE WATCHLIST GROWS ITSELF, LAWFULLY. Aggregator jobs whose apply URL resolves to a
+  public greenhouse/lever/ashby/smartrecruiters board reveal that company's feed token — data the
+  sweep already paid for. atsTokenFromUrl (pure, gated) extracts it; unknown tokens become Pulse
+  board proposals; accepting adds the board to the watchlist (Nabz pattern — he confirms, nothing
+  silent). From then on that company's every posting arrives board-verified. Workday CXS was
+  probed working but REJECTED: no CORS, undocumented, ToS-prohibited — those companies' roles
+  arrive via JSearch/Adzuna, which is the lawful door (D122 stands).
+- D133: DISCOVERY DEPTH (P7). JSearch: per-hunt employment-type filter (owner-set only — a
+  default filter would LOSE coverage) + hunt ROTATION (persistent offset, the D111 pattern): with
+  budget 10 and 15+ hunts, the same first-10 got funded every sweep and hunt #11+ starved forever.
+  Adzuna: 19th market added ('ch' — its own swagger lists 19; we rotated 18) + sort_by=date +
+  max_days_old=60 (stale results wasted the per-country credit on postings D65 discards anyway).
+  NEW LANE: SimplifyJobs community index (Summer2026-Internships + New-Grad listings.json, CORS
+  `*`, live-verified) — AI/ML intern/new-grad listings with an `active` flag (board-verified open,
+  exactly his rule), direct ATS links; ~11MB raw fetched at most weekly, only the filtered result
+  cached. DREAM-COMPANY HUNTS: vision.dreamCompanies → per-company aggregator hunts ("Netomi AI
+  engineer") — the lawful reach into no-feed companies, editable in Settings.
+- D134: "KHABRI TELLS ME FIRST" — a freshly-swept role with positive visionFit wears a
+  "naya, tumhare vision ka" flag in the briefing the same session the sweep lands it
+  (BriefingMatch.freshForVision = isNew && visionPoints>0). Plus the week's state of the hunt in
+  one line (applied/replies/interviews, last 7 days) — the agent's check-in, from real data.
+- D135: SAHAYAK (P1) — what a paid reverse-recruiter hands over, compiled lawfully (research:
+  25-row capability matrix, top picks by impact-per-effort). (1) The day-7/14 nudge now hands him
+  the MESSAGE (draftFollowUp — one follow-up lifts response ~65%); (2) referral-ask draft on every
+  packet (referrals take ~72% of interviews from ~7% of applicants — he sends it to people he
+  actually knows; nothing is scraped or sent by the app, I3); (3) POST-REJECTION RETRO: deterministic
+  aggregation of must-have gaps shared across his rejected/ghosted applications ("kubernetes was a
+  gap in 3 of 5") — a pattern, never an invented reason; what no software product ships. All
+  deterministic, slop/guarantee-scanned (I9), gated.
+- D136: THE BAITHAK'S GENUINE-ASK CONTRACT (P2, "genuine ko galat bolega toh gussa aayega").
+  hasEvidence searched title/tags/keywords/bullets but NOT the entry summary or the deep-read
+  README context — a fact he wrote in his own README was refused as a fabrication (the D81 lesson,
+  unapplied to one more call site). Widened to the whole entry; 22-utterance fixture gates 0 false
+  refusals + 0 false acceptances + questions answered with zero ops + compound asks in one turn.
+- D137: SLOP AUDIT OF THE APP'S OWN VOICE (P3). "Reasoned against the stated criteria." (the
+  decide() default why) and "shares the most signal with the criteria" (the heuristic) were
+  template mush → both now name the actual criteria the winner hit; the two canned benched
+  sentences → reasons naming THIS project's overlap with THIS role; the per-keyword gap-note
+  cadence ("The honest move…" × N) → aggregated must-have/nice-to-have lines; the slop lexicon
+  gained the conversational AI tells ("delve into", "i hope this finds you well", "in today's
+  fast-paced"…) — phrases only, never single common words.
+- D138: ONE HOME PER CAPABILITY (P4) + THE HEAVY-WEEK PASS (P5). Khabri's duplicate saved-hunts
+  manager (a second write-surface over the same table — the "kabhi Morcha kabhi kuch" confusion)
+  became a pointer to the Radar's Hunt panel; Settings' Dak note became a working link to Morcha;
+  briefing matches link to the Radar. Six QoL wins from walking a 50-applications/200-new-roles
+  week: "✕ not for me" on Radar cards (HIS verdict, sticky across sweeps, distinct from the
+  board's `closed`), "mark all seen" + "new only" filter (200 NEW stamps are noise), the
+  verified-open chip, "applied Nd ago" on Morcha cards, and Dak's "ack all generic" (interviews/
+  rejections never batch — they carry a decision).
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

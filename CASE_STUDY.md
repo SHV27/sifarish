@@ -525,6 +525,112 @@ ways he named one at a time. Each fix was correct and still incomplete, which is
 
 ---
 
+### 3.21 · STORED BUT NOT CONSUMED, ROUND FOUR — salary, markets, and the library that never reached the desk (Sessions 5.8–5.9)
+
+Session 5.8 opened with four read-only agents mapping the app before any edit, and the finds were all
+one disease in different clothes — **captured but never consumed**:
+
+- *"Achi salary" was his stated rubric*, and Adzuna/JSearch/Remotive/RemoteOK all set `Job.salary` —
+  which no component rendered and the score never read. The data sat on every record while the score
+  said "No compensation signal." (D110)
+- Adzuna's market list was **frozen at 8 of 18 countries** — ten markets never hunted once, forever,
+  because a fixed array is a decision nobody re-reads. Fixed as a rotating window with India pinned
+  first. (D111)
+- The Ustaad library — 55 cited sources of résumé craft — produced *display receipts* that `decide()`
+  **silently dropped from the request body.** The firm had a library it never opened at the desk: the
+  model reasoned without the research the app was proudly citing in the UI. `craftClauses()` now renders
+  the patterns AS PROMPT TEXT into every pass's payload, and the cache key includes them so a library
+  update busts stale reasoning. (D118)
+- **Lesson (the 3.17 rule, now a law):** a value that isn't in the payload doesn't exist to the model,
+  and a value that isn't on the screen doesn't exist to the user. Storage is not integration; grep the
+  *consumption* site, not the *assignment* site.
+
+Session 5.9 added the other half: selection/ordering alone cannot express one truth five ways, so the
+chosen angle became a **drift-guarded framing rewrite** — every re-expressed line survives `detectDrift`
+against his own whole entry or dies. Live-proven on two real Netomi JDs: different archetype, different
+section order, zero identical framing lines, zero drift failures.
+
+---
+
+### 3.22 · THE FINAL VERIFICATION PASS — the truth was the first thing truncated (Session 5.10)
+
+A context audit walked every reasoner's PAYLOAD BOUNDARY and found seven truncation/blindness defects.
+The emblem: the Baithak's ledger digest — described in its own prompt as "the ONLY source of truth,
+every op must cite its exact ids" — sat LAST in a system prompt measuring ~7–8k against an 8k server
+cap. **The single most important block was the one the cap cut first.** Same audit, same class:
+`api/polish.ts` was the last call site still on `json_object` — the exact request shape measured 0/3
+against gpt-oss-120b in D73 — so the polish pass had been silently dead in production since the model
+migration, invisible because its fallback (keep the compiled text) is indistinguishable from success.
+
+A wiring audit (the D69 pattern-hunt) found five built-but-unreachable capabilities — including the
+WRITE half of the library-update loop, which had a loader that ran at boot and **no door that could
+ever produce the file it loaded** — and four dead exports, deleted ("dead code lies").
+
+**Lesson:** order your payloads by what must survive truncation, and audit them AT the boundary; a
+fallback that never complains is where a dead feature lives forever (the 3.13 law, recurring).
+
+---
+
+### 3.23 · THE NUMBERS WERE THERE, THE SELECTOR WAS BLIND (Session 6)
+
+The owner's screenshot was the whole bug report: **Quantification 0/25**, with the quality panel itself
+saying *"6 bullet(s) skipped a number the ledger DOES hold."* The rubric could SEE the numbered bullets;
+the machinery that picks bullets could not. Root cause in two selectors: the surgery pass scored bullets
+on archetype-cue hits + JD-keyword overlap and never looked at a digit; the compiler's fallback sort was
+identical. A bullet carrying **ROC-AUC 0.957** lost its seat to a numberless sibling with the same
+keywords, every compile, deterministically. And upstream, the forge's number rule was *opt-in* ("a
+number ONLY IF…") — permission where the craft demanded obligation.
+
+The fix is three lines of philosophy: a digit-bearing bullet gets one must-have hit's worth of bonus in
+BOTH selectors (selection, never invention — I1), and the forge SYSTEM now says **MUST**. The library
+grew the receipts to match (v1.2.0: metric-first-half, verb-context-result — CMU's own placed-student
+formula, cited).
+
+**Lesson:** a rubric that measures what selection ignores will report the same honest zero forever. When
+a scorer and a selector disagree about what matters, the user sees the scorer's complaint and blames the
+model — but the defect is the selector's, and it's three lines.
+
+---
+
+### 3.24 · "GENUINE KO GALAT BOLEGA TOH GUSSA AAYEGA" — the refusal boundary, scoped too narrow again (Session 6)
+
+The Baithak's `hasEvidence` searched titles, tags, keywords and bullet text — but **not** the entry
+summary or the deep-read README context. So "websockets jaanta hoon likh de", with *websockets* written
+in his own README about his own project, was refused as a fabrication. This is D81's exact lesson
+(an invariant scoped too narrowly reads as stupidity) recurring at one more call site three sessions
+later.
+
+The fix widened the search to the whole entry, and — more important — the contract became a **gate**: a
+22-utterance fixture asserting 0 false refusals, 0 false acceptances, questions answered with zero ops,
+compound asks landing as multiple ops in one turn. A false refusal is now formally a bug of the same
+severity as a fabrication.
+
+**Lesson:** every honesty guard has TWO failure modes and only one gets tested by default. Fabrication
+(accepting the false) always has tests; false refusal (rejecting the true) only gets tests after it makes
+the owner angry. Write both sides of the contract the day the guard ships.
+
+---
+
+### 3.25 · AGE ≠ DEATH — softening a penalty on proof, not hope (Session 6)
+
+His rule: *"a 3-month-old post marked 'actively reviewing' is MINE. A dead one is not."* The staleness
+deduction (D65) punished posting AGE — while D122's closure scan was simultaneously *verifying, every
+sweep,* which of those old postings their own boards still listed. The two features never spoke: the
+scan's `openIds` were consumed by closure reconciliation and discarded, so the strongest freshness
+evidence in the app (a board's live word) never reached the score.
+
+Now every posting seen open gets a `lastSeenOpenAt` stamp, and the deduction caps at −8 when the stamp
+is ≤10 days old — with the reason rendered ("its own board still listed it 2d ago — verified open").
+An equally old aggregator ghost keeps the full penalty. The same session, the lawful inverse shipped:
+aggregator apply-URLs that resolve to public ATS boards now *propose watchlist additions* — the
+watchlist grows itself from data the sweep already paid for, human-confirmed.
+
+**Lesson:** when two features independently know something about the same entity, the bug is usually
+that neither tells the other. The scan knew "still open"; the score knew "old"; only the JOIN was
+missing — and the join is where the product insight lived.
+
+---
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.
