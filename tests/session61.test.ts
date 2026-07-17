@@ -128,6 +128,21 @@ describe('S6.1 — the drift guard reads the FULL README; scrape-claims die', ()
   })
 })
 
+describe('S6.1 — guard false-rejections caught live: hyphen compounds + plural acronyms', () => {
+  it('a hyphenated source compound accepts its joined form ("multi-agent" -> "multiagent RAG")', async () => {
+    const { detectDrift } = await import('../src/lib/polish/factGuard')
+    expect(detectDrift('a multi-agent RAG pipeline over lawful aggregators', 'Engineered a multi‑agent RAG pipeline via a lawful aggregator').ok).toBe(true)
+  })
+  it('a pluralized acronym is its singular ("ledger id" -> "ledger IDs")', async () => {
+    const { detectDrift } = await import('../src/lib/polish/factGuard')
+    expect(detectDrift('every line links to a ledger id for provenance', 'Linked every line to ledger IDs for provenance').ok).toBe(true)
+  })
+  it('an acronym plural with NO singular in the source is still drift', async () => {
+    const { detectDrift } = await import('../src/lib/polish/factGuard')
+    expect(detectDrift('a simple todo app', 'Built GPUs into the todo app').ok).toBe(false)
+  })
+})
+
 // ---------- Discovery: geography + unpaid ----------
 
 describe('S6.1 — unpaid postings can never hold a queue slot on keywords alone', () => {

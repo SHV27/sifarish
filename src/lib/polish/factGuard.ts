@@ -94,6 +94,13 @@ export function detectDrift(original: string, polished: string): DriftResult {
 
   const origWordList = original.toLowerCase().match(/[a-z0-9₹$€£]+/g) ?? []
   const origWords = new Set(origWordList)
+  // Session 6.1 (live-probe catch): the tokenizer splits a hyphenated source compound
+  // ("multi-agent") into two words, while the bullet's compound normalizes to the JOINED form
+  // ("multiagent") — so a term the author literally wrote was flagged as drift. Every hyphenated
+  // compound in the source also joins the word set (any dash variant).
+  for (const m of original.toLowerCase().match(/[a-z0-9]+(?:[-‑–][a-z0-9]+)+/g) ?? []) {
+    origWords.add(m.replace(/[^a-z0-9]/g, ''))
+  }
   const addedFacts: string[] = []
   const words = polished.split(/\s+/)
 
@@ -108,6 +115,9 @@ export function detectDrift(original: string, polished: string): DriftResult {
     // retrieval-augmented generation, MCP ⟵ model context protocol). Accept it BEFORE the tech-term
     // check below — otherwise a lexicon acronym like RAG/MCP is flagged even when the README defines it.
     if (/^[A-Z]{2,6}$/.test(w) && acronymDerivable(w, origWordList)) return
+    // Session 6.1 (live-probe catch): a PLURALIZED acronym — "IDs", "APIs", "LLMs" — is the same
+    // fact as its singular. Accept when the source contains the singular (or spells it out).
+    if (/^[A-Z]{1,6}s$/.test(w) && (origWords.has(lower.slice(0, -1)) || acronymDerivable(w.slice(0, -1), origWordList))) return
 
     // (2) a known technology/skill term the original never claimed. Honest keyword mirroring
     // (Session 6, Defect 2): a morphological variant of a word the source ALREADY contains is a
