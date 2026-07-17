@@ -202,12 +202,27 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   const discovered: Job[] = []
 
   // --- Keyed aggregator lane (JSearch), budget-gated (I8) ---
+  // Session 6.1 — GEOGRAPHY ROTATION (his LinkedIn screenshot: "AI engineer in Europe, past 24h"
+  // → 243 fresh roles across UK/DE/FR/IT/ES/CH). Our hunts carried NO country at all, so JSearch
+  // defaulted every query to the US and the whole European market never entered the queue. A hunt
+  // he pinned to a country keeps it; an unpinned hunt now sweeps a rotating window over the
+  // markets his vision spans (India every sweep, the rest of the world in turns — the D111
+  // pattern). Same budget, the whole map over successive sweeps.
+  const JSEARCH_MARKETS = ['in', 'us', 'gb', 'de', 'fr', 'nl', 'es', 'it', 'ch', 'se', 'pl', 'sg', 'ca', 'au', 'ae']
+  const marketRow = await db.nabzCache.get('jsearch:markets')
+  const marketOffset = Number(marketRow?.json ?? 0) || 0
+  await db.nabzCache.put({ key: 'jsearch:markets', json: String(marketOffset + 1), fetchedAt: new Date().toISOString() })
+  const marketFor = (i: number): string => (i === 0 ? 'in' : JSEARCH_MARKETS[(marketOffset + i) % JSEARCH_MARKETS.length])
+
   const jsearchBudget = await allowedThisRun('jsearch')
   let jsearchUsed = 0
+  let huntIdx = 0
   for (const hunt of hunts) {
     if (jsearchUsed >= jsearchBudget) break
-    onStep?.(`JSearch: "${hunt.query}"`)
-    const resp = await callJobsApi(hunt)
+    const country = hunt.country || marketFor(huntIdx)
+    huntIdx++
+    onStep?.(`JSearch ${country.toUpperCase()}: "${hunt.query}"`)
+    const resp = await callJobsApi({ ...hunt, country })
     if (!resp) continue
     if (resp.keyless) break // no key → skip the whole lane, keyless lanes carry it
     if (!keyedLanes.includes('JSearch (LinkedIn/Indeed/…)')) keyedLanes.push('JSearch (LinkedIn/Indeed/…)')

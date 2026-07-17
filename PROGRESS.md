@@ -2,7 +2,25 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 6 "The Final Form" — the last session; the app is finished ✦
+## Status: Session 6.1 "The Vault Repair" — the craft finally reaches HIS data ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **550 passed | 2 skipped (552) gates** · tsc clean ·
+warning-free build. The owner's real résumé exposed what the seed proofs couldn't: his LOCAL-FIRST
+vault still carried pre-repair bullets and no deploy can touch IndexedDB (D140):
+- **The silent-downgrade guard:** a rate-limited re-forge can never again overwrite real bullets
+  with fallback scraps; the batch loop paces itself (the D73 law, in-app).
+- **The repair banner:** entries carry forgeVersion; the landing screen re-forges stale entries in
+  one confirmed click, and packets older than the repair re-tailor themselves on open.
+- **Display sanitization:** markdown residue/URLs/status prefixes stripped from description lines;
+  repo slugs lift to SIFARISH-style titles; dates render as Month Year (the 8/8-ATS format).
+- **The guard reads the FULL README** (the 14k cap was rejecting TRUE bullets on his richest
+  projects) + scrape-claims banned + codename-led bullets banned + architecture substance demanded.
+- **Discovery geography:** JSearch sweeps a rotating 15-market window (India every sweep) — his
+  hunts had NO country and defaulted everything to the US; unpaid postings take a visible −20.
+**HIS ONE CLICK:** open the app → the landing banner says "Re-forge N projects" → click it once.
+Every packet recompiles itself after that.
+
+## Prior: Session 6 "The Final Form" ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **533 passed | 2 skipped (535) gates** · tsc clean ·
 warning-free build · deployed + served-hash verified · Four Proofs executed (see the session report).

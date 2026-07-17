@@ -99,15 +99,22 @@ export function NabzPanel() {
     let degraded = 0 // ok, but the smart path was rate-limited and the deterministic path was used
     for (const o of repos) {
       try {
+        setReforging(o.repo.name)
         const r = await refreshEntryFromRepo(o.repo)
         if (r.ok) {
           fixed++
           if (r.by === 'deterministic') degraded++
         } else skipped++
+        // Session 6.1 (the D73/D126 law applied to the app's own batch loop): back-to-back forge
+        // calls trip the free-tier TPM, the later repos degrade, and a rate limit quietly rewrote
+        // his vault downward. A real LLM pass now breathes 15s before the next repo; cache hits
+        // and skips continue instantly.
+        if (r.by === 'dimaag' && r.ok) await new Promise((res) => setTimeout(res, 15000))
       } catch {
         skipped++
       }
     }
+    await db.settings.update('app', { lastReforgeAt: new Date().toISOString() })
     setReforging(null)
     setReforgeNote(
       `Re-forged ${fixed} entr${fixed === 1 ? 'y' : 'ies'} from their READMEs${skipped ? ` · ${skipped} skipped (no README or nothing bullet-worthy)` : ''}. Your titles, tiers and edits are untouched.` +

@@ -149,9 +149,9 @@ describe('One-page budget (compiler)', () => {
       editorial: { order: ['proj-a', 'proj-c'], bullets: {} }, // cast only A and C
     })
     const titles = resume.lines.filter((l) => l.kind === 'entry-title').map((l) => l.text)
-    expect(titles).toContain('Project A (01/2026)')
-    expect(titles).toContain('Project C (01/2026)')
-    expect(titles).not.toContain('Project B (01/2026)') // benched
+    expect(titles).toContain('Project A (Jan 2026)') // Month-Year display (S6.1)
+    expect(titles).toContain('Project C (Jan 2026)')
+    expect(titles).not.toContain('Project B (Jan 2026)') // benched
     expect(titles).not.toContain('Project D (01/2026)')
   })
 })

@@ -72,6 +72,58 @@ export function estimateHeight(lines: CompiledLine[]): number {
  * `.slice(0,160)` mid-word. Cut at the last word boundary and close with an ellipsis so the line
  * reads as deliberately shortened, never as broken.
  */
+/**
+ * Session 6.1 (owner's own résumé screenshot): his vault's summaries carry raw README artifacts —
+ * markdown bold (`**`), "▶ Live:"/"Code:" link labels, full URLs, status emoji — and the compiler
+ * printed them verbatim ("… · sifarish-shv-s-projects.vercel.app**"). The evidence URL already
+ * renders separately on the same line; everything link-shaped or markdown-shaped in the summary is
+ * pure noise to a recruiter AND to an ATS parser. Strip it at render time, whatever the data holds.
+ */
+export function cleanSummaryForDisplay(s: string): string {
+  return s
+    .replace(/https?:\/\/\S+/gi, ' ') // raw URLs (the evidence link renders separately)
+    .replace(/\b[\w.-]+\.(?:app|dev|io|com|org|net|in|co)\/?\S*/gi, ' ') // bare domains
+    .replace(/[*_`~#]+/g, ' ') // markdown residue
+    .replace(/[▶►⮕➡️‍]|\p{Extended_Pictographic}/gu, ' ') // ▶ / emoji markers
+    .replace(/\b(?:live|demo|code|repo|app|site|docs?)\s*[:\-–—]\s*(?=\s|·|$)/gi, ' ') // orphaned link labels
+    .replace(/^\s*(?:live|demo|beta|alpha|wip)\s*(?:\([^)]*\))?\s*[—–:-]\s*/i, '') // "Live (proof-of-concept) —" status prefixes
+    .replace(/\s*[·|]\s*(?=[·|]|$)/g, ' ') // separators left holding nothing
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s·|—–-]+|[\s·|—–-]+$/g, '')
+    .trim()
+}
+
+/**
+ * Session 6.1: Nabz-added entries carry raw repo slugs as titles ("sifarish", "spark-core") and
+ * machine dates ("2026/07"). A recruiter reads "SIFARISH (Jul 2026)" — his own naming convention
+ * (GLOAMING, DARYA), and Month-Year is the date format that parsed 8/8 in the ATS test (¶single-
+ * column-ats). Display-only: his ledger data is never edited (D59).
+ */
+export function displayTitle(title: string): string {
+  const head = title.split('—')[0].trim()
+  // A slug title has no uppercase and no spaces — lift it to his project-name convention.
+  if (head && !/[A-Z]/.test(head) && !/\s/.test(head)) {
+    return title.replace(head, head.toUpperCase())
+  }
+  return title
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+export function displayDate(d?: string): string {
+  if (!d) return ''
+  let m = /^(\d{4})[/-](\d{1,2})$/.exec(d.trim()) // 2026/07, 2026-07
+  if (m) {
+    const mon = MONTHS[Number(m[2]) - 1]
+    return mon ? `${mon} ${m[1]}` : d
+  }
+  m = /^(\d{1,2})[/-](\d{4})$/.exec(d.trim()) // 07/2026
+  if (m) {
+    const mon = MONTHS[Number(m[1]) - 1]
+    return mon ? `${mon} ${m[2]}` : d
+  }
+  return d
+}
+
 export function truncateAtWord(s: string, max: number): string {
   const t = s.replace(/\s+/g, ' ').trim()
   if (t.length <= max) return t
@@ -269,14 +321,14 @@ export function compileResume(input: CompileInput): CompiledResume {
           const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
           push(lines, {
             kind: 'entry-title',
-            text: `${p.title}${p.evidence?.date ? ` (${p.evidence.date})` : ''}`,
+            text: `${displayTitle(p.title)}${p.evidence?.date ? ` (${displayDate(p.evidence.date)})` : ''}`,
             ledgerIds: [p.id],
           })
           // Session 5.7 (owner: "these are not app descriptions") — a project's bullets are engineering
           // ACHIEVEMENTS; without a one-line "what it IS" a recruiter can't tell that sifarish is a
           // job-hunt assistant. Render the project's own summary (its product description) + the live
           // link on one line, so the achievements below have context. Never trimmed away (it IS the point).
-          const desc = truncateAtWord(p.summary ?? '', 160)
+          const desc = truncateAtWord(cleanSummaryForDisplay(p.summary ?? ''), 160)
           const metaText = [desc, evidenceUrl.replace(/^https?:\/\//, '')].filter(Boolean).join(' · ')
           if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [p.id] })
           for (const b of bulletsFor(p, lv.bulletsPerProject)) {

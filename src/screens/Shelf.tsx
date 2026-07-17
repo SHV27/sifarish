@@ -5,6 +5,7 @@ import type { EntryKind, LedgerEntry } from '../types'
 import { resumeStrength } from '../lib/strength'
 import { NabzPanel } from '../components/NabzPanel'
 import { Briefing } from '../components/Briefing'
+import RepairBanner from '../components/RepairBanner'
 
 const KIND_ORDER: { kind: EntryKind; label: string }[] = [
   { kind: 'project', label: 'Projects' },
@@ -23,6 +24,7 @@ export function Shelf({ onNav, onTailor }: { onNav: (t: 'radar' | 'morcha' | 'kh
 
   return (
     <div>
+      <RepairBanner />
       <Briefing onNav={onNav} onTailor={onTailor} />
       <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
         <div>

@@ -180,6 +180,19 @@ function PacketView({ job }: { job: Job }) {
   }
 
   // Auto-tailor the moment we land here from the Radar with no packet yet (one click, not two).
+  // Session 6.1 — a stored packet compiled BEFORE the last vault repair keeps serving pre-repair
+  // bullets forever unless he knows to click re-tailor. It now re-tailors itself on open, once.
+  const settings = useLiveQuery(() => db.settings.get('app'))
+  useEffect(() => {
+    if (!packet || firstBuild) return
+    const reforgedAt = settings?.lastReforgeAt
+    if (reforgedAt && packet.createdAt < reforgedAt && startedFor.current !== `stale-${packet.id}`) {
+      startedFor.current = `stale-${packet.id}`
+      void tailor()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packet?.id, settings?.lastReforgeAt])
+
   useEffect(() => {
     if (packetLoaded && !packet && !firstBuild && startedFor.current !== job.id) {
       startedFor.current = job.id

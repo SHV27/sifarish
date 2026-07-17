@@ -1,7 +1,9 @@
 import { db } from '../../db/db'
 import type { LedgerEntry, NabzSuggestion } from '../../types'
 import { LEXICON } from '../jd/lexicon'
-import { buildContext, forgeBullets, sanitizeBullets, toBullets } from './forge'
+import { buildContext, forgeBullets, sanitizeBullets, toBullets, FORGE_VERSION } from './forge'
+import { meteredCallsAllowed } from '../apiGuard'
+import { allowedThisRun } from '../budget'
 
 /**
  * GitHub Nabz — the pulse. Public REST, no key (CORS `*`, 60 req/hr unauth verified WS0).
@@ -134,6 +136,12 @@ export interface ReadmeDistilled {
   problem: string
   /** Cleaned README prose (capped) — the tailor's full reading material (Session 5.4). */
   raw: string
+  /**
+   * Session 6.1 — the UNCAPPED cleaned README, for the drift guard only. The guard used to check
+   * against the capped `raw`, so a TRUE bullet about content past the 14k cap was rejected as an
+   * invention — thinning the kept pool on his richest projects. Never stored, never in a payload.
+   */
+  fullClean: string
 }
 
 const SECTION_WORDS = /^(installation|install|usage|getting started|setup|features|table of contents|contents|license|contributing|contributors|acknowledg|prerequisites|requirements|demo|screenshots?|tech stack|built with|about|overview|run it|make it yours|art direction)\b/i
@@ -242,9 +250,10 @@ export function distillReadme(md: string): ReadmeDistilled {
   // source, so a real number the model correctly used ("29 boards", "18 markets") must be inside the
   // cap or the guard wrongly flags it as invented and nukes a good bullet. 14k holds his READMEs'
   // substance while keeping each forge call within Groq's free-tier per-minute token budget.
-  const raw = cleanMd(noCode).slice(0, 14000)
+  const fullClean = cleanMd(noCode)
+  const raw = fullClean.slice(0, 14000)
 
-  return { summary, bullets, keywords, stack, liveUrl, hasReadme: cleanMd(noCode).length > 20, problem, raw }
+  return { summary, bullets, keywords, stack, liveUrl, hasReadme: fullClean.length > 20, problem, raw, fullClean }
 }
 
 function hostOf(url: string): string {
@@ -538,6 +547,25 @@ export async function refreshEntryFromRepo(repo: GhRepo): Promise<RefreshResult>
   }
 
   const forged = await forgeBullets({ repo, distilled }).catch(() => null)
+
+  // Session 6.1 — THE SILENT-DOWNGRADE GUARD (how the slop got into his vault): a batch re-forge
+  // used to trip the free-tier TPM mid-run, the later repos fell to the deterministic path, and
+  // this function PERSISTED those README scraps over his existing bullets — a rate limit quietly
+  // rewrote his résumé downward. The rule now: when intelligence was EXPECTED (owner mode, budget
+  // available) and the entry already holds real bullets, a deterministic result never overwrites
+  // them. Context + evidence still refresh (safe source material); bullets wait for the real forge.
+  const expectedDimaag = meteredCallsAllowed() && (await allowedThisRun('dimaag')) > 0
+  if (forged?.by !== 'dimaag' && expectedDimaag && entry.bullets.length >= 2) {
+    await db.ledger.update(entry.id, { context: buildContext(repo, distilled) })
+    return {
+      ok: false,
+      by: 'deterministic',
+      bullets: 0,
+      rejected: forged?.rejected ?? [],
+      note: `Dimaag was busy (rate-limit) for ${repo.name} — your bullets are UNTOUCHED. Re-run in a minute; the forge never downgrades your entry silently.`,
+    }
+  }
+
   const texts = forged && forged.bullets.length > 0 ? forged.bullets : sanitizeBullets(distilled.bullets)
   if (texts.length === 0) {
     return { ok: false, by: 'deterministic', bullets: 0, rejected: forged?.rejected ?? [], note: 'The README had no material that could honestly become a resume bullet. Your entry is untouched.' }
@@ -549,6 +577,8 @@ export async function refreshEntryFromRepo(repo: GhRepo): Promise<RefreshResult>
     summary: forged?.summary || distilled.summary || entry.summary,
     bullets: toBullets(repo.name, texts, keywords),
     context: buildContext(repo, distilled),
+    // Stamped only on a REAL forge pass — the repair banner keys off this (Session 6.1).
+    forgeVersion: forged?.by === 'dimaag' ? FORGE_VERSION : entry.forgeVersion,
     evidence: {
       ...(entry.evidence ?? { date: repo.pushed_at.slice(0, 7).replace('-', '/'), note: 'Public GitHub repo (via Nabz).' }),
       repo: entry.evidence?.repo ?? repo.html_url,

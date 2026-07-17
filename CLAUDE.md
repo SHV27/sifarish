@@ -947,6 +947,48 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   transient worker-spawn flake (the D97 environment class), not app breakage; re-run before
   diagnosing. A compile that passes proves the lines; only rendering proves the page.
 
+--- Session 6.1 "The Vault Repair" (owner-reported from his REAL résumé: old slop still rendering,
+  ATS 35, LinkedIn out-diversifying the radar. 18-Jul-2026) ---
+- D140: THE PROOFS RAN ON THE SEED, THE OWNER RUNS ON HIS VAULT — Session 6 verified the new
+  tailor against seed/ledger.seed.json and declared DONE while his LOCAL-FIRST vault still carried
+  (a) bullets written by the deterministic fallback during a rate-limited batch re-forge, and
+  (b) summaries polluted with raw README markdown ("…vercel.app**", "▶ Live:"). No deploy can
+  reach IndexedDB. Root fixes, each gated:
+  (1) THE SILENT-DOWNGRADE GUARD — refreshEntryFromRepo used to PERSIST the deterministic fallback
+      when the LLM merely rate-limited: a batch re-forge tripped the free-tier TPM and quietly
+      rewrote his vault DOWNWARD. Now, when intelligence was expected and the entry holds real
+      bullets, a non-dimaag result leaves the entry UNTOUCHED ("never downgrades silently"), and
+      the batch loop breathes 15s between real LLM passes (the D73 law, finally applied to the
+      app's own loop — the probes knew it; the product didn't).
+  (2) THE REPAIR BANNER — entries carry forgeVersion; when the forge craft is newer than the vault
+      (needsReforge, pure+gated), the landing screen offers a one-click, spaced, owner-confirmed
+      re-forge; lastReforgeAt is stamped and any stored packet older than it RE-TAILORS ITSELF on
+      open. A craft improvement now reaches his data through one visible click, never through
+      hoping he finds a buried button.
+  (3) DISPLAY SANITIZATION — cleanSummaryForDisplay strips markdown residue/URLs/status prefixes
+      from the description line whatever the vault holds; displayTitle lifts repo slugs
+      ("sifarish"→"SIFARISH"); displayDate renders Month-Year (the 8/8-ATS format).
+  (4) THE GUARD READ A CAPPED README — forgeBullets checked drift against the 14k-capped `raw`,
+      so TRUE bullets about content past the cap were rejected as inventions, thinning his richest
+      projects to 2 bullets. The guard now reads the uncapped fullClean (never stored, never in a
+      payload). Plus a REGISTER BAN: the live probe caught the model writing "scrapes cited news
+      sources" — the README says "never scrape" and a drift guard cannot read negation; any
+      scrape-claim dies deterministically, and the prompt bans codename-LED bullets ("Engineered
+      a weekly Pulse Loop…") while demanding the architecture substance (function counts, LLM
+      routing, RAG, guardrails) surface.
+  (5) DISCOVERY GEOGRAPHY — his LinkedIn screenshot ("AI engineer in Europe, 24h" → 243 fresh
+      roles) exposed that JSearch hunts carried NO country, so every query defaulted to the US and
+      Europe never entered the queue. Unpinned hunts now sweep a rotating 15-market window (India
+      every sweep — the D111 pattern); a pinned country always wins. And an explicitly UNPAID
+      posting takes a visible −20 (owner-caught: "you even suggested me an unpaid intern").
+  LIVE-PROVEN on his real READMEs through prod: sehat-saarthi forged "Integrated fine-tuned Claude
+  models with ROC-AUC 0.957 (chest X-ray) and 0.686 (retinopathy)…" (the numbers rule working);
+  spark-core forged "Implemented edge-middleware with signed HMAC-SHA256 cookies, constant-time
+  admin password checks and rate-limited logins…". The craft was real; the vault had never met it.
+  LESSON (the hardest one this project has taught): in a local-first app, DONE is a property of
+  the USER'S DATA, not of the code — a proof that runs on the seed proves the machine, and only
+  the repair loop proves the product.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

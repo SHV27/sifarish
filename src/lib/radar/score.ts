@@ -176,6 +176,13 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
   // like every other part — the penalty is never hidden math (L4).
   parts.push(stalenessPart(job))
 
+  // Session 6.1 (owner-caught: "you even suggested me an unpaid intern"): an explicitly unpaid
+  // posting sits below his stated stipend floor by definition — a hard, visible deduction, so it
+  // can never hold a queue slot on keyword strength alone. Deterministic; renders in "why" (L4).
+  if (/\bunpaid\b|\bno stipend\b|\bwithout (a )?stipend\b|\bnon-?paid\b/i.test(`${job.title} ${job.jd}`)) {
+    parts.push({ key: 'unpaid', label: 'Unpaid', points: -20, max: 0, why: 'The posting says UNPAID — below your stated stipend floor; it costs 20 points so it never outranks paid work.' })
+  }
+
   // 8 · Vision fit (D85) — the piece that makes the top 15 HIS, not a generic AI list.
   //
   // The rubric above scores what a role IS (AI-ness, ledger fit, remote, window) but never whether

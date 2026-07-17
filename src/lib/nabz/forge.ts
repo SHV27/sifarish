@@ -110,6 +110,14 @@ export function preferAccomplishments(bullets: string[]): string[] {
   return strong.length >= 2 ? strong : bullets
 }
 
+/**
+ * Session 6.1 — the forge's craft version. Bumped whenever the SYSTEM prompt / guard rules change
+ * meaningfully; entries forged under an older version (or never LLM-forged at all) are what the
+ * one-click vault repair re-forges. v2 = numbers rule mandatory + honest keyword mirroring +
+ * reader test + library v1.2.0.
+ */
+export const FORGE_VERSION = 2
+
 export interface ForgeResult {
   summary: string
   bullets: string[]
@@ -160,7 +168,9 @@ THE HUMAN STAKES (what separates him from AI slop): he builds things that help r
 
 EVERY BULLET:
 1. LEADS WITH A STRONG PAST-TENSE VERB (Built, Architected, Engineered, Designed, Shipped, Implemented, Automated, Scaled) — then names, in PLAIN LANGUAGE, WHAT HE BUILT AND WHAT IT DOES for a real user or system ("a co-op board game where the board is the antagonist", "a flood-alert system for villages", "a résumé compiler"). The FIRST bullet of each project MUST establish what the whole project IS and its core purpose — someone reading only that line should get it.
-2. BAN PRIVATE JARGON AND COINED NAMES the reader won't know — "keyless core", "the forge", "pillars", "phase→control ordering", "orphan-claim guardrail", "Pulse Loop", "the Dimaag". Describe the REAL-WORLD EFFECT instead: "runs with zero API keys", "prevents illegal moves", "blocks any unproven claim from the résumé". Name concrete, well-known tech (React, TypeScript, LLMs, RAG, agents) — that a recruiter recognizes — but in service of explaining what was built, never as a buzzword dump.
+2. BAN PRIVATE JARGON AND COINED NAMES the reader won't know — "keyless core", "the forge", "pillars", "phase→control ordering", "orphan-claim guardrail", "Pulse Loop", "the Dimaag". A bullet must NEVER OPEN with a project's internal codename ("Engineered a weekly Pulse Loop that…" FAILS — the reader has no idea what a Pulse Loop is); describe the CAPABILITY in market terms first ("Built a self-updating market-intelligence sweep that…") and let a codename appear in parentheses at most. Describe the REAL-WORLD EFFECT: "prevents illegal moves", "blocks any unproven claim from the résumé". Name concrete, well-known tech (React, TypeScript, LLMs, RAG, agents) — that a recruiter recognizes — but in service of explaining what was built, never as a buzzword dump.
+2b. THE ARCHITECTURE IS THE HIGHEST-SCORING TRUTH: when the README documents the system's real engineering — the number of serverless functions, two-tier LLM model routing, retrieval/RAG, deterministic guardrails, evals, encryption, rate-limit architecture — those facts MUST surface in the bullets; they are exactly what an AI-engineer recruiter is buying. A résumé that mentions a news sweep but hides an 11-function serverless architecture with LLM routing has buried its best truth.
+2c. NEVER claim scraping or crawling — this candidate's systems use lawful public APIs by principle; a scrape-claim is both false and disqualifying, and the app discards any bullet containing one.
 3. States the HARD PART as an OUTCOME a non-builder grasps ("so a game runs entirely in the browser with no server", "so fabricated claims are impossible", "cutting export failures to zero").
 4. ENDS with IMPACT woven into the sentence — never a bare label. THE NUMBERS RULE: when the README states a real figure (an accuracy, a %, a latency, a count — "ROC-AUC 0.957", "98.6%", "18 markets"), you MUST carry that exact figure into a bullet — a hired résumé's strongest lines are its numbered ones, and leaving a real number in the README is leaving proof on the table. Never invent, round, or infer a number the README doesn't state; when no figure exists, end with the real scale, the failure class eliminated, or the user value. Never end with a category word ("SCALE", "RELIABILITY") or a bracketed tag.
 5. 15-28 words, plain and clear — a smart non-engineer should follow it. Never a terse fragment, never private jargon, never rambling past two lines.
@@ -239,13 +249,21 @@ export async function forgeBullets(input: { repo: GhRepo; distilled: ReadmeDisti
 
   // THE GUARD: the README is the only permitted source of facts. A bullet that smuggles in a
   // number, technology or proper noun the README never claimed is dropped (I1). We check against
-  // the README PLUS the repo metadata, since language/description/name are equally his own truth.
-  const source = `${distilled.raw}\n${repo.description ?? ''}\n${repo.language ?? ''}\n${repo.name}\n${distilled.stack.join(' ')}`
+  // the FULL cleaned README (Session 6.1 — checking the capped `raw` was rejecting TRUE bullets
+  // about content past the 14k cap on his richest projects) PLUS the repo metadata.
+  const source = `${distilled.fullClean || distilled.raw}\n${repo.description ?? ''}\n${repo.language ?? ''}\n${repo.name}\n${distilled.stack.join(' ')}`
   const kept: string[] = []
   const rejected: string[] = []
   for (const b of out.bullets) {
     const text = String(b ?? '').trim().replace(/^[-*•]\s*/, '').replace(/\s+/g, ' ')
     if (!isResumeBullet(text)) {
+      rejected.push(text)
+      continue
+    }
+    // Session 6.1 REGISTER BAN: his systems use lawful APIs, never scraping — the live probe
+    // caught the model writing "scrapes cited news sources" because the README says "never
+    // scrape" and a drift guard cannot read negation. A scrape-claim dies deterministically.
+    if (/\bscrap(e|es|ed|ing)\b/i.test(text)) {
       rejected.push(text)
       continue
     }

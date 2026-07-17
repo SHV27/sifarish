@@ -68,6 +68,12 @@ export interface LedgerEntry {
   tags: string[]
   /** Shaurya's call: some real skills are not interview-safe; they never enter any export. */
   resumeEligible: boolean
+  /**
+   * Session 6.1 — the forge craft version that last wrote this entry's bullets via the REAL
+   * reasoning pass. Absent/older than FORGE_VERSION on a repo-backed project → the vault-repair
+   * banner offers a one-click re-forge (his data, his click — D59).
+   */
+  forgeVersion?: number
 }
 
 export interface Identity {
@@ -563,6 +569,9 @@ export interface Settings {
   rubricChangelog?: RubricChange[]
   lastSweepAt?: string
   lastPulseAt?: string
+  /** Session 6.1 — set when the vault repair re-forges the ledger; packets older than this
+   *  auto re-tailor on open, so a stored packet can never keep serving pre-repair bullets. */
+  lastReforgeAt?: string
 }
 
 // ---------- Khabri (discovery + signals) ----------

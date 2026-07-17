@@ -631,6 +631,37 @@ missing — and the join is where the product insight lived.
 
 ---
 
+### 3.26 · "DONE" IS A PROPERTY OF THE USER'S DATA — the vault the proofs never met (Session 6.1)
+
+Session 6 shipped the strongest tailor the project has had, proved it live on the seed ledger, and
+said DONE. The owner opened his own résumé and found the same old slop — "Pulse Loop — weekly cited
+news sweep…", "…vercel.app`**`", an external ATS checker scoring 35 — and had a panic attack.
+
+Both things were true at once. The craft WAS better; his résumé WAS still broken — because in a
+local-first app the code ships to everyone and the DATA ships to no one. His vault carried bullets
+written months of sessions earlier — specifically, bullets the deterministic fallback had persisted
+when a batch re-forge tripped the free-tier rate limit — and his stored packets kept compiling that
+data forever. The proofs ran on `seed/ledger.seed.json`; the owner runs on IndexedDB.
+
+Worse, the mechanism that wrote the slop was a designed one: `refreshEntryFromRepo` treated "the
+LLM didn't answer" and "use the fallback" as the same case, so a 429 mid-batch **quietly rewrote
+the vault downward** — silent degradation (the 3.13 law) in its cruelest form, because this time
+the degradation *persisted*. And the drift guard was checking bullets against a 14k-capped README,
+rejecting TRUE claims about content past the cap — thinning exactly his richest projects.
+
+The repairs: a rate-limited re-forge now leaves existing bullets untouched by rule; the batch loop
+spaces its calls (the D73 law the *probes* had learned a session earlier and the *product* hadn't);
+entries carry a `forgeVersion` and a landing-screen banner repairs the vault in one confirmed
+click; packets older than the repair re-tailor themselves on open; and the compiler sanitizes its
+display so no vault state can ever print markdown residue on a résumé again.
+
+**Lessons.** (1) In local-first software, every craft improvement is HALF a fix until the data-
+repair path ships with it — visible, one click, never buried. (2) A fallback that can *persist*
+its output is a fallback that can corrupt; degrade loudly, write conservatively. (3) Proofs must
+run where the user lives: the seed proves the machine, only the vault proves the product.
+
+---
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.
