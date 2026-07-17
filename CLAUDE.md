@@ -934,6 +934,18 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   board's `closed`), "mark all seen" + "new only" filter (200 NEW stamps are noise), the
   verified-open chip, "applied Nd ago" on Morcha cards, and Dak's "ack all generic" (interviews/
   rejections never batch — they carry a decision).
+- D139: THREE DEFECTS ONLY THE LIVE PROOFS COULD CATCH (the §14 discipline earning its keep, again).
+  (1) READING the rendered PDF — not the compiled lines, the PDF — showed the WinAnsi sanitizer's
+  final strip EATING "…" and "×": the brand-new word-safe truncation re-broke ON THE PAGE ("with a
+  hand-authored |") while every gate stayed green, because the gates compared post-sanitizer text
+  to post-sanitizer text. Mapped to ASCII before the strip + double-space collapse + the gate that
+  compares against the HUMAN-expected string. (2) The live tailor proof showed education rendering
+  Class X above Class XII — Dexie returns rows in primary-key order ('edu-x' < 'edu-xii'
+  alphabetically) and the compiler never sorted the pool; now reverse-chronological with a real
+  MM/YYYY→YYYYMM key (lexicographic compare on "07/2021" vs "05/2023" sorts WRONG — the naive fix
+  was itself a bug). (3) The first probe run of the session read 41 test files all-red — a
+  transient worker-spawn flake (the D97 environment class), not app breakage; re-run before
+  diagnosing. A compile that passes proves the lines; only rendering proves the page.
 
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
