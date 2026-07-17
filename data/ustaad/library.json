@@ -1,1039 +1,1215 @@
 {
- "version": "1.1.0",
- "updatedAt": "2026-07-16",
- "honestyNote": "This library encodes CRAFT PATTERNS with citations. There is no public database of 'resumes selected at company X' and this library does not pretend one exists. Per-company insight comes from Intel/JD analysis at tailor time. Every pattern below carries the source(s) it was derived from and the date it was verified. Stale entries (>12 months) must be flagged by Pulse, never silently trusted.",
- "sources": [
-  {
-   "id": "S1",
-   "title": "Inc. — Google recruiters: the X-Y-Z resume formula (Laszlo Bock)",
-   "url": "https://www.inc.com/bill-murphy-jr/google-recruiters-say-these-5-resume-tips-including-x-y-z-formula-will-improve-your-odds-of-getting-hired-at-google.html",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S2",
-   "title": "CNBC — Google recruiter's 3-part resume formula",
-   "url": "https://www.cnbc.com/2018/08/16/google-recruiters-share-the-3-part-formula-for-stronger-resumes.html",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S3",
-   "title": "Ladders Eye-Tracking Study (2018) — recruiters average 7.4s on first skim",
-   "url": "https://www.theladders.com/static/images/basicSite/pdfs/TheLadders-EyeTracking-StudyC2.pdf",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S4",
-   "title": "HR Dive — summary of the Ladders eye-tracking study",
-   "url": "https://www.hrdive.com/news/eye-tracking-study-shows-recruiters-look-at-resumes-for-7-seconds/541582/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S5",
-   "title": "Stanford Career Education — Developing Your Resume (handout)",
-   "url": "https://careered.stanford.edu/sites/g/files/sbiybj22801/files/media/file/developing_your_resume_handout.pdf",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S6",
-   "title": "Stanford Career Education — Resumes & Cover Letters examples",
-   "url": "https://careered.stanford.edu/sites/g/files/sbiybj22801/files/media/file/resume-and-cover-letter-examples.pdf",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S7",
-   "title": "UC Berkeley Career Center — Job & Internship Guide: Resume & Letter Writing",
-   "url": "https://cdnsm5-ss19.sharpschool.com/UserFiles/Servers/Server_160846/File/Departments/College%20and%20Career%20Center/Resume%20and%20Letter%20Writing/ResumeLetterWriting.pdf",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S8",
-   "title": "Harvard FAS Mignone Center — Create a Strong Resume",
-   "url": "https://careerservices.fas.harvard.edu/resources/create-a-strong-resume/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S9",
-   "title": "Harvard FAS Mignone Center — 45 Rare Action Verbs (2025)",
-   "url": "https://careerservices.fas.harvard.edu/blog/2025/08/14/45-rare-action-verbs-for-your-resume-with-examples/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S10",
-   "title": "Resume Worded — How to quantify your resume (50+ examples)",
-   "url": "https://resumeworded.com/how-to-quantify-resume-key-advice",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S11",
-   "title": "Indeed — How to quantify resume accomplishments",
-   "url": "https://www.indeed.com/career-advice/resumes-cover-letters/how-to-quantify-resume",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S12",
-   "title": "Forbes — 5 ways to add metrics to your resume",
-   "url": "https://www.forbes.com/sites/andrewfennell/2024/05/16/5-ways-to-add-metrics-to-your-resume-for-quantifiable-success/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S13",
-   "title": "Tech Interview Handbook — FAANG-ready software engineer resumes",
-   "url": "https://www.techinterviewhandbook.org/resume/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S14",
-   "title": "freeCodeCamp — How to write a killer software engineering résumé",
-   "url": "https://www.freecodecamp.org/news/writing-a-killer-software-engineering-resume-b11c91ef699d/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S15",
-   "title": "Jobscan — Resume keyword stuffing backfires",
-   "url": "https://www.jobscan.co/blog/resume-keyword-stuffing/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S16",
-   "title": "Cangrade — White fonting: what it is and why it's risky",
-   "url": "https://www.cangrade.com/blog/talent-acquisition/white-fonting-what-it-is-why-its-risky-and-how-employers-should-respond/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S17",
-   "title": "Prosple — Debunking the white-font resume hack",
-   "url": "https://prosple.com/applying/debunking-the-white-font-resume-hack-from-tiktok",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S18",
-   "title": "ResumeAdapter — ATS resume formatting rules (2026 checklist)",
-   "url": "https://www.resumeadapter.com/blog/ats-resume-formatting-rules-2026",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S19",
-   "title": "CVCraft — Can ATS read tables & columns? 8 systems tested (2026)",
-   "url": "https://cvcraft.roynex.com/blog/can-ats-read-tables-columns-formatting-2026",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S20",
-   "title": "RecruitBPM — Resume columns and ATS compatibility (2026)",
-   "url": "https://recruitbpm.com/blog/resume-columns-and-ats-compatibility",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S21",
-   "title": "Resume Worded — Machine learning resume examples",
-   "url": "https://resumeworded.com/machine-learning-resume-examples",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S22",
-   "title": "CV Compiler — 18 machine learning resume examples",
-   "url": "https://cvcompiler.com/machine-learning-resume-examples",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S23",
-   "title": "MirrorCV — AI engineer resume guide: LLM, RAG & MLOps skills (2026)",
-   "url": "https://mirrorcv.com/resume-guide/ai-ml-engineer",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S24",
-   "title": "MIT CAPD — How to write an effective cover letter",
-   "url": "https://capd.mit.edu/resources/how-to-write-an-effective-cover-letter/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S25",
-   "title": "Resume Genius — Cover letter tips hiring managers respond to",
-   "url": "https://resumegenius.com/blog/cover-letter-help/cover-letter-tips",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S26",
-   "title": "Monster — Indian resume format guide",
-   "url": "https://www.monster.com/career-advice/resume/indian-resume-format",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S27",
-   "title": "ResumeVera — Resume for freshers India (2026 format & tips)",
-   "url": "https://resumevera.com/guides/resume-for-freshers-india",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S28",
-   "title": "The Muse — Resume tense: past or present",
-   "url": "https://www.themuse.com/advice/resume-tense-past-present",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S29",
-   "title": "Resume Worded — Past tense vs present tense on resumes",
-   "url": "https://resumeworded.com/resume-past-tense-or-present-tense-key-advice",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S30",
-   "title": "Zippia — 25 employee referral statistics (US)",
-   "url": "https://www.zippia.com/advice/employee-referral-statistics/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S31",
-   "title": "Ashby Talent Trends — Are referred candidates more likely to get hired?",
-   "url": "https://www.ashbyhq.com/talent-trends-report/reports/referrals",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S32",
-   "title": "NACE — Intern conversion rate hits five-year high (2024-25 class)",
-   "url": "https://www.naceweb.org/talent-acquisition/internships/intern-conversion-rate-hits-highest-mark-in-five-years",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S33",
-   "title": "Levels.fyi — Tech internship guide & salaries (2025-2026)",
-   "url": "https://www.levels.fyi/internships/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S34",
-   "title": "Silvia Sapora — ML job interviews: the ultimate guide",
-   "url": "https://silviasapora.github.io/blog/ml-interviews.html",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S35",
-   "title": "Simplify — Startup vs big tech for new-grad engineers",
-   "url": "https://simplify.jobs/blog/startup-vs-big-tech-new-grad-engineers",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S36",
-   "title": "Educative (Fahim ul Haq) — Is LeetCode still worth it in 2026?",
-   "url": "https://medium.com/@fahimulhaq/is-it-still-worth-doing-leetcode-a5ec9944970d",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S37",
-   "title": "awesome-ai-residency — AI residency program requirements (community-maintained)",
-   "url": "https://github.com/dangkhoasdc/awesome-ai-residency",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S38",
-   "title": "Google Research — AI Residency program (research profile expectations)",
-   "url": "https://research.google.com/teams/brain/residency/",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S39",
-   "title": "CV Pro Maker — CV tips for remote and international jobs",
-   "url": "https://www.cvpromaker.com/blog/cv-tips-remote-international-jobs",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S40",
-   "title": "College Simplified — Remote internships with foreign companies for Indian students (2026)",
-   "url": "https://www.collegesimplified.in/post/remote-internships-with-foreign-companies-for-indian-students-2026-edition",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S41",
-   "title": "Interview Kickstart — How to list projects on a software engineer resume (2026)",
-   "url": "https://interviewkickstart.com/blogs/articles/list-projects-on-software-engineer-resume",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S42",
-   "title": "Wonsulting — The power of quantifiable results: the XYZ formula",
-   "url": "https://www.wonsulting.com/job-search-hub/the-power-of-quantifiable-results-how-to-use-the-xyz-formula-to-supercharge-your-resume",
-   "accessed": "2026-07-12"
-  },
-  {
-   "id": "S43",
-   "title": "ResumeMaster — The XYZ Resume Formula, evidence-based (Laszlo Bock / Google origin)",
-   "url": "https://www.resumemaster.net/blog/evidence-based-resume-xyz-formula",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S44",
-   "title": "Job Search Guide — How to Write a Technical Resume Without Making Up Metrics",
-   "url": "https://newsletter.jobsearch.guide/p/how-to-write-a-technical-resume-without",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S45",
-   "title": "Rezi — The Top 30 Weakest Action Verbs From 102,944 Resumes",
-   "url": "https://www.rezi.ai/posts/weak-action-verbs-resume",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S46",
-   "title": "SWE Resume — Software Engineer Resume Projects",
-   "url": "https://www.sweresume.app/articles/software-engineer-resume-projects/",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S47",
-   "title": "Resume Worded — How to List Projects on a Resume",
-   "url": "https://resumeworded.com/blog/projects-on-resume/",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S48",
-   "title": "HR Dive — Eye-tracking: recruiters look at resumes for 7 seconds (Ladders study)",
-   "url": "https://www.hrdive.com/news/eye-tracking-study-shows-recruiters-look-at-resumes-for-7-seconds/541582/",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S49",
-   "title": "CodePath — How to Have Side Projects That Stand Out and Why",
-   "url": "https://www.codepath.org/news/how-to-have-side-projects-that-stand-out-and-why",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S50",
-   "title": "Resume Optimizer Pro — AI Engineer Resume Examples: LLM, RAG, Agents (8,600-resume analysis)",
-   "url": "https://resumeoptimizerpro.com/blog/ai-engineer-resume-examples",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S51",
-   "title": "TechieCV — AI Engineer Resume: Complete 2026 Guide (ex-Google recruiter)",
-   "url": "https://www.techiecv.com/resume-guides/ai-engineer-resume",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S52",
-   "title": "Exponent — ML Engineer Resume Guide and Templates",
-   "url": "https://www.tryexponent.com/blog/machine-learning-engineer-resume",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S53",
-   "title": "Jobscan — 500+ Resume Keywords for the ATS",
-   "url": "https://www.jobscan.co/blog/top-resume-keywords-boost-resume/",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S54",
-   "title": "Willo — 11 Tips To Spot AI-generated Resumes",
-   "url": "https://www.willo.video/blog/how-to-detect-ai-generated-resumes",
-   "accessed": "2026-07-16"
-  },
-  {
-   "id": "S55",
-   "title": "Artisan Talent — The Rise of AI Resume Slop and How to Beat It",
-   "url": "https://creative.artisantalent.com/ai-slop-resumes",
-   "accessed": "2026-07-16"
-  }
- ],
- "patterns": [
-  {
-   "id": "xyz-formula",
-   "rule": "Prefer bullets shaped 'Accomplished [X] as measured by [Y] by doing [Z]' — outcome first, measurement explicit, method last.",
-   "why": "Google's own recruiters (via Laszlo Bock) teach this shape because it forces metrics and concrete results into every line; it reads as impact, not duty.",
-   "sourceIds": [
-    "S1",
-    "S2",
-    "S42",
-    "S43"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "redteam",
-    "estimator"
-   ],
-   "exemplar": "Structure: <result verb> <thing> <measured by N> <by doing method>. e.g. 'Cut export failures to zero (100% parse-back fidelity) by drawing PDF text line-by-line with a deterministic renderer.'"
-  },
-  {
-   "id": "six-second-skim",
-   "rule": "Optimize the top third of the page: name, headline, strongest project titles and their first bullets must carry the argument alone.",
-   "why": "Eye-tracking shows recruiters average 7.4 seconds on the first skim, reading in an E/F pattern — top-left content and bold titles get almost all fixation time.",
-   "sourceIds": [
-    "S3",
-    "S4",
-    "S48"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "casting",
-    "surgery",
-    "estimator"
-   ],
-   "exemplar": "The #1-cast project sits first; its first bullet is its strongest measured outcome, not its setup."
-  },
-  {
-   "id": "single-column-ats",
-   "rule": "Single column, standard section headings, no tables, no text boxes, no header/footer content, 'Month YYYY' dates.",
-   "why": "Parser tests across 8 ATS systems show tables and multi-column layouts scramble or drop content; single-column plain text parses reliably everywhere (Greenhouse included).",
-   "sourceIds": [
-    "S18",
-    "S19",
-    "S20"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "estimator"
-   ],
-   "exemplar": "Already structural in SIFARISH (D5): the compiler emits a plain single-column document; this pattern is the estimator's parse-structure check."
-  },
-  {
-   "id": "action-verb-lead",
-   "rule": "Every bullet starts with a strong past-tense action verb; never 'Responsible for', never a noun phrase, never the same verb twice in one entry.",
-   "why": "Harvard and Stanford career guides both teach verb-first bullets; repeated or weak verbs read as duty lists and fail the skim.",
-   "sourceIds": [
-    "S8",
-    "S9",
-    "S5"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "redteam"
-   ],
-   "exemplar": "Strong: Built, Shipped, Cut, Reduced, Designed, Engineered, Automated, Benchmarked, Instrumented. Weak: Worked on, Helped, Was responsible for, Participated in."
-  },
-  {
-   "id": "quantify-everything-honest",
-   "rule": "Surface every real number the evidence holds (users, latency, size, count, %, time saved). Never invent one — a bullet with no evidenced number stays number-free.",
-   "why": "Recruiter surveys report quantified achievements as a top shortlisting factor; numbers give the skim something to fixate on. Honesty is structural in SIFARISH (I1): metrics come from the ledger only.",
-   "sourceIds": [
-    "S10",
-    "S11",
-    "S12"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "estimator"
-   ],
-   "exemplar": "Ledger has '29 ATS boards probed live' → the bullet says '29 live-probed ATS boards', not 'multiple job boards'."
-  },
-  {
-   "id": "projects-are-experience",
-   "rule": "For a candidate without formal work history, Projects IS the experience section: 3-4 deep projects with stack, 2-3 outcome bullets each, and a live link — placed above Education.",
-   "why": "Intern-focused guides (Tech Interview Handbook, Interview Kickstart, freeCodeCamp) converge: shipped personal projects with metrics fill the experience gap and are weighted heavily for interns.",
-   "sourceIds": [
-    "S13",
-    "S41",
-    "S14"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "archetype",
-    "casting"
-   ],
-   "exemplar": "PROJECT TITLE — one-line what-it-is · stack · live URL, then bullets. Depth beats count: 3 projects with outcomes > 6 titles."
-  },
-  {
-   "id": "skills-grouped-exact",
-   "rule": "Skills section: 8-15 skills grouped by category (Languages / AI-LLM / Frameworks / Tools), spelled exactly as the JD spells them, and only skills the candidate can defend in an interview.",
-   "why": "ATS keyword match is exact-string in many systems ('JavaScript' ≠ 'JS'); grouped short lists scan better than laundry lists, and unlisted-but-undefendable skills fail interviews.",
-   "sourceIds": [
-    "S13",
-    "S23",
-    "S21"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "estimator"
-   ],
-   "exemplar": "Languages: Python, TypeScript · AI/LLM: RAG, agent orchestration, evals · Tools: Git, Docker."
-  },
-  {
-   "id": "no-hidden-text",
-   "rule": "Zero invisible text, zero keyword stuffing, zero pasted-JD tricks. Keywords appear only where evidence exists.",
-   "why": "ATS platforms and recruiters detect white-fonting (Ctrl-A, parser diffs); it converts a maybe into a blacklist. Structural in SIFARISH: keywords without ledger evidence are a hard gate failure.",
-   "sourceIds": [
-    "S15",
-    "S16",
-    "S17"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "redteam",
-    "estimator"
-   ],
-   "exemplar": "JD coverage gate: matched keywords all carry ledgerIds; unevidenced keywords appearing anywhere = 0 tolerance."
-  },
-  {
-   "id": "one-page-india-fresher",
-   "rule": "Exactly one page for <2 years experience. Education carries CGPA (if ≥7.0), institute, and dates. No photo, no DOB, no marital status, no declaration for private-sector tech.",
-   "why": "Indian tech recruiters treat two pages from a fresher as poor prioritization; CGPA is expected for 0-3 year candidates; personal-detail blocks are outdated and invite bias.",
-   "sourceIds": [
-    "S26",
-    "S27"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "estimator"
-   ],
-   "exemplar": "Structural in SIFARISH (D32): the compiler solves one-page by progressive trim."
-  },
-  {
-   "id": "tense-consistency",
-   "rule": "Past tense for completed work, present tense only for ongoing items (the 'Currently Building' line). Never mix tenses inside one entry; keep bullets grammatically parallel.",
-   "why": "Career guides converge on tense consistency as a readability and parser signal; irregular structure disrupts both the human skim and keyword extraction.",
-   "sourceIds": [
-    "S28",
-    "S29"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "redteam"
-   ],
-   "exemplar": "Shipped project → 'Built…', 'Cut…'. In-forge line → 'Building…' with its honest date (I2)."
-  },
-  {
-   "id": "headline-mirrors-role",
-   "rule": "The headline under the name mirrors the target role family in plain words (no title inflation), e.g. 'AI engineering intern candidate — shipped LLM/agent systems'.",
-   "why": "The skim's first fixation is name + headline; a headline aligned to the opening tells the reviewer they're in the right pile within the first second.",
-   "sourceIds": [
-    "S3",
-    "S13"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "archetype",
-    "surgery"
-   ],
-   "exemplar": "Headline states what he builds and the strongest true credential, not adjectives."
-  },
-  {
-   "id": "ml-production-over-notebooks",
-   "rule": "For applied-AI/agent/platform roles, lead with deployment, evals, guardrails, latency/cost — end-to-end ownership language — not model theory.",
-   "why": "AI-hiring reviewers reject notebook-only profiles; production signals (serving, monitoring, evals, budgets) are the differentiator recruiters search for.",
-   "sourceIds": [
-    "S21",
-    "S22",
-    "S23"
-   ],
-   "archetypes": [
-    "applied-ai",
-    "agent-eng",
-    "platform-infra",
-    "forward-deployed"
-   ],
-   "passes": [
-    "casting",
-    "surgery"
-   ],
-   "exemplar": "Bullet foregrounds 'deployed', 'evaluated against N-case suite', 'p95 latency', 'keyless fallback', 'budget-capped' over 'trained a model'."
-  },
-  {
-   "id": "research-rigor-signals",
-   "rule": "For research roles, lead with method + measured evaluation + honesty about limits; include math/foundations and any reproducible artifacts (repo, report).",
-   "why": "Research labs and residencies explicitly screen for rigorous evaluation, open-source artifacts, and depth over breadth.",
-   "sourceIds": [
-    "S37",
-    "S38",
-    "S34"
-   ],
-   "archetypes": [
-    "research-intern",
-    "ml-generalist"
-   ],
-   "passes": [
-    "casting",
-    "surgery"
-   ],
-   "exemplar": "Bullet shape: method → experiment → measured result → what didn't work (honest limitation reads as rigor)."
-  },
-  {
-   "id": "cover-letter-3-paragraphs",
-   "rule": "Cover letter: 250-450 words, 3-4 paragraphs. Open with the strongest role-relevant proof, name something specific about the company (cited), close with one plain ask.",
-   "why": "Hiring managers skim letters; specificity to the company is the credibility test, and the strongest qualification must land in the first two sentences.",
-   "sourceIds": [
-    "S24",
-    "S25"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "redteam"
-   ],
-   "exemplar": "Para 1: strongest proof + why this company (cited intel). Para 2: one project story with numbers. Para 3: the dated-momentum line + ask."
-  },
-  {
-   "id": "live-links-are-proof",
-   "rule": "Every shipped project carries a working URL (live app or repo). A dead link is worse than no link.",
-   "why": "For portfolio-driven AI hiring, reviewers click; a live artifact is the single strongest honesty signal a student resume can carry. Probe-gated in SIFARISH.",
-   "sourceIds": [
-    "S13",
-    "S41",
-    "S37"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "casting",
-    "redteam",
-    "estimator"
-   ],
-   "exemplar": "Title line: NAME — what it is · live URL. Baithak attaches links only after a liveness probe."
-  },
-  {
-   "id": "remote-async-signals",
-   "rule": "For remote-international roles, surface timezone (IST, UTC+5:30), written-communication artifacts (docs, READMEs), and any async-collaboration evidence.",
-   "why": "Distributed teams screen for async writing ability and timezone honesty; guides for Indian candidates applying internationally converge on stating both explicitly.",
-   "sourceIds": [
-    "S39",
-    "S40"
-   ],
-   "archetypes": [
-    "forward-deployed",
-    "applied-ai",
-    "agent-eng"
-   ],
-   "passes": [
-    "surgery"
-   ],
-   "exemplar": "Location line: 'Lucknow, India (IST, UTC+5:30) · open to async-first remote'. Bullets cite documentation/README quality where evidenced."
-  },
-  {
-   "id": "cut-the-obvious",
-   "rule": "Cut objective statements, references-available, soft-skill adjective lists, and any course/tool with no evidence behind it. White space is a feature.",
-   "why": "Eye-tracking punishes clutter; career-center guides treat objective blocks as wasted top-third real estate for experienced-project candidates.",
-   "sourceIds": [
-    "S3",
-    "S8",
-    "S5"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "redteam"
-   ],
-   "exemplar": "The top third goes to headline + the #1 project, never to 'seeking a challenging opportunity…'."
-  },
-  {
-   "id": "verb-strength-ladder",
-   "rule": "Prefer specific engineering verbs over generic ones: Built/Shipped/Engineered/Cut/Automated/Benchmarked/Instrumented > Developed/Created > Worked on/Helped (banned).",
-   "why": "Verb specificity is the fastest craft lever in a 7-second skim; Harvard's verb guidance exists precisely because generic verbs blur real work.",
-   "sourceIds": [
-    "S9",
-    "S8",
-    "S45"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "redteam",
-    "estimator"
-   ],
-   "exemplar": "'Worked on a resume tool' → 'Shipped a resume compiler with 100% parse-back fidelity'."
-  },
-  {
-   "id": "plain-language-what-it-is",
-   "rule": "Every project needs a jargon-free identity line before any mechanism bullet: what it is, for whom, in nouns a stranger recognizes. Internal vocabulary (module names, invented terms) means the reviewer skims past without comprehension.",
-   "why": "The context line is what makes the following bullets legible as parts of a real system rather than disconnected mechanisms.",
-   "sourceIds": [
-    "S46"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "reframe",
-    "redteam"
-   ],
-   "exemplar": "A [familiar category noun] that [does plain-language Y] for [audience Z] — then and only then the how"
-  },
-  {
-   "id": "name-the-model-and-eval",
-   "rule": "Name specific model versions and evaluation tooling where he actually used them — never stop at a bare \"LLMs\". Pair vector stores with their embedding models and tie orchestration frameworks to shipped features, never to a tool list.",
-   "why": "In an 8,600-resume analysis, top scorers named model versions 3.4x more often, and naming an eval tool put candidates in the top quartile 2.6x as often — most resumes mention no evaluation at all, which reads as shipping unevaluated features.",
-   "sourceIds": [
-    "S50"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "reframe",
-    "surgery"
-   ],
-   "exemplar": "Built X on [specific model/version he used] with [the eval/guardrail he built], measured by [the real check]"
-  },
-  {
-   "id": "shipped-not-notebook",
-   "rule": "Frame LLM/agent work as deployed capability with its operational consequence — retrieval, tool use, guardrails, latency/cost handling serving real use — never as an experiment or demo.",
-   "why": "Hiring teams for LLM/agent roles screen first for evidence of features shipped to real users; notebook demos are discounted on sight.",
-   "sourceIds": [
-    "S51"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "casting",
-    "surgery"
-   ],
-   "exemplar": "Shipped [LLM capability] serving [real users/context], handling [operational hard part: latency, cost, guardrails]"
-  },
-  {
-   "id": "context-built-consequence",
-   "rule": "When no clean number exists, lead with the concrete problem, name what was built, and close with the ripple effect — what it unblocked, what class of failure it removed, whose work got easier. Specificity substitutes for quantity.",
-   "why": "A fabricated percentage falls apart in an interview; a precise causal story does not.",
-   "sourceIds": [
-    "S44"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "reframe",
-    "surgery"
-   ],
-   "exemplar": "Rewrote X that was failing under condition Y, eliminating failure-class Z and unblocking W"
-  },
-  {
-   "id": "honest-non-numeric-impact",
-   "rule": "Where no measurement exists, state scope, frequency, a before/after state, or an eliminated failure mode — never an invented metric. Vague claims (\"improved performance\") are the failure, not the absence of digits.",
-   "why": "Recruiters accept state-change framing as a legitimate measure; a made-up number is the #1 fraud they hunt.",
-   "sourceIds": [
-    "S44"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "reframe",
-    "redteam"
-   ],
-   "exemplar": "Reduced X from [old state] to [new state] by doing Z — a state change, not an invented percentage"
-  },
-  {
-   "id": "varied-bullet-rhythm",
-   "rule": "Vary bullet length and sentence construction deliberately across a block — never three bullets sharing one grammatical skeleton. Anchor each to a specific system, a specific failure, a specific choice only this candidate could have written.",
-   "why": "Recruiters flag identical sentence rhythm and polish-without-particulars as AI-generated and discount the whole page.",
-   "sourceIds": [
-    "S54",
-    "S55"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "reframe",
-    "redteam"
-   ],
-   "exemplar": "One specific system + one specific hard part per bullet, in varied shapes — rotate result-first / method-first / initiative-first"
-  },
-  {
-   "id": "cost-latency-eval-metrics",
-   "rule": "The credible AI-work dimensions are operational: latency, token/inference cost, eval pass rates, hallucination-class reduction, retrieval precision. Name the dimension only where the work truly touched it — the dimension without a fake number still carries the signal.",
-   "why": "These separate engineers who ran systems in production from those who called an API once.",
-   "sourceIds": [
-    "S51"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "reframe"
-   ],
-   "exemplar": "Reduced [operational dimension] by doing Z, verified by [the eval mechanism he built]"
-  },
-  {
-   "id": "validation-over-description",
-   "rule": "Pair every project with whatever honest external proof exists — a live URL, user count, stars, a placement — stated in the text itself, not only as a link.",
-   "why": "A description alone blurs into the pile; a validation signal makes it real, and reviewers may not click.",
-   "sourceIds": [
-    "S49"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "forge",
-    "casting"
-   ],
-   "exemplar": "Built X [description] — live at URL / used by N — the proof rides in the same line"
-  },
-  {
-   "id": "project-block-anatomy",
-   "rule": "Render each project as: title with stack, one plain context line stating what it does and why it exists, then 2-3 bullets covering what was built, the hard engineering part, and an outcome or credibility signal. Engineering work, not a product pitch.",
-   "why": "This is the block shape reviewers can actually parse in a skim; anything denser is skipped.",
-   "sourceIds": [
-    "S46",
-    "S47"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "casting",
-    "estimator"
-   ],
-   "exemplar": "TITLE | stack, then a plain \"A [noun] that does X for Y.\" line, then: built A with hard-part B; engineered C producing D"
-  },
-  {
-   "id": "honest-keyword-mirroring",
-   "rule": "Use the exact term the job description uses wherever it accurately describes real evidence-backed experience, placed once in context — never as density stuffing, and never a near-synonym where the exact term is true.",
-   "why": "ATS filtering is literal (near-synonyms miss); modern parsers score stuffing down. Coverage over repetition.",
-   "sourceIds": [
-    "S53"
-   ],
-   "archetypes": [
-    "*"
-   ],
-   "passes": [
-    "surgery",
-    "reframe",
-    "estimator"
-   ],
-   "exemplar": "[Action verb] + [the exact JD term, evidence-backed] + [result], once, in context"
-  }
- ],
- "archetypeGuides": [
-  {
-   "archetype": "applied-ai",
-   "sectionOrder": [
-    "contact",
-    "skills",
-    "projects",
-    "education",
-    "honors"
-   ],
-   "leadSignals": [
-    "shipped LLM/agent product with live URL",
-    "evals & guardrails",
-    "end-to-end ownership"
-   ],
-   "skillsGroups": [
-    "Languages",
-    "AI/LLM",
-    "Frameworks",
-    "Tools"
-   ],
-   "sourceIds": [
-    "S23",
-    "S21",
-    "S13"
-   ]
-  },
-  {
-   "archetype": "agent-eng",
-   "sectionOrder": [
-    "contact",
-    "skills",
-    "projects",
-    "education",
-    "honors"
-   ],
-   "leadSignals": [
-    "agent loops & tool orchestration",
-    "deterministic guardrails",
-    "reliability"
-   ],
-   "skillsGroups": [
-    "Languages",
-    "Agents/LLM",
-    "Frameworks",
-    "Tools"
-   ],
-   "sourceIds": [
-    "S23",
-    "S13"
-   ]
-  },
-  {
-   "archetype": "research-intern",
-   "sectionOrder": [
-    "contact",
-    "education",
-    "projects",
-    "skills",
-    "honors"
-   ],
-   "leadSignals": [
-    "method + rigorous eval",
-    "math foundations",
-    "reproducible artifacts"
-   ],
-   "skillsGroups": [
-    "Languages",
-    "ML",
-    "Math/Stats",
-    "Tools"
-   ],
-   "sourceIds": [
-    "S37",
-    "S38",
-    "S34"
-   ]
-  },
-  {
-   "archetype": "forward-deployed",
-   "sectionOrder": [
-    "contact",
-    "projects",
-    "skills",
-    "education",
-    "honors"
-   ],
-   "leadSignals": [
-    "real users & field impact",
-    "breadth across the stack",
-    "communication artifacts"
-   ],
-   "skillsGroups": [
-    "Languages",
-    "Product/AI",
-    "Frameworks",
-    "Tools"
-   ],
-   "sourceIds": [
-    "S13",
-    "S14"
-   ]
-  },
-  {
-   "archetype": "ml-generalist",
-   "sectionOrder": [
-    "contact",
-    "education",
-    "skills",
-    "projects",
-    "honors"
-   ],
-   "leadSignals": [
-    "Python & data fluency",
-    "one clean modeling story",
-    "stats intuition"
-   ],
-   "skillsGroups": [
-    "Languages",
-    "ML/Data",
-    "Tools"
-   ],
-   "sourceIds": [
-    "S21",
-    "S22"
-   ]
-  },
-  {
-   "archetype": "platform-infra",
-   "sectionOrder": [
-    "contact",
-    "skills",
-    "projects",
-    "education",
-    "honors"
-   ],
-   "leadSignals": [
-    "serving & reliability",
-    "latency/cost awareness",
-    "systems thinking"
-   ],
-   "skillsGroups": [
-    "Languages",
-    "Infra/MLOps",
-    "Frameworks",
-    "Tools"
-   ],
-   "sourceIds": [
-    "S23",
-    "S21"
-   ]
-  }
- ],
- "pathBriefs": [
-  {
-   "id": "ai-first-startup",
-   "label": "AI-first startup (his stated lane)",
-   "summary": "Fast, founder-adjacent hiring; portfolio and shipped artifacts outweigh DSA. Interviews vary widely; a live product with evals is the strongest signal. Interns contribute to production from week one.",
-   "timeline": "Rolling, short cycles (days-weeks); apply when a role opens, not by season.",
-   "referralWeight": "High — referred candidates interview at roughly 40-60% vs 2-3% for cold applications; a warm intro to a founder/eng lead is the highest-leverage single act.",
-   "portfolioVsDsa": "Portfolio-first. Expect a practical build/take-home or deep walkthrough of your own systems; DSA rounds are lighter or absent.",
-   "conversionNorms": "Less formalized than big tech; strong interns often convert to part-time/full-time offers quickly because teams are small.",
-   "indiaVsRemote": "Remote-international is realistic if async-writing signals are visible; state IST overlap honestly.",
-   "sourceIds": [
-    "S35",
-    "S36",
-    "S30",
-    "S31",
-    "S39"
-   ]
-  },
-  {
-   "id": "research-lab",
-   "label": "Research lab / AI residency",
-   "summary": "Screens for research rigor: strong math foundations, reproducible projects, open-source contributions or publications. Residencies exist precisely for non-traditional entrants with proof of ability.",
-   "timeline": "Annual cohorts with hard deadlines (typically fall-winter applications for the following year); missing the window costs a full year.",
-   "referralWeight": "Moderate — a researcher's endorsement helps, but artifacts (papers, repos, rigorous evals) carry the decision.",
-   "portfolioVsDsa": "Artifacts + fundamentals. Expect research discussion and ML-depth interviews over LeetCode grinding.",
-   "conversionNorms": "Residencies frequently convert to research engineer/scientist roles; treat the residency itself as the pipeline.",
-   "indiaVsRemote": "Most residencies are on-site (US/UK) with visa support varying; some labs run remote-friendly internships — check per-program.",
-   "sourceIds": [
-    "S37",
-    "S38",
-    "S34"
-   ]
-  },
-  {
-   "id": "big-tech-internship",
-   "label": "Big-tech internship pipeline",
-   "summary": "Structured, season-locked, DSA-gated. The primary pipeline to full-time at these companies (~70-80% of their engineers interned first), but it is also the lane most saturated with cold applicants.",
-   "timeline": "Applications open ~8-12 months before the summer (Aug-Oct for the following year); on-campus/off-campus drives in India follow their own calendars.",
-   "referralWeight": "High for getting the screen — referrals are a large share of interviews — but the DSA bar is unbendable regardless of referral.",
-   "portfolioVsDsa": "DSA-first. At least two dedicated coding rounds; projects differentiate at the margin but cannot substitute for fundamentals.",
-   "conversionNorms": "Intern→full-time conversion averages ~63% industry-wide (2024-25 class, five-year high); top programs convert at 70-80%+.",
-   "indiaVsRemote": "India offices (Bengaluru/Hyderabad/Gurgaon) run their own intern drives; international remote internships at these firms are rare.",
-   "sourceIds": [
-    "S32",
-    "S33",
-    "S36",
-    "S30",
-    "S31"
-   ]
-  }
- ]
+  "version": "1.2.0",
+  "updatedAt": "2026-07-17",
+  "honestyNote": "This library encodes CRAFT PATTERNS with citations. There is no public database of 'resumes selected at company X' and this library does not pretend one exists. Per-company insight comes from Intel/JD analysis at tailor time. Every pattern below carries the source(s) it was derived from and the date it was verified. Stale entries (>12 months) must be flagged by Pulse, never silently trusted.",
+  "sources": [
+    {
+      "id": "S1",
+      "title": "Inc. — Google recruiters: the X-Y-Z resume formula (Laszlo Bock)",
+      "url": "https://www.inc.com/bill-murphy-jr/google-recruiters-say-these-5-resume-tips-including-x-y-z-formula-will-improve-your-odds-of-getting-hired-at-google.html",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S2",
+      "title": "CNBC — Google recruiter's 3-part resume formula",
+      "url": "https://www.cnbc.com/2018/08/16/google-recruiters-share-the-3-part-formula-for-stronger-resumes.html",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S3",
+      "title": "Ladders Eye-Tracking Study (2018) — recruiters average 7.4s on first skim",
+      "url": "https://www.theladders.com/static/images/basicSite/pdfs/TheLadders-EyeTracking-StudyC2.pdf",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S4",
+      "title": "HR Dive — summary of the Ladders eye-tracking study",
+      "url": "https://www.hrdive.com/news/eye-tracking-study-shows-recruiters-look-at-resumes-for-7-seconds/541582/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S5",
+      "title": "Stanford Career Education — Developing Your Resume (handout)",
+      "url": "https://careered.stanford.edu/sites/g/files/sbiybj22801/files/media/file/developing_your_resume_handout.pdf",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S6",
+      "title": "Stanford Career Education — Resumes & Cover Letters examples",
+      "url": "https://careered.stanford.edu/sites/g/files/sbiybj22801/files/media/file/resume-and-cover-letter-examples.pdf",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S7",
+      "title": "UC Berkeley Career Center — Job & Internship Guide: Resume & Letter Writing",
+      "url": "https://cdnsm5-ss19.sharpschool.com/UserFiles/Servers/Server_160846/File/Departments/College%20and%20Career%20Center/Resume%20and%20Letter%20Writing/ResumeLetterWriting.pdf",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S8",
+      "title": "Harvard FAS Mignone Center — Create a Strong Resume",
+      "url": "https://careerservices.fas.harvard.edu/resources/create-a-strong-resume/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S9",
+      "title": "Harvard FAS Mignone Center — 45 Rare Action Verbs (2025)",
+      "url": "https://careerservices.fas.harvard.edu/blog/2025/08/14/45-rare-action-verbs-for-your-resume-with-examples/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S10",
+      "title": "Resume Worded — How to quantify your resume (50+ examples)",
+      "url": "https://resumeworded.com/how-to-quantify-resume-key-advice",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S11",
+      "title": "Indeed — How to quantify resume accomplishments",
+      "url": "https://www.indeed.com/career-advice/resumes-cover-letters/how-to-quantify-resume",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S12",
+      "title": "Forbes — 5 ways to add metrics to your resume",
+      "url": "https://www.forbes.com/sites/andrewfennell/2024/05/16/5-ways-to-add-metrics-to-your-resume-for-quantifiable-success/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S13",
+      "title": "Tech Interview Handbook — FAANG-ready software engineer resumes",
+      "url": "https://www.techinterviewhandbook.org/resume/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S14",
+      "title": "freeCodeCamp — How to write a killer software engineering résumé",
+      "url": "https://www.freecodecamp.org/news/writing-a-killer-software-engineering-resume-b11c91ef699d/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S15",
+      "title": "Jobscan — Resume keyword stuffing backfires",
+      "url": "https://www.jobscan.co/blog/resume-keyword-stuffing/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S16",
+      "title": "Cangrade — White fonting: what it is and why it's risky",
+      "url": "https://www.cangrade.com/blog/talent-acquisition/white-fonting-what-it-is-why-its-risky-and-how-employers-should-respond/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S17",
+      "title": "Prosple — Debunking the white-font resume hack",
+      "url": "https://prosple.com/applying/debunking-the-white-font-resume-hack-from-tiktok",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S18",
+      "title": "ResumeAdapter — ATS resume formatting rules (2026 checklist)",
+      "url": "https://www.resumeadapter.com/blog/ats-resume-formatting-rules-2026",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S19",
+      "title": "CVCraft — Can ATS read tables & columns? 8 systems tested (2026)",
+      "url": "https://cvcraft.roynex.com/blog/can-ats-read-tables-columns-formatting-2026",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S20",
+      "title": "RecruitBPM — Resume columns and ATS compatibility (2026)",
+      "url": "https://recruitbpm.com/blog/resume-columns-and-ats-compatibility",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S21",
+      "title": "Resume Worded — Machine learning resume examples",
+      "url": "https://resumeworded.com/machine-learning-resume-examples",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S22",
+      "title": "CV Compiler — 18 machine learning resume examples",
+      "url": "https://cvcompiler.com/machine-learning-resume-examples",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S23",
+      "title": "MirrorCV — AI engineer resume guide: LLM, RAG & MLOps skills (2026)",
+      "url": "https://mirrorcv.com/resume-guide/ai-ml-engineer",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S24",
+      "title": "MIT CAPD — How to write an effective cover letter",
+      "url": "https://capd.mit.edu/resources/how-to-write-an-effective-cover-letter/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S25",
+      "title": "Resume Genius — Cover letter tips hiring managers respond to",
+      "url": "https://resumegenius.com/blog/cover-letter-help/cover-letter-tips",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S26",
+      "title": "Monster — Indian resume format guide",
+      "url": "https://www.monster.com/career-advice/resume/indian-resume-format",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S27",
+      "title": "ResumeVera — Resume for freshers India (2026 format & tips)",
+      "url": "https://resumevera.com/guides/resume-for-freshers-india",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S28",
+      "title": "The Muse — Resume tense: past or present",
+      "url": "https://www.themuse.com/advice/resume-tense-past-present",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S29",
+      "title": "Resume Worded — Past tense vs present tense on resumes",
+      "url": "https://resumeworded.com/resume-past-tense-or-present-tense-key-advice",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S30",
+      "title": "Zippia — 25 employee referral statistics (US)",
+      "url": "https://www.zippia.com/advice/employee-referral-statistics/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S31",
+      "title": "Ashby Talent Trends — Are referred candidates more likely to get hired?",
+      "url": "https://www.ashbyhq.com/talent-trends-report/reports/referrals",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S32",
+      "title": "NACE — Intern conversion rate hits five-year high (2024-25 class)",
+      "url": "https://www.naceweb.org/talent-acquisition/internships/intern-conversion-rate-hits-highest-mark-in-five-years",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S33",
+      "title": "Levels.fyi — Tech internship guide & salaries (2025-2026)",
+      "url": "https://www.levels.fyi/internships/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S34",
+      "title": "Silvia Sapora — ML job interviews: the ultimate guide",
+      "url": "https://silviasapora.github.io/blog/ml-interviews.html",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S35",
+      "title": "Simplify — Startup vs big tech for new-grad engineers",
+      "url": "https://simplify.jobs/blog/startup-vs-big-tech-new-grad-engineers",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S36",
+      "title": "Educative (Fahim ul Haq) — Is LeetCode still worth it in 2026?",
+      "url": "https://medium.com/@fahimulhaq/is-it-still-worth-doing-leetcode-a5ec9944970d",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S37",
+      "title": "awesome-ai-residency — AI residency program requirements (community-maintained)",
+      "url": "https://github.com/dangkhoasdc/awesome-ai-residency",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S38",
+      "title": "Google Research — AI Residency program (research profile expectations)",
+      "url": "https://research.google.com/teams/brain/residency/",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S39",
+      "title": "CV Pro Maker — CV tips for remote and international jobs",
+      "url": "https://www.cvpromaker.com/blog/cv-tips-remote-international-jobs",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S40",
+      "title": "College Simplified — Remote internships with foreign companies for Indian students (2026)",
+      "url": "https://www.collegesimplified.in/post/remote-internships-with-foreign-companies-for-indian-students-2026-edition",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S41",
+      "title": "Interview Kickstart — How to list projects on a software engineer resume (2026)",
+      "url": "https://interviewkickstart.com/blogs/articles/list-projects-on-software-engineer-resume",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S42",
+      "title": "Wonsulting — The power of quantifiable results: the XYZ formula",
+      "url": "https://www.wonsulting.com/job-search-hub/the-power-of-quantifiable-results-how-to-use-the-xyz-formula-to-supercharge-your-resume",
+      "accessed": "2026-07-12"
+    },
+    {
+      "id": "S43",
+      "title": "ResumeMaster — The XYZ Resume Formula, evidence-based (Laszlo Bock / Google origin)",
+      "url": "https://www.resumemaster.net/blog/evidence-based-resume-xyz-formula",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S44",
+      "title": "Job Search Guide — How to Write a Technical Resume Without Making Up Metrics",
+      "url": "https://newsletter.jobsearch.guide/p/how-to-write-a-technical-resume-without",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S45",
+      "title": "Rezi — The Top 30 Weakest Action Verbs From 102,944 Resumes",
+      "url": "https://www.rezi.ai/posts/weak-action-verbs-resume",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S46",
+      "title": "SWE Resume — Software Engineer Resume Projects",
+      "url": "https://www.sweresume.app/articles/software-engineer-resume-projects/",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S47",
+      "title": "Resume Worded — How to List Projects on a Resume",
+      "url": "https://resumeworded.com/blog/projects-on-resume/",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S48",
+      "title": "HR Dive — Eye-tracking: recruiters look at resumes for 7 seconds (Ladders study)",
+      "url": "https://www.hrdive.com/news/eye-tracking-study-shows-recruiters-look-at-resumes-for-7-seconds/541582/",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S49",
+      "title": "CodePath — How to Have Side Projects That Stand Out and Why",
+      "url": "https://www.codepath.org/news/how-to-have-side-projects-that-stand-out-and-why",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S50",
+      "title": "Resume Optimizer Pro — AI Engineer Resume Examples: LLM, RAG, Agents (8,600-resume analysis)",
+      "url": "https://resumeoptimizerpro.com/blog/ai-engineer-resume-examples",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S51",
+      "title": "TechieCV — AI Engineer Resume: Complete 2026 Guide (ex-Google recruiter)",
+      "url": "https://www.techiecv.com/resume-guides/ai-engineer-resume",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S52",
+      "title": "Exponent — ML Engineer Resume Guide and Templates",
+      "url": "https://www.tryexponent.com/blog/machine-learning-engineer-resume",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S53",
+      "title": "Jobscan — 500+ Resume Keywords for the ATS",
+      "url": "https://www.jobscan.co/blog/top-resume-keywords-boost-resume/",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S54",
+      "title": "Willo — 11 Tips To Spot AI-generated Resumes",
+      "url": "https://www.willo.video/blog/how-to-detect-ai-generated-resumes",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S55",
+      "title": "Artisan Talent — The Rise of AI Resume Slop and How to Beat It",
+      "url": "https://creative.artisantalent.com/ai-slop-resumes",
+      "accessed": "2026-07-16"
+    },
+    {
+      "id": "S56",
+      "title": "SWE Resume — the XYZ method with Laszlo Bock’s formula and SWE exemplars",
+      "url": "https://www.sweresume.app/articles/xyz-method-resume/",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S57",
+      "title": "ResumeOptimizerPro — AI engineer résumé teardown: named models, evals, before→after deltas",
+      "url": "https://resumeoptimizerpro.com/blog/ai-engineer-resume-examples",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S58",
+      "title": "CMU College of Engineering — graduate résumé guide (Verb + Context + Result, placed-student exemplars)",
+      "url": "https://www.cmu.edu/career/documents/resources-by-college/resume_guide_college_of_engineering_graduate_students_june_2020.pdf",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S59",
+      "title": "OwlApply — AI engineer résumé examples (two-metric bullets, summary anatomy)",
+      "url": "https://owlapply.com/en/resume-examples/ai-engineer",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S60",
+      "title": "ResumeGyani — 10th/12th marks on Indian résumés: when to include, when to drop",
+      "url": "https://resumegyani.in/10th-12th-marks-on-resume-india",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S61",
+      "title": "interviewing.io (Aline Lerner) — stop trying to make recruiters think: plain verifiable facts",
+      "url": "https://interviewing.io/blog/stop-trying-to-make-recruiters-think-or-why-your-resume-is-bad-and-how-to-fix-it",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S62",
+      "title": "QuickCV — empirical parse test across 8 real ATS systems (columns, tables, headings, dates)",
+      "url": "https://quickcv.io/blog/i-tested-8-ats-systems-to-see-how-they-actually-parse-resumes",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S63",
+      "title": "Rezi — weak action verbs: data study over 102,944 résumés",
+      "url": "https://www.rezi.ai/posts/weak-action-verbs-resume",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S64",
+      "title": "HR Dive — Ladders eye-tracking study: 7.4-second F-pattern skim",
+      "url": "https://www.hrdive.com/news/eye-tracking-study-shows-recruiters-look-at-resumes-for-7-seconds/541582/",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S65",
+      "title": "The Interview Guys — what ATS looks for (Jobscan 2025: 99.7% of recruiters use keyword filters; exact terms, not synonyms)",
+      "url": "https://blog.theinterviewguys.com/what-ats-looks-for-in-resumes/",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S66",
+      "title": "NotchResume — bullet-point craft: impact without invented metrics, length and count rules",
+      "url": "https://notchresume.com/resources/resume-bullet-points.html",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S67",
+      "title": "System Design One — the software-engineer résumé through a hiring manager’s eyes",
+      "url": "https://newsletter.systemdesign.one/p/software-engineer-resume",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S68",
+      "title": "UIUC Engineering Career Services — student résumé structure and section order",
+      "url": "https://ecs.grainger.illinois.edu/student-resources/resumes-letters/resumes",
+      "accessed": "2026-07-17"
+    },
+    {
+      "id": "S69",
+      "title": "freeCodeCamp — the résumé that got a software engineer hired at Google",
+      "url": "https://www.freecodecamp.org/news/heres-the-resume-i-used-to-get-a-job-at-google-as-a-software-engineer-26516526f29a/",
+      "accessed": "2026-07-17"
+    }
+  ],
+  "patterns": [
+    {
+      "id": "xyz-formula",
+      "rule": "Prefer bullets shaped 'Accomplished [X] as measured by [Y] by doing [Z]' — outcome first, measurement explicit, method last.",
+      "why": "Google's own recruiters (via Laszlo Bock) teach this shape because it forces metrics and concrete results into every line; it reads as impact, not duty.",
+      "sourceIds": [
+        "S1",
+        "S2",
+        "S42",
+        "S43"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "redteam",
+        "estimator"
+      ],
+      "exemplar": "Structure: <result verb> <thing> <measured by N> <by doing method>. e.g. 'Cut export failures to zero (100% parse-back fidelity) by drawing PDF text line-by-line with a deterministic renderer.'"
+    },
+    {
+      "id": "six-second-skim",
+      "rule": "Optimize the top third of the page: name, headline, strongest project titles and their first bullets must carry the argument alone.",
+      "why": "Eye-tracking shows recruiters average 7.4 seconds on the first skim, reading in an E/F pattern — top-left content and bold titles get almost all fixation time.",
+      "sourceIds": [
+        "S3",
+        "S4",
+        "S48",
+        "S64"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "surgery",
+        "estimator"
+      ],
+      "exemplar": "The #1-cast project sits first; its first bullet is its strongest measured outcome, not its setup."
+    },
+    {
+      "id": "single-column-ats",
+      "rule": "Single column, standard section headings, no tables, no text boxes, no header/footer content, 'Month YYYY' dates.",
+      "why": "Parser tests across 8 ATS systems show tables and multi-column layouts scramble or drop content; single-column plain text parses reliably everywhere (Greenhouse included).",
+      "sourceIds": [
+        "S18",
+        "S19",
+        "S20",
+        "S62"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "Already structural in SIFARISH (D5): the compiler emits a plain single-column document; this pattern is the estimator's parse-structure check."
+    },
+    {
+      "id": "action-verb-lead",
+      "rule": "Every bullet starts with a strong past-tense action verb; never 'Responsible for', never a noun phrase, never the same verb twice in one entry.",
+      "why": "Harvard and Stanford career guides both teach verb-first bullets; repeated or weak verbs read as duty lists and fail the skim.",
+      "sourceIds": [
+        "S8",
+        "S9",
+        "S5"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "redteam"
+      ],
+      "exemplar": "Strong: Built, Shipped, Cut, Reduced, Designed, Engineered, Automated, Benchmarked, Instrumented. Weak: Worked on, Helped, Was responsible for, Participated in."
+    },
+    {
+      "id": "quantify-everything-honest",
+      "rule": "Surface every real number the evidence holds (users, latency, size, count, %, time saved). Never invent one — a bullet with no evidenced number stays number-free.",
+      "why": "Recruiter surveys report quantified achievements as a top shortlisting factor; numbers give the skim something to fixate on. Honesty is structural in SIFARISH (I1): metrics come from the ledger only.",
+      "sourceIds": [
+        "S10",
+        "S11",
+        "S12",
+        "S66"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "estimator"
+      ],
+      "exemplar": "Ledger has '29 ATS boards probed live' → the bullet says '29 live-probed ATS boards', not 'multiple job boards'."
+    },
+    {
+      "id": "projects-are-experience",
+      "rule": "For a candidate without formal work history, Projects IS the experience section: 3-4 deep projects with stack, 2-3 outcome bullets each, and a live link — placed above Education.",
+      "why": "Intern-focused guides (Tech Interview Handbook, Interview Kickstart, freeCodeCamp) converge: shipped personal projects with metrics fill the experience gap and are weighted heavily for interns.",
+      "sourceIds": [
+        "S13",
+        "S41",
+        "S14",
+        "S68"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "archetype",
+        "casting"
+      ],
+      "exemplar": "PROJECT TITLE — one-line what-it-is · stack · live URL, then bullets. Depth beats count: 3 projects with outcomes > 6 titles."
+    },
+    {
+      "id": "skills-grouped-exact",
+      "rule": "Skills section: 8-15 skills grouped by category (Languages / AI-LLM / Frameworks / Tools), spelled exactly as the JD spells them, and only skills the candidate can defend in an interview.",
+      "why": "ATS keyword match is exact-string in many systems ('JavaScript' ≠ 'JS'); grouped short lists scan better than laundry lists, and unlisted-but-undefendable skills fail interviews.",
+      "sourceIds": [
+        "S13",
+        "S23",
+        "S21"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "estimator"
+      ],
+      "exemplar": "Languages: Python, TypeScript · AI/LLM: RAG, agent orchestration, evals · Tools: Git, Docker."
+    },
+    {
+      "id": "no-hidden-text",
+      "rule": "Zero invisible text, zero keyword stuffing, zero pasted-JD tricks. Keywords appear only where evidence exists.",
+      "why": "ATS platforms and recruiters detect white-fonting (Ctrl-A, parser diffs); it converts a maybe into a blacklist. Structural in SIFARISH: keywords without ledger evidence are a hard gate failure.",
+      "sourceIds": [
+        "S15",
+        "S16",
+        "S17"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "redteam",
+        "estimator"
+      ],
+      "exemplar": "JD coverage gate: matched keywords all carry ledgerIds; unevidenced keywords appearing anywhere = 0 tolerance."
+    },
+    {
+      "id": "one-page-india-fresher",
+      "rule": "Exactly one page for <2 years experience. Education carries CGPA (if ≥7.0), institute, and dates. No photo, no DOB, no marital status, no declaration for private-sector tech.",
+      "why": "Indian tech recruiters treat two pages from a fresher as poor prioritization; CGPA is expected for 0-3 year candidates; personal-detail blocks are outdated and invite bias.",
+      "sourceIds": [
+        "S26",
+        "S27"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "Structural in SIFARISH (D32): the compiler solves one-page by progressive trim."
+    },
+    {
+      "id": "tense-consistency",
+      "rule": "Past tense for completed work, present tense only for ongoing items (the 'Currently Building' line). Never mix tenses inside one entry; keep bullets grammatically parallel.",
+      "why": "Career guides converge on tense consistency as a readability and parser signal; irregular structure disrupts both the human skim and keyword extraction.",
+      "sourceIds": [
+        "S28",
+        "S29"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "redteam"
+      ],
+      "exemplar": "Shipped project → 'Built…', 'Cut…'. In-forge line → 'Building…' with its honest date (I2)."
+    },
+    {
+      "id": "headline-mirrors-role",
+      "rule": "The headline under the name mirrors the target role family in plain words (no title inflation), e.g. 'AI engineering intern candidate — shipped LLM/agent systems'.",
+      "why": "The skim's first fixation is name + headline; a headline aligned to the opening tells the reviewer they're in the right pile within the first second.",
+      "sourceIds": [
+        "S3",
+        "S13"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "archetype",
+        "surgery"
+      ],
+      "exemplar": "Headline states what he builds and the strongest true credential, not adjectives."
+    },
+    {
+      "id": "ml-production-over-notebooks",
+      "rule": "For applied-AI/agent/platform roles, lead with deployment, evals, guardrails, latency/cost — end-to-end ownership language — not model theory.",
+      "why": "AI-hiring reviewers reject notebook-only profiles; production signals (serving, monitoring, evals, budgets) are the differentiator recruiters search for.",
+      "sourceIds": [
+        "S21",
+        "S22",
+        "S23"
+      ],
+      "archetypes": [
+        "applied-ai",
+        "agent-eng",
+        "platform-infra",
+        "forward-deployed"
+      ],
+      "passes": [
+        "casting",
+        "surgery"
+      ],
+      "exemplar": "Bullet foregrounds 'deployed', 'evaluated against N-case suite', 'p95 latency', 'keyless fallback', 'budget-capped' over 'trained a model'."
+    },
+    {
+      "id": "research-rigor-signals",
+      "rule": "For research roles, lead with method + measured evaluation + honesty about limits; include math/foundations and any reproducible artifacts (repo, report).",
+      "why": "Research labs and residencies explicitly screen for rigorous evaluation, open-source artifacts, and depth over breadth.",
+      "sourceIds": [
+        "S37",
+        "S38",
+        "S34"
+      ],
+      "archetypes": [
+        "research-intern",
+        "ml-generalist"
+      ],
+      "passes": [
+        "casting",
+        "surgery"
+      ],
+      "exemplar": "Bullet shape: method → experiment → measured result → what didn't work (honest limitation reads as rigor)."
+    },
+    {
+      "id": "cover-letter-3-paragraphs",
+      "rule": "Cover letter: 250-450 words, 3-4 paragraphs. Open with the strongest role-relevant proof, name something specific about the company (cited), close with one plain ask.",
+      "why": "Hiring managers skim letters; specificity to the company is the credibility test, and the strongest qualification must land in the first two sentences.",
+      "sourceIds": [
+        "S24",
+        "S25"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "redteam"
+      ],
+      "exemplar": "Para 1: strongest proof + why this company (cited intel). Para 2: one project story with numbers. Para 3: the dated-momentum line + ask."
+    },
+    {
+      "id": "live-links-are-proof",
+      "rule": "Every shipped project carries a working URL (live app or repo). A dead link is worse than no link.",
+      "why": "For portfolio-driven AI hiring, reviewers click; a live artifact is the single strongest honesty signal a student resume can carry. Probe-gated in SIFARISH.",
+      "sourceIds": [
+        "S13",
+        "S41",
+        "S37"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "redteam",
+        "estimator"
+      ],
+      "exemplar": "Title line: NAME — what it is · live URL. Baithak attaches links only after a liveness probe."
+    },
+    {
+      "id": "remote-async-signals",
+      "rule": "For remote-international roles, surface timezone (IST, UTC+5:30), written-communication artifacts (docs, READMEs), and any async-collaboration evidence.",
+      "why": "Distributed teams screen for async writing ability and timezone honesty; guides for Indian candidates applying internationally converge on stating both explicitly.",
+      "sourceIds": [
+        "S39",
+        "S40"
+      ],
+      "archetypes": [
+        "forward-deployed",
+        "applied-ai",
+        "agent-eng"
+      ],
+      "passes": [
+        "surgery"
+      ],
+      "exemplar": "Location line: 'Lucknow, India (IST, UTC+5:30) · open to async-first remote'. Bullets cite documentation/README quality where evidenced."
+    },
+    {
+      "id": "cut-the-obvious",
+      "rule": "Cut objective statements, references-available, soft-skill adjective lists, and any course/tool with no evidence behind it. White space is a feature.",
+      "why": "Eye-tracking punishes clutter; career-center guides treat objective blocks as wasted top-third real estate for experienced-project candidates.",
+      "sourceIds": [
+        "S3",
+        "S8",
+        "S5"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "redteam"
+      ],
+      "exemplar": "The top third goes to headline + the #1 project, never to 'seeking a challenging opportunity…'."
+    },
+    {
+      "id": "verb-strength-ladder",
+      "rule": "Prefer specific engineering verbs over generic ones: Built/Shipped/Engineered/Cut/Automated/Benchmarked/Instrumented > Developed/Created > Worked on/Helped (banned).",
+      "why": "Verb specificity is the fastest craft lever in a 7-second skim; Harvard's verb guidance exists precisely because generic verbs blur real work.",
+      "sourceIds": [
+        "S9",
+        "S8",
+        "S45",
+        "S63"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "redteam",
+        "estimator"
+      ],
+      "exemplar": "'Worked on a resume tool' → 'Shipped a resume compiler with 100% parse-back fidelity'."
+    },
+    {
+      "id": "metric-first-half",
+      "rule": "Place the real number in the FIRST HALF of the bullet — accomplished X, measured by Y, by doing Z — and when the source states a before→after pair, quote the delta (6.2%→0.7%), never the lone endpoint.",
+      "why": "Numbers are the recruiter’s documented pattern-interrupt in the 6-second skim, and a delta proves you measured — the exact behavior AI teams hire for.",
+      "sourceIds": [
+        "S56",
+        "S57"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe"
+      ],
+      "exemplar": "Reduced search latency by 65% by implementing Elasticsearch caching, improving user retention by 12%."
+    },
+    {
+      "id": "verb-context-result",
+      "rule": "Build every bullet as Action Verb + Context (what and how) + Result (metric, outcome, or impact) — one key idea per bullet, never two.",
+      "why": "The literal formula CMU’s engineering career center trains placed graduate engineers on, with hired-student exemplars.",
+      "sourceIds": [
+        "S58"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe"
+      ],
+      "exemplar": "Developed an algorithm that automated post-operation assessment of drilling data, identifying $100,000+ per well pad in avoidable cost."
+    },
+    {
+      "id": "plain-language-what-it-is",
+      "rule": "Every project needs a jargon-free identity line before any mechanism bullet: what it is, for whom, in nouns a stranger recognizes. Internal vocabulary (module names, invented terms) means the reviewer skims past without comprehension.",
+      "why": "The context line is what makes the following bullets legible as parts of a real system rather than disconnected mechanisms.",
+      "sourceIds": [
+        "S46"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe",
+        "redteam"
+      ],
+      "exemplar": "A [familiar category noun] that [does plain-language Y] for [audience Z] — then and only then the how"
+    },
+    {
+      "id": "name-the-model-and-eval",
+      "rule": "Name specific model versions and evaluation tooling where he actually used them — never stop at a bare \"LLMs\". Pair vector stores with their embedding models and tie orchestration frameworks to shipped features, never to a tool list.",
+      "why": "In an 8,600-resume analysis, top scorers named model versions 3.4x more often, and naming an eval tool put candidates in the top quartile 2.6x as often — most resumes mention no evaluation at all, which reads as shipping unevaluated features.",
+      "sourceIds": [
+        "S50"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe",
+        "surgery"
+      ],
+      "exemplar": "Built X on [specific model/version he used] with [the eval/guardrail he built], measured by [the real check]"
+    },
+    {
+      "id": "shipped-not-notebook",
+      "rule": "Frame LLM/agent work as deployed capability with its operational consequence — retrieval, tool use, guardrails, latency/cost handling serving real use — never as an experiment or demo.",
+      "why": "Hiring teams for LLM/agent roles screen first for evidence of features shipped to real users; notebook demos are discounted on sight.",
+      "sourceIds": [
+        "S51"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "casting",
+        "surgery"
+      ],
+      "exemplar": "Shipped [LLM capability] serving [real users/context], handling [operational hard part: latency, cost, guardrails]"
+    },
+    {
+      "id": "context-built-consequence",
+      "rule": "When no clean number exists, lead with the concrete problem, name what was built, and close with the ripple effect — what it unblocked, what class of failure it removed, whose work got easier. Specificity substitutes for quantity.",
+      "why": "A fabricated percentage falls apart in an interview; a precise causal story does not.",
+      "sourceIds": [
+        "S44"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe",
+        "surgery"
+      ],
+      "exemplar": "Rewrote X that was failing under condition Y, eliminating failure-class Z and unblocking W"
+    },
+    {
+      "id": "honest-non-numeric-impact",
+      "rule": "Where no measurement exists, state scope, frequency, a before/after state, or an eliminated failure mode — never an invented metric. Vague claims (\"improved performance\") are the failure, not the absence of digits.",
+      "why": "Recruiters accept state-change framing as a legitimate measure; a made-up number is the #1 fraud they hunt.",
+      "sourceIds": [
+        "S44"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe",
+        "redteam"
+      ],
+      "exemplar": "Reduced X from [old state] to [new state] by doing Z — a state change, not an invented percentage"
+    },
+    {
+      "id": "varied-bullet-rhythm",
+      "rule": "Vary bullet length and sentence construction deliberately across a block — never three bullets sharing one grammatical skeleton. Anchor each to a specific system, a specific failure, a specific choice only this candidate could have written.",
+      "why": "Recruiters flag identical sentence rhythm and polish-without-particulars as AI-generated and discount the whole page.",
+      "sourceIds": [
+        "S54",
+        "S55",
+        "S66"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe",
+        "redteam"
+      ],
+      "exemplar": "One specific system + one specific hard part per bullet, in varied shapes — rotate result-first / method-first / initiative-first"
+    },
+    {
+      "id": "cost-latency-eval-metrics",
+      "rule": "The credible AI-work dimensions are operational: latency, token/inference cost, eval pass rates, hallucination-class reduction, retrieval precision. Name the dimension only where the work truly touched it — the dimension without a fake number still carries the signal.",
+      "why": "These separate engineers who ran systems in production from those who called an API once.",
+      "sourceIds": [
+        "S51"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "reframe"
+      ],
+      "exemplar": "Reduced [operational dimension] by doing Z, verified by [the eval mechanism he built]"
+    },
+    {
+      "id": "validation-over-description",
+      "rule": "Pair every project with whatever honest external proof exists — a live URL, user count, stars, a placement — stated in the text itself, not only as a link.",
+      "why": "A description alone blurs into the pile; a validation signal makes it real, and reviewers may not click.",
+      "sourceIds": [
+        "S49"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "casting"
+      ],
+      "exemplar": "Built X [description] — live at URL / used by N — the proof rides in the same line"
+    },
+    {
+      "id": "project-block-anatomy",
+      "rule": "Render each project as: title with stack, one plain context line stating what it does and why it exists, then 2-3 bullets covering what was built, the hard engineering part, and an outcome or credibility signal. Engineering work, not a product pitch.",
+      "why": "This is the block shape reviewers can actually parse in a skim; anything denser is skipped.",
+      "sourceIds": [
+        "S46",
+        "S47",
+        "S67",
+        "S69"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "estimator"
+      ],
+      "exemplar": "TITLE | stack, then a plain \"A [noun] that does X for Y.\" line, then: built A with hard-part B; engineered C producing D"
+    },
+    {
+      "id": "honest-keyword-mirroring",
+      "rule": "Use the exact term the job description uses wherever it accurately describes real evidence-backed experience, placed once in context — never as density stuffing, and never a near-synonym where the exact term is true.",
+      "why": "ATS filtering is literal (near-synonyms miss); modern parsers score stuffing down. Coverage over repetition.",
+      "sourceIds": [
+        "S53",
+        "S65"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "reframe",
+        "estimator",
+        "forge"
+      ],
+      "exemplar": "[Action verb] + [the exact JD term, evidence-backed] + [result], once, in context"
+    },
+    {
+      "id": "two-metric-bullet",
+      "rule": "When both are true, pair one technical metric with one business/cost consequence in a single bullet.",
+      "why": "It anchors the claim to a method AND a consequence a non-engineer values — the strongest single-bullet structure in current AI hiring guides.",
+      "sourceIds": [
+        "S59"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "reframe",
+        "estimator"
+      ],
+      "exemplar": "Fine-tuned Llama 3 8B with QLoRA on 1.2M tickets, lifting F1 from 0.74 to 0.86 and cutting training cost 68%."
+    },
+    {
+      "id": "education-line-india",
+      "rule": "Format each Indian education line as one coherent line — Degree, Branch · Institute, City · Years · CGPA n.n/10 (always with the scale); board marks stay only where they are genuinely strong, and never as orphan fragments.",
+      "why": "Mass-hire pipelines filter on board marks but AI-first companies screen on shipped work; a lone year or score floating on its own line reads as a formatting error to both.",
+      "sourceIds": [
+        "S60",
+        "S58"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "B.Tech Computer Science & Engineering — Thapar Institute, Patiala · 2023–2027 · CGPA 7.7/10"
+    },
+    {
+      "id": "summary-verifiable-facts",
+      "rule": "A summary line states verifiable facts in plain English — degree, the strongest shipped proof, the target specialty in market vocabulary — never adjectives.",
+      "why": "Recruiters spend a median 30 seconds and will not intuit anything: spell it out verbatim. “Results-driven” reads as an AI-generated tell.",
+      "sourceIds": [
+        "S61",
+        "S59"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator",
+        "reframe"
+      ],
+      "exemplar": "AI engineer specializing in LLM agents, RAG, and evals — 6 shipped production systems, B.Tech CS 2027."
+    }
+  ],
+  "archetypeGuides": [
+    {
+      "archetype": "applied-ai",
+      "sectionOrder": [
+        "contact",
+        "skills",
+        "projects",
+        "education",
+        "honors"
+      ],
+      "leadSignals": [
+        "shipped LLM/agent product with live URL",
+        "evals & guardrails",
+        "end-to-end ownership"
+      ],
+      "skillsGroups": [
+        "Languages",
+        "AI/LLM",
+        "Frameworks",
+        "Tools"
+      ],
+      "sourceIds": [
+        "S23",
+        "S21",
+        "S13"
+      ]
+    },
+    {
+      "archetype": "agent-eng",
+      "sectionOrder": [
+        "contact",
+        "skills",
+        "projects",
+        "education",
+        "honors"
+      ],
+      "leadSignals": [
+        "agent loops & tool orchestration",
+        "deterministic guardrails",
+        "reliability"
+      ],
+      "skillsGroups": [
+        "Languages",
+        "Agents/LLM",
+        "Frameworks",
+        "Tools"
+      ],
+      "sourceIds": [
+        "S23",
+        "S13"
+      ]
+    },
+    {
+      "archetype": "research-intern",
+      "sectionOrder": [
+        "contact",
+        "education",
+        "projects",
+        "skills",
+        "honors"
+      ],
+      "leadSignals": [
+        "method + rigorous eval",
+        "math foundations",
+        "reproducible artifacts"
+      ],
+      "skillsGroups": [
+        "Languages",
+        "ML",
+        "Math/Stats",
+        "Tools"
+      ],
+      "sourceIds": [
+        "S37",
+        "S38",
+        "S34"
+      ]
+    },
+    {
+      "archetype": "forward-deployed",
+      "sectionOrder": [
+        "contact",
+        "projects",
+        "skills",
+        "education",
+        "honors"
+      ],
+      "leadSignals": [
+        "real users & field impact",
+        "breadth across the stack",
+        "communication artifacts"
+      ],
+      "skillsGroups": [
+        "Languages",
+        "Product/AI",
+        "Frameworks",
+        "Tools"
+      ],
+      "sourceIds": [
+        "S13",
+        "S14"
+      ]
+    },
+    {
+      "archetype": "ml-generalist",
+      "sectionOrder": [
+        "contact",
+        "education",
+        "skills",
+        "projects",
+        "honors"
+      ],
+      "leadSignals": [
+        "Python & data fluency",
+        "one clean modeling story",
+        "stats intuition"
+      ],
+      "skillsGroups": [
+        "Languages",
+        "ML/Data",
+        "Tools"
+      ],
+      "sourceIds": [
+        "S21",
+        "S22"
+      ]
+    },
+    {
+      "archetype": "platform-infra",
+      "sectionOrder": [
+        "contact",
+        "skills",
+        "projects",
+        "education",
+        "honors"
+      ],
+      "leadSignals": [
+        "serving & reliability",
+        "latency/cost awareness",
+        "systems thinking"
+      ],
+      "skillsGroups": [
+        "Languages",
+        "Infra/MLOps",
+        "Frameworks",
+        "Tools"
+      ],
+      "sourceIds": [
+        "S23",
+        "S21"
+      ]
+    }
+  ],
+  "pathBriefs": [
+    {
+      "id": "ai-first-startup",
+      "label": "AI-first startup (his stated lane)",
+      "summary": "Fast, founder-adjacent hiring; portfolio and shipped artifacts outweigh DSA. Interviews vary widely; a live product with evals is the strongest signal. Interns contribute to production from week one.",
+      "timeline": "Rolling, short cycles (days-weeks); apply when a role opens, not by season.",
+      "referralWeight": "High — referred candidates interview at roughly 40-60% vs 2-3% for cold applications; a warm intro to a founder/eng lead is the highest-leverage single act.",
+      "portfolioVsDsa": "Portfolio-first. Expect a practical build/take-home or deep walkthrough of your own systems; DSA rounds are lighter or absent.",
+      "conversionNorms": "Less formalized than big tech; strong interns often convert to part-time/full-time offers quickly because teams are small.",
+      "indiaVsRemote": "Remote-international is realistic if async-writing signals are visible; state IST overlap honestly.",
+      "sourceIds": [
+        "S35",
+        "S36",
+        "S30",
+        "S31",
+        "S39"
+      ]
+    },
+    {
+      "id": "research-lab",
+      "label": "Research lab / AI residency",
+      "summary": "Screens for research rigor: strong math foundations, reproducible projects, open-source contributions or publications. Residencies exist precisely for non-traditional entrants with proof of ability.",
+      "timeline": "Annual cohorts with hard deadlines (typically fall-winter applications for the following year); missing the window costs a full year.",
+      "referralWeight": "Moderate — a researcher's endorsement helps, but artifacts (papers, repos, rigorous evals) carry the decision.",
+      "portfolioVsDsa": "Artifacts + fundamentals. Expect research discussion and ML-depth interviews over LeetCode grinding.",
+      "conversionNorms": "Residencies frequently convert to research engineer/scientist roles; treat the residency itself as the pipeline.",
+      "indiaVsRemote": "Most residencies are on-site (US/UK) with visa support varying; some labs run remote-friendly internships — check per-program.",
+      "sourceIds": [
+        "S37",
+        "S38",
+        "S34"
+      ]
+    },
+    {
+      "id": "big-tech-internship",
+      "label": "Big-tech internship pipeline",
+      "summary": "Structured, season-locked, DSA-gated. The primary pipeline to full-time at these companies (~70-80% of their engineers interned first), but it is also the lane most saturated with cold applicants.",
+      "timeline": "Applications open ~8-12 months before the summer (Aug-Oct for the following year); on-campus/off-campus drives in India follow their own calendars.",
+      "referralWeight": "High for getting the screen — referrals are a large share of interviews — but the DSA bar is unbendable regardless of referral.",
+      "portfolioVsDsa": "DSA-first. At least two dedicated coding rounds; projects differentiate at the margin but cannot substitute for fundamentals.",
+      "conversionNorms": "Intern→full-time conversion averages ~63% industry-wide (2024-25 class, five-year high); top programs convert at 70-80%+.",
+      "indiaVsRemote": "India offices (Bengaluru/Hyderabad/Gurgaon) run their own intern drives; international remote internships at these firms are rare.",
+      "sourceIds": [
+        "S32",
+        "S33",
+        "S36",
+        "S30",
+        "S31"
+      ]
+    }
+  ]
 }

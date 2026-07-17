@@ -82,9 +82,26 @@ export default function DakPanel() {
 
       {cards.length > 0 && (
         <>
-          <p className="mt-2 text-[11px] font-mono text-ink-soft">
-            <strong className="text-ink">{cards.length}</strong> repl{cards.length === 1 ? 'y' : 'ies'} need you —
-            interviews first. “✓ I know this one” clears what you already handled in Gmail.
+          <p className="mt-2 text-[11px] font-mono text-ink-soft flex flex-wrap items-center gap-2">
+            <span>
+              <strong className="text-ink">{cards.length}</strong> repl{cards.length === 1 ? 'y' : 'ies'} need you —
+              interviews first. “✓ I know this one” clears what you already handled in Gmail.
+            </span>
+            {/* Session 6 (P5): on a 30-reply week most generic acknowledgements are already
+                handled in Gmail — one click acks the whole generic tail, interviews/rejections
+                stay (they carry a decision). */}
+            {cards.filter((c) => !c.stageSuggestion).length > 1 && (
+              <button
+                className="text-[10px] underline decoration-dotted hover:text-ink"
+                onClick={async () => {
+                  const generic = cards.filter((c) => !c.stageSuggestion)
+                  for (const c of generic) await ackCard(c.id)
+                  setNote(`${generic.length} generic replies acknowledged.`)
+                }}
+              >
+                ✓ ack all {cards.filter((c) => !c.stageSuggestion).length} generic
+              </button>
+            )}
           </p>
           <ul className="mt-2 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
             {cards.map((c) => (

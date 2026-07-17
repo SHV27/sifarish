@@ -174,6 +174,25 @@ export async function acceptPulse(brief: PulseBrief): Promise<void> {
     const h = await db.savedHunts.get(brief.proposedHuntRemoval.huntId)
     if (h) await db.savedHunts.update(h.id, { enabled: false, ownerSetDate: true })
   }
+
+  // Session 6: accepting a board proposal adds the company's public ATS feed to the watchlist —
+  // the watchlist grows itself from tokens the aggregator sweeps already surfaced (lawful, keyless,
+  // human-confirmed). Deduped by source+token; enabled immediately so the next scan covers it.
+  if (brief.proposedBoard?.token) {
+    const b = brief.proposedBoard
+    const watch = await db.watchlist.toArray()
+    const exists = watch.some((w) => w.source === b.source && w.token.toLowerCase() === b.token.toLowerCase())
+    if (!exists) {
+      await db.watchlist.put({
+        id: `w-pulse-${b.source}-${b.token.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        company: b.company,
+        source: b.source,
+        token: b.token,
+        enabled: true,
+        starred: false,
+      })
+    }
+  }
   await db.pulse.update(brief.id, { status: 'accepted' })
 }
 

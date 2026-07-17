@@ -65,6 +65,16 @@ export const LEXICON: LexiconEntry[] = [
 
 /** Phrases that instantly read as AI slop — zero tolerance in any generated artifact (§7). */
 export const SLOP_PHRASES: string[] = [
+  // Session 6 (P3): the conversational AI tells recruiters now screen for — mechanically
+  // checkable phrases, never single common words (a lone "delve" in prose is a style call;
+  // "delve into" as an opener is a tell).
+  'delve into',
+  'i hope this email finds you well',
+  'i hope this finds you well',
+  "in today's fast-paced",
+  'navigating the ever-evolving',
+  'a testament to my',
+  'i am excited to express my',
   'results-driven',
   'results driven',
   'passionate about leveraging',

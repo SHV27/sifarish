@@ -48,13 +48,14 @@ describe('Salary signal (S5.8) — a provider-stated salary finally reaches the 
   })
 })
 
-// ---------- 2 · Adzuna 18-market rotation ----------
+// ---------- 2 · Adzuna full-market rotation (18 at S5.8; +'ch' in Session 6 = 19) ----------
 
 describe('Adzuna rotation (S5.8) — the whole world, not the same 8 forever', () => {
-  it('the market list is the full 18-country Adzuna index', () => {
-    expect(ADZUNA_COUNTRIES).toHaveLength(18)
-    expect(new Set(ADZUNA_COUNTRIES).size).toBe(18)
+  it('the market list is the full Adzuna index (19 markets, verified against its swagger)', () => {
+    expect(ADZUNA_COUNTRIES).toHaveLength(19)
+    expect(new Set(ADZUNA_COUNTRIES).size).toBe(19)
     expect(ADZUNA_COUNTRIES).toContain('in')
+    expect(ADZUNA_COUNTRIES).toContain('ch')
   })
 
   it("'in' is pinned first on EVERY sweep — his home market never rotates out", () => {
@@ -63,7 +64,7 @@ describe('Adzuna rotation (S5.8) — the whole world, not the same 8 forever', (
     }
   })
 
-  it('successive sweeps cover ALL 18 markets (window rotates by cap-1)', () => {
+  it('successive sweeps cover ALL markets (window rotates by cap-1)', () => {
     const seen = new Set<string>()
     let offset = 0
     for (let sweep = 0; sweep < 3; sweep++) {
@@ -72,7 +73,7 @@ describe('Adzuna rotation (S5.8) — the whole world, not the same 8 forever', (
       countries.forEach((c) => seen.add(c))
       offset += countries.length - 1
     }
-    expect(seen.size).toBe(18)
+    expect(seen.size).toBe(19)
   })
 
   it('cap bounds the window (budget-aware, I8)', () => {

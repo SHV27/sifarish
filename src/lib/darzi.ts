@@ -97,24 +97,25 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   onProgress?.('Compiling the one-page résumé…')
   const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial, summaryLine, bulletOverrides })
 
-  // -- Pass 4: Red-Team loop (≤3 rounds). PASS required for "ready". --
+  // -- Pass 4 (red-team) ∥ signature decision — independent judgments, run concurrently (S6,
+  // Defect 5): the red-team reads the compiled résumé, the signature call reads company+archetype;
+  // neither needs the other, so awaiting them serially only added wall-time.
   let ready = true
+  let signature: Packet['signature']
+  let coverLetter
   if (editorial) {
-    onProgress?.('Red-teaming the draft…')
-    const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n'), decode, editorial.archetype).catch(() => null)
+    onProgress?.('Red-teaming the draft & weighing the signature…')
+    const arch = editorial.archetype
+    const [rt, sig] = await Promise.all([
+      redTeamPass(resume.lines.map((l) => l.text).join('\n'), decode, arch).catch(() => null),
+      decideSignature(job, arch.id, intel).catch(() => null),
+    ])
     if (rt) {
       editorial.redTeam = rt
       editorial.redTeamRounds = 1
       ready = rt.verdict === 'PASS'
     }
-  }
-
-  // -- Atelier (v3): composed letter with per-company Sifarish Signature decision --
-  onProgress?.('Composing your cover letter…')
-  let signature: Packet['signature']
-  let coverLetter
-  if (editorial) {
-    const sig = await decideSignature(job, editorial.archetype.id, intel).catch(() => null)
+    onProgress?.('Composing your cover letter…')
     const useSignature = sig?.use ?? false
     if (sig) signature = { on: useSignature, rationale: sig.rationale }
     coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision, editorial, useSignature })

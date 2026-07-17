@@ -104,6 +104,7 @@ export type JobSource =
   | 'adzuna'
   | 'workingnomads'
   | 'weworkremotely'
+  | 'simplify'
 
 export type JobStatus =
   | 'found'
@@ -162,8 +163,20 @@ export interface Job {
   publisher?: string
   /** True until the user has seen it in the queue — drives the NEW stamp. */
   isNew?: boolean
+  /**
+   * Session 6 (P5) — "not for me": owner-dismissed from the ranked queue. Sticky (a re-sweep
+   * updates the record but never clears this), reversible only by him. Distinct from `closed`
+   * (the board's verdict) — this one is HIS verdict.
+   */
+  dismissed?: boolean
   /** Salary text when the source provides it. */
   salary?: string
+  /**
+   * Session 6 — the last board scan that saw this posting still listed (from D122's openIds).
+   * Proof of life: a verified-open posting gets its staleness deduction softened, whatever its
+   * posted date says. Board sources only; aggregator jobs have no board to verify against.
+   */
+  lastSeenOpenAt?: string
 }
 
 export type AtsSource = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters'
@@ -523,6 +536,13 @@ export interface VisionProfile {
   windowEnd: string // 'May 2027'
   remoteInternational: boolean
   openToOctoberStart: boolean
+  /**
+   * Session 6 — companies he specifically wants (from his own feed: Netomi, Weekday, Wingify…).
+   * deriveHunts turns each into a per-company aggregator hunt — the lawful door to companies on
+   * Workday/custom ATSes with no public feed (D122): their postings ARE on LinkedIn/Indeed, and
+   * JSearch reaches those via Google-for-Jobs.
+   */
+  dreamCompanies?: string[]
 }
 
 export interface RubricChange {
@@ -568,6 +588,12 @@ export interface SavedHunt {
    * a hunt he created or toggled by hand is never touched.
    */
   derived?: boolean
+  /**
+   * Session 6 (P7 lane depth) — optional JSearch employment-type filter for THIS hunt
+   * (comma-sep of FULLTIME, CONTRACTOR, PARTTIME, INTERN). Unset = all types (never narrows
+   * by default; his vision spans internships AND roles).
+   */
+  employmentTypes?: string
 }
 
 /** A hiring signal — news/announcement, not a posting. Every one carries a source URL (I7). */
@@ -643,6 +669,13 @@ export interface PulseBrief {
    * and a hunt he set or touched by hand is never proposed — D59/D88).
    */
   proposedHuntRemoval?: { huntId: string; query: string; why: string }
+  /**
+   * Session 6 — THE WATCHLIST GROWS ITSELF (lawfully). When an aggregator job's apply URL
+   * resolves to a public ATS board (greenhouse/lever/ashby/smartrecruiters) not yet on the
+   * watchlist, the token is proposed here; accepting adds the board — from then on that company's
+   * EVERY posting arrives board-verified, not just what the aggregators happen to index.
+   */
+  proposedBoard?: { source: AtsSource; token: string; company: string; why: string }
   status: 'pending' | 'accepted' | 'dismissed'
 }
 

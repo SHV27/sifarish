@@ -72,6 +72,16 @@ export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
     }
   }
 
+  // Session 6 (P7) — DREAM-COMPANY HUNTS: the lawful door to companies on Workday/custom ATSes
+  // with no public feed (D122). Their postings ARE indexed by LinkedIn/Indeed, and JSearch reaches
+  // those via Google-for-Jobs — an employer name in the query IS the employer filter. One hunt per
+  // named company, so a Weekday/Wingify/Teradata opening reaches the Radar the sweep it appears.
+  for (const company of vision.dreamCompanies ?? []) {
+    const c = company.trim()
+    if (!c) continue
+    add(`${c} AI engineer`, `You named ${c} a dream company — this hunt catches its AI postings via the aggregator lanes, since its ATS publishes no public feed.`)
+  }
+
   return hunts
 }
 

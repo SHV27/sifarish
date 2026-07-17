@@ -14,6 +14,12 @@ export interface BriefingMatch {
   job: Job
   score: ScoreBreakdown
   visionWhy: string
+  /**
+   * Session 6 ("Khabri tells me FIRST") — true when this role is BOTH freshly discovered (isNew,
+   * unseen in the queue) AND on-vision (positive visionFit). The briefing flags it the same
+   * session the sweep lands it: naya, tumhare vision ka.
+   */
+  freshForVision: boolean
 }
 
 export type BriefingTarget = 'radar' | 'morcha' | 'khabri' | 'packet'
@@ -26,13 +32,15 @@ export interface BriefingData {
   tailoredCount: number
   /** The single most valuable next move, priority-ordered — an assistant gives ONE, not a list. */
   next: { text: string; cta: string; target: BriefingTarget; jobId?: string }
+  /** Session 6 (P1) — the week's state of the hunt in one line, like an agent's weekly check-in. */
+  week: { applied: number; replies: number; interviews: number }
 }
 
 const visionPoints = (s: ScoreBreakdown) => s.parts.find((p) => p.key === 'visionFit')?.points ?? 0
 
 export function buildBriefing(jobs: Job[], ledger: LedgerEntry[], settings: Settings, starred: Set<string> = new Set()): BriefingData {
   const ranked = jobs
-    .filter((j) => j.status === 'found' && !j.closed) // closed postings never brief him (S5.10)
+    .filter((j) => j.status === 'found' && !j.closed && !j.dismissed) // closed/dismissed never brief him
     .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
     // Vision breaks ties at the score ceiling — his target-role matches surface above generic AI.
     .sort((a, b) => b.score.total - a.score.total || visionPoints(b.score) - visionPoints(a.score))
@@ -41,6 +49,7 @@ export function buildBriefing(jobs: Job[], ledger: LedgerEntry[], settings: Sett
     job,
     score,
     visionWhy: score.parts.find((p) => p.key === 'visionFit')?.why ?? '',
+    freshForVision: job.isNew === true && visionPoints(score) > 0,
   }))
   const newCount = jobs.filter((j) => j.isNew === true).length
   const dueFollowups = jobs.filter((j) => nudgeState(j).due)
@@ -62,5 +71,12 @@ export function buildBriefing(jobs: Job[], ledger: LedgerEntry[], settings: Sett
     next = { text: 'Run a Khabri sweep to pull in roles matched to your vision', cta: 'Open Khabri →', target: 'khabri' }
   }
 
-  return { newCount, topMatches, dueFollowups, interviews, tailoredCount, next }
+  const weekAgo = Date.now() - 7 * 86400000
+  const week = {
+    applied: jobs.filter((j) => j.appliedAt && new Date(j.appliedAt).getTime() >= weekAgo).length,
+    replies: jobs.filter((j) => j.replyDetectedAt && new Date(j.replyDetectedAt).getTime() >= weekAgo).length,
+    interviews: interviews.length,
+  }
+
+  return { newCount, topMatches, dueFollowups, interviews, tailoredCount, next, week }
 }

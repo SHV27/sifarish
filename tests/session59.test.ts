@@ -23,8 +23,12 @@ describe('Ustaad library v1.1.0 — hundreds-of-résumés research landed as DAT
   const lib = getLibrary()
 
   it('grew materially and still validates', () => {
-    expect(lib.version).toBe('1.1.0')
-    expect(lib.updatedAt).toBe('2026-07-16')
+    // ≥ semantics (Session 6): the library is self-evolving DATA (I13) — this gate asserts growth
+    // and validity, never a frozen version string that breaks on every legitimate update.
+    const [maj, min] = lib.version.split('.').map(Number)
+    expect(maj).toBe(1)
+    expect(min).toBeGreaterThanOrEqual(1)
+    expect(new Date(lib.updatedAt).getTime()).toBeGreaterThanOrEqual(new Date('2026-07-16').getTime())
     expect(lib.sources.length).toBeGreaterThanOrEqual(55)
     expect(lib.patterns.length).toBeGreaterThanOrEqual(28)
     expect(isValidLibrary(lib)).toBe(true)

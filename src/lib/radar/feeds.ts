@@ -258,12 +258,13 @@ export async function syncRadar(onProgress?: (done: number, total: number) => vo
       const { jobs, openIds } = await fetchBoard(w)
       found += jobs.length
       await db.transaction('rw', [db.jobs, db.watchlist], async () => {
+        const scanAt = new Date().toISOString()
         for (const job of jobs) {
           const existing = await db.jobs.get(job.id)
           if (existing) {
-            await db.jobs.update(job.id, { jd: job.jd || existing.jd, updatedAt: job.updatedAt, fetchedAt: job.fetchedAt, linkAlive: true })
+            await db.jobs.update(job.id, { jd: job.jd || existing.jd, updatedAt: job.updatedAt, fetchedAt: job.fetchedAt, linkAlive: true, lastSeenOpenAt: scanAt })
           } else {
-            await db.jobs.put({ ...job, linkAlive: true })
+            await db.jobs.put({ ...job, linkAlive: true, lastSeenOpenAt: scanAt })
           }
         }
         // Close what the board itself no longer lists; reopen what returned.
@@ -271,7 +272,14 @@ export async function syncRadar(onProgress?: (done: number, total: number) => vo
         const known = (await db.jobs.toArray()).filter((j) => j.id.startsWith(prefix))
         const rec = reconcileClosures(known, openIds, prefix)
         for (const id of rec.close) await db.jobs.update(id, { closed: true, linkAlive: false })
-        for (const id of rec.reopen) await db.jobs.update(id, { closed: false, linkAlive: true })
+        for (const id of rec.reopen) await db.jobs.update(id, { closed: false, linkAlive: true, lastSeenOpenAt: scanAt })
+        // Session 6 ("age ≠ death"): every posting the scan saw open — including those the title
+        // filter/cap kept off the queue refresh above — gets its proof-of-life stamp, so the
+        // staleness deduction softens for verified-open roles (score.ts).
+        const openSet = new Set(openIds)
+        for (const j of known) {
+          if (openSet.has(j.id)) await db.jobs.update(j.id, { lastSeenOpenAt: scanAt })
+        }
         closed += rec.close.length
         await db.watchlist.update(w.id, { lastJobCount: openIds.length, lastChecked: new Date().toISOString() })
       })

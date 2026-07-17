@@ -162,12 +162,12 @@ EVERY BULLET:
 1. LEADS WITH A STRONG PAST-TENSE VERB (Built, Architected, Engineered, Designed, Shipped, Implemented, Automated, Scaled) — then names, in PLAIN LANGUAGE, WHAT HE BUILT AND WHAT IT DOES for a real user or system ("a co-op board game where the board is the antagonist", "a flood-alert system for villages", "a résumé compiler"). The FIRST bullet of each project MUST establish what the whole project IS and its core purpose — someone reading only that line should get it.
 2. BAN PRIVATE JARGON AND COINED NAMES the reader won't know — "keyless core", "the forge", "pillars", "phase→control ordering", "orphan-claim guardrail", "Pulse Loop", "the Dimaag". Describe the REAL-WORLD EFFECT instead: "runs with zero API keys", "prevents illegal moves", "blocks any unproven claim from the résumé". Name concrete, well-known tech (React, TypeScript, LLMs, RAG, agents) — that a recruiter recognizes — but in service of explaining what was built, never as a buzzword dump.
 3. States the HARD PART as an OUTCOME a non-builder grasps ("so a game runs entirely in the browser with no server", "so fabricated claims are impossible", "cutting export failures to zero").
-4. ENDS with IMPACT woven into the sentence — never a bare label. A NUMBER only if that exact number is in the README (never invent/round/infer); otherwise the real scale, the failure class eliminated, or the user value. Never end with a category word ("SCALE", "RELIABILITY") or a bracketed tag.
+4. ENDS with IMPACT woven into the sentence — never a bare label. THE NUMBERS RULE: when the README states a real figure (an accuracy, a %, a latency, a count — "ROC-AUC 0.957", "98.6%", "18 markets"), you MUST carry that exact figure into a bullet — a hired résumé's strongest lines are its numbered ones, and leaving a real number in the README is leaving proof on the table. Never invent, round, or infer a number the README doesn't state; when no figure exists, end with the real scale, the failure class eliminated, or the user value. Never end with a category word ("SCALE", "RELIABILITY") or a bracketed tag.
 5. 15-28 words, plain and clear — a smart non-engineer should follow it. Never a terse fragment, never private jargon, never rambling past two lines.
 
 HARD TRUTH RULES (breaking any makes the output useless — the app discards drifting bullets):
 - State ONLY facts present in the README. Re-express, compress, sharpen — but NEVER add a number, metric, model name, company, or technology the README does not contain.
-- Use the README's OWN tokens for technologies (if he wrote "RAG"/"LLM"/"agents"/"MCP", use those exact words — do not introduce new tech names).
+- Use the README's OWN tokens for technologies (if he wrote "RAG"/"LLM"/"agents"/"MCP", use those exact words). HONEST KEYWORD MIRRORING (the one permitted translation): when the README clearly DESCRIBES a standard market concept without naming it in the market's word, write the market's word — embedding search → "embeddings", coordinating multiple agents/pipelines → "orchestration", crafting/refining LLM prompts → "prompt engineering", SQL queries/schemas → "SQL". A JD and an ATS match on the market's vocabulary; describing his real work in its standard name is translation, not invention. NEVER mirror a term the README gives no basis for — that is fabrication and the bullet dies.
 - No superlatives you can't back ("100% accuracy", "best-in-class"). No brochure register ("passionate about leveraging", "results-driven", "proven track record", "spearheaded synergies").
 - For AI/agent projects, prefer bullets that show DEPTH where the README supports it: the agent architecture (tools/orchestration/MCP), an eval or guardrail he built, or a cost/production concern.
 
@@ -191,7 +191,11 @@ bullets: 3-4 bullets, strongest first, EACH passing the READER TEST — a recrui
  * cited DATA (I13) — a Pulse-accepted update deepens this prompt with zero code change.
  */
 export function forgeSystem(): string {
-  const craft = craftClauses('forge', undefined, 6)
+  // Cap 12 (was 6): library v1.2.0 carries 11 forge patterns and every one must actually reach
+  // the model — a studied rule that misses the payload is a library the firm never opens (D118).
+  // ~350 extra tokens against the 16k system cap; the D105 discipline is the compact BRIEF, not
+  // starving the craft.
+  const craft = craftClauses('forge', undefined, 12)
   if (craft.length === 0) return SYSTEM
   return `${SYSTEM}\n\nSTUDIED CRAFT (patterns from résumés that got AI engineers hired — cited in-app):\n${craft.map((c) => `- ${c}`).join('\n')}`
 }

@@ -47,6 +47,7 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
   const [result, setResult] = useState<SyncResult | null>(null)
   const [query, setQuery] = useState('')
   const [showAll, setShowAll] = useState(false)
+  const [newOnly, setNewOnly] = useState(false)
 
   const starred = useMemo(() => new Set(watchlist.filter((w) => w.starred).map((w) => w.company)), [watchlist])
 
@@ -57,13 +58,18 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
     const visionPts = (s: ScoreBreakdown) => s.parts.find((p) => p.key === 'visionFit')?.points ?? 0
     return jobs
       // A closed posting cannot occupy a slot — "jisne hiring band kar di wo company na aaye" (S5.10).
-      .filter((j) => j.status === 'found' && !j.closed)
+      // Session 6 (P5): nor can one HE dismissed ("not for me" is his verdict; the board's is `closed`).
+      .filter((j) => j.status === 'found' && !j.closed && !j.dismissed)
       .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
       .sort((a, b) => b.score.total - a.score.total || visionPts(b.score) - visionPts(a.score))
   }, [jobs, ledger, settings, starred])
 
   const terms = useMemo(() => termsOf(query), [query])
-  const filtered = useMemo(() => (terms.length ? ranked.filter(({ job }) => matchesQuery(job, terms)) : ranked), [ranked, terms])
+  const filtered = useMemo(() => {
+    const base = terms.length ? ranked.filter(({ job }) => matchesQuery(job, terms)) : ranked
+    return newOnly ? base.filter(({ job }) => job.isNew === true) : base
+  }, [ranked, terms, newOnly])
+  const newCount = useMemo(() => ranked.filter(({ job }) => job.isNew === true).length, [ranked])
   // A search is a deliberate hunt → show every match. The cap only rules the unfiltered queue.
   const searching = terms.length > 0
   const visible = searching || showAll ? filtered : filtered.slice(0, VISIBLE_CAP)
@@ -144,6 +150,29 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
               <button className="text-xs text-ink-soft hover:underline shrink-0" onClick={() => setQuery('')}>
                 clear
               </button>
+            )}
+            {/* Session 6 (P5): on a 200-new-roles day, "what's new since I last looked" is THE
+                question — one chip answers it, one click retires the stamps. */}
+            {newCount > 0 && (
+              <>
+                <button
+                  className={`shrink-0 text-xs font-mono px-2 py-1 rounded border ${newOnly ? 'bg-stamp text-paper border-stamp' : 'text-ink-soft border-paper-edge hover:text-ink'}`}
+                  onClick={() => setNewOnly((v) => !v)}
+                  aria-pressed={newOnly}
+                >
+                  new only ({newCount})
+                </button>
+                <button
+                  className="shrink-0 text-[11px] font-mono text-ink-soft hover:text-ink underline decoration-dotted"
+                  onClick={async () => {
+                    const ids = jobs.filter((j) => j.isNew).map((j) => j.id)
+                    await Promise.all(ids.map((id) => db.jobs.update(id, { isNew: false })))
+                    setNewOnly(false)
+                  }}
+                >
+                  mark all seen
+                </button>
+              </>
             )}
           </div>
 
@@ -380,6 +409,20 @@ function HuntPanel() {
                 <option value="month">this month</option>
                 <option value="all">any age</option>
               </select>
+              {/* Session 6 (P7): optional JSearch employment-type filter, per hunt. Default "all"
+                  never narrows — his vision spans internships AND full roles. */}
+              <select
+                className="text-[10px] font-mono border border-ink-wash rounded px-1 py-0.5 bg-paper text-ink"
+                value={h.employmentTypes ?? ''}
+                onChange={(e) => db.savedHunts.update(h.id, { employmentTypes: e.target.value || undefined })}
+                aria-label={`Employment type for ${h.query}`}
+              >
+                <option value="">all types</option>
+                <option value="INTERN">intern</option>
+                <option value="FULLTIME">full-time</option>
+                <option value="INTERN,FULLTIME">intern + FT</option>
+                <option value="CONTRACTOR">contract</option>
+              </select>
               <button
                 className="text-[10px] text-ink-soft hover:text-stamp"
                 onClick={() => db.savedHunts.delete(h.id)}
@@ -436,6 +479,8 @@ function EmptyRadar({ synced, onSync }: { synced: boolean; onSync: () => void })
 function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; onTailor: () => void }) {
   const [open, setOpen] = useState(false)
   const fresh = job.updatedAt ? daysAgo(job.updatedAt) : null
+  // Session 6: proof of life on the card (L4) — the board scan saw this posting open recently.
+  const verifiedOpen = job.lastSeenOpenAt ? daysAgo(job.lastSeenOpenAt) <= 10 : false
   const band = score.total >= 70 ? 'shipped' : score.total >= 45 ? 'forge' : 'stamp'
   const bandCls = { shipped: 'text-shipped border-shipped', forge: 'text-forge border-forge', stamp: 'text-ink-soft border-paper-edge' }[band]
 
@@ -459,6 +504,11 @@ function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; on
                 {fresh === 0 ? 'updated today' : `updated ${fresh}d ago`}
               </span>
             )}
+            {verifiedOpen && (
+              <span className="font-mono text-[10px] ml-2 text-shipped" title="Its own board still lists this posting — verifiably hiring, whatever the posted date says">
+                ✓ board-verified open
+              </span>
+            )}
           </p>
           {/* Session 5.8 — "achi salary" is his stated rubric; the provider's own salary figure
               was captured on Job.salary but never rendered anywhere. Now it's on the card. */}
@@ -468,12 +518,20 @@ function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; on
             </p>
           )}
         </div>
-        <button
-          className="shrink-0 bg-stamp text-paper font-semibold text-sm px-4 py-2 rounded hover:opacity-90"
-          onClick={onTailor}
-        >
-          Tailor →
-        </button>
+        <div className="shrink-0 flex flex-col items-end gap-1">
+          <button className="bg-stamp text-paper font-semibold text-sm px-4 py-2 rounded hover:opacity-90" onClick={onTailor}>
+            Tailor →
+          </button>
+          {/* Session 6 (P5): "not for me" — one click removes it from the queue, HIS verdict,
+              sticky across re-sweeps. The board's own verdict stays `closed`. */}
+          <button
+            className="text-[10px] font-mono text-ink-faint hover:text-stamp"
+            title="Remove from the queue (won't return on re-sweep)"
+            onClick={() => db.jobs.update(job.id, { dismissed: true, isNew: false })}
+          >
+            ✕ not for me
+          </button>
+        </div>
       </div>
 
       <button

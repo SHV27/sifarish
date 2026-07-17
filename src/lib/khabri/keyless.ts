@@ -241,3 +241,65 @@ export async function fetchJobicy(): Promise<Job[]> {
       }),
     )
 }
+
+// ---- SimplifyJobs (Session 6) — the community-maintained AI/ML intern + new-grad index.
+// Public GitHub raw JSON, CORS `*` (verified live 17-Jul-2026). Practically built for this hunt:
+// every listing carries an `active` flag (board-verified open — exactly the owner's "hiring chal
+// rahi ho" rule), a direct ATS apply URL, locations, and a category. The file is ~11 MB, so the
+// FILTERED result is cached in Dexie for 7 days by the caller and the raw payload is never stored. ----
+interface SimplifyListing {
+  id: string
+  active: boolean
+  company_name: string
+  title: string
+  locations: string[]
+  url: string
+  category?: string
+  date_posted: number
+  date_updated: number
+  sponsorship?: string
+  terms?: string[]
+}
+
+export function mapSimplifyListings(listings: SimplifyListing[], now = new Date().toISOString()): Job[] {
+  return listings
+    .filter((l) => l.active && (l.category === 'AI/ML/Data' || relevant(l.title)))
+    .sort((a, b) => (b.date_updated || b.date_posted) - (a.date_updated || a.date_posted))
+    .slice(0, 40)
+    .map(
+      (l): Job => ({
+        id: `simplify:${l.id}`,
+        source: 'simplify',
+        externalId: l.id,
+        company: l.company_name,
+        title: l.title,
+        location: (l.locations ?? []).join(' · ') || 'See posting',
+        url: l.url,
+        jd: `${l.title} at ${l.company_name}. Locations: ${(l.locations ?? []).join(', ') || 'see posting'}. ${l.sponsorship ? `Sponsorship: ${l.sponsorship}.` : ''} Internship/new-grad listing from the SimplifyJobs community index (board-verified active).`,
+        publisher: 'SimplifyJobs index',
+        updatedAt: new Date((l.date_updated || l.date_posted) * 1000).toISOString(),
+        fetchedAt: now,
+        status: 'found',
+      }),
+    )
+}
+
+const SIMPLIFY_URLS = [
+  'https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json',
+  'https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json',
+]
+
+export async function fetchSimplify(): Promise<Job[]> {
+  const out: Job[] = []
+  for (const url of SIMPLIFY_URLS) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) continue
+      const listings = (await res.json()) as SimplifyListing[]
+      out.push(...mapSimplifyListings(listings))
+    } catch {
+      /* one index down never blocks the other */
+    }
+  }
+  return out.slice(0, 50)
+}

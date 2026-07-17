@@ -46,16 +46,23 @@ export function Briefing({ onNav, onTailor }: { onNav: (t: NavTarget) => void; o
       {/* Top matches — ranked by HIS vision, each with the reason (L4) */}
       {b.topMatches.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-ink-soft mb-2">Ranked for you — your strongest matches waiting in the Radar</p>
+          <button onClick={() => onNav('radar')} className="text-xs font-medium text-ink-soft mb-2 hover:text-stamp">
+            Ranked for you — your strongest matches waiting in the Radar →
+          </button>
           <div className="space-y-2">
-            {b.topMatches.map(({ job, score, visionWhy }) => (
+            {b.topMatches.map(({ job, score, visionWhy, freshForVision }) => (
               <div key={job.id} className="flex items-center gap-3">
                 <div className={`shrink-0 w-9 h-9 rounded-full border-2 grid place-items-center font-mono text-xs font-bold ${bandCls(score.total)}`}>
                   {score.total}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-ink truncate">
-                    {job.isNew && <span className="stamp stamp-red !text-[9px] mr-1 align-middle">NEW</span>}
+                    {/* Session 6 — "Khabri tells me FIRST": a fresh on-vision role wears its flag. */}
+                    {freshForVision ? (
+                      <span className="stamp stamp-shipped !text-[9px] mr-1 align-middle" title="Freshly found, matched to your vision">naya · tumhare vision ka</span>
+                    ) : (
+                      job.isNew && <span className="stamp stamp-red !text-[9px] mr-1 align-middle">NEW</span>
+                    )}
                     <span className="font-medium">{job.title}</span> <span className="text-ink-soft">· {job.company}</span>
                   </p>
                   {visionWhy && <p className="text-[11px] text-ink-faint truncate">{visionWhy}</p>}
@@ -69,8 +76,14 @@ export function Briefing({ onNav, onTailor }: { onNav: (t: NavTarget) => void; o
         </div>
       )}
 
-      {(b.dueFollowups.length > 0 || b.interviews.length > 0) && <div className="ledger-rule my-3" />}
+      {(b.dueFollowups.length > 0 || b.interviews.length > 0 || b.week.applied > 0 || b.week.replies > 0) && <div className="ledger-rule my-3" />}
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs">
+        {/* Session 6 (P1): the week's state of the hunt — an agent's check-in line, from real data. */}
+        {(b.week.applied > 0 || b.week.replies > 0 || b.week.interviews > 0) && (
+          <span className="text-ink-soft font-mono text-[11px]">
+            this week: {b.week.applied} applied · {b.week.replies} repl{b.week.replies === 1 ? 'y' : 'ies'} · {b.week.interviews} interview{b.week.interviews === 1 ? '' : 's'}
+          </span>
+        )}
         {b.dueFollowups.length > 0 && (
           <button onClick={() => onNav('morcha')} className="text-ink hover:text-stamp">
             <span className="inline-block w-2 h-2 rounded-full bg-stamp-red mr-1 align-middle" />

@@ -18,7 +18,6 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
   const [sweeping, setSweeping] = useState(false)
   const [step, setStep] = useState('')
   const [result, setResult] = useState<SweepYield | null>(null)
-  const [newHunt, setNewHunt] = useState('')
 
   const sweep = async () => {
     setSweeping(true)
@@ -43,8 +42,8 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
           </h1>
           <p className="text-sm text-ink-soft mt-1">
             Your informant. Sweeps live job sources worldwide — LinkedIn/Indeed/Glassdoor roles via a lawful
-            aggregator, Adzuna across 18 country markets, plus keyless global-remote boards and a hiring-signal
-            feed. No scraping, ever.
+            aggregator, Adzuna across 19 country markets, plus keyless global-remote boards, the SimplifyJobs
+            intern index, and a hiring-signal feed. No scraping, ever.
           </p>
         </div>
         <div className="text-right">
@@ -106,52 +105,24 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
           )}
         </section>
 
-        {/* Saved hunts */}
+        {/* One home per capability (Session 6, P4): hunts LIVE on the Radar (D67). This is a
+            pointer, never a second manager — two write-surfaces for the same table was the
+            confusion he reported ("kabhi Morcha kabhi kuch"). */}
         <aside>
           <h2 className="font-display font-semibold text-lg text-ink mb-2">Saved hunts</h2>
-          <div className="dossier p-3 space-y-1.5">
-            {hunts.map((h) => (
-              <div key={h.id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={h.enabled}
-                  onChange={(e) => db.savedHunts.update(h.id, { enabled: e.target.checked })}
-                  aria-label={`Enable hunt ${h.query}`}
-                />
-                <span className="text-ink truncate flex-1" title={h.query}>
-                  {h.query}
-                </span>
-                {h.remoteOnly && <span className="font-mono text-[9px] text-ink-soft">remote</span>}
-                <button
-                  className="text-ink-faint hover:text-stamp"
-                  onClick={() => db.savedHunts.delete(h.id)}
-                  aria-label={`Delete hunt ${h.query}`}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            <form
-              className="flex gap-1 pt-2 ledger-rule"
-              onSubmit={async (e) => {
-                e.preventDefault()
-                if (!newHunt.trim()) return
-                await db.savedHunts.put({ id: `h-${Date.now()}`, query: newHunt.trim(), remoteOnly: false, datePosted: 'month', enabled: true })
-                setNewHunt('')
-              }}
-            >
-              <input
-                className="flex-1 bg-paper-sunken px-2 py-1.5 rounded text-xs"
-                value={newHunt}
-                onChange={(e) => setNewHunt(e.target.value)}
-                placeholder="Add a hunt query…"
-                aria-label="New hunt query"
-              />
-              <button className="text-xs font-semibold bg-ink text-paper px-2.5 rounded" type="submit">
-                +
-              </button>
-            </form>
-          </div>
+          <button
+            onClick={onOpenRadar}
+            className="dossier w-full p-4 text-left hover:shadow-dossier-hover"
+            aria-label="Manage hunts on the Radar"
+          >
+            <p className="text-sm text-ink">
+              {hunts.filter((h) => h.enabled).length} hunt{hunts.filter((h) => h.enabled).length === 1 ? '' : 's'} running
+            </p>
+            <p className="text-[11px] text-ink-soft mt-1 leading-snug">
+              Hunts are steered from the Radar's Hunt panel — what's hunted, freshness windows, per-hunt
+              controls, "Hunt now". Open the Radar →
+            </p>
+          </button>
           <p className="text-[11px] text-ink-soft mt-2 leading-snug">
             Each enabled hunt runs against JSearch (LinkedIn/Indeed/Glassdoor via Google-for-Jobs) plus the
             keyless lanes. Budgets are enforced — see Settings.
@@ -231,6 +202,12 @@ function PulseBriefRow({ brief }: { brief: PulseBrief }) {
           Accept to stop hunting <span className="font-mono">“{brief.proposedHuntRemoval.query}”</span> — {brief.proposedHuntRemoval.why}
         </p>
       )}
+      {brief.proposedBoard && (
+        <p className="text-xs text-ink mt-1">
+          <span className="stamp stamp-shipped !text-[9px] mr-1">board</span>
+          Accept to watch <span className="font-semibold">{brief.proposedBoard.company}</span>'s {brief.proposedBoard.source} board directly — {brief.proposedBoard.why}
+        </p>
+      )}
       <div className="mt-1 flex items-center gap-3 text-[11px]">
         {brief.url && (
           <a href={brief.url} target="_blank" rel="noreferrer" className="font-mono text-ink underline decoration-dotted">
@@ -244,7 +221,7 @@ function PulseBriefRow({ brief }: { brief: PulseBrief }) {
           </a>
         )}
         <button className="ml-auto font-medium text-shipped hover:underline" onClick={() => acceptPulse(brief)}>
-          {brief.proposedHuntRemoval ? 'Retire hunt ✓' : brief.proposedHunt ? 'Add hunt ✓' : brief.suggestion ? 'Log it ✓' : 'Got it ✓'}
+          {brief.proposedBoard ? 'Watch board ✓' : brief.proposedHuntRemoval ? 'Retire hunt ✓' : brief.proposedHunt ? 'Add hunt ✓' : brief.suggestion ? 'Log it ✓' : 'Got it ✓'}
         </button>
         <button className="text-ink-soft hover:underline" onClick={() => dismissPulse(brief.id)}>
           dismiss

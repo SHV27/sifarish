@@ -112,7 +112,11 @@ export async function castingPass(
     context:
       `${arch.reviewerNote} Angle language rewarded: ${arch.angleHint}` +
       (intelText ? ` | What THIS company actually builds & values (live intel — lead with the project that speaks to it): ${intelText}` : ''),
-    evidence: projects.map((p) => ({ ref: p.id, text: `${p.title}: ${projectBrief(p, 900)}` })),
+    // Session 6 (Defect 5 / D105): options[].detail above already carries each project's brief at
+    // 700 chars — re-serializing near-identical briefs at 900 as `evidence` doubled the payload
+    // for zero new information. A slim evidence ref (title + tags) keeps the refs citable; the
+    // substance rides once, in the options.
+    evidence: projects.map((p) => ({ ref: p.id, text: `${p.title} [${p.tags.slice(0, 6).join(', ')}]` })),
     citations: [
       // The craft receipts (Ustaad P13): why casting optimizes the top of the page.
       ...citePatterns(['six-second-skim', 'projects-are-experience'], 2),
@@ -130,15 +134,20 @@ export async function castingPass(
   const chosenIds = orderedIds.slice(0, 3)
   const benched = orderedIds.slice(3).map((id) => {
     const p = projects.find((x) => x.id === id)!
-    const overlap = arch.cues.filter((c) => p.tags.includes(c)).length
-    return {
-      ledgerId: id,
-      title: p.title.split('—')[0].trim(),
-      why:
-        overlap === 0
-          ? `Benched: its domain (${p.tags.slice(0, 2).join('/')}) doesn't match what a ${arch.label} scans for — including it would dilute the top three.`
-          : `Benched for space: strong, but the top three cover this JD's priorities more directly.`,
+    const cueHits = arch.cues.filter((c) => p.tags.includes(c) || p.bullets.some((b) => b.keywords.includes(c)))
+    const jdHits = decode.mustHave.filter((k) => p.tags.includes(k) || p.bullets.some((b) => b.keywords.includes(k)))
+    // P3: the benched reason names THIS project's actual overlap with THIS role — two canned
+    // sentences repeated across every packet read as template output, not judgment.
+    const title = p.title.split('—')[0].trim()
+    let why: string
+    if (cueHits.length === 0 && jdHits.length === 0) {
+      why = `${title} is ${p.tags.slice(0, 2).join('/')} work — this JD asks for ${decode.mustHave.slice(0, 2).join(' and ') || arch.priorities[0]}, and none of its evidence answers that. It would cost a slot the top three earn.`
+    } else if (jdHits.length > 0) {
+      why = `${title} does cover ${jdHits.slice(0, 2).join(', ')}, but the cast projects cover the same ground with stronger evidence — two projects proving one skill is one project too many on a one-pager.`
+    } else {
+      why = `${title} speaks to ${cueHits.slice(0, 2).join(', ')} generally, but not to this JD's stated must-haves — the three above answer those directly.`
     }
+    return { ledgerId: id, title, why }
   })
   return { casting, chosenIds, benched }
 }
@@ -236,7 +245,14 @@ export async function surgeryPass(
     .map((b) => {
       const cueHits = arch.cues.filter((c) => b.keywords.includes(c)).length
       const rel = bulletRelevance(b.keywords, decode)
-      const score = jdAngle ? cueHits + rel * 2 : cueHits * 2 + rel
+      // Session 6 (Defect 1): a bullet carrying a REAL number (ROC-AUC 0.957, 98.6%, a count) is
+      // the strongest single line on a résumé (Ustaad ¶quantify-everything-honest) — yet this
+      // score never saw digits, so numbered bullets lost to numberless keyword-heavy ones and the
+      // quality rubric then honestly reported 0/25. The bonus weighs like one must-have hit: it
+      // breaks ties toward the number without letting an off-topic numbered bullet outrank real
+      // JD evidence. Selection only — no number is ever minted (I1).
+      const hasNumber = /\d/.test(b.text) || (b.metrics ? /\d/.test(b.metrics) : false)
+      const score = (jdAngle ? cueHits + rel * 2 : cueHits * 2 + rel) + (hasNumber ? 2 : 0)
       return { b, score }
     })
     .sort((a, b) => b.score - a.score)
@@ -345,15 +361,25 @@ export async function runEditor(
   const bullets: Record<string, string[]> = {}
   // Framing rewrites (Session 5.9): only the top 2 leading projects get the reframe call — the
   // 6-second skim lands there, and the budget stays disciplined (I8).
+  //
+  // Session 6 (Defect 5): the per-project surgery passes are INDEPENDENT (each reasons about its
+  // own project), so they run concurrently — wall-time drops from sum-of-passes to the slowest
+  // single pass. Peak concurrency is 3; a free-tier 429 still backs off and retries on the LLM
+  // path (D105), so bursts degrade to sequential, never to keyless. Results merge in chosenIds
+  // order, so the output is byte-identical to the old serial loop.
   let overrides: Record<string, string> | undefined
-  for (const id of chosenIds) {
-    const project = input.projects.find((p) => p.id === id)
-    if (!project) continue
-    const wantFraming = chosenIds.indexOf(id) < 2
-    const { choice, bulletIds, bulletOverrides } = await surgeryPass(project, arch, input.decode, input.intel, input.company, wantFraming)
-    chosen.push(choice)
-    bullets[id] = bulletIds
-    if (bulletOverrides) overrides = { ...overrides, ...bulletOverrides }
+  const surgeries = await Promise.all(
+    chosenIds.map((id, i) => {
+      const project = input.projects.find((p) => p.id === id)
+      if (!project) return Promise.resolve(null)
+      return surgeryPass(project, arch, input.decode, input.intel, input.company, i < 2).then((r) => ({ id, ...r }))
+    }),
+  )
+  for (const s of surgeries) {
+    if (!s) continue
+    chosen.push(s.choice)
+    bullets[s.id] = s.bulletIds
+    if (s.bulletOverrides) overrides = { ...overrides, ...s.bulletOverrides }
   }
 
   return {

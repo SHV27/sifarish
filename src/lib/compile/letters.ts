@@ -102,14 +102,19 @@ export function compileOutreach(
 
 /** The Gap Note: honest ambition, surfaced usefully. Missing evidence never enters the resume. */
 export function buildGapNote(coverage: CoverageReport): string[] {
+  // Session 6 (P3): one sentence-shape repeated per keyword read as template output. The gaps now
+  // aggregate — must-haves in one honest line, nice-to-haves in another — same information, a
+  // human's cadence.
   const notes: string[] = []
-  for (const miss of coverage.missing) {
-    const kw = miss.keyword.replace(/-/g, ' ')
-    notes.push(
-      miss.mustHave
-        ? `"${kw}" is a must-have here and the ledger has no evidence for it. The honest move: build or learn it, then let Nabz promote it — never claim it first.`
-        : `"${kw}" is nice-to-have; no ledger evidence yet. A small public artifact would cover it.`,
-    )
+  const must = coverage.missing.filter((m) => m.mustHave).map((m) => m.keyword.replace(/-/g, ' '))
+  const nice = coverage.missing.filter((m) => !m.mustHave).map((m) => m.keyword.replace(/-/g, ' '))
+  if (must.length === 1) {
+    notes.push(`This JD calls "${must[0]}" a must-have and the ledger holds no evidence for it — so it stays off the page (I1). Build or learn it, ship the proof, and Nabz promotes it.`)
+  } else if (must.length > 1) {
+    notes.push(`${must.length} of this JD's must-haves have no ledger evidence: ${must.map((k) => `"${k}"`).join(', ')}. They stay off the page (I1) — real proof for even one of them changes the compile.`)
+  }
+  if (nice.length > 0) {
+    notes.push(`Nice-to-haves without evidence yet: ${nice.map((k) => `"${k}"`).join(', ')}. A small public artifact would cover any of them.`)
   }
   return notes
 }

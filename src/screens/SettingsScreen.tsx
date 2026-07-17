@@ -21,7 +21,7 @@ const KEY_INFO = [
   { name: 'GITHUB_PAT', enables: 'Nabz at 5,000 req/hr', without: 'Nabz at 60 req/hr (still works)' },
 ]
 
-export function SettingsScreen() {
+export function SettingsScreen({ onNav }: { onNav?: (s: 'shelf' | 'khabri' | 'radar' | 'packet' | 'guru' | 'morcha' | 'settings') => void }) {
   const settings = useLiveQuery(() => db.settings.get('app'))
   const watchlist = useLiveQuery(() => db.watchlist.orderBy('id').toArray()) ?? []
   const budgets = useLiveQuery(async () => {
@@ -92,7 +92,11 @@ export function SettingsScreen() {
       <section className="dossier p-4 mb-5" aria-label="Dak Khana">
         <h2 className="font-display font-semibold text-lg text-ink">Dak Khana (mail vigilance)</h2>
         <p className="text-xs text-ink-soft mt-1 leading-relaxed">
-          Connect from the <strong>Morcha</strong> board. Scope is <code className="font-mono">gmail.readonly</code>{' '}
+          Connect from the{' '}
+          <button className="font-semibold underline decoration-dotted hover:text-stamp" onClick={() => onNav?.('morcha')}>
+            Morcha board →
+          </button>
+          . Scope is <code className="font-mono">gmail.readonly</code>{' '}
           only — sending is structurally impossible (I3); mail is read in this browser and never touches a server
           of ours. OAuth Client ID (public-safe): <code className="font-mono text-[10px]">{GOOGLE_CLIENT_ID.slice(0, 18)}…</code>
         </p>
@@ -600,6 +604,21 @@ function VisionEditor({ vision }: { vision: VisionProfile }) {
         aria-label="Not interested"
         placeholder={'Pure frontend\nNon-AI QA / support\nGeneric SDE / mass-MNC'}
       />
+      {/* Session 6 (P7): per-company aggregator hunts — the lawful reach into companies whose ATS
+          has no public feed (their postings ARE on LinkedIn/Indeed, which JSearch indexes). */}
+      <label className="block text-xs font-medium text-ink mb-1">Dream companies — hunted by name every sweep (one per line)</label>
+      <textarea
+        className="w-full bg-paper-sunken px-3 py-2 rounded text-xs mb-1 font-mono"
+        rows={2}
+        value={(vision.dreamCompanies ?? []).join('\n')}
+        onChange={(e) => save({ dreamCompanies: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })}
+        aria-label="Dream companies"
+        placeholder={'Netomi\nWeekday\nWingify'}
+      />
+      <p className="text-[11px] text-ink-soft mb-3">
+        Each name becomes a per-company hunt on the aggregator lanes — the door to companies whose career
+        sites publish no public feed. Their postings reach the Radar the sweep they appear.
+      </p>
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="text-xs text-ink">
           Stipend floor (₹/month)

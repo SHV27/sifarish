@@ -55,18 +55,24 @@ const CUE = {
   removeWord: /\b(hata|remove|nikaal|off|bina|without|no)\b/i,
 }
 
-/** Search the whole ledger for evidence of a term (title, tags, keywords, bullet text).
+/** Search the whole ledger for evidence of a term — title, tags, keywords, bullet text, summary,
+ *  AND the deep-read README context (D81's whole-entry boundary, Session 6: a fact he wrote
+ *  anywhere about his own work is GENUINE; refusing it is a bug as severe as a fabrication).
  *  Word-boundary match — "rust" must not ride in on "trust". */
-function hasEvidence(term: string, ledger: LedgerEntry[]): boolean {
+export function hasEvidence(term: string, ledger: LedgerEntry[]): boolean {
   const t = term.toLowerCase().trim()
   if (t.length < 2) return false
   const re = new RegExp(`(^|[^a-z0-9])${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i')
-  const hits = (s: string) => re.test(s)
+  const hits = (s?: string) => !!s && re.test(s)
   return ledger.some(
     (e) =>
       hits(e.title) ||
-      e.tags.some(hits) ||
-      e.bullets.some((b) => hits(b.text) || b.keywords.some(hits)),
+      e.tags.some((x) => hits(x)) ||
+      e.bullets.some((b) => hits(b.text) || b.keywords.some((x) => hits(x))) ||
+      hits(e.summary) ||
+      hits(e.context?.problem) ||
+      (e.context?.features ?? []).some((x) => hits(x)) ||
+      hits(e.context?.readme),
   )
 }
 

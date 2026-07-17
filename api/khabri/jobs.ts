@@ -23,6 +23,8 @@ interface JobsRequest {
   remoteOnly?: boolean
   datePosted?: 'all' | 'today' | '3days' | 'week' | 'month'
   numPages?: number
+  /** Session 6 (P7): comma-sep JSearch employment types, owner-set per hunt. */
+  employmentTypes?: string
 }
 
 interface JSearchJob {
@@ -107,6 +109,15 @@ export default async function handler(req: Request): Promise<Response> {
   })
   if (body.country) params.set('country', body.country)
   if (body.remoteOnly) params.set('work_from_home', 'true')
+  // Session 6 (P7): per-hunt employment-type filter, honored only when the owner set it on the
+  // hunt. Sanitised to JSearch's documented enum; never applied by default (his vision spans
+  // internships AND full roles, so a forced filter would LOSE coverage).
+  const emp = String(body.employmentTypes ?? '')
+    .toUpperCase()
+    .split(',')
+    .map((t) => t.trim())
+    .filter((t) => ['FULLTIME', 'CONTRACTOR', 'PARTTIME', 'INTERN'].includes(t))
+  if (emp.length > 0) params.set('employment_types', emp.join(','))
 
   try {
     const res = await fetch(`https://api.openwebninja.com/jsearch/search?${params.toString()}`, {

@@ -1,7 +1,7 @@
 import { db } from '../../db/db'
-import type { Job, SavedHunt, Signal, SweepYield, VisionProfile } from '../../types'
+import type { AtsSource, Job, SavedHunt, Signal, SweepYield, VisionProfile } from '../../types'
 import { deriveHunts } from '../vision/derive'
-import { fetchHackerNews, fetchRemotive, fetchRemoteOK, fetchArbeitnow, fetchJobicy } from './keyless'
+import { fetchHackerNews, fetchRemotive, fetchRemoteOK, fetchArbeitnow, fetchJobicy, fetchSimplify } from './keyless'
 import { mergeDiscovered } from './normalize'
 import { allowedThisRun, recordSpend } from '../budget'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
@@ -47,9 +47,11 @@ export const SEED_SIGNAL_QUERIES = [
  * ALWAYS first (his home market, every sweep), and the remaining 17 rotate through a persistent
  * window — same budget per sweep, the whole index covered every ~3 sweeps.
  */
+// Session 6: +'ch' — Adzuna's own swagger lists 19 markets and Switzerland was the one never
+// hunted (verified against api.adzuna.com/v1/api-docs 17-Jul-2026).
 export const ADZUNA_COUNTRIES = [
   'in', 'us', 'gb', 'ca', 'de', 'sg', 'au', 'nl', 'fr',
-  'es', 'it', 'pl', 'br', 'mx', 'za', 'be', 'at', 'nz',
+  'es', 'it', 'pl', 'br', 'mx', 'za', 'be', 'at', 'nz', 'ch',
 ]
 
 /**
@@ -118,6 +120,8 @@ async function callJobsApi(hunt: SavedHunt): Promise<JobsApiResp | null> {
         remoteOnly: hunt.remoteOnly,
         datePosted: hunt.datePosted,
         numPages: 1,
+        // P7 lane depth: honored only when HE set it on the hunt — never narrows by default.
+        employmentTypes: hunt.employmentTypes,
       }),
     })
     if (!res.ok) return null
@@ -162,16 +166,33 @@ async function callAggregatorApi(src: 'adzuna' | 'workingnomads' | 'weworkremote
   }
 }
 
+/**
+ * Rotate a list by a persistent offset — the Adzuna-market pattern (D111) applied to hunts.
+ * Pure + unit-tested: with more hunts than the per-run JSearch budget, the same first-10 used to
+ * get the budget every sweep and hunt #11+ starved forever. The window now advances each sweep.
+ */
+export function rotateHunts<T>(list: T[], offset: number): T[] {
+  if (list.length <= 1) return list
+  const s = ((offset % list.length) + list.length) % list.length
+  return [...list.slice(s), ...list.slice(0, s)]
+}
+
 export async function runSweep(onStep?: (label: string) => void): Promise<SweepYield> {
   // Darshak/demo: sweeps mutate the Radar and can spend credits — Owner Mode only (D44).
   if (!meteredCallsAllowed()) {
     return { found: 0, new: 0, duplicate: 0, bySource: {}, creditsSpent: 0, keylessLanes: [], keyedLanes: [], failed: ['Owner Mode required — the showcase never sweeps'] }
   }
   // His vision-derived hunts are hunted FIRST (Session 5.6) — the budget-limited lanes (JSearch,
-  // Adzuna) spend on the roles he actually wants before any generic seed query.
-  const hunts = (await db.savedHunts.toArray())
-    .filter((h) => h.enabled)
-    .sort((a, b) => Number(b.derived ?? false) - Number(a.derived ?? false))
+  // Adzuna) spend on the roles he actually wants before any generic seed query. Within each group
+  // (derived / manual) the order ROTATES per sweep (Session 6) so no enabled hunt is starved.
+  const allEnabled = (await db.savedHunts.toArray()).filter((h) => h.enabled)
+  const huntOffsetRow = await db.nabzCache.get('jsearch:rotation')
+  const huntOffset = Number(huntOffsetRow?.json ?? 0) || 0
+  const hunts = [
+    ...rotateHunts(allEnabled.filter((h) => h.derived), huntOffset),
+    ...rotateHunts(allEnabled.filter((h) => !h.derived), huntOffset),
+  ]
+  await db.nabzCache.put({ key: 'jsearch:rotation', json: String(huntOffset + 1), fetchedAt: new Date().toISOString() })
   const existing = await db.jobs.toArray()
   const bySource: Record<string, number> = {}
   const failed: string[] = []
@@ -252,6 +273,22 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     // remote). Both verified live CORS `*`, both self-filter to AI-relevant roles. Zero budget.
     ['Arbeitnow · Europe + remote', () => fetchArbeitnow()],
     ['Jobicy · global remote', () => fetchJobicy()],
+    // Session 6 — SimplifyJobs community index (AI/ML intern + new-grad, active-flagged, direct
+    // ATS links; CORS `*`). The ~11MB raw file is fetched at most once per 7 days; only the
+    // filtered result is cached (Dexie), so the lane costs one download a week and zero credits.
+    [
+      'SimplifyJobs · intern/new-grad index',
+      async () => {
+        const CACHE_KEY = 'simplify:listings'
+        const cached = await db.nabzCache.get(CACHE_KEY)
+        if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < 7 * 86400000) {
+          return JSON.parse(cached.json) as Job[]
+        }
+        const jobs = await fetchSimplify()
+        await db.nabzCache.put({ key: CACHE_KEY, json: JSON.stringify(jobs), fetchedAt: new Date().toISOString() })
+        return jobs
+      },
+    ],
   ]
   for (const [label, run] of laneRuns) {
     onStep?.(label)
@@ -293,6 +330,16 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   const merge = mergeDiscovered(discovered, existing)
   await db.jobs.bulkPut(merge.toPersist)
 
+  // --- THE WATCHLIST GROWS ITSELF (Session 6, lawful) --- Aggregator jobs whose apply URL
+  // resolves to a public ATS board reveal that company's feed token — data the sweep already
+  // paid for. Each unknown token becomes a Pulse proposal; HE confirms (Nabz pattern), and from
+  // then on that company's every posting arrives board-verified instead of aggregator-sampled.
+  try {
+    await proposeBoardsFromJobs(merge.toPersist)
+  } catch {
+    /* advisory loop — never blocks a sweep */
+  }
+
   // --- Signal lane (Tavily), budget-gated ---
   const tavilyBudget = await allowedThisRun('tavily')
   if (tavilyBudget > 0) {
@@ -322,6 +369,61 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     keyedLanes,
     failed,
   }
+}
+
+/**
+ * ATS-token extraction (Session 6, pure → unit-tested). A greenhouse/lever/ashby/smartrecruiters
+ * apply URL names the company's PUBLIC feed token — the same token the watchlist runs on.
+ */
+export function atsTokenFromUrl(url: string): { source: AtsSource; token: string } | null {
+  try {
+    const u = new URL(url)
+    const seg = u.pathname.split('/').filter(Boolean)
+    if (/(^|\.)greenhouse\.io$/.test(u.hostname)) {
+      // boards.greenhouse.io/{token}/… or job-boards.greenhouse.io/{token}/…
+      const token = seg[0] === 'embed' ? (u.searchParams.get('for') ?? '') : (seg[0] ?? '')
+      return token && token !== 'v1' ? { source: 'greenhouse', token: token.toLowerCase() } : null
+    }
+    if (u.hostname === 'jobs.lever.co' && seg[0]) return { source: 'lever', token: seg[0].toLowerCase() }
+    if (u.hostname === 'jobs.ashbyhq.com' && seg[0]) return { source: 'ashby', token: seg[0] }
+    if (/(^|\.)smartrecruiters\.com$/.test(u.hostname) && u.hostname.startsWith('careers.') && seg[0]) {
+      return { source: 'smartrecruiters', token: seg[0] }
+    }
+    if (u.hostname === 'jobs.smartrecruiters.com' && seg[0]) return { source: 'smartrecruiters', token: seg[0] }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/** Turn unknown ATS tokens found in swept jobs into pending Pulse board proposals (deduped). */
+export async function proposeBoardsFromJobs(jobs: Job[]): Promise<number> {
+  const watch = await db.watchlist.toArray()
+  const known = new Set(watch.map((w) => `${w.source}:${w.token.toLowerCase()}`))
+  const seen = new Set<string>()
+  let proposed = 0
+  for (const j of jobs) {
+    if (!j.url) continue
+    const hit = atsTokenFromUrl(j.url)
+    if (!hit) continue
+    const key = `${hit.source}:${hit.token.toLowerCase()}`
+    if (known.has(key) || seen.has(key)) continue
+    seen.add(key)
+    const id = `pulse-board-${key.replace(/[^a-z0-9]+/gi, '-')}`
+    if (await db.pulse.get(id)) continue // proposed once; his accept/dismiss stands (D59)
+    await db.pulse.put({
+      id,
+      at: new Date().toISOString(),
+      topic: 'watchlist',
+      headline: `${j.company} runs a public ${hit.source} board — watch it directly?`,
+      url: j.url,
+      insight: `A swept posting ("${j.title}") applies through ${hit.source}. Watching the board means every ${j.company} role arrives board-verified (open/closed known), not just what the aggregators index.`,
+      proposedBoard: { source: hit.source, token: hit.token, company: j.company, why: `Found via ${j.publisher ?? j.source} sweep — the board feed is public and keyless.` },
+      status: 'pending',
+    })
+    proposed++
+  }
+  return proposed
 }
 
 /**

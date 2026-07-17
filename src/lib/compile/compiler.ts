@@ -66,6 +66,20 @@ export function estimateHeight(lines: CompiledLine[]): number {
   return h
 }
 
+/**
+ * Session 6 (Defect 3 — "ek line mein kahin kuch kahin kuch"): truncation must never cut a word
+ * in half. The owner's own résumé showed "…hand-authored fallba · gloaming-murex…" — a raw
+ * `.slice(0,160)` mid-word. Cut at the last word boundary and close with an ellipsis so the line
+ * reads as deliberately shortened, never as broken.
+ */
+export function truncateAtWord(s: string, max: number): string {
+  const t = s.replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  const cut = t.slice(0, max - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${(lastSpace > max * 0.5 ? cut.slice(0, lastSpace) : cut).replace(/[,;:\-–—]$/, '')}…`
+}
+
 function push(lines: CompiledLine[], line: CompiledLine) {
   if (line.kind === 'bullet' && line.ledgerIds.length === 0) {
     throw new CompileError(`I1 violation: bullet "${line.text.slice(0, 60)}…" has no ledger evidence link.`)
@@ -191,9 +205,12 @@ export function compileResume(input: CompileInput): CompiledResume {
       const chosen = plan.map((id) => byId.get(id)).filter((b): b is (typeof p.bullets)[number] => !!b)
       if (chosen.length > 0) return chosen.slice(0, cap)
     }
+    // Session 6 (Defect 1): the same numbered-bullet bonus as the Editor's Desk — a real number
+    // the ledger holds must not lose its seat to a numberless bullet with equal keyword overlap.
+    const numBonus = (b: (typeof p.bullets)[number]) => (/\d/.test(b.text) || (b.metrics ? /\d/.test(b.metrics) : false) ? 2 : 0)
     return p.bullets
       .slice()
-      .sort((a, b) => bulletRelevance(b.keywords, decode) - bulletRelevance(a.keywords, decode))
+      .sort((a, b) => bulletRelevance(b.keywords, decode) + numBonus(b) - (bulletRelevance(a.keywords, decode) + numBonus(a)))
       .slice(0, cap)
   }
 
@@ -220,8 +237,10 @@ export function compileResume(input: CompileInput): CompiledResume {
         if (education.length === 0) return
         push(lines, { kind: 'heading', text: 'EDUCATION', ledgerIds: education.map((e) => e.id) })
         for (const e of education) {
-          push(lines, { kind: 'entry-title', text: e.title, ledgerIds: [e.id] })
-          if (e.summary) push(lines, { kind: 'meta', text: e.summary, ledgerIds: [e.id] })
+          // Session 6 (Defect 3): one coherent line per qualification — title and its year/score
+          // joined, never a bold degree line followed by an orphan "2021" floating alone.
+          const text = e.summary ? `${e.title} · ${e.summary.replace(/\s+/g, ' ').trim()}` : e.title
+          push(lines, { kind: 'entry-title', text, ledgerIds: [e.id] })
         }
       },
       skills: () => {
@@ -247,7 +266,7 @@ export function compileResume(input: CompileInput): CompiledResume {
           // ACHIEVEMENTS; without a one-line "what it IS" a recruiter can't tell that sifarish is a
           // job-hunt assistant. Render the project's own summary (its product description) + the live
           // link on one line, so the achievements below have context. Never trimmed away (it IS the point).
-          const desc = (p.summary ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)
+          const desc = truncateAtWord(p.summary ?? '', 160)
           const metaText = [desc, evidenceUrl.replace(/^https?:\/\//, '')].filter(Boolean).join(' · ')
           if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [p.id] })
           for (const b of bulletsFor(p, lv.bulletsPerProject)) {
@@ -272,15 +291,20 @@ export function compileResume(input: CompileInput): CompiledResume {
         for (const h of keptAch) {
           push(lines, { kind: 'bullet', text: `- ${h.title}${h.summary ? ` — ${h.summary}` : ''}`, ledgerIds: [h.id] })
         }
-        if (keptPos.length > 0) {
-          push(lines, { kind: 'bullet', text: `- ${keptPos.map((p) => p.title).join('; ')}`, ledgerIds: keptPos.map((p) => p.id) })
+        // Session 6 (Defect 3): each position on its own bullet — the old `;`-joined single line
+        // crammed three leadership roles into one unreadable run-on. The trim ladder still drops
+        // positions entirely under page pressure, so page-fit is unaffected.
+        for (const p of keptPos) {
+          push(lines, { kind: 'bullet', text: `- ${p.title}`, ledgerIds: [p.id] })
         }
       },
       certs: () => {
         if (!lv.includeCerts || certs.length === 0) return
         push(lines, { kind: 'heading', text: 'CERTIFICATIONS', ledgerIds: certs.map((e) => e.id) })
         for (const c of certs) {
-          push(lines, { kind: 'bullet', text: `- ${c.title}${c.summary ? ` (${c.summary})` : ''}`, ledgerIds: [c.id] })
+          // Trailing period stripped before wrapping in parens — "(Certificate ID X.)" read broken.
+          const detail = c.summary ? ` (${c.summary.trim().replace(/\.$/, '')})` : ''
+          push(lines, { kind: 'bullet', text: `- ${c.title}${detail}`, ledgerIds: [c.id] })
         }
       },
     }

@@ -1,7 +1,8 @@
 import type { BaithakParse, EditOp, LedgerEntry, Packet, ProposedEdit } from '../../types'
 import { db } from '../../db/db'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
-import { allowedThisRun, recordSpend } from '../budget'
+import { allowedThisRun } from '../budget'
+import { recordUsage } from '../dimaag/core'
 
 /**
  * SMART BAITHAK (Session 5.2, D53) — the intelligence layer. When the deterministic parser
@@ -331,8 +332,14 @@ export async function smartBaithak(utterance: string, packet: Packet, ledger: Le
   } catch {
     return keyless
   }
-  if (!data || data.keyless || !data.result) return keyless
-  await recordSpend('dimaag', 1)
+  if (!data || data.keyless || !data.result) {
+    // Session 6: a degraded smart turn now shows in the Dimaag Ledger + health badge (D115).
+    await recordUsage('baithak.smart', 'reasoning', 'fallback').catch(() => {})
+    return keyless
+  }
+  // Session 6: metered through the same ledger as every reasoning feature (recordUsage spends the
+  // dimaag budget internally — the old direct recordSpend left this feature invisible in Settings).
+  await recordUsage('baithak.smart', 'reasoning', 'call', data.tokens ?? 0)
 
   const r = data.result
   if (r.refuse?.term) {

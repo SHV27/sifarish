@@ -132,6 +132,11 @@ async function handleAdzuna(req: Request): Promise<Response> {
     app_key: appKey,
     results_per_page: String(rpp),
     what,
+    // Session 6 (P7, verified against Adzuna's own swagger 17-Jul-2026): freshest first, and
+    // nothing older than 60 days — the staleness deduction (D65) would sink those anyway, so
+    // requesting them wasted the per-country credit on postings the queue discards.
+    sort_by: 'date',
+    max_days_old: '60',
     'content-type': 'application/json',
   })
   try {

@@ -359,6 +359,7 @@ function PacketBody({
         <CopyDoc title="Cover letter" doc={packet.coverLetter} downloadAs={`Shaurya_Verma_Cover_Letter_${job.company.replace(/\W+/g, '')}`} />
         <AtelierBaithak key={`atelier-${packet.id}`} packet={packet} />
         <CopyDoc title="Outreach draft (send it yourself — SIFARISH never sends)" doc={packet.outreach} />
+        <ReferralAskPanel job={job} />
         <ApplyPlanPanel packet={packet} job={job} />
       </div>
 
@@ -759,6 +760,52 @@ function CopyDoc({ title, doc, downloadAs }: { title: string; doc: CompiledDoc; 
           </p>
         ))}
       </div>
+    </section>
+  )
+}
+
+/**
+ * Session 6 (P1) — THE REFERRAL ASK. Referred candidates take ~72% of interviews from ~7% of
+ * applicants; a paid reverse-recruiter networks every application. The lawful version: a drafted,
+ * evidence-grounded ask HE sends to someone he actually knows (or finds via public sources).
+ * Deterministic, zero LLM, zero sends (I3).
+ */
+function ReferralAskPanel({ job }: { job: Job }) {
+  const [copied, setCopied] = useState(false)
+  const [text, setText] = useState<string | null>(null)
+  const reveal = async () => {
+    const [identity, ledger] = await Promise.all([db.identity.get('me'), db.ledger.toArray()])
+    if (!identity) return
+    const { draftReferralAsk } = await import('../lib/sahayak')
+    setText(draftReferralAsk(job, identity, ledger))
+  }
+  return (
+    <section className="dossier p-4" aria-label="Referral ask">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display font-semibold text-ink text-sm">Referral ask (the strongest lawful channel)</h2>
+        {text ? (
+          <button
+            className="text-xs font-mono text-ink-soft hover:text-ink"
+            onClick={async () => {
+              await navigator.clipboard.writeText(text)
+              setCopied(true)
+              setTimeout(() => setCopied(false), 2000)
+            }}
+          >
+            {copied ? 'copied ✓' : 'copy'}
+          </button>
+        ) : (
+          <button className="text-xs font-mono text-ink-soft hover:text-ink underline decoration-dotted" onClick={reveal}>
+            draft it
+          </button>
+        )}
+      </div>
+      <p className="text-[11px] text-ink-soft mt-1 leading-relaxed">
+        Referred candidates take the lion's share of interviews. If you know ANYONE at {job.company} — or can
+        find the team on their site or GitHub — this draft makes the ask effortless for them. You send it;
+        the app never does.
+      </p>
+      {text && <pre className="mt-2 text-xs text-ink leading-relaxed whitespace-pre-wrap font-sans bg-paper-sunken rounded p-2">{text}</pre>}
     </section>
   )
 }

@@ -172,3 +172,88 @@ describe('Baithak link probe — a dead link can never enter a packet', () => {
     expect(await probeAlive('https://github.com/SHV27/does-not-exist', notFound)).toBe(false)
   })
 })
+
+/**
+ * Session 6 (P2) — THE GENUINE-ASK CONTRACT. His words: "genuine ko galat bolega toh gussa
+ * aayega." A GENUINE ask = supported anywhere in his own writing (D81's whole-entry boundary —
+ * bullets, tags, summary, deep-read README context). For genuine asks the answer is yes-and-done;
+ * refusal is ONLY for claims with zero evidence anywhere. A false refusal is a bug of the same
+ * severity as a fabrication. 22-utterance fixture: Hinglish, vague, compound, questions,
+ * genuine-but-oddly-phrased, and truly-unevidenced.
+ */
+describe('Session 6 P2 — 0 false refusals, 0 false acceptances, questions answered with zero ops', () => {
+  const ctx = makeCtx()
+
+  // Genuine asks (evidence exists somewhere in his own writing) — must NEVER refuse.
+  const genuine: { utterance: string; expectOps: boolean }[] = [
+    { utterance: 'python aata hai likh de', expectOps: false }, // evidenced → no refusal (no op needed either: already a skill)
+    { utterance: 'DARYA aage kar do please', expectOps: true },
+    { utterance: 'MUNSHI hata, DARYA aage kar, aur skills upar', expectOps: true }, // compound: 3 ops, one turn
+    { utterance: 'professional summary daal do', expectOps: true },
+    { utterance: 'summary hata do', expectOps: true },
+    { utterance: 'thoda tight kar', expectOps: true }, // tone cue
+    { utterance: 'DARYA mein hash-chain wala point ghusa', expectOps: true },
+    { utterance: 'add DARYA', expectOps: true }, // benched-but-real → promote, never refuse
+    { utterance: 'education pehle rakho', expectOps: true },
+    { utterance: 'whisper jaanta hoon likh de', expectOps: false }, // evidenced in DARYA's bullets — genuine
+  ]
+  for (const g of genuine) {
+    it(`GENUINE: "${g.utterance}" is never refused`, () => {
+      const r = parseUtterance(g.utterance, ctx)
+      expect(r.refused, `false refusal on: ${g.utterance}`).toBeUndefined()
+      if (g.expectOps) expect(r.proposals.length + (r.handled === false ? 1 : 0)).toBeGreaterThan(0)
+    })
+  }
+
+  // Questions — answered with ZERO ops (forcing an edit on a question was itself a bug, D61).
+  const questions = ['GLOAMING kyun chuna?', 'ye bullets aise kyun likhe?', 'DARYA bench kyun hua?']
+  for (const q of questions) {
+    it(`QUESTION: "${q}" → answered, zero ops`, () => {
+      const r = parseUtterance(q, ctx)
+      expect(r.proposals).toHaveLength(0)
+      expect(r.refused).toBeUndefined()
+      expect(r.reply.length).toBeGreaterThan(20)
+    })
+  }
+
+  // Truly unevidenced — MUST refuse with a Gap Note (0 false acceptances).
+  const fabrications = ['add that I know Kubernetes', 'rust aata hai likh de', 'terraform jaanta hoon likh de', 'mention kar ki mujhe golang aata hai']
+  for (const f of fabrications) {
+    it(`FABRICATION: "${f}" → refused + gap note`, () => {
+      const r = parseUtterance(f, ctx)
+      expect(r.proposals).toHaveLength(0)
+      expect(r.refused?.term).toBeDefined()
+      expect(r.refused?.gapNote).toBeDefined()
+    })
+  }
+
+  // The D81 whole-entry boundary applied to the Baithak's evidence search (Session 6 fix): a term
+  // he wrote in a project's SUMMARY or deep-read README context is GENUINE, not a fabrication.
+  it('a term evidenced only in a project SUMMARY is genuine (was a false refusal)', () => {
+    const ledger = richLedger()
+    // "bookkeeping" appears only in MUNSHI's summary — nowhere in bullets/tags/keywords.
+    const r = parseUtterance('bookkeeping aata hai likh de', { ...makeCtx(), ledger })
+    expect(r.refused).toBeUndefined()
+  })
+  it('a term evidenced only in the deep-read README context is genuine', () => {
+    const ctx2 = makeCtx()
+    const darya = ctx2.ledger.find((e) => e.id === 'proj-darya')!
+    darya.context = { readme: 'The pipeline uses websockets for realtime streaming updates.', features: [], stack: [], source: { repo: 'x', readAt: 'y' } }
+    const r = parseUtterance('websockets jaanta hoon likh de', ctx2)
+    expect(r.refused).toBeUndefined()
+  })
+
+  // Vague but harmless — the fallback teaches; it never refuses, never invents.
+  it('VAGUE: "kuch accha kar" → teaches the vocabulary, zero ops, zero refusal', () => {
+    const r = parseUtterance('kuch accha kar', ctx)
+    expect(r.refused).toBeUndefined()
+    expect(r.proposals).toHaveLength(0)
+    expect(r.handled).toBe(false) // hands off to the smart layer when a key exists
+  })
+
+  // Compound genuine ask lands as multiple ops in ONE turn.
+  it('COMPOUND: "MUNSHI hata, DARYA aage kar" → both ops, one turn', () => {
+    const r = parseUtterance('MUNSHI hata, DARYA aage kar', ctx)
+    expect(r.proposals.map((p) => p.op.kind).sort()).toEqual(['bench-project', 'promote-project'])
+  })
+})

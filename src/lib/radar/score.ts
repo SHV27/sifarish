@@ -30,7 +30,9 @@ export function scoreJobCached(job: Job, ledger: LedgerEntry[], rubric: RubricWe
   // updatedAt joins the key: the staleness deduction (D65) is a function of the posting date,
   // so a re-synced job whose date moved must re-score rather than serve a stale breakdown.
   // visionSig joins it too (D85): the same job re-ranks when his vision changes.
-  const key = `${job.id}|${job.fetchedAt}|${job.updatedAt ?? ''}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}|${visionSig(vision)}`
+  // lastSeenOpenAt joins the key (Session 6): a board scan that re-verifies a posting open must
+  // re-score it — a softened staleness deduction served from a stale cache would be invisible.
+  const key = `${job.id}|${job.fetchedAt}|${job.updatedAt ?? ''}|${job.lastSeenOpenAt ?? ''}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}|${visionSig(vision)}`
   const hit = scoreCache.get(key)
   if (hit) return hit
   const result = scoreJob(job, ledger, rubric, starred, vision)
@@ -256,8 +258,11 @@ export function visionPart(job: Job, vision?: VisionProfile): ScorePart {
   }
 }
 
+/** A board scan confirmed this posting open within the last N days → it is verifiably hiring. */
+const VERIFIED_OPEN_WINDOW_DAYS = 10
+
 /** Age bands. Unknown date → no penalty: we punish evidence of staleness, never absence of it. */
-export function stalenessPart(job: Job): ScorePart {
+export function stalenessPart(job: Job, now = Date.now()): ScorePart {
   const stamp = job.updatedAt
   if (!stamp) {
     return { key: 'freshness', label: 'Freshness', points: 0, max: 0, why: 'No posting date published by this board — not penalised on a guess.' }
@@ -270,8 +275,28 @@ export function stalenessPart(job: Job): ScorePart {
   if (!Number.isFinite(t)) {
     return { key: 'freshness', label: 'Freshness', points: 0, max: 0, why: 'Posting date unrecognised — not penalised on a guess.' }
   }
-  const days = Math.max(0, Math.floor((Date.now() - t) / 86400000))
+  const days = Math.max(0, Math.floor((now - t) / 86400000))
   const band = days <= 30 ? 0 : days <= 60 ? -5 : days <= 120 ? -12 : days <= 240 ? -20 : -30
+
+  // Session 6 (owner: "hiring chal rahi ho, that's what matters — age ≠ death"). When the last
+  // board scan SAW this posting still listed (D122's openIds, stamped as lastSeenOpenAt), the
+  // company is verifiably still hiring whatever the posted date says. Evidence of life caps the
+  // deduction at −8: an old-but-verified-open role stays in the running, while an equally old
+  // aggregator ghost (no board to verify against) keeps the full penalty. We soften on proof of
+  // life, never on hope.
+  const seenOpen = job.lastSeenOpenAt ? new Date(job.lastSeenOpenAt).getTime() : NaN
+  const verifiedOpen = Number.isFinite(seenOpen) && now - seenOpen <= VERIFIED_OPEN_WINDOW_DAYS * 86400000
+  if (verifiedOpen && band < -8) {
+    const seenDays = Math.max(0, Math.floor((now - seenOpen) / 86400000))
+    return {
+      key: 'freshness',
+      label: 'Freshness',
+      points: -8,
+      max: 0,
+      why: `Posted ${days}d ago, but its own board still listed it ${seenDays === 0 ? 'today' : `${seenDays}d ago`} — verified open, so age costs it far less than a ghost.`,
+    }
+  }
+
   const why =
     band === 0
       ? `Posted ${days}d ago — live.`

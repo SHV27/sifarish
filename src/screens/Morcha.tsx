@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { Job, JobStatus } from '../types'
 import { nudgeState, setJobStatus, clearFound } from '../lib/morcha'
+import { rejectionRetro } from '../lib/sahayak'
 import { buildDossier, type InterviewDossier } from '../lib/dossier'
 import DakPanel from '../components/DakPanel'
 
@@ -115,6 +116,7 @@ export function Morcha({ onOpenPacket }: { onOpenPacket: (jobId: string) => void
                 {VERDICTS.map((v) => (
                   <VerdictBucket key={v.status} label={v.label} jobs={byStatus.get(v.status) ?? []} onOpenPacket={onOpenPacket} />
                 ))}
+                <RetroPanel jobs={jobs} />
               </div>
             </div>
           </div>
@@ -240,6 +242,7 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
   const nudge = nudgeState(job)
   const actions = NEXT[job.status] ?? []
   const back = PREV[job.status]
+  const [copied, setCopied] = useState(false)
 
   return (
     <div className="dossier p-2.5 animate-dossier-in">
@@ -248,12 +251,35 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
         <p className="text-[11px] text-ink-soft">{job.company}</p>
         {/* Session 5.8 — provider-stated salary, previously captured but rendered nowhere. */}
         {job.salary && <p className="font-mono text-[10px] text-shipped mt-0.5">💰 {job.salary}</p>}
+        {/* Session 6 (P5): with 50 applications in flight, "how long has this one been waiting"
+            should never require opening the card. */}
+        {(job.status === 'applied' || job.status === 'followup') && job.appliedAt && (
+          <p className="font-mono text-[10px] text-ink-faint mt-0.5">
+            applied {Math.max(0, Math.floor((Date.now() - new Date(job.appliedAt).getTime()) / 86400000))}d ago
+          </p>
+        )}
       </button>
 
       {nudge.due && (
         <div className="mt-1.5 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-stamp animate-nudge" aria-hidden />
           <span className="text-[10px] text-stamp font-medium">Day {nudge.day} — follow up</span>
+          {/* Session 6 (P1): the nudge hands him the MESSAGE, not just the reminder — one
+              follow-up measurably lifts response rates; the draft removes the friction. He
+              copies, he sends (I3). */}
+          <button
+            className="ml-auto text-[10px] font-mono text-ink-soft hover:text-ink underline decoration-dotted"
+            onClick={async () => {
+              const [identity, ledger] = await Promise.all([db.identity.get('me'), db.ledger.toArray()])
+              if (!identity) return
+              const { draftFollowUp } = await import('../lib/sahayak')
+              await navigator.clipboard.writeText(draftFollowUp(job, nudge.day ?? 7, identity, ledger))
+              setCopied(true)
+              setTimeout(() => setCopied(false), 2000)
+            }}
+          >
+            {copied ? 'copied ✓' : 'copy draft'}
+          </button>
         </div>
       )}
 
@@ -299,6 +325,28 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
             </button>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Session 6 (P1) — POST-REJECTION RETRO: what the lost applications demonstrably shared. The
+ * compounding loop a human placement mentor runs after every interview — here it is deterministic
+ * aggregation over the packets' own coverage data, never a guess about a company's private reasons.
+ */
+function RetroPanel({ jobs }: { jobs: Job[] }) {
+  const packets = useLiveQuery(() => db.packets.toArray()) ?? []
+  const lostCount = jobs.filter((j) => j.status === 'rejected' || j.status === 'ghosted').length
+  if (lostCount < 2) return null
+  const retro = rejectionRetro(jobs, packets)
+  if (retro.sampleSize < 2) return null
+  return (
+    <div className="dossier p-2.5">
+      <p className="text-[11px] font-semibold text-ink">What your closed applications share</p>
+      <p className="text-[10px] text-ink-soft mt-1 leading-relaxed">{retro.note}</p>
+      {retro.shared.length > 0 && (
+        <p className="text-[10px] text-ink-soft mt-1">Taleem in Khabri ranks what to build next.</p>
       )}
     </div>
   )

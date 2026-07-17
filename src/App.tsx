@@ -128,7 +128,7 @@ export default function App() {
           {screen === 'packet' && <PacketScreen jobId={activeJobId} onPickJob={openPacket} />}
           {screen === 'guru' && <Guru onOpenPacket={openPacket} />}
           {screen === 'morcha' && <Morcha onOpenPacket={openPacket} />}
-          {screen === 'settings' && <SettingsScreen />}
+          {screen === 'settings' && <SettingsScreen onNav={setScreen} />}
         </main>
       </div>
       </div>

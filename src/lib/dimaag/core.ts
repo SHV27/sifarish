@@ -26,7 +26,9 @@ function hash(obj: unknown): string {
 
 type UsageMode = 'hit' | 'call' | 'fallback'
 
-async function recordUsage(feature: string, tier: DimaagTier, mode: UsageMode, tokens = 0) {
+// Exported (Session 6): the smart Baithak posts to /api/dimaag directly (its own schema, D74) and
+// was invisible in the Dimaag Ledger — a metering blind spot. Every metered feature reports here.
+export async function recordUsage(feature: string, tier: DimaagTier, mode: UsageMode, tokens = 0) {
   const mk = monthKey()
   const id = `${feature}:${mk}`
   const row = (await db.dimaagUsage.get(id)) ?? { id, feature, monthKey: mk, calls: 0, tokens: 0, cacheHits: 0, fallbacks: 0 }
@@ -190,10 +192,19 @@ function genericHeuristic(input: DecideInput): { choice: string; ranking: string
     .sort((a, b) => b.score - a.score)
   const top = scored[0]
   const spread = scored.length > 1 ? top.score - scored[scored.length - 1].score : top.score
+  // Session 6 (P3): name the criteria the winner actually hit, not a generic "shares the most
+  // signal" — a rationale that can't say something specific should say less, never pad.
+  const topHay = `${top.o.label} ${top.o.detail ?? ''}`.toLowerCase()
+  const hits = input.criteria.filter((c) => topHay.includes(c.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim())).slice(0, 3)
+  const runnerUp = scored[1]
   return {
     choice: top.o.id,
     ranking: scored.map((s) => s.o.id),
-    why: `Heuristic match: "${top.o.label}" shares the most signal with the criteria (${input.criteria.slice(0, 3).join(', ')}). Keyless mode — deterministic keyword scoring, not LLM reasoning.`,
+    why:
+      (hits.length > 0
+        ? `"${top.o.label}" directly covers ${hits.join(', ')}${runnerUp ? `; "${runnerUp.o.label}" covers less of what this decision weighs` : ''}.`
+        : `"${top.o.label}" overlaps the decision criteria more than any alternative.`) +
+      ' Scored deterministically (keyless).',
     confidence: Math.max(0.4, Math.min(0.75, 0.4 + spread * 0.08)),
   }
 }
@@ -256,7 +267,8 @@ export async function decide(input: DecideInput): Promise<Rationale> {
     criteria: input.criteria,
     choice: labelOf(input, r.choiceId),
     ranking: (r.ranking ?? input.options.map((o) => o.id)).map((id) => labelOf(input, id)),
-    why: r.why ?? 'Reasoned against the stated criteria.',
+    // P3: when the model omits its why, say something TRUE and specific, never filler prose.
+    why: r.why ?? `Chose "${labelOf(input, r.choiceId)}" against ${input.criteria.slice(0, 3).join(', ')}.`,
     confidence: clamp01(r.confidence ?? 0.7),
     citations: input.citations,
     evidenceRefs: input.evidence?.map((e) => e.ref),
@@ -296,6 +308,22 @@ export async function critique(input: CritiqueInput): Promise<Critique> {
   const fallback = (): Critique => {
     const fixes = input.heuristicChecks?.(input.artifact) ?? []
     return { verdict: fixes.length === 0 ? 'PASS' : 'REVISE', fixes: fixes.slice(0, 3), by: 'heuristic', at: new Date().toISOString() }
+  }
+
+  // Session 6 (Defect 5 — "red-team is slow") — THE FAST PATH: the deterministic checks run FIRST,
+  // on every call. When they already find concrete fixes the verdict is REVISE by definition, and
+  // consulting the 120b would spend seconds + tokens to learn the same thing. The model runs only
+  // when the mechanical checks pass — its job is the subtle judgment (inflated tone, misordered
+  // evidence), never the mechanical one. Zero intelligence traded: a heuristic hit is a real
+  // defect either way, and the recompiled artifact comes back through the full path.
+  const preFixes = input.heuristicChecks?.(input.artifact) ?? []
+  if (preFixes.length > 0) {
+    const fast: Critique = { verdict: 'REVISE', fixes: preFixes.slice(0, 3), by: 'heuristic', at: new Date().toISOString() }
+    // Recorded as a hit (resolved with zero spend), NOT a fallback — a deliberate fast path must
+    // never read as a degraded reasoning tier in dimaagHealth (D115).
+    await recordUsage(input.feature, 'reasoning', 'hit')
+    await db.dimaagCache.put({ hash: cacheKey, json: JSON.stringify(fast), at: fast.at })
+    return fast
   }
 
   if ((await allowedThisRun('dimaag')) < 1) return persistFallback(fallback())
