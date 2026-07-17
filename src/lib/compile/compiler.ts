@@ -186,7 +186,17 @@ export function compileResume(input: CompileInput): CompiledResume {
   }
 
   // -- Fixed + trimmable content pools --
-  const education = shipped.filter((e) => e.kind === 'education')
+  // Education newest-first (Session 6, caught in the live proof): Dexie returns rows in
+  // primary-key order, which put Class X above Class XII. Degrees read reverse-chronological.
+  // Dates arrive as "MM/YYYY" or "YYYY[-MM]" — normalize to YYYYMM so the sort is real.
+  const eduKey = (d?: string): string => {
+    const m = /^(\d{1,2})\/(\d{4})$/.exec(d ?? '')
+    if (m) return `${m[2]}${m[1].padStart(2, '0')}`
+    return (d ?? '').replace(/[^0-9]/g, '').padEnd(6, '0').slice(0, 6)
+  }
+  const education = shipped
+    .filter((e) => e.kind === 'education')
+    .sort((a, b) => eduKey(b.evidence?.date).localeCompare(eduKey(a.evidence?.date)))
   const skills = shipped
     .filter((e) => e.kind === 'skill')
     .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))

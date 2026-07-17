@@ -18,7 +18,13 @@ export function sanitizePdfText(text: string): string {
     .replace(/–/g, '-')
     .replace(/•/g, '-')
     .replace(/·/g, '|')
+    // Session 6 (Defect 3, caught by READING the rendered PDF): the final strip below was EATING
+    // "…" and "×", so a word-safe truncation re-read as a broken phrase ("with a hand-authored |")
+    // and "TIET × LinkedIn" collapsed to a double space. Map them to ASCII before the strip.
+    .replace(/…/g, '...')
+    .replace(/×/g, 'x')
     .replace(/[^\x20-\x7E]/g, '')
+    .replace(/ {2,}/g, ' ')
 }
 
 function wrap(font: PDFFont, text: string, size: number, maxWidth: number): string[] {

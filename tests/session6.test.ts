@@ -123,6 +123,15 @@ describe('Defect 3 — the page reads like a typesetter set it', () => {
     }
     const xii = lines.find((l) => l.text.includes('Class X,'))
     expect(xii?.text).toMatch(/98\.6%.*2021/)
+    // Session 6 (live-proof catch): education is reverse-chronological — B.Tech, then XII, then X
+    // (Dexie's primary-key order had put Class X above Class XII).
+    const eduLines = []
+    for (let i = eduHeading + 1; i < lines.length && lines[i].kind !== 'heading'; i++) eduLines.push(lines[i].text)
+    const iBtech = eduLines.findIndex((t) => t.includes('B.Tech'))
+    const iXII = eduLines.findIndex((t) => t.includes('Class XII'))
+    const iX = eduLines.findIndex((t) => t.includes('Class X,'))
+    expect(iBtech).toBeLessThan(iXII)
+    expect(iXII).toBeLessThan(iX)
   })
 
   it('positions render one per bullet — never a semicolon-joined run-on', () => {
@@ -153,6 +162,15 @@ describe('Defect 3 — the page reads like a typesetter set it', () => {
       const lastWord = desc.slice(0, -1).trim().split(' ').pop()!
       expect(long.summary).toMatch(new RegExp(`(^|\\s)${lastWord}(\\s|$)`))
     }
+  })
+})
+
+describe('Defect 3 — the PDF sanitizer keeps the typesetting (caught by READING the PDF)', () => {
+  it('ellipsis and multiplication sign survive as ASCII, never vanish', async () => {
+    const { sanitizePdfText } = await import('../src/lib/export/pdf')
+    expect(sanitizePdfText('with a hand-authored…')).toBe('with a hand-authored...')
+    expect(sanitizePdfText('TIET × LinkedIn Learning')).toBe('TIET x LinkedIn Learning')
+    expect(sanitizePdfText('a  b')).toBe('a b')
   })
 })
 
