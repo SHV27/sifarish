@@ -224,6 +224,11 @@ interface TrimLevel {
  * with 3 fewer skills beats a sparse one with a wall of skills.
  */
 const TRIM_LEVELS: TrimLevel[] = [
+  // Session 7.2 (owner: "kanjoosi nahi — jitni required description deni hai denge"): the
+  // richest level tries FOUR bullets per project first — the forge produces up to 4 real
+  // accomplishments, and a strong ledger deserves the space. The one-page solver remains the
+  // final authority: if it doesn't fit, the ladder steps down exactly as before.
+  { bulletsPerProject: 4, maxProjects: 4, maxAchievements: 99, includePositions: true, includeCerts: true, skillsCap: 99 },
   { bulletsPerProject: 3, maxProjects: 4, maxAchievements: 99, includePositions: true, includeCerts: true, skillsCap: 99 },
   { bulletsPerProject: 3, maxProjects: 4, maxAchievements: 4, includePositions: true, includeCerts: true, skillsCap: 99 },
   { bulletsPerProject: 3, maxProjects: 3, maxAchievements: 3, includePositions: true, includeCerts: true, skillsCap: 18 },
@@ -430,7 +435,9 @@ export function compileResume(input: CompileInput): CompiledResume {
           // job-hunt assistant. Render the project's own summary (its product description) + the live
           // link on one line, so the achievements below have context. Never trimmed away (it IS the point).
           // Session 7 (defect R2): SENTENCE-boundary trim — the page never ends a thought mid-clause.
-          const desc = sentenceTrim(cleanSummaryForDisplay(p.summary ?? ''), 230)
+          // 230 → 280 (S7.2, "required description" over stinginess): a two-sentence product
+          // description survives whole more often; the sentence-boundary trim still governs.
+          const desc = sentenceTrim(cleanSummaryForDisplay(p.summary ?? ''), 280)
           const metaText = [desc, cleanUrlForDisplay(evidenceUrl)].filter(Boolean).join(' · ')
           if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [p.id] })
           for (const b of bulletsFor(p, lv.bulletsPerProject, pageTexts)) {
