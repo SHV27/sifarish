@@ -31,7 +31,37 @@ export function ledgerSummary(ledger: LedgerEntry[]): string {
   ].join('\n')
 }
 
-export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, jobs: Job[], pulse: PulseBrief[] = []): string {
+/**
+ * Session 7 (WS-G) — the app's LIVE configuration, injected so Guru can actually steer:
+ * "meri vision ab aisi hai, hunts mein kya change karun?" gets an answer grounded in what the
+ * hunts/budgets/watchlist ACTUALLY are right now — plus the exact human-confirmed door for each
+ * edit (the Nabz pattern: Guru names the change, HE clicks it; nothing mutates from chat, I3).
+ */
+export interface GuruConfigSnapshot {
+  hunts: { query: string; derived: boolean; country?: string }[]
+  budgets: { id: string; used: number; monthlyCap: number }[]
+  watchlist: { total: number; starred: number }
+}
+
+export function configSummary(config?: GuruConfigSnapshot): string {
+  if (!config) return ''
+  const huntLines = config.hunts.slice(0, 30).map((h) => `- "${h.query}"${h.country ? ` [${h.country}]` : ''}${h.derived ? ' (vision-derived)' : ' (hand-set)'}`)
+  const budgetLine = config.budgets.map((b) => `${b.id} ${b.used}/${b.monthlyCap}`).join(' · ')
+  return [
+    'APP CONFIG (live — answer config questions from THIS, never from memory):',
+    `Active hunts (${config.hunts.length}):`,
+    ...huntLines,
+    `Budgets this month: ${budgetLine}`,
+    `Watchlist: ${config.watchlist.total} ATS boards (${config.watchlist.starred} starred).`,
+    'STEERING RULE: when he asks what to change (vision, hunts, budgets, watchlist), propose the',
+    'SPECIFIC edit with its exact current value and name the door that applies it with his click:',
+    'vision → Settings › Vision editor (hunts re-derive on save); hunts → Radar › Hunt panel',
+    '(add/remove/“Hunt now”); budgets → Settings › Budgets; boards → Pulse proposals / Settings.',
+    'Never claim you changed anything yourself — the app has no self-mutating chat, by design (I3).',
+  ].join('\n')
+}
+
+export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, jobs: Job[], pulse: PulseBrief[] = [], config?: GuruConfigSnapshot): string {
   const v = settings.visionProfile
   const pipeline = {
     found: jobs.filter((j) => j.status === 'found').length,
@@ -86,6 +116,8 @@ export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, job
     pulse.length > 0
       ? `MARKET PULSE (recent, cited):\n${pulse.slice(0, 5).map((p) => `- ${p.headline} (${p.url})`).join('\n')}`
       : '',
+    '',
+    configSummary(config),
   ]
     .filter(Boolean)
     .join('\n')

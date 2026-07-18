@@ -16,6 +16,11 @@ const VISION: VisionProfile = {
   notInterested: ['Pure frontend'],
   remoteInternational: true,
   dreamCompanies: [],
+  compFloorStipend: 20000,
+  ppoFloorLpa: 10,
+  windowStart: '2026-09',
+  windowEnd: '2027-02',
+  openToOctoberStart: true,
 }
 
 const fakeJob = (over: Partial<Job>): Job =>

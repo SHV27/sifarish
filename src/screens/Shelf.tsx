@@ -244,8 +244,9 @@ function EntryCard({
           </a>
         )}
         {!entry.resumeEligible && (
-          <span className="font-mono text-ink-soft" title="Shaurya's call: never enters any export">
-            excluded from resume
+          // Session 7 (declutter): a quiet marker, not a loud badge — the dimmed card already says it.
+          <span className="font-mono text-[10px] text-ink-faint" title="Shaurya's call: never enters any export — toggle in Edit">
+            off-résumé
           </span>
         )}
         <span className="ml-auto flex gap-2">
@@ -256,6 +257,17 @@ function EntryCard({
               </button>
               <button className="text-ink-soft hover:underline" onClick={() => setEditing(false)}>
                 Cancel
+              </button>
+              {/* Session 7 (declutter, owner-requested): redundant entries that only eat space can
+                  GO. Confirmed, reversible by re-adding (or re-forging a linked repo). */}
+              <button
+                className="text-stamp hover:underline"
+                onClick={async () => {
+                  if (!window.confirm(`Delete "${entry.title}" from the ledger? You can re-add it anytime.`)) return
+                  await db.ledger.delete(entry.id)
+                }}
+              >
+                Delete
               </button>
             </>
           ) : (

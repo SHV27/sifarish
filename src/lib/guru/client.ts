@@ -55,7 +55,19 @@ export async function streamGuru(history: GuruMessage[], onToken: (t: string) =>
   // Guru v3: the compiled dossier on EVERY turn — vision + avoids + guardrail + path briefs +
   // pipeline + recent pulse + ledger. Retrieved, not hoped for.
   const pulse = await db.pulse.orderBy('at').reverse().limit(5).toArray().catch(() => [])
-  const system = buildSystemPrompt(ledger, settings, jobs, pulse)
+  // Session 7 (WS-G): the live config rides every turn — Guru steers from what IS, not from
+  // guesswork, and every proposed edit names its human-confirmed door.
+  const [hunts, budgets, watchlist] = await Promise.all([
+    db.savedHunts.toArray().catch(() => []),
+    db.budgets.toArray().catch(() => []),
+    db.watchlist.toArray().catch(() => []),
+  ])
+  const config = {
+    hunts: hunts.filter((h) => h.enabled).map((h) => ({ query: h.query, derived: !!h.derived, country: h.country })),
+    budgets: budgets.map((b) => ({ id: b.id, used: b.used, monthlyCap: b.monthlyCap })),
+    watchlist: { total: watchlist.length, starred: watchlist.filter((w) => w.starred).length },
+  }
+  const system = buildSystemPrompt(ledger, settings, jobs, pulse, config)
   const messages = history
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
