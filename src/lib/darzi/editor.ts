@@ -29,6 +29,7 @@ function projectBrief(p: LedgerEntry, cap: number): string {
   return parts.join('\n').slice(0, cap)
 }
 import { entryRelevance, bulletRelevance } from '../match/evidence'
+import { bulletOverlap, HARD_DUPLICATE } from '../compile/overlap'
 import { scanHonesty } from '../slop/scan'
 import { citePatterns, craftClauses, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
 
@@ -241,7 +242,7 @@ export async function surgeryPass(
   // emphasis). If the JD-focus angle won, the bullets that answer the JD's must-haves lead; else
   // archetype-cue bullets lead. Evidence-true selection/order only — no rewriting, no new facts (I1).
   const jdAngle = angleId === 'jd-focus'
-  const bulletIds = project.bullets
+  const bulletIdsRanked = project.bullets
     .map((b) => {
       const cueHits = arch.cues.filter((c) => b.keywords.includes(c)).length
       const rel = bulletRelevance(b.keywords, decode)
@@ -256,8 +257,18 @@ export async function surgeryPass(
       return { b, score }
     })
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map((x) => x.b.id)
+  // Session 7 (WS-R2): the Desk's plan mirrors the compiler's redundancy law — two bullets
+  // making the same claim never share a block (¶blt-no-duplicated-fact). Greedy pick with a
+  // hard-duplicate skip; the compiler re-enforces page-wide regardless (D28 — final authority).
+  const pickedBullets: string[] = []
+  const pickedTexts: string[] = []
+  for (const { b } of bulletIdsRanked) {
+    if (pickedBullets.length >= 3) break
+    if (pickedTexts.some((t) => bulletOverlap(b.text, t) >= HARD_DUPLICATE)) continue
+    pickedBullets.push(b.id)
+    pickedTexts.push(b.text)
+  }
+  const bulletIds = pickedBullets
 
   const choice: CastChoice = {
     ledgerId: project.id,
@@ -299,10 +310,17 @@ export async function redTeamPass(
   resumeText: string,
   decode?: JDDecode,
   archInfo?: { label: string; priorities: string[] },
+  ledgerInventory?: string,
 ): Promise<import('../../types').Critique> {
   const musts = (decode?.mustHave ?? []).slice(0, 6).map((k) => k.replace(/-/g, ' '))
   const roleClause = archInfo ? ` Judged for a ${archInfo.label} (scans first for ${archInfo.priorities.slice(0, 3).join(', ')}).` : ''
   const mustClause = musts.length ? ` The JD's must-haves are: ${musts.join(', ')} — REVISE if the top third of the page doesn't visibly earn them.` : ''
+  // Session 7 (defect R6): the red-team used to see ONLY the page, so its fixes were career-coach
+  // boilerplate ("add deployment metrics" the ledger doesn't hold). It now sees what the ledger
+  // ACTUALLY holds unused — every fix must name page text or inventory evidence, never invent.
+  const inventoryClause = ledgerInventory
+    ? ` The candidate's evidence ledger holds this UNUSED material: ${ledgerInventory}. Every fix you propose must point at SPECIFIC text on the page or SPECIFIC unused evidence from this inventory — advice naming evidence the ledger does not hold is a wrong answer.`
+    : ''
   return critique({
     feature: 'darzi.redteam',
     artifact: resumeText,
@@ -311,7 +329,8 @@ export async function redTeamPass(
       'A senior studio shipped this. Nothing inflated, generic, or template-y. Strongest evidence leads. ' +
       'Every claim reads as provable. If you would not forward it, say REVISE.' +
       roleClause +
-      mustClause,
+      mustClause +
+      inventoryClause,
     heuristicChecks: (a) => {
       const fixes: string[] = []
       // scanHonesty = slop + guarantee in one pass (S5.10 wiring audit: the combined scanner

@@ -106,8 +106,30 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   if (editorial) {
     onProgress?.('Red-teaming the draft & weighing the signature…')
     const arch = editorial.archetype
+    // Session 7 (defect R6): ground the red-team in what the ledger ACTUALLY holds unused —
+    // digit-bearing bullets that didn't make the page + benched shipped projects. Its fixes
+    // must cite this inventory or the page itself; career-coach boilerplate dies here.
+    const pageText = resume.lines.map((l) => `${l.text}${l.right ? ` ${l.right}` : ''}`).join('\n')
+    const onPage = pageText.toLowerCase()
+    const unusedNumbered = ledger
+      .filter((e) => e.resumeEligible && e.tier === 'shipped')
+      .flatMap((e) => e.bullets)
+      .filter((b) => /\d/.test(b.text) && !onPage.includes(b.text.slice(0, 40).toLowerCase()))
+      .slice(0, 4)
+      .map((b) => `"${b.text.slice(0, 90)}"`)
+    const benched = shippedProjects
+      .filter((p) => !resume.lines.some((l) => l.ledgerIds.includes(p.id)))
+      .slice(0, 3)
+      .map((p) => p.title.split('—')[0].trim())
+    const inventory =
+      [
+        unusedNumbered.length ? `unused numbered bullets: ${unusedNumbered.join('; ')}` : '',
+        benched.length ? `benched shipped projects: ${benched.join(', ')}` : '',
+      ]
+        .filter(Boolean)
+        .join(' · ') || 'none — everything usable is already on the page'
     const [rt, sig] = await Promise.all([
-      redTeamPass(resume.lines.map((l) => l.text).join('\n'), decode, arch).catch(() => null),
+      redTeamPass(pageText, decode, arch, inventory).catch(() => null),
       decideSignature(job, arch.id, intel).catch(() => null),
     ])
     if (rt) {

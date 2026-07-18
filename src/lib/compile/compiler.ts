@@ -8,6 +8,7 @@ import type {
 } from '../../types'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills } from './typeset'
+import { bulletOverlap, HARD_DUPLICATE, REDUNDANCY_WEIGHT } from './overlap'
 
 /**
  * Stage 3: deterministic compile under the one-page budget.
@@ -279,20 +280,74 @@ export function compileResume(input: CompileInput): CompiledResume {
   const forgeIds = new Set(coverage.building.flatMap((h) => h.ledgerIds))
   const forgeEntries = eligible.filter((e) => e.tier === 'in_forge' && forgeIds.has(e.id))
 
-  const bulletsFor = (p: LedgerEntry, cap: number) => {
+  type PBullet = LedgerEntry['bullets'][number]
+  const renderText = (b: PBullet) => input.bulletOverrides?.[b.id] ?? b.text
+  const hasNumber = (b: PBullet) => /\d/.test(renderText(b)) || (b.metrics ? /\d/.test(b.metrics) : false)
+
+  /** Ranked candidate list: the editorial plan leads (D28 — Dimaag proposes), relevance backfills. */
+  const rankedBullets = (p: LedgerEntry): PBullet[] => {
+    const numBonus = (b: PBullet) => (hasNumber(b) ? 2 : 0)
+    const base = p.bullets
+      .slice()
+      .sort((a, b) => bulletRelevance(b.keywords, decode) + numBonus(b) - (bulletRelevance(a.keywords, decode) + numBonus(a)))
     const plan = input.editorial?.bullets[p.id]
     if (plan && plan.length > 0) {
       const byId = new Map(p.bullets.map((b) => [b.id, b]))
-      const chosen = plan.map((id) => byId.get(id)).filter((b): b is (typeof p.bullets)[number] => !!b)
-      if (chosen.length > 0) return chosen.slice(0, cap)
+      const planned = plan.map((id) => byId.get(id)).filter((b): b is PBullet => !!b)
+      if (planned.length > 0) {
+        const inPlan = new Set(planned.map((b) => b.id))
+        return [...planned, ...base.filter((b) => !inPlan.has(b.id))]
+      }
     }
-    // Session 6 (Defect 1): the same numbered-bullet bonus as the Editor's Desk — a real number
-    // the ledger holds must not lose its seat to a numberless bullet with equal keyword overlap.
-    const numBonus = (b: (typeof p.bullets)[number]) => (/\d/.test(b.text) || (b.metrics ? /\d/.test(b.metrics) : false) ? 2 : 0)
-    return p.bullets
-      .slice()
-      .sort((a, b) => bulletRelevance(b.keywords, decode) + numBonus(b) - (bulletRelevance(a.keywords, decode) + numBonus(a)))
-      .slice(0, cap)
+    return base
+  }
+
+  /**
+   * Session 7 (WS-R2, defect R3 — two near-identical bullets on his real résumé): greedy
+   * MMR selection. Every candidate is scored by its ranked position MINUS its redundancy
+   * against everything already on the page (this project AND earlier ones). A hard duplicate
+   * (same claim, different words) never renders — fewer bullets beat repeated ones. And the
+   * quantification GUARANTEE (defect R4): if the entry holds a digit-bearing bullet, at least
+   * one digit-bearing bullet makes the cut — a +2 tie-break was never a guarantee.
+   */
+  const bulletsFor = (p: LedgerEntry, cap: number, pageTexts: string[]): PBullet[] => {
+    const ranked = rankedBullets(p)
+    const chosen: PBullet[] = []
+    const overlapMax = (b: PBullet) => {
+      let m = 0
+      for (const t of pageTexts) m = Math.max(m, bulletOverlap(renderText(b), t))
+      for (const c of chosen) m = Math.max(m, bulletOverlap(renderText(b), renderText(c)))
+      return m
+    }
+    const baseScore = new Map(ranked.map((b, i) => [b.id, ranked.length - i]))
+    const remaining = ranked.slice()
+    while (chosen.length < cap && remaining.length > 0) {
+      let bestIdx = -1
+      let best = -Infinity
+      for (let i = 0; i < remaining.length; i++) {
+        const o = overlapMax(remaining[i])
+        if (o >= HARD_DUPLICATE) continue // the same claim never renders twice
+        const s = (baseScore.get(remaining[i].id) ?? 0) - REDUNDANCY_WEIGHT * o
+        if (s > best) {
+          best = s
+          bestIdx = i
+        }
+      }
+      if (bestIdx === -1) break // everything left is a duplicate of the page — stop short
+      chosen.push(remaining.splice(bestIdx, 1)[0])
+    }
+    if (chosen.length > 0 && !chosen.some(hasNumber)) {
+      const numbered = remaining.find((b) => hasNumber(b) && overlapMax(b) < HARD_DUPLICATE)
+      if (numbered) {
+        // Swap out the weakest non-numbered pick — the ledger's real number keeps its seat.
+        let weakest = chosen.length - 1
+        for (let i = chosen.length - 1; i >= 0; i--) {
+          if ((baseScore.get(chosen[i].id) ?? 0) <= (baseScore.get(chosen[weakest].id) ?? 0)) weakest = i
+        }
+        chosen[weakest] = numbered
+      }
+    }
+    return chosen
   }
 
   const sectionOrder = input.editorial?.sectionOrder?.length ? input.editorial.sectionOrder : DEFAULT_SECTION_ORDER
@@ -340,6 +395,8 @@ export function compileResume(input: CompileInput): CompiledResume {
         const projects = projectPool.slice(0, lv.maxProjects)
         if (projects.length === 0) return
         push(lines, { kind: 'heading', text: 'PROJECTS', ledgerIds: projects.map((e) => e.id) })
+        // Cross-project redundancy state: every emitted bullet repels near-duplicates page-wide.
+        const pageTexts: string[] = []
         for (const p of projects) {
           const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
           push(lines, {
@@ -356,9 +413,10 @@ export function compileResume(input: CompileInput): CompiledResume {
           const desc = sentenceTrim(cleanSummaryForDisplay(p.summary ?? ''), 230)
           const metaText = [desc, cleanUrlForDisplay(evidenceUrl)].filter(Boolean).join(' · ')
           if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [p.id] })
-          for (const b of bulletsFor(p, lv.bulletsPerProject)) {
+          for (const b of bulletsFor(p, lv.bulletsPerProject, pageTexts)) {
             // A Baithak rephrasing renders in place of the original, under the SAME evidence link.
-            const text = input.bulletOverrides?.[b.id] ?? b.text
+            const text = renderText(b)
+            pageTexts.push(text)
             push(lines, { kind: 'bullet', text: `- ${text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [p.id] })
           }
         }
