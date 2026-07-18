@@ -183,6 +183,13 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
     parts.push({ key: 'unpaid', label: 'Unpaid', points: -20, max: 0, why: 'The posting says UNPAID — below your stated stipend floor; it costs 20 points so it never outranks paid work.' })
   }
 
+  // 8b · Role-family lens (Session 7 — "meri vision bass AI engineer ki hai"): a role FAMILY he
+  // never asked for (research scientist, data scientist, analyst, pure frontend, QA) takes a
+  // visible deduction — DEMOTED, never hidden (his law: supply wide, ranking sorts). If his
+  // vision names the family, no penalty — his words always outrank our lexicon.
+  const family = roleFamilyPart(job, vision)
+  if (family) parts.push(family)
+
   // 8 · Vision fit (D85) — the piece that makes the top 15 HIS, not a generic AI list.
   //
   // The rubric above scores what a role IS (AI-ness, ledger fit, remote, window) but never whether
@@ -197,6 +204,34 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
   // Vision can push a strong match past the rubric's 100 — cap it; a deduction can't go below 0.
   const total = Math.max(0, Math.min(100, parts.reduce((n, p) => n + p.points, 0)))
   return { total, parts }
+}
+
+/**
+ * Role families the market titles distinctly. A family hit in the TITLE demotes unless the
+ * owner's vision names that family — deterministic, bounded, rendered in "why" (L4).
+ */
+const ROLE_FAMILIES: { re: RegExp; name: string }[] = [
+  { re: /\bresearch scientist\b/i, name: 'research scientist' },
+  { re: /\bdata scientist\b/i, name: 'data scientist' },
+  { re: /\b(data|business) analyst\b/i, name: 'analyst' },
+  { re: /\bfront[- ]?end\b|\bui developer\b/i, name: 'pure frontend' },
+  { re: /\bqa engineer\b|\btest engineer\b|\bquality assurance\b/i, name: 'QA' },
+  { re: /\bdevops\b|\bsite reliability\b/i, name: 'DevOps/SRE' },
+]
+
+export function roleFamilyPart(job: Job, vision?: VisionProfile): ScorePart | null {
+  if (!vision) return null
+  const fam = ROLE_FAMILIES.find((f) => f.re.test(job.title))
+  if (!fam) return null
+  const visionHay = `${vision.dream} ${vision.targetRoles.join(' ')}`.toLowerCase()
+  if (visionHay.includes(fam.name.replace('pure ', ''))) return null // he asked for it — no penalty
+  return {
+    key: 'roleFamily',
+    label: 'Role family',
+    points: -12,
+    max: 0,
+    why: `titled as a ${fam.name} role — a family your vision doesn't name, so it ranks below your stated lanes (edit your vision to lift this).`,
+  }
 }
 
 /** Salient theme words a vision dream implies (AI-role vocabulary), for secondary matching. */

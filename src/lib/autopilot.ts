@@ -1,6 +1,7 @@
 import { db } from '../db/db'
 import { runSweep, syncVisionHunts } from './khabri/client'
 import { runPulse, pulseDue } from './pulse/client'
+import { syncRadar } from './radar/feeds'
 
 /**
  * AUTOPILOT (v3, D34) — the app keeps itself current without being asked. On open, if the
@@ -12,7 +13,12 @@ import { runPulse, pulseDue } from './pulse/client'
  * Fire-and-forget: failures are swallowed; the app is fully usable whether or not this runs.
  */
 
-const SWEEP_STALE_MS = 24 * 60 * 60 * 1000
+// Session 7 (H5/H7): LinkedIn is a continuous feed; a 24h window left the queue a day behind.
+// 6h keeps every open fresh while budgets still gate every credit (I8).
+const SWEEP_STALE_MS = 6 * 60 * 60 * 1000
+// The 32 ATS boards are KEYLESS and board-verified — the freshest source was the least-run one
+// (its only caller was a manual button). Autopilot now scans them on open, 6h-cached, ₹0.
+const BOARD_SCAN_STALE_MS = 6 * 60 * 60 * 1000
 let ranThisSession = false
 
 export async function runAutopilot(): Promise<void> {
@@ -31,6 +37,19 @@ export async function runAutopilot(): Promise<void> {
   const sweepStale = !settings.lastSweepAt || Date.now() - new Date(settings.lastSweepAt).getTime() > SWEEP_STALE_MS
   if (sweepStale) {
     runSweep().catch(() => {}) // budget-gated inside; new finds land in the Radar with a NEW stamp
+  }
+
+  // Session 7 (H5): the board scan joins the autopilot — keyless, board-verified-open truth
+  // (D122/D131) refreshing itself instead of waiting for a manual click. Delayed a touch so it
+  // never contends with the sweep's network burst.
+  const scanRow = await db.nabzCache.get('radar:lastBoardScan').catch(() => undefined)
+  const scanStale = !scanRow || Date.now() - new Date(scanRow.fetchedAt).getTime() > BOARD_SCAN_STALE_MS
+  if (scanStale) {
+    setTimeout(() => {
+      syncRadar()
+        .then(() => db.nabzCache.put({ key: 'radar:lastBoardScan', json: '1', fetchedAt: new Date().toISOString() }))
+        .catch(() => {})
+    }, 2500)
   }
 
   if (pulseDue(settings.lastPulseAt)) {

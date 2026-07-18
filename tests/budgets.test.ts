@@ -19,17 +19,35 @@ describe('I8 — budgets', () => {
 
   it('D88: raises an existing vault\'s cap to a higher default, but never lowers a manual one', async () => {
     const mk = monthKey()
-    // Old vault: a JSearch row from before the widening (perRunCap 6), plus a row the owner
+    // Old vault: a JSearch row BELOW today's default (perRunCap 4), plus a row the owner
     // deliberately raised ABOVE the default — that manual value must survive.
-    await db.budgets.put({ id: 'jsearch', label: 'JSearch', monthlyCap: 200, perRunCap: 6, used: 3, unit: 'requests', monthKey: mk })
+    await db.budgets.put({ id: 'jsearch', label: 'JSearch', monthlyCap: 150, perRunCap: 4, used: 3, unit: 'requests', monthKey: mk })
     await db.budgets.put({ id: 'tavily', label: 'Tavily', monthlyCap: 9999, perRunCap: 99, used: 1, unit: 'credits', monthKey: mk })
     await ensureBudgets()
 
     const js = await getBudget('jsearch')
-    expect(js!.perRunCap).toBe(10) // adopted the higher default (D88 breadth)
+    expect(js!.perRunCap).toBe(6) // adopted the higher default (S7 honest caps)
+    expect(js!.monthlyCap).toBe(200)
     expect(js!.used).toBe(3) // his spend this month is preserved
     const tv = await getBudget('tavily')
     expect(tv!.perRunCap).toBe(99) // his manual raise was NOT clobbered downward
+  })
+
+  it('S7 corrective: the OLD our-default jsearch caps (300/10) exceed the provider\'s real free plan — corrected to 200/6; any other value is the owner\'s and stands', async () => {
+    const mk = monthKey()
+    await db.budgets.put({ id: 'jsearch', label: 'JSearch', monthlyCap: 300, perRunCap: 10, used: 42, unit: 'requests', monthKey: mk })
+    await ensureBudgets()
+    const js = await getBudget('jsearch')
+    expect(js!.monthlyCap).toBe(200) // provider truth (Law-12 live, 18-Jul-2026)
+    expect(js!.perRunCap).toBe(6)
+    expect(js!.used).toBe(42)
+
+    // An owner-set value (not exactly the old default pair) is never touched downward.
+    await db.budgets.put({ id: 'jsearch', label: 'JSearch', monthlyCap: 500, perRunCap: 20, used: 1, unit: 'requests', monthKey: mk })
+    await ensureBudgets()
+    const owner = await getBudget('jsearch')
+    expect(owner!.monthlyCap).toBe(500)
+    expect(owner!.perRunCap).toBe(20)
   })
 
   it('allowedThisRun never exceeds the per-run cap', async () => {

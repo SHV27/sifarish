@@ -125,7 +125,7 @@ async function handleAdzuna(req: Request): Promise<Response> {
   }
   const country = (String(body.country ?? 'in').toLowerCase().replace(/[^a-z]/g, '').slice(0, 2)) || 'in'
   const what = String(body.query ?? 'AI engineer').slice(0, 120)
-  const rpp = Math.min(Math.max(Number(body.resultsPerPage) || 20, 1), 30) // I8: bounded payload
+  const rpp = Math.min(Math.max(Number(body.resultsPerPage) || 20, 1), 50) // I8: bounded payload (Adzuna serves up to 50/page, Law-12 verified 18-Jul-2026)
 
   const params = new URLSearchParams({
     app_id: appId,
@@ -189,7 +189,7 @@ async function handleWorkingNomads(): Promise<Response> {
     const now = new Date().toISOString()
     const jobs = list
       .filter((j) => !!j.url && AI_RE.test(`${j.title ?? ''} ${j.category_name ?? ''} ${j.tags ?? ''}`))
-      .slice(0, 25)
+      .slice(0, 40)
       .map((j) => ({
         id: `workingnomads:${j.url}`,
         source: 'workingnomads' as const,
@@ -261,7 +261,7 @@ export function parseWwrRss(xml: string): Array<Record<string, unknown>> {
       fetchedAt: now,
       status: 'found',
     })
-    if (jobs.length >= 25) break
+    if (jobs.length >= 40) break // S7: free lane — breadth costs nothing here
   }
   return jobs
 }

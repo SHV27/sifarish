@@ -25,7 +25,9 @@ const PHRASE_RULES: { test: RegExp; queries: string[] }[] = [
   { test: /claude|anthropic|openai|gpt|llm|language model|generative|gen.?ai/i, queries: ['LLM engineer', 'generative AI engineer', 'GenAI engineer intern'] },
   { test: /rag|retrieval|search|knowledge|vector|embedding/i, queries: ['RAG engineer', 'AI search engineer', 'retrieval engineer'] },
   { test: /eval|guardrail|safety|alignment|trust|reliab/i, queries: ['AI evaluation engineer', 'LLM evals engineer', 'trustworthy AI intern'] },
-  { test: /research|paper|novel|model|foundation|pretrain|fine.?tun/i, queries: ['AI research intern', 'ML research engineer', 'research scientist intern'] },
+  // Session 7 (H2): 'research scientist intern' removed — the owner's vision is ENGINEER; the
+  // research-scientist family now takes a visible penalty in scoring unless his vision names it.
+  { test: /research|paper|novel|model|foundation|pretrain|fine.?tun/i, queries: ['AI research intern', 'ML research engineer'] },
   { test: /voice|speech|asr|audio/i, queries: ['voice AI engineer', 'speech ML engineer'] },
   { test: /multimodal|vision|image|video|cv|perception/i, queries: ['multimodal AI engineer', 'computer vision engineer intern'] },
   { test: /nlp|text|conversational|chatbot|dialog/i, queries: ['NLP engineer', 'conversational AI engineer'] },
@@ -56,11 +58,28 @@ export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
     hunts.push({ query: q, why, remoteOnly: vision.remoteInternational })
   }
 
-  // The explicit target roles he named come first, each with a remote/India variant.
+  // The explicit target roles he named come first — and Session 7 (H2, the LinkedIn gap): the
+  // BROAD market query leads. His comparison search was plain "AI Engineer", yet every derived
+  // hunt carried "…Intern", so the plain market query was never funded. The core role (intern/
+  // residency qualifiers stripped) is emitted FIRST; the qualified variant follows. An intern-
+  // suitable posting titles itself "AI Engineer" more often than "AI Engineer Intern".
   for (const r of vision.targetRoles) {
+    const core = r.replace(/\s*\b(interns?(hips?)?|residency|resident)\b\s*/gi, ' ').replace(/\s+/g, ' ').trim()
+    if (core && core.toLowerCase() !== r.toLowerCase()) {
+      for (const v of withLocationVariants(core, vision)) {
+        add(v, `The broad market query behind your target "${r}" — boards index the role name, and intern-suitable postings usually title it plainly.`)
+      }
+    }
     for (const v of withLocationVariants(r, vision)) {
       add(v, `You named "${r}" as a target role — this is the query a job board indexes on.`)
     }
+  }
+
+  // Session 7 (H6): region-phrased hunts — Google-for-Jobs resolves "in Europe" phrasing, giving
+  // his LinkedIn-Europe comparison a direct counterpart alongside the per-country rotation.
+  if (vision.remoteInternational && vision.targetRoles.length > 0) {
+    const core0 = vision.targetRoles[0].replace(/\s*\b(interns?(hips?)?|residency|resident)\b\s*/gi, ' ').replace(/\s+/g, ' ').trim()
+    if (core0) add(`${core0} Europe remote`, 'Region-wide sweep: one query that answers the whole European market at once, the way LinkedIn\'s region search does.')
   }
 
   // Theme-derived queries: every AI-role corner his vision implies.

@@ -177,21 +177,36 @@ export function rotateHunts<T>(list: T[], offset: number): T[] {
   return [...list.slice(s), ...list.slice(0, s)]
 }
 
+/**
+ * Session 7 (H4) — derived and manual hunts INTERLEAVE so a budget smaller than the derived
+ * count can never starve his hand-written hunts again (they had received zero JSearch requests,
+ * ever). Pure + gate-tested.
+ */
+export function interleaveHunts<T>(derived: T[], manual: T[]): T[] {
+  const out: T[] = []
+  for (let i = 0; i < Math.max(derived.length, manual.length); i++) {
+    if (derived[i] !== undefined) out.push(derived[i])
+    if (manual[i] !== undefined) out.push(manual[i])
+  }
+  return out
+}
+
 export async function runSweep(onStep?: (label: string) => void): Promise<SweepYield> {
   // Darshak/demo: sweeps mutate the Radar and can spend credits — Owner Mode only (D44).
   if (!meteredCallsAllowed()) {
     return { found: 0, new: 0, duplicate: 0, bySource: {}, creditsSpent: 0, keylessLanes: [], keyedLanes: [], failed: ['Owner Mode required — the showcase never sweeps'] }
   }
-  // His vision-derived hunts are hunted FIRST (Session 5.6) — the budget-limited lanes (JSearch,
-  // Adzuna) spend on the roles he actually wants before any generic seed query. Within each group
-  // (derived / manual) the order ROTATES per sweep (Session 6) so no enabled hunt is starved.
+  // Session 7 (H4 — his manual hunts NEVER ran): derived-before-manual ordering + a budget
+  // smaller than the derived count meant the hand-written hunts got zero JSearch requests, any
+  // sweep, forever. Derived and manual now INTERLEAVE (both rotated per sweep), so his own
+  // queries share every sweep's budget with the vision-derived ones.
   const allEnabled = (await db.savedHunts.toArray()).filter((h) => h.enabled)
   const huntOffsetRow = await db.nabzCache.get('jsearch:rotation')
   const huntOffset = Number(huntOffsetRow?.json ?? 0) || 0
-  const hunts = [
-    ...rotateHunts(allEnabled.filter((h) => h.derived), huntOffset),
-    ...rotateHunts(allEnabled.filter((h) => !h.derived), huntOffset),
-  ]
+  const hunts = interleaveHunts(
+    rotateHunts(allEnabled.filter((h) => h.derived), huntOffset),
+    rotateHunts(allEnabled.filter((h) => !h.derived), huntOffset),
+  )
   await db.nabzCache.put({ key: 'jsearch:rotation', json: String(huntOffset + 1), fetchedAt: new Date().toISOString() })
   const existing = await db.jobs.toArray()
   const bySource: Record<string, number> = {}
@@ -254,7 +269,9 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
       const country = sweepCountries[i]
       const query = adzunaQueries[i % adzunaQueries.length]
       onStep?.(`Adzuna ${country.toUpperCase()}: "${query}"`)
-      const resp = await callAggregatorApi('adzuna', { country, query, resultsPerPage: 20 })
+      // Session 7 (Law-12): Adzuna serves up to 50 rows/page — the old 20 left 60% of every
+      // credit's breadth on the table. Same request count, 2.5× the catch.
+      const resp = await callAggregatorApi('adzuna', { country, query, resultsPerPage: 50 })
       if (!resp) continue
       if (resp.keyless) break // no key → skip the lane, keyless lanes carry the sweep (I4)
       if (!keyedLanes.includes('Adzuna (global · 18 countries)')) keyedLanes.push('Adzuna (global · 18 countries)')

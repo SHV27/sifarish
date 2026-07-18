@@ -10,6 +10,24 @@ import { scoreJobCached } from '../lib/radar/score'
 const VISIBLE_CAP = 15 // sniper, not spray — the cap is a feature (vision §P3)
 
 /**
+ * Session 7 — LinkedIn-parity filter chips (from the owner's own screenshots: Date posted /
+ * Remote / Gen AI / LLM / Employment type in one tap). Deterministic predicates over what the
+ * job record already holds; an active chip is a deliberate ask, so its results show uncapped.
+ */
+const CHIP_DEFS: { id: string; label: string; test: (j: Job) => boolean }[] = [
+  { id: 'remote', label: 'Remote', test: (j) => /remote/i.test(`${j.location} ${j.title}`) },
+  {
+    id: 'india',
+    label: 'India',
+    test: (j) => /india|bengaluru|bangalore|mumbai|delhi|gurugram|gurgaon|hyderabad|pune|noida|chennai|kolkata/i.test(j.location),
+  },
+  { id: 'intern', label: 'Intern', test: (j) => /\bintern/i.test(`${j.title} ${j.jd.slice(0, 500)}`) },
+  { id: 'fulltime', label: 'Full-time', test: (j) => /full[- ]?time/i.test(`${j.title} ${j.jd.slice(0, 1000)}`) },
+  { id: 'fresh', label: 'Past week', test: (j) => (j.updatedAt ? daysAgo(j.updatedAt) <= 7 : false) },
+  { id: 'llm', label: 'GenAI / LLM', test: (j) => /\b(llm|gen\s?ai|generative|agentic|agents?)\b/i.test(j.title) },
+]
+
+/**
  * SEARCH THE FULL CATCH (Session 5.4, D64).
  *
  * The cap governs the DEFAULT queue — that stays: an unasked-for firehose is spray, and D6 is
@@ -48,6 +66,14 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
   const [query, setQuery] = useState('')
   const [showAll, setShowAll] = useState(false)
   const [newOnly, setNewOnly] = useState(false)
+  const [chips, setChips] = useState<Set<string>>(new Set())
+  const toggleChip = (id: string) =>
+    setChips((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
 
   const starred = useMemo(() => new Set(watchlist.filter((w) => w.starred).map((w) => w.company)), [watchlist])
 
@@ -66,13 +92,36 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
 
   const terms = useMemo(() => termsOf(query), [query])
   const filtered = useMemo(() => {
-    const base = terms.length ? ranked.filter(({ job }) => matchesQuery(job, terms)) : ranked
+    let base = terms.length ? ranked.filter(({ job }) => matchesQuery(job, terms)) : ranked
+    // Session 7 (LinkedIn-parity chips): every active chip is an AND filter — one tap, the way
+    // LinkedIn's filter row works. A chip is a deliberate ask, so chip results show uncapped.
+    for (const id of chips) {
+      const def = CHIP_DEFS.find((c) => c.id === id)
+      if (def) base = base.filter(({ job }) => def.test(job))
+    }
     return newOnly ? base.filter(({ job }) => job.isNew === true) : base
-  }, [ranked, terms, newOnly])
+  }, [ranked, terms, newOnly, chips])
   const newCount = useMemo(() => ranked.filter(({ job }) => job.isNew === true).length, [ranked])
-  // A search is a deliberate hunt → show every match. The cap only rules the unfiltered queue.
-  const searching = terms.length > 0
-  const visible = searching || showAll ? filtered : filtered.slice(0, VISIBLE_CAP)
+  // A search/chip-filter is a deliberate hunt → show every match. The cap rules only the
+  // unfiltered default queue.
+  const searching = terms.length > 0 || chips.size > 0
+  // Session 7 (H3 — "same 4-5 companies repeating"): the default top-15 carries at most TWO
+  // roles per company. Nothing is hidden — search/show-all/chips reach everything; the default
+  // queue just reads like a market, not one board's careers page.
+  const visible = useMemo(() => {
+    if (searching || showAll) return filtered
+    const perCompany = new Map<string, number>()
+    const out: typeof filtered = []
+    for (const item of filtered) {
+      const c = item.job.company.trim().toLowerCase()
+      const n = perCompany.get(c) ?? 0
+      if (n >= 2) continue
+      perCompany.set(c, n + 1)
+      out.push(item)
+      if (out.length >= VISIBLE_CAP) break
+    }
+    return out
+  }, [filtered, searching, showAll])
 
   const runSync = async () => {
     setSyncing(true)
@@ -105,6 +154,11 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
           <h1 className="font-display font-bold text-3xl text-ink">Shikaar Radar</h1>
           <p className="text-sm text-ink-soft mt-1">
             {enabledCount} keyless boards · ranked, capped at {VISIBLE_CAP}. Few, deep, truthful — a sniper's queue.
+            {settings?.lastSweepAt && (
+              <span className="font-mono text-[11px] ml-2 text-ink-faint" title="Autopilot sweeps on open when stale; boards auto-scan too (Session 7)">
+                · swept {hoursAgoLabel(settings.lastSweepAt)}
+              </span>
+            )}
           </p>
         </div>
         <button
@@ -173,6 +227,28 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
                   mark all seen
                 </button>
               </>
+            )}
+          </div>
+
+          {/* Session 7 — one-tap filters, the LinkedIn filter row made honest: deterministic
+              predicates, AND-combined, uncapped results (a chip is a deliberate ask). */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-3" role="group" aria-label="Filter the queue">
+            {CHIP_DEFS.map((c) => (
+              <button
+                key={c.id}
+                className={`text-xs font-mono px-2.5 py-1 rounded-full border transition-colors ${
+                  chips.has(c.id) ? 'bg-ink text-paper border-ink' : 'text-ink-soft border-paper-edge hover:text-ink hover:border-ink-wash'
+                }`}
+                onClick={() => toggleChip(c.id)}
+                aria-pressed={chips.has(c.id)}
+              >
+                {c.label}
+              </button>
+            ))}
+            {chips.size > 0 && (
+              <button className="text-[11px] font-mono text-ink-soft hover:underline ml-1" onClick={() => setChips(new Set())}>
+                reset filters
+              </button>
             )}
           </div>
 
@@ -509,6 +585,12 @@ function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; on
                 ✓ board-verified open
               </span>
             )}
+            {/* Session 7 — LinkedIn's "Be an early applicant" signal, from data we already hold. */}
+            {fresh !== null && fresh <= 2 && (
+              <span className="font-mono text-[10px] ml-2 text-forge" title="Posted within the last 48 hours — early applicants get read first">
+                ★ be an early applicant
+              </span>
+            )}
           </p>
           {/* Session 5.8 — "achi salary" is his stated rubric; the provider's own salary figure
               was captured on Job.salary but never rendered anywhere. Now it's on the card. */}
@@ -570,4 +652,12 @@ function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; on
 
 function daysAgo(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000))
+}
+
+/** "swept 3h ago" / "swept just now" — freshness is visible, never assumed (Session 7). */
+function hoursAgoLabel(iso: string): string {
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000)
+  if (h <= 0) return 'just now'
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
 }

@@ -84,7 +84,7 @@ export async function fetchHackerNews(keywords: string[]): Promise<Job[]> {
       status: 'found',
     })
   }
-  return jobs.slice(0, 25)
+  return jobs.slice(0, 40) // S7: free lane — breadth costs nothing here
 }
 
 // ---- Remotive ----
@@ -96,7 +96,7 @@ export async function fetchRemotive(query: string): Promise<Job[]> {
   const now = new Date().toISOString()
   return (data.jobs ?? [])
     .filter((j: { title: string; category: string }) => relevant(`${j.title} ${j.category}`))
-    .slice(0, 25)
+    .slice(0, 40)
     .map(
       (j: {
         id: number
@@ -138,7 +138,7 @@ export async function fetchRemoteOK(query: string): Promise<Job[]> {
       const hay = `${j.position ?? ''} ${(j.tags ?? []).join(' ')}`
       return relevant(hay) && (q.split(' ').some((w) => w.length > 2 && hay.toLowerCase().includes(w)) || AI_RE.test(hay))
     })
-    .slice(0, 25)
+    .slice(0, 40)
     .map(
       (j: {
         id: string
@@ -178,7 +178,7 @@ export async function fetchArbeitnow(): Promise<Job[]> {
   const now = new Date().toISOString()
   return (data.data ?? [])
     .filter((j: { title?: string; tags?: string[]; job_types?: string[] }) => relevant(`${j.title ?? ''} ${(j.tags ?? []).join(' ')} ${(j.job_types ?? []).join(' ')}`))
-    .slice(0, 25)
+    .slice(0, 40)
     .map(
       (j: {
         slug: string
@@ -214,7 +214,7 @@ export async function fetchJobicy(): Promise<Job[]> {
   const now = new Date().toISOString()
   return (data.jobs ?? [])
     .filter((j: { jobTitle?: string; jobIndustry?: string[] }) => relevant(`${j.jobTitle ?? ''} ${(j.jobIndustry ?? []).join(' ')}`))
-    .slice(0, 25)
+    .slice(0, 40)
     .map(
       (j: {
         id: number

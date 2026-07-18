@@ -11,7 +11,10 @@ const STOP_TITLE = /\b(intern|internship|engineer|developer|scientist|full[\s-]?
 
 export function dedupeKey(company: string, title: string, location: string): string {
   const c = company.toLowerCase().replace(/\b(inc|llc|ltd|technologies|technology|labs|ai|the)\b/g, '').replace(/[^a-z0-9]/g, '')
-  const t = title.toLowerCase().replace(STOP_TITLE, '').replace(/[^a-z0-9]/g, '').slice(0, 14)
+  // Session 7 (H3): 14 chars over-merged distinct roles of one company ("agentic ai platform
+  // developer" vs "agentic ai developer" collided). 40 keeps real cross-source dupes collapsing
+  // while distinct roles stay distinct.
+  const t = title.toLowerCase().replace(STOP_TITLE, '').replace(/[^a-z0-9]/g, '').slice(0, 40)
   const l = location.toLowerCase().match(/[a-z]+/)?.[0] ?? ''
   return `${c}|${t}|${l}`
 }

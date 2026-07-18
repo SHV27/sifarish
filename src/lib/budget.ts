@@ -12,7 +12,11 @@ export function monthKey(d = new Date()): string {
 }
 
 export const BUDGET_DEFAULTS: Omit<Budget, 'used' | 'monthKey'>[] = [
-  { id: 'jsearch', label: 'JSearch (job aggregation)', monthlyCap: 300, perRunCap: 10, unit: 'requests' },
+  // Session 7 (Law-12 live check, 18-Jul-2026): the JSearch FREE plan is 200 requests/month —
+  // the old 300 cap was a silent-burn promise the provider never made. 6/sweep × ~30 daily
+  // sweeps ≈ 180 stays inside the real plan; breadth now comes from Adzuna rpp 50 + the widened
+  // keyless lanes + auto board scans, which cost nothing.
+  { id: 'jsearch', label: 'JSearch (job aggregation)', monthlyCap: 200, perRunCap: 6, unit: 'requests' },
   // Adzuna aggregates 18 country markets; one request = one country per sweep, so perRunCap 8 =
   // eight geographies covered each hunt (India→US→UK→CA→DE→SG→AU→NL). monthlyCap 300 ≈ 37 sweeps.
   { id: 'adzuna', label: 'Adzuna (global job aggregation)', monthlyCap: 300, perRunCap: 8, unit: 'requests' },
@@ -34,8 +38,16 @@ export async function ensureBudgets(): Promise<void> {
     // Local-first means a raised default cap (D88 widened JSearch for discovery breadth) never
     // reaches an existing vault (D59's lesson). So adopt a HIGHER cap from the defaults — but only
     // ever upward, so a value the owner deliberately lowered in Settings is never clobbered.
-    const perRunCap = Math.max(existing.perRunCap, def.perRunCap)
-    const monthlyCap = Math.max(existing.monthlyCap, def.monthlyCap)
+    let perRunCap = Math.max(existing.perRunCap, def.perRunCap)
+    let monthlyCap = Math.max(existing.monthlyCap, def.monthlyCap)
+    // Session 7 CORRECTIVE exception (I8 beats D59 here): the old jsearch defaults (300/10) were
+    // OUR numbers, never owner-set, and they exceed the provider's real free plan (200/mo,
+    // verified live 18-Jul-2026). A vault still carrying exactly those defaults is corrected to
+    // the honest caps; any other value is the owner's and stands.
+    if (def.id === 'jsearch' && existing.monthlyCap === 300 && existing.perRunCap === 10) {
+      monthlyCap = 200
+      perRunCap = 6
+    }
     const usedReset = existing.monthKey !== mk // new month → reset the meter
     if (perRunCap !== existing.perRunCap || monthlyCap !== existing.monthlyCap || usedReset) {
       await db.budgets.put({ ...existing, perRunCap, monthlyCap, used: usedReset ? 0 : existing.used, monthKey: mk })
