@@ -241,6 +241,22 @@ const TRIM_LEVELS: TrimLevel[] = [
   { bulletsPerProject: 1, maxProjects: 2, maxAchievements: 0, includePositions: false, includeCerts: false, skillsCap: 10 },
 ]
 
+/**
+ * Session 7.2 (owner-caught: the casting sheet said "Leading: 3 projects", the page showed 2 —
+ * GLOAMING silently vanished): THE CAST IS A CONTRACT. Under an editorial plan, the trim ladder
+ * used to drop PROJECT COUNT while richer descriptions/bullets survived — a project the Editor
+ * cast (and the owner saw cast) could be eaten by another project's description length. His law:
+ * "kisi ki description ki wajah se ek project reh hi jaye — that's wrong." So every ladder level
+ * now keeps AT LEAST the cast count; bullets, descriptions, achievements, positions, certs and
+ * skills all shrink FIRST, and only the two absolute-last-resort levels (the practically-
+ * impossible single-entry-too-long case) may ever break the contract instead of erroring.
+ */
+function trimLevelsFor(castCount: number): TrimLevel[] {
+  if (castCount <= 0) return TRIM_LEVELS
+  const n = Math.min(castCount, 4)
+  return [...TRIM_LEVELS.map((lv) => ({ ...lv, maxProjects: Math.max(lv.maxProjects, n) })), ...TRIM_LEVELS.slice(-2)]
+}
+
 export function compileResume(input: CompileInput): CompiledResume {
   const { identity, ledger, decode, coverage, jobId } = input
   // Suppression is a single gate at the top: whatever he told the tailor to drop for this role
@@ -487,7 +503,8 @@ export function compileResume(input: CompileInput): CompiledResume {
   }
 
   // -- Solve the one-page constraint: tighten until it fits --
-  for (const lv of TRIM_LEVELS) {
+  // The cast is a contract (S7.2): every level keeps at least the cast count; richness yields first.
+  for (const lv of trimLevelsFor(input.editorial?.order.length ?? 0)) {
     const lines = assemble(lv)
     if (estimateHeight(lines) <= USABLE_HEIGHT) return { lines, jobId }
   }

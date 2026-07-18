@@ -312,3 +312,38 @@ describe('A9 — the Editor\'s plan dedupe is concept-aware (source gate)', () =
     expect(src.slice(pickIdx, pickIdx + 600)).toContain('bulletOverlapSameProject')
   })
 })
+
+describe('THE CAST IS A CONTRACT (owner-caught: 3 cast, 2 rendered — GLOAMING vanished)', () => {
+  it('every cast project renders even under heavy description/bullet pressure', () => {
+    const long = (s: string) =>
+      `${s} — engineered with retrieval pipelines, evaluation harnesses, deterministic fallbacks, calibrated scoring, structured guardrails and full deployment automation so the system stays provable end to end under real production load`
+    const mk = (i: number): LedgerEntry => ({
+      ...shippedProject,
+      id: `proj-cast-${i}`,
+      title: `CASTPROJ${i} — a heavy project`,
+      summary: long(`A very rich product description for project number ${i}, written at full length the way his READMEs actually read, with two complete sentences of context`),
+      bullets: [1, 2, 3, 4].map((b) => ({
+        id: `cp${i}-b${b}`,
+        text: long(`Bullet ${b} of project ${i}: built subsystem ${b} handling ${b}00 requests`),
+        keywords: ['python', 'llm'],
+      })),
+    })
+    const heavy = [mk(1), mk(2), mk(3)]
+    const ledger = [...SEED_LEDGER.filter((e) => e.kind !== 'project'), ...heavy]
+    const decode = decodeJD('AI engineer. Must have: Python, LLM.')
+    const resume = compileResume({
+      identity: SEED_IDENTITY,
+      ledger,
+      decode,
+      coverage: matchEvidence(decode, ledger),
+      jobId: 'j-cast',
+      editorial: { order: ['proj-cast-1', 'proj-cast-2', 'proj-cast-3'], bullets: {} },
+    })
+    for (const id of ['proj-cast-1', 'proj-cast-2', 'proj-cast-3']) {
+      expect(
+        resume.lines.some((l) => l.kind === 'entry-title' && l.ledgerIds.includes(id)),
+        `${id} was cast — it MUST render; richness yields before coverage does`,
+      ).toBe(true)
+    }
+  })
+})
