@@ -2,7 +2,31 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 7 "The Taaj" — the classic résumé + the LinkedIn-parity hunt ✦
+## Status: Session 7.2 "The Sanad" — zero amnesia, honest arithmetic, one copy of every rule ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **669 passed | 2 skipped (671) gates** · tsc
+clean · warning-free build · deployed + served-hash verified (index-CbwWssTa) · adversary +
+fresh-eyes-demo proofs executed live (D154). Method: THREE read-only forensic audits first;
+only audit-proven defects fixed, each with its regression gate. Shipped (D151-D154):
+
+- **WS-A · Zero amnesia (D151):** ONE recompile authority — compilePlan + Nazar exclusions +
+  summary + framing overrides persist on the packet and survive EVERY op (they used to vanish
+  on any Baithak edit/toggle/overrule); the letter + polish pass the same hygiene/dedupe gates
+  as the résumé; phase-2 failures run the deterministic floors visibly (retry chip); the
+  professional summary is JD-aware (proven must-haves, deterministic, I1).
+- **WS-B · Arithmetic that closes (D152):** daily rations keep JSearch/Adzuna/Tavily alive ALL
+  month (the 6h-cadence had killed the LinkedIn lane by day ~8, silently); budget skips are
+  NAMED in the yield + UI; proven hunts earn page-2 depth; vision class-quotas finally sync the
+  Europe/theme/dream-company hunts; the dedupe key keeps role identity and re-sightings heal
+  staleness; board scans join the dedupe (one card per role, board-verified wins).
+- **WS-C · Honest meters, no dead ends (D153):** the Groq meter finally moves (and the Dimaag
+  Ledger names WHICH free brain answered); Mark-applied stamps appliedAt (nudges/weekly counts
+  live); Guru remembers across screens, keeps citations, greets by live identity, and its
+  actions navigate; the letter-Baithak shares the ONE evidence rule; apply-plan drafts read the
+  live vision; Dak says "reconnect" instead of "nothing new"; keyless re-forge can't loop;
+  onboarding lands on the first packet (L7); + the small-lies sweep.
+
+## Prior: Session 7 "The Taaj" — the classic résumé + the LinkedIn-parity hunt ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **592 passed | 2 skipped (594) gates** · tsc clean ·
 warning-free build. Owner's brief: résumé like the selected-student canon + hunt like LinkedIn +

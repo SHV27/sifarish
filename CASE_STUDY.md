@@ -707,6 +707,39 @@ titles to 14 chars and over-merged distinct roles. None was a mystery; all were 
 **Lesson: "our results are worse than the competitor's" is almost never one big cause — audit the
 pipeline valve by valve, and fix the ordering/caps/keys before dreaming of new sources.**
 
+### 3.31 · STATE AMNESIA — every recompile forgot a different field (Session 7.2)
+
+The first compile knew everything: the Nazar's exclusions, the professional summary, the framing
+rewrites, the Editor's bullet plan. But FIVE recompile paths (Baithak op, summary toggle,
+overrule, set-entry, phase-2 retry) each re-assembled the compile options ad-hoc — and each
+forgot a different subset. A résumé the owner had perfected could silently regress the moment he
+touched ANY later control, and no single-path test could see it (each path was individually
+"correct"). Cure: the packet's persisted state IS the compile input (`compilePlan`,
+`excludedBulletIds`, `summaryOn`, `bulletOverrides` all live on the Packet), and ONE
+`recompilePacket` authority reads it — an op may change only its own field.
+**Lesson: when N call sites re-derive shared state, the bug isn't in any one of them — it's the
+absence of the single authority. Persist the intent, not the outcome.**
+
+### 3.32 · ARITHMETIC THAT LIES — the budget the cadence had already spent (Session 7.2)
+
+Autopilot swept every 6h × 6 JSearch credits against a 200/month cap: the only LinkedIn-reaching
+lane was mathematically dead from day ~8, silently, every month — while the Settings bar looked
+healthy and a skipped lane was indistinguishable from a lane that found nothing. The mirror
+image: the Groq budget bar read 0/5000 forever because Guru/polish never gated or recorded spend.
+Cure: per-lane daily rations (⌊cap/30⌋), skips NAMED with reasons in the sweep yield, and every
+metered caller both gates and records. **Lesson: two correct constants (6h cadence, 6/run cap)
+can compose into a broken system — check the ARITHMETIC of the whole loop, not each constant;
+and a meter nobody writes to is worse than no meter, because it testifies falsely.**
+
+### 3.33 · ONE RULE, THREE COPIES — the fix that reached two of them (Session 7.2)
+
+D136 widened `hasEvidence` so a fact from his own README stopped being refused as fabrication —
+in `baithak/intent.ts`. The letter-Baithak's PRIVATE copy of the same function never got the fix,
+so the same genuine ask was honored on the résumé surface and refused on the letter surface. The
+identity-ban heuristic had likewise grown two slightly different implementations (compiler vs
+forge). **Lesson: the second copy of a rule is a fork of its future bugs. When a fix lands, grep
+for the rule's siblings — or better, make the copy impossible by exporting the one function.**
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.

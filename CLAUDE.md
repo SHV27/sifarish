@@ -989,6 +989,63 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   the USER'S DATA, not of the code — a proof that runs on the seed proves the machine, and only
   the repair loop proves the product.
 
+--- Session 7.2 "The Sanad" (owner: "har cheez ko improvement ki zarurat hai — errors ho hi na";
+  three read-only audits FIRST, then only audit-proven fixes, each with its regression gate.
+  19-Jul-2026) ---
+- D151: STATE AMNESIA KILLED AT THE ROOT (WS-A). Five recompile paths each forgot different
+  fields — Baithak ops dropped the professional summary, setSummary dropped the Nazar exclusions
+  + framing rewrites, overrule dropped all three plus the editorial bullet plan, and Nazar's
+  excludedBulletIds were never persisted at all (judged-out twins returned on ANY later edit).
+  Cure: compilePlan + excludedBulletIds persist ON THE PACKET; ONE recompilePacket authority
+  reads the persisted state and an op may change only its own field. Re-runs carry full red-team
+  context (decode+archetype+inventory). Plus: the LETTER passes the same hygiene gates as the
+  résumé (the vercel.app** class rendered verbatim in letters); polishPacket re-enters the
+  sanitizer + page-twin check (it mutated lines AFTER the gates); a phase-2 failure runs the
+  deterministic floors VISIBLY (enhanceFailed + retry chip) instead of silently shipping a
+  never-judged fast packet; the summary is JD-aware deterministically (proven must-haves only,
+  I1); education/achievement/cert lines + Shelf display get cleanSummaryForDisplay; ONE
+  identity-ban heuristic (compiler+forge shared); the Editor's plan dedupe is concept-aware.
+- D152: THE HUNT'S ARITHMETIC FINALLY CLOSES (WS-B). The audit's math: 6h autopilot sweeps × 6
+  credits = the 200/mo JSearch budget dead by day ~8, silently, every month — the "LinkedIn is
+  fresher" experience was mostly a spent wallet. Cure: DAILY RATIONS (⌊cap/30⌋ for jsearch/
+  adzuna/tavily; reasoning lanes deliberately unrationed), skips NAMED with reasons in the
+  SweepYield + both UIs (I8's legible half); page-2 depth for hunts that proved themselves
+  (≤2/sweep, inside the ration); vision-net CLASS QUOTAS (roles 8 · regions 2 · themes 4 ·
+  dream-companies 2) so the Europe/theme/dream-company hunts finally reach savedHunts (the cap
+  used to discard them all — D69's disease as cap math); datePosted 'all' honored (was silently
+  'month'); market rotation de-drifted (no double-India, window-width advance); the dedupe key
+  keeps discipline+seniority ("Senior ML Engineer" vs "ML Engineer Intern" no longer collide)
+  and a re-sighted duplicate HEALS the survivor's staleness; board scans join the dedupe (board
+  wins, absorbs pipeline state — no more double cards); Remotive gets query cores; Adzuna's
+  query index rotates.
+- D153: HONEST METERS, NO DEAD ENDS, ONE COPY OF EVERY RULE (WS-C). The 'groq' budget gated and
+  recorded NOTHING (bar at 0/5000 forever while Guru/polish burned) → both gate + record now,
+  and the Dimaag Ledger names WHICH free brain answered (per-model counts — the D144
+  observability gap). Morcha's "Mark applied" was a bare status write (no appliedAt → nudges/
+  counters never fired) → setJobStatus routes 'applied' through markApplied, ONE door. Guru:
+  thread persists to the (declared, backed-up, never-written) guruThreads table; citations
+  survive the LLM path (I7); greeting reads live identity (demo saw "Namaste Shaurya");
+  open_radar action finally navigates. Letter-Baithak shares D136's hasEvidence (the third copy
+  of the same dumbness). ApplyPlan reads the LIVE vision (window/October/remote/identity were
+  2027-era hardcodes); export filenames follow the résumé's own name line. probeAlive routes his
+  repos via /api/gh (the D86 console-4xx class had crept back). Dak distinguishes an expired
+  token from "nothing new" (it printed the lie verbatim). Keyless re-forge can't loop or churn
+  packets (lastReforgeAt stamps only on a real upgrade). Onboarding honors the 60-second
+  first-packet handoff (`void onDone` — the L7 promise was wired from App and explicitly
+  discarded). Small-lies sweep: forceAddRepo deleted, stale gpt-oss/Groq-only copy fixed,
+  Settings KEY_INFO gains GEMINI+ADZUNA, keyless intel tombstones (1d), dimaagCache prunes at
+  600, Guru's pulse digest filters dismissed, follow-up draft reachable any day, Retro→Taleem is
+  a nav link, QuickAdd anchored, Briefing memoized.
+- D154: S7.2 PROOFS. Machine: 669 passed | 2 skipped (671) · tsc clean · warning-free build.
+  Deployed; prod served-hash verified (index-CbwWssTa). Adversary live: 8/8 metered functions
+  403 on no-Origin POST; fabricated token → keyless; /api/gh?kind=repo returns clean 200.
+  Fresh-eyes live (scripts/demo-smoke.mjs, wiped browser → Demo): all 7 screens, Arjun persona
+  visible, ZERO owner-name greeting leak (C7 verified live), 0 metered POSTs, ERRORS(0).
+  Money: no new metered surface (the only new API path is the read-only public /api/gh repo
+  probe); ration arithmetic gate-simulated (30 days × 4 sweeps ≤ cap, lane alive on day 30).
+  Owner passcode remains server-side only (D108) — the owner-mode happy path is his own click,
+  as designed.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
