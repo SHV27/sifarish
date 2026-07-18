@@ -557,6 +557,8 @@ export interface DimaagUsageRow {
   tokens: number
   cacheHits: number // identical input served from cache (0 cost)
   fallbacks: number // deterministic heuristic used (keyless / over-budget; 0 cost)
+  /** Session 7.2 (C1): per-model call counts — WHICH free brain answered (Gemini/Groq lanes). */
+  models?: Record<string, number>
 }
 
 // ---------- Settings ----------

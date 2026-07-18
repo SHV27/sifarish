@@ -339,7 +339,7 @@ export async function smartBaithak(utterance: string, packet: Packet, ledger: Le
   }
   // Session 6: metered through the same ledger as every reasoning feature (recordUsage spends the
   // dimaag budget internally — the old direct recordSpend left this feature invisible in Settings).
-  await recordUsage('baithak.smart', 'reasoning', 'call', data.tokens ?? 0)
+  await recordUsage('baithak.smart', 'reasoning', 'call', data.tokens ?? 0, (data as { model?: string }).model)
 
   const r = data.result
   if (r.refuse?.term) {

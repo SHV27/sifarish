@@ -14,10 +14,14 @@ import { storagePersisted, autoBackup, restoreFromLatest, requestDurableStorage 
 import { hasSyncKey, lastSyncAt, syncConfigured, pushVault, pullVault, clearSyncKey } from '../lib/sync'
 import { addSavedHunt, syncVisionHunts, proposeHuntEdits } from '../lib/khabri/client'
 
+// Session 7.2 (C12): two sessions of new providers finally reach this panel — Adzuna (D92) and
+// Gemini (D144, now the PRIMARY reasoning lane) were live in prod and absent here.
 const KEY_INFO = [
-  { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
+  { name: 'GEMINI_API_KEY', enables: 'Primary free reasoning lane (Editor\'s Desk, forge, Nazar)', without: 'Reasoning falls back to Groq, then deterministic heuristics' },
+  { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish + reasoning fallback lane', without: 'Guru uses its deterministic router; resume stays as compiled' },
   { name: 'TAVILY_API_KEY', enables: 'Hiring signals, company intel, market pulse', without: 'Discovery runs on the free lanes; no signal/intel/pulse' },
-  { name: 'JSEARCH_API_KEY', enables: 'LinkedIn/Indeed/Glassdoor job aggregation', without: 'Discovery via Hacker News + Remotive + RemoteOK' },
+  { name: 'JSEARCH_API_KEY', enables: 'LinkedIn/Indeed/Glassdoor job aggregation', without: 'Discovery via the keyless lanes (boards, Remotive, RemoteOK, …)' },
+  { name: 'ADZUNA_APP_ID + ADZUNA_APP_KEY', enables: 'Global job aggregation across 19 country markets, with salaries', without: 'Global reach via the keyless lanes only' },
   { name: 'GITHUB_PAT', enables: 'Nabz at 5,000 req/hr', without: 'Nabz at 60 req/hr (still works)' },
 ]
 
@@ -534,11 +538,19 @@ function DimaagLedger() {
           </p>
           <div className="space-y-1">
             {rows.slice().sort((a, b) => b.calls - a.calls).map((r) => (
-              <div key={r.id} className="flex items-center justify-between text-xs ledger-rule pt-1">
-                <span className="text-ink">{r.feature}</span>
-                <span className="font-mono text-ink-soft">
-                  {r.calls} call{r.calls === 1 ? '' : 's'} · {r.cacheHits} cached · {r.fallbacks} heuristic · {r.tokens} tok
-                </span>
+              <div key={r.id} className="ledger-rule pt-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-ink">{r.feature}</span>
+                  <span className="font-mono text-ink-soft">
+                    {r.calls} call{r.calls === 1 ? '' : 's'} · {r.cacheHits} cached · {r.fallbacks} heuristic · {r.tokens} tok
+                  </span>
+                </div>
+                {/* Session 7.2 (C1): WHICH free brain answered — the D144 router's per-provider burn was invisible. */}
+                {r.models && Object.keys(r.models).length > 0 && (
+                  <p className="font-mono text-[10px] text-ink-faint mt-0.5">
+                    {Object.entries(r.models).map(([m, n]) => `${m.replace(/^(openai\/|models\/)/, '')} ×${n}`).join(' · ')}
+                  </p>
+                )}
               </div>
             ))}
           </div>

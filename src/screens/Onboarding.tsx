@@ -8,7 +8,6 @@ import { resumeStrength } from '../lib/strength'
  * The first packet flows from Radar's top card immediately after.
  */
 export function Onboarding({ onDone }: { onDone: (jobId: string) => void }) {
-  void onDone
   const [step, setStep] = useState<0 | 1>(0)
   const entries = useLiveQuery(() => db.ledger.toArray()) ?? []
   const watchlist = useLiveQuery(() => db.watchlist.toArray()) ?? []
@@ -17,6 +16,12 @@ export function Onboarding({ onDone }: { onDone: (jobId: string) => void }) {
 
   const finish = async () => {
     await db.settings.update('app', { onboarded: true })
+    // Session 7.2 (C11): the L7 promise, honored — the handoff callback was wired from App and
+    // then explicitly discarded, dumping the user on the Shelf. If a role is already known,
+    // land on its packet (which auto-tailors) — taste of success before any input is demanded.
+    const jobs = await db.jobs.toArray()
+    const first = jobs.find((j) => j.status === 'found' && !j.closed && !j.dismissed) ?? jobs[0]
+    if (first) onDone(first.id)
   }
 
   if (!identity) return null
@@ -61,8 +66,8 @@ export function Onboarding({ onDone }: { onDone: (jobId: string) => void }) {
           <>
             <h1 className="font-display font-bold text-2xl text-ink">Pick your hunt</h1>
             <p className="text-ink-soft mt-1 text-sm">
-              {watchlist.length} AI-first boards, every one probed live and returning real jobs today.
-              ★ marks conviction picks. Edit anytime in Settings.
+              {watchlist.length} AI-first boards on the watchlist — each was live-probed when it was
+              added, and every scan re-verifies. ★ marks conviction picks. Edit anytime in Settings.
             </p>
             <div className="mt-4 max-h-72 overflow-y-auto grid sm:grid-cols-2 gap-1.5">
               {watchlist.map((w) => (

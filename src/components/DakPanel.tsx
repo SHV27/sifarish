@@ -39,7 +39,14 @@ export default function DakPanel() {
   const check = async () => {
     setBusy(true)
     const sweep = await sweepMail()
-    setNote(sweep.newCards > 0 ? `${sweep.newCards} new reply card(s).` : 'Nothing new — the watchman keeps watching.')
+    // Session 7.2 (C9): an expired token is its own truth — "nothing new" was a lie before.
+    // The session token lives only in memory (by design), so this is the honest hourly reality.
+    if (sweep.authExpired) {
+      setConnected(false)
+      setNote('Gmail session expired (the token lives only in memory, by design). Reconnect to keep watching.')
+    } else {
+      setNote(sweep.newCards > 0 ? `${sweep.newCards} new reply card(s).` : 'Nothing new — the watchman keeps watching.')
+    }
     setBusy(false)
   }
 

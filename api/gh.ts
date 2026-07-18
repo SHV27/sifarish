@@ -65,6 +65,18 @@ export default async function handler(req: Request): Promise<Response> {
       return json({ ok: true, readme })
     }
 
+    // Session 7.2 (C8): repo-existence probe for the Baithak's attach-link liveness check —
+    // the browser used to hit api.github.com directly, re-introducing the exact console-4xx
+    // class this proxy was built to kill (and burning the 60/hr anonymous budget).
+    if (kind === 'repo') {
+      const repo = (url.searchParams.get('repo') ?? '').replace(/[^\w.-]/g, '')
+      if (!repo) return json({ ok: false, status: 400 })
+      const res = await fetch(`https://api.github.com/repos/${USER}/${repo}`, {
+        headers: ghHeaders('application/vnd.github+json'),
+      })
+      return json({ ok: true, alive: res.ok })
+    }
+
     return json({ ok: false, status: 400, error: 'unknown kind' })
   } catch {
     // Network hiccup server-side → tell the client to fall back to cache; never throw at the user.

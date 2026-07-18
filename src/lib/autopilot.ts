@@ -58,4 +58,20 @@ export async function runAutopilot(): Promise<void> {
       runPulse().catch(() => {})
     }, 4000)
   }
+
+  // Session 7.2 (C12): the reasoning cache had NO pruning — unbounded growth per unique input
+  // hash, forever. Keep the newest 500; identical inputs re-cache on their next real call.
+  setTimeout(() => {
+    void (async () => {
+      try {
+        const n = await db.dimaagCache.count()
+        if (n > 600) {
+          const stale = await db.dimaagCache.orderBy('at').limit(n - 500).primaryKeys()
+          await db.dimaagCache.bulkDelete(stale)
+        }
+      } catch {
+        /* housekeeping only */
+      }
+    })()
+  }, 8000)
 }

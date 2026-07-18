@@ -97,10 +97,19 @@ export function buildCards(metas: MailMeta[], jobs: Job[], now = new Date()): Da
 
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me'
 
+/** Session 7.2 (C9): an EXPIRED token is a different truth from "no mail" — it must surface. */
+export class GmailAuthError extends Error {}
+
 async function gmailGet<T>(path: string, tokenValue: string): Promise<T | null> {
+  let res: Response
   try {
-    const res = await fetch(`${GMAIL_API}${path}`, { headers: { Authorization: `Bearer ${tokenValue}` } })
-    if (!res.ok) return null
+    res = await fetch(`${GMAIL_API}${path}`, { headers: { Authorization: `Bearer ${tokenValue}` } })
+  } catch {
+    return null // network hiccup — quiet is honest here
+  }
+  if (res.status === 401 || res.status === 403) throw new GmailAuthError('gmail token expired')
+  if (!res.ok) return null
+  try {
     return (await res.json()) as T
   } catch {
     return null
@@ -116,35 +125,42 @@ function header(headers: { name: string; value: string }[] | undefined, name: st
  * land as pending cards. Returns how many NEW cards appeared. No token → 0, silently (the
  * feature hides when unconnected; nothing else degrades).
  */
-export async function sweepMail(): Promise<{ newCards: number; checked: number }> {
+export async function sweepMail(): Promise<{ newCards: number; checked: number; authExpired?: boolean }> {
   const tokenValue = getAccessToken()
   if (!tokenValue) return { newCards: 0, checked: 0 }
   const jobs = await db.jobs.toArray()
   const watched = jobs.filter((j) => ['applied', 'followup', 'interview'].includes(j.status))
   if (watched.length === 0) return { newCards: 0, checked: 0 }
 
-  const list = await gmailGet<{ messages?: { id: string }[] }>(
-    `/messages?q=${encodeURIComponent('newer_than:45d in:inbox -category:promotions')}&maxResults=40`,
-    tokenValue,
-  )
-  const ids = list?.messages?.map((m) => m.id) ?? []
-  const known = new Set((await db.dak.toArray()).map((c) => c.id))
   const metas: MailMeta[] = []
-  for (const id of ids) {
-    if (known.has(id)) continue
-    const msg = await gmailGet<{
-      id: string
-      snippet?: string
-      payload?: { headers?: { name: string; value: string }[] }
-    }>(`/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, tokenValue)
-    if (!msg) continue
-    metas.push({
-      id: msg.id,
-      from: header(msg.payload?.headers, 'From'),
-      subject: header(msg.payload?.headers, 'Subject'),
-      date: header(msg.payload?.headers, 'Date'),
-      snippet: msg.snippet ?? '',
-    })
+  try {
+    const list = await gmailGet<{ messages?: { id: string }[] }>(
+      `/messages?q=${encodeURIComponent('newer_than:45d in:inbox -category:promotions')}&maxResults=40`,
+      tokenValue,
+    )
+    const ids = list?.messages?.map((m) => m.id) ?? []
+    const known = new Set((await db.dak.toArray()).map((c) => c.id))
+    for (const id of ids) {
+      if (known.has(id)) continue
+      const msg = await gmailGet<{
+        id: string
+        snippet?: string
+        payload?: { headers?: { name: string; value: string }[] }
+      }>(`/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`, tokenValue)
+      if (!msg) continue
+      metas.push({
+        id: msg.id,
+        from: header(msg.payload?.headers, 'From'),
+        subject: header(msg.payload?.headers, 'Subject'),
+        date: header(msg.payload?.headers, 'Date'),
+        snippet: msg.snippet ?? '',
+      })
+    }
+  } catch (e) {
+    // Session 7.2 (C9): "Nothing new — the watchman keeps watching" was a LIE when the token had
+    // expired. An auth failure now surfaces as its own state; the panel offers Reconnect (I6).
+    if (e instanceof GmailAuthError) return { newCards: 0, checked: 0, authExpired: true }
+    return { newCards: 0, checked: 0 }
   }
 
   const cards = buildCards(metas, jobs)

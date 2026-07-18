@@ -408,8 +408,11 @@ function QuickAdd() {
       </button>
     )
 
+  // Session 7.2 (C12): anchored to its own relative wrapper — the old `absolute right-6 mt-10`
+  // positioned against whatever ancestor happened to be positioned (fragile by luck).
   return (
-    <div className="dossier p-3 absolute right-6 z-20 w-72 mt-10 animate-dossier-in">
+    <div className="relative inline-block">
+    <div className="dossier p-3 absolute right-0 top-full mt-2 z-20 w-72 animate-dossier-in">
       <div className="flex gap-1 mb-2">
         {(['achievement', 'certification', 'skill'] as const).map((k) => (
           <button
@@ -444,6 +447,7 @@ function QuickAdd() {
           Add · stamped Shipped
         </button>
       </div>
+    </div>
     </div>
   )
 }

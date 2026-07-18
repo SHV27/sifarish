@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, afterAll, vi } from 'vitest'
+import { readFileSync } from 'fs'
 import { db } from '../src/db/db'
-import { overviewRepos, forceAddRepo, addRepoToLedger, dismissSuggestion, computeSuggestions, distillReadme, type GhRepo } from '../src/lib/nabz/github'
+import { overviewRepos, addRepoToLedger, dismissSuggestion, computeSuggestions, distillReadme, type GhRepo } from '../src/lib/nabz/github'
 import { SEED_LEDGER } from './helpers'
 
 /**
@@ -81,35 +82,24 @@ describe('overviewRepos — nothing is ever silently invisible (D47)', () => {
   })
 })
 
-describe('forceAddRepo — the manual override always works (D47)', () => {
-  it('resurfaces a DISMISSED repo as a fresh pending suggestion', async () => {
+describe('the D47 guarantee lives in addRepoToLedger (Session 7.2: forceAddRepo deleted — dead code lies)', () => {
+  it('a DISMISSED repo can still be added in one click — nothing hides forever', async () => {
     const repos = [repo('sifarish')]
     await computeSuggestions(repos)
     await dismissSuggestion('sug-new-sifarish')
     expect((await db.suggestions.get('sug-new-sifarish'))?.status).toBe('dismissed')
 
-    await forceAddRepo(repos[0])
-    const row = await db.suggestions.get('sug-new-sifarish')
-    expect(row?.status).toBe('pending')
-    expect(row?.draftEntry?.title).toBe('sifarish')
+    const id = await addRepoToLedger(repos[0])
+    expect(await db.ledger.get(id), 'the entry lands in the ledger regardless of dismiss history').toBeDefined()
   })
 
   it('works even when no suggestion ever existed (fresh add)', async () => {
-    const s = await forceAddRepo(repo('brand-new-thing'))
-    expect(s.status).toBe('pending')
-    expect((await db.suggestions.get('sug-new-brand-new-thing'))?.status).toBe('pending')
+    const id = await addRepoToLedger(repo('brand-new-thing'))
+    expect(await db.ledger.get(id)).toBeDefined()
   })
 
-  it('a repeated sync no longer re-hides a resurfaced repo (isDismissed sees "pending", not "dismissed")', async () => {
-    const repos = [repo('sifarish')]
-    await computeSuggestions(repos)
-    await dismissSuggestion('sug-new-sifarish')
-    await forceAddRepo(repos[0])
-    const resynced = await computeSuggestions(repos)
-    // computeSuggestions won't re-push (prior exists), but it must not be blocked from
-    // showing in the live pending view — the record itself is 'pending' again.
-    expect((await db.suggestions.get('sug-new-sifarish'))?.status).toBe('pending')
-    expect(resynced.some((s) => s.repoName === 'sifarish')).toBe(true)
+  it('the dead export is gone (source gate)', () => {
+    expect(readFileSync('src/lib/nabz/github.ts', 'utf8')).not.toContain('export async function forceAddRepo')
   })
 })
 

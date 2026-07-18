@@ -53,7 +53,7 @@ export function Why({ rationale, label = 'Why?' }: { rationale: Rationale; label
           )}
           <p className="text-[10px] text-ink-faint">
             {rationale.by === 'dimaag'
-              ? 'Reasoned by the Dimaag core (gpt-oss-120b), stored and inspectable.'
+              ? 'Reasoned by the Dimaag core (Gemini → Groq free-brain chain), stored and inspectable.'
               : 'Deterministic heuristic (keyless or budget-capped) — honest, just less eloquent.'}
           </p>
         </div>

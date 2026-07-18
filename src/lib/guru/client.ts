@@ -4,6 +4,7 @@ import { buildSystemPrompt } from './context'
 import { route, honestyGate, visionAlignmentScan, type RoutedReply } from './router'
 import { runSweep } from '../khabri/client'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
+import { allowedThisRun, recordSpend } from '../budget'
 
 /**
  * Guru orchestration. The deterministic router runs FIRST on every turn and owns the
@@ -48,13 +49,20 @@ export async function runAction(action: RoutedReply['action']): Promise<string |
 export async function streamGuru(history: GuruMessage[], onToken: (t: string) => void): Promise<string | null> {
   // Darshak/demo browsers get the deterministic router only — zero token spend (D44).
   if (!meteredCallsAllowed()) return null
+  // Session 7.2 (C1) — I8 finally reaches Guru: the 'groq' budget existed in Settings and
+  // gated NOTHING (the bar read 0/5000 forever while real calls burned). Over-budget → the
+  // deterministic router carries the turn (I4), and the Settings bar says why.
+  if ((await allowedThisRun('groq')) <= 0) return null
   const ledger = await db.ledger.toArray()
   const jobs = await db.jobs.toArray()
   const settings = await db.settings.get('app')
   if (!settings) return null
   // Guru v3: the compiled dossier on EVERY turn — vision + avoids + guardrail + path briefs +
   // pipeline + recent pulse + ledger. Retrieved, not hoped for.
-  const pulse = await db.pulse.orderBy('at').reverse().limit(5).toArray().catch(() => [])
+  // C12: dismissed proposals are HIS verdict — they don't re-enter the prompt as live briefs.
+  const pulse = (await db.pulse.orderBy('at').reverse().limit(15).toArray().catch(() => []))
+    .filter((p) => p.status !== 'dismissed')
+    .slice(0, 5)
   // Session 7 (WS-G): the live config rides every turn — Guru steers from what IS, not from
   // guesswork, and every proposed edit names its human-confirmed door.
   const [hunts, budgets, watchlist] = await Promise.all([
@@ -126,8 +134,10 @@ export async function streamGuru(history: GuruMessage[], onToken: (t: string) =>
       }
     }
   } catch {
+    if (full.length > 0) await recordSpend('groq', 1) // the tokens were consumed either way (C1)
     return full.length > 0 && replyClean(full, settings.visionProfile) ? full : null
   }
+  if (full.length > 0) await recordSpend('groq', 1) // C1: every real Guru call moves the meter
   return replyClean(full, settings.visionProfile) ? full : null
 }
 

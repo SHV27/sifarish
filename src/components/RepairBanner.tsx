@@ -67,12 +67,20 @@ export default function RepairBanner() {
           waiting++
         }
       }
-      await db.settings.update('app', { lastReforgeAt: new Date().toISOString() })
+      // Session 7.2 (C10): lastReforgeAt stamps ONLY when something actually upgraded — a
+      // zero-change run used to force EVERY stored packet to re-tailor itself on next open
+      // (full buildPacket spend for no content change), and a keyless vault could loop forever.
+      if (upgraded > 0) await db.settings.update('app', { lastReforgeAt: new Date().toISOString() })
       setDone(
-        waiting === 0
-          ? `${upgraded} project${upgraded === 1 ? '' : 's'} re-forged with the new tailor. Open any packet — it recompiles itself with the new bullets.`
-          : `${upgraded} re-forged; ${waiting} hit the per-minute token window and stayed UNTOUCHED (never downgraded). Run this again in a minute — the finished ones are cached and instant.`,
+        upgraded === 0
+          ? `0 re-forged — the reasoning tier wasn't reachable (keyless / over-budget / rate-limited). Nothing was touched, nothing downgraded; your packets were NOT churned. Try again when the Dimaag badge is live.`
+          : waiting === 0
+            ? `${upgraded} project${upgraded === 1 ? '' : 's'} re-forged with the new tailor. Open any packet — it recompiles itself with the new bullets.`
+            : `${upgraded} re-forged; ${waiting} hit the per-minute token window and stayed UNTOUCHED (never downgraded). Run this again in a minute — the finished ones are cached and instant.`,
       )
+    } catch (e) {
+      // C12: a thrown fetchRepos used to become an unhandled rejection — now an honest state.
+      setDone(`Repair pass could not run (${e instanceof Error ? e.message : 'network'}). Nothing was touched.`)
     } finally {
       setRunning(false)
       setProgress('')

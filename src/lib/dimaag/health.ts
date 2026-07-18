@@ -35,7 +35,7 @@ export const HEALTH_COPY: Record<DimaagHealth, { label: string; hint: string }> 
   live: { label: '🧠 reasoning: live', hint: 'The LLM tier is answering — decisions carry real reasoning.' },
   degraded: {
     label: '🧠 reasoning: DEGRADED',
-    hint: 'LLM calls are mostly failing and falling back to heuristics — check the Groq key, budgets, or rate limits (Settings → Dimaag Ledger).',
+    hint: 'LLM calls are mostly failing and falling back to heuristics — check the Gemini/Groq keys, budgets, or rate limits (Settings → Dimaag Ledger).',
   },
   keyless: {
     label: '⚙ reasoning: keyless',

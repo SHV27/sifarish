@@ -201,7 +201,9 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
 async function appendApplyPlan(job: Job, append: (msg: GuruMessage) => void, onOpenPacket: (jobId: string) => void) {
   const packet = await db.packets.where('jobId').equals(job.id).first()
   const ledger = await db.ledger.toArray()
-  const plan = buildApplyPlan(job, packet, ledger)
+  const settings = await db.settings.get('app')
+  const identity = await db.identity.get('me')
+  const plan = buildApplyPlan(job, packet, ledger, { vision: settings?.visionProfile, identity })
   const text = [
     `Apply plan — ${job.title} @ ${job.company}:`,
     ...plan.steps.map((s) => `${s.n}. ${s.action} — ${s.detail}`),

@@ -210,6 +210,10 @@ function PacketView({ job }: { job: Job }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packetLoaded, packet, job.id])
 
+  // Session 7.2 (C7): the export filename carries the résumé's OWN name line (identity-honest —
+  // a demo browser exports Arjun's file, never Shaurya's).
+  const fileStem = (p: Packet) => `${(p.resume.lines[0]?.text ?? 'Resume').replace(/\W+/g, '_')}_Resume_${job.company.replace(/\W+/g, '')}`
+
   const exportPdf = async (p: Packet) => {
     try {
       const { renderResumePdf } = await import('../lib/export/pdf')
@@ -219,7 +223,7 @@ function PacketView({ job }: { job: Job }) {
         const r = await parsebackTest(p.resume, bytes)
         setParseback(r.ok ? 'parse-back ✓ 100%' : `parse-back FAILED: ${r.missing.length} missing`)
       }
-      saveFile(bytes, `Shaurya_Verma_Resume_${job.company.replace(/\W+/g, '')}.pdf`, 'application/pdf')
+      saveFile(bytes, `${fileStem(p)}.pdf`, 'application/pdf')
     } catch (e) {
       if (e instanceof CompileError) setError({ message: e.message, suggestions: e.suggestions })
     }
@@ -228,7 +232,7 @@ function PacketView({ job }: { job: Job }) {
   const exportDocx = async (p: Packet) => {
     const { renderResumeDocxBlob } = await import('../lib/export/docx')
     const blob = await renderResumeDocxBlob(p.resume)
-    saveFile(blob, `Shaurya_Verma_Resume_${job.company.replace(/\W+/g, '')}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    saveFile(blob, `${fileStem(p)}.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
   }
 
   return (
@@ -389,7 +393,7 @@ function PacketBody({
         <Baithak key={`baithak-${packet.id}`} packet={packet} />
 
         {packet.signature && <SignatureToggle packet={packet} />}
-        <CopyDoc title="Cover letter" doc={packet.coverLetter} downloadAs={`Shaurya_Verma_Cover_Letter_${job.company.replace(/\W+/g, '')}`} />
+        <CopyDoc title="Cover letter" doc={packet.coverLetter} downloadAs={`${(packet.resume.lines[0]?.text ?? 'Cover').replace(/\W+/g, '_')}_Cover_Letter_${job.company.replace(/\W+/g, '')}`} />
         <AtelierBaithak key={`atelier-${packet.id}`} packet={packet} />
         <CopyDoc title="Outreach draft (send it yourself — SIFARISH never sends)" doc={packet.outreach} />
         <ReferralAskPanel job={job} />
@@ -686,8 +690,10 @@ function IntelPanel({ packet, company }: { packet: Packet; company: string }) {
 
 function ApplyPlanPanel({ packet, job }: { packet: Packet; job: Job }) {
   const ledger = useLiveQuery(() => db.ledger.toArray()) ?? []
+  const settings = useLiveQuery(() => db.settings.get('app'))
+  const identity = useLiveQuery(() => db.identity.get('me'))
   const [open, setOpen] = useState(false)
-  const plan = buildApplyPlan(job, packet, ledger)
+  const plan = buildApplyPlan(job, packet, ledger, { vision: settings?.visionProfile, identity }) // C7: live facts
   return (
     <section className="dossier p-4 mt-4" aria-label="Apply plan">
       <button className="w-full flex items-center justify-between" onClick={() => setOpen(!open)} aria-expanded={open}>

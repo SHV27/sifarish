@@ -114,7 +114,9 @@ export function NabzPanel() {
         skipped++
       }
     }
-    await db.settings.update('app', { lastReforgeAt: new Date().toISOString() })
+    // Session 7.2 (C10): stamp only when a REAL upgrade landed — a zero-change pass must not
+    // force every stored packet to re-tailor itself (the same guard as the RepairBanner).
+    if (fixed - degraded > 0) await db.settings.update('app', { lastReforgeAt: new Date().toISOString() })
     setReforging(null)
     setReforgeNote(
       `Re-forged ${fixed} entr${fixed === 1 ? 'y' : 'ies'} from their READMEs${skipped ? ` · ${skipped} skipped (no README or nothing bullet-worthy)` : ''}. Your titles, tiers and edits are untouched.` +

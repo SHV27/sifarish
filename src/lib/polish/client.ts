@@ -4,6 +4,7 @@ import { safePolish } from './factGuard'
 import { scanSlop } from '../slop/scan'
 import { scanGuarantee } from '../slop/scan'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
+import { allowedThisRun, recordSpend } from '../budget'
 import { stripMarkdownResidue } from '../compile/typeset'
 import { bulletOverlap, HARD_DUPLICATE } from '../compile/overlap'
 
@@ -22,6 +23,8 @@ export interface PolishOutcome {
 export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
   // Darshak/demo mode: compiled text stands, zero spend (D44).
   if (!meteredCallsAllowed()) return { packet, applied: 0, rejected: 0, keyless: true }
+  // Session 7.2 (C1): polish spends the 'groq' budget it always claimed to (I8).
+  if ((await allowedThisRun('groq')) <= 0) return { packet, applied: 0, rejected: 0, keyless: true }
   const voice = (await db.voicebank.get('voice'))?.samples ?? []
 
   // Only bullet/forge lines are eligible; headings/contact/skills stay verbatim.
@@ -46,6 +49,7 @@ export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
   }
 
   if (!polished) return { packet, applied: 0, rejected: 0, keyless: true }
+  await recordSpend('groq', 1) // C1: a real polish call moves the meter
 
   let applied = 0
   let rejected = 0
@@ -86,6 +90,7 @@ export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
  */
 export async function polishDoc(doc: CompiledDoc): Promise<{ doc: CompiledDoc; applied: number; rejected: number; keyless: boolean }> {
   if (!meteredCallsAllowed()) return { doc, applied: 0, rejected: 0, keyless: true }
+  if ((await allowedThisRun('groq')) <= 0) return { doc, applied: 0, rejected: 0, keyless: true } // C1
   const voice = (await db.voicebank.get('voice'))?.samples ?? []
   // Only substantive body paragraphs are eligible; greeting and the P.S. signature stay exact.
   const eligible = doc.paragraphs
@@ -105,6 +110,7 @@ export async function polishDoc(doc: CompiledDoc): Promise<{ doc: CompiledDoc; a
     keyless = true
   }
   if (!polished) return { doc, applied: 0, rejected: 0, keyless: true }
+  await recordSpend('groq', 1) // C1
 
   let applied = 0
   let rejected = 0

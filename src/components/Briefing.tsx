@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { buildBriefing } from '../lib/briefing'
@@ -15,10 +16,17 @@ export function Briefing({ onNav, onTailor }: { onNav: (t: NavTarget) => void; o
   const settings = useLiveQuery(() => db.settings.get('app'))
   const identity = useLiveQuery(() => db.identity.get('me'))
   const watchlist = useLiveQuery(() => db.watchlist.toArray())
-  if (!jobs || !ledger || !settings || !watchlist) return null
 
-  const starred = new Set(watchlist.filter((w) => w.starred).map((w) => w.company))
-  const b = buildBriefing(jobs, ledger, settings, starred)
+  // Session 7.2 (C12): buildBriefing scores every found role — on a 1,000-role radar that is an
+  // O(n) sweep, and it used to run on EVERY render tick of the LANDING screen. Memoized off the
+  // live-query identities: it now recomputes only when the underlying data actually changed.
+  const b = useMemo(() => {
+    if (!jobs || !ledger || !settings || !watchlist) return null
+    const starred = new Set(watchlist.filter((w) => w.starred).map((w) => w.company))
+    return buildBriefing(jobs, ledger, settings, starred)
+  }, [jobs, ledger, settings, watchlist])
+
+  if (!b) return null
   const name = (identity?.name ?? 'Shaurya').split(' ')[0]
   const bandCls = (t: number) => (t >= 70 ? 'text-shipped border-shipped' : t >= 45 ? 'text-forge border-forge' : 'text-ink-soft border-paper-edge')
   const goNext = () => (b.next.target === 'packet' && b.next.jobId ? onTailor(b.next.jobId) : onNav(b.next.target as NavTarget))

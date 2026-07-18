@@ -28,7 +28,7 @@ type UsageMode = 'hit' | 'call' | 'fallback'
 
 // Exported (Session 6): the smart Baithak posts to /api/dimaag directly (its own schema, D74) and
 // was invisible in the Dimaag Ledger — a metering blind spot. Every metered feature reports here.
-export async function recordUsage(feature: string, tier: DimaagTier, mode: UsageMode, tokens = 0) {
+export async function recordUsage(feature: string, tier: DimaagTier, mode: UsageMode, tokens = 0, model?: string) {
   const mk = monthKey()
   const id = `${feature}:${mk}`
   const row = (await db.dimaagUsage.get(id)) ?? { id, feature, monthKey: mk, calls: 0, tokens: 0, cacheHits: 0, fallbacks: 0 }
@@ -37,6 +37,9 @@ export async function recordUsage(feature: string, tier: DimaagTier, mode: Usage
   else {
     row.calls += 1
     row.tokens += tokens
+    // Session 7.2 (C1): WHICH free brain answered is part of the honest ledger — the D144
+    // router's per-provider burn was invisible (Gemini quotas are dashboard-only).
+    if (model) row.models = { ...(row.models ?? {}), [model]: (row.models?.[model] ?? 0) + 1 }
     await recordSpend(tier === 'reasoning' ? 'dimaag' : 'chhota', 1) // only a real call spends budget
   }
   await db.dimaagUsage.put(row)
@@ -46,6 +49,8 @@ interface CallResult {
   result: unknown
   tokens: number
   keyless: boolean
+  /** Which model/lane answered (from the /api/dimaag router) — for the honest usage ledger. */
+  model?: string
 }
 
 /**
@@ -142,11 +147,11 @@ async function callOnce(tier: DimaagTier, system: string, user: string, maxToken
       body: JSON.stringify({ tier, system, user, maxTokens, schema }),
     })
     if (!res.ok) return null
-    const data = (await res.json()) as { keyless?: boolean; result?: unknown; tokens?: number; error?: string; rateLimited?: boolean }
+    const data = (await res.json()) as { keyless?: boolean; result?: unknown; tokens?: number; error?: string; rateLimited?: boolean; model?: string }
     if (data.rateLimited) return 'ratelimit' // free-tier TPM hit — the caller backs off, not degrades
     if (data.keyless) return { result: null, tokens: 0, keyless: true }
     if (data.error || data.result == null) return null
-    return { result: data.result, tokens: data.tokens ?? 0, keyless: false }
+    return { result: data.result, tokens: data.tokens ?? 0, keyless: false, model: data.model }
   } catch {
     return null
   }
@@ -275,7 +280,7 @@ export async function decide(input: DecideInput): Promise<Rationale> {
     by: 'dimaag',
     at: new Date().toISOString(),
   }
-  await recordUsage(input.feature, 'reasoning', 'call', call.tokens)
+  await recordUsage(input.feature, 'reasoning', 'call', call.tokens, call.model)
   await db.dimaagCache.put({ hash: cacheKey, json: JSON.stringify(rationale), at: rationale.at })
   return rationale
 
@@ -345,7 +350,7 @@ export async function critique(input: CritiqueInput): Promise<Critique> {
     by: 'dimaag',
     at: new Date().toISOString(),
   }
-  await recordUsage(input.feature, 'reasoning', 'call', call.tokens)
+  await recordUsage(input.feature, 'reasoning', 'call', call.tokens, call.model)
   await db.dimaagCache.put({ hash: cacheKey, json: JSON.stringify(critiqueResult), at: critiqueResult.at })
   return critiqueResult
 
@@ -396,7 +401,7 @@ export async function classify(input: ClassifyInput): Promise<{ label: string; c
   if (!call || call.keyless || !call.result) return persistFallback(heuristic())
   const r = call.result as { labelId?: string; confidence?: number }
   if (!r.labelId || !input.labels.some((l) => l.id === r.labelId)) return persistFallback(heuristic())
-  await recordUsage(input.feature, 'classify', 'call', call.tokens)
+  await recordUsage(input.feature, 'classify', 'call', call.tokens, call.model)
   const v = { label: r.labelId, confidence: clamp01(r.confidence ?? 0.7), by: 'dimaag' as const }
   await db.dimaagCache.put({ hash: cacheKey, json: JSON.stringify(v), at: new Date().toISOString() })
   return v
@@ -442,7 +447,7 @@ export async function generate<T>(input: GenerateInput): Promise<T | null> {
     await recordUsage(input.feature, tier, 'fallback')
     return null
   }
-  await recordUsage(input.feature, tier, 'call', call.tokens)
+  await recordUsage(input.feature, tier, 'call', call.tokens, call.model)
   await db.dimaagCache.put({ hash: cacheKey, json: JSON.stringify(call.result), at: new Date().toISOString() })
   return call.result as T
 }

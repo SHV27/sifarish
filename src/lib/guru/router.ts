@@ -326,7 +326,7 @@ export function route(userText: string, ledger: LedgerEntry[], jobs: Job[], visi
     case 'derive_hunts':
       return {
         intent,
-        text: "Let me derive hunts straight from your vision — the role names the market uses for the work you actually want. I'll list them; you confirm each (nothing added silently). You can also do this in Settings → Vision Profile → Derive hunts.",
+        text: "Let me derive hunts straight from your vision — the role names the market uses for the work you actually want. I'll list them; you confirm each (nothing added silently). The Hunt panel on the Radar is where they live (add, remove, Hunt now).",
         action: 'derive_hunts',
         citationsRequired: false,
       }

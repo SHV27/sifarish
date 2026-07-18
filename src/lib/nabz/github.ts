@@ -478,15 +478,8 @@ export async function overviewRepos(repos: GhRepo[], readReadmes = true, budgetR
   return out
 }
 
-/**
- * Manual override (D47): re-surface a new-entry suggestion for ANY repo, ignoring prior
- * dismiss/accept history — an `upsert`, not a `put-if-absent`.
- */
-export async function forceAddRepo(repo: GhRepo): Promise<NabzSuggestion> {
-  const s = await buildNewEntrySuggestion(repo)
-  await db.suggestions.put(s)
-  return s
-}
+// (forceAddRepo deleted in Session 7.2 — superseded by addRepoToLedger since D52, zero callers.
+// D125's own rule: dead code lies.)
 
 /**
  * ONE-CLICK ADD (D52): build the deep README-distilled draft and write it straight to the ledger,

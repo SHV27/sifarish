@@ -21,7 +21,7 @@ const VERDICTS: { status: JobStatus; label: string }[] = [
   { status: 'ghosted', label: 'Ghosted' },
 ]
 
-export function Morcha({ onOpenPacket }: { onOpenPacket: (jobId: string) => void }) {
+export function Morcha({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) => void; onNav?: (s: 'khabri') => void }) {
   const jobs = useLiveQuery(() => db.jobs.toArray()) ?? []
   const ledger = useLiveQuery(() => db.ledger.toArray()) ?? []
   const [dossier, setDossier] = useState<InterviewDossier | null>(null)
@@ -116,7 +116,7 @@ export function Morcha({ onOpenPacket }: { onOpenPacket: (jobId: string) => void
                 {VERDICTS.map((v) => (
                   <VerdictBucket key={v.status} label={v.label} jobs={byStatus.get(v.status) ?? []} onOpenPacket={onOpenPacket} />
                 ))}
-                <RetroPanel jobs={jobs} />
+                <RetroPanel jobs={jobs} onOpenKhabri={onNav ? () => onNav('khabri') : undefined} />
               </div>
             </div>
           </div>
@@ -260,13 +260,19 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
         )}
       </button>
 
-      {nudge.due && (
+      {/* Session 7.2 (C12): the follow-up DRAFT is reachable any day — it used to exist only
+          while the day-7/14 nudge was due (day 6 or day 9? no way to get the message). The
+          nudge still marks WHEN; the draft is always his to copy. He sends (I3). */}
+      {(job.status === 'applied' || job.status === 'followup') && (
         <div className="mt-1.5 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-stamp animate-nudge" aria-hidden />
-          <span className="text-[10px] text-stamp font-medium">Day {nudge.day} — follow up</span>
-          {/* Session 6 (P1): the nudge hands him the MESSAGE, not just the reminder — one
-              follow-up measurably lifts response rates; the draft removes the friction. He
-              copies, he sends (I3). */}
+          {nudge.due ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-stamp animate-nudge" aria-hidden />
+              <span className="text-[10px] text-stamp font-medium">Day {nudge.day} — follow up</span>
+            </>
+          ) : (
+            <span className="text-[10px] text-ink-faint font-mono">follow-up</span>
+          )}
           <button
             className="ml-auto text-[10px] font-mono text-ink-soft hover:text-ink underline decoration-dotted"
             onClick={async () => {
@@ -334,7 +340,7 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
  * compounding loop a human placement mentor runs after every interview — here it is deterministic
  * aggregation over the packets' own coverage data, never a guess about a company's private reasons.
  */
-function RetroPanel({ jobs }: { jobs: Job[] }) {
+function RetroPanel({ jobs, onOpenKhabri }: { jobs: Job[]; onOpenKhabri?: () => void }) {
   const packets = useLiveQuery(() => db.packets.toArray()) ?? []
   const lostCount = jobs.filter((j) => j.status === 'rejected' || j.status === 'ghosted').length
   if (lostCount < 2) return null
@@ -344,9 +350,15 @@ function RetroPanel({ jobs }: { jobs: Job[] }) {
     <div className="dossier p-2.5">
       <p className="text-[11px] font-semibold text-ink">What your closed applications share</p>
       <p className="text-[10px] text-ink-soft mt-1 leading-relaxed">{retro.note}</p>
-      {retro.shared.length > 0 && (
-        <p className="text-[10px] text-ink-soft mt-1">Taleem in Khabri ranks what to build next.</p>
-      )}
+      {retro.shared.length > 0 &&
+        // Session 7.2 (C12): the D138 one-home rule — a pointer is a LINK, not a sentence.
+        (onOpenKhabri ? (
+          <button className="text-[10px] text-stamp mt-1 underline decoration-dotted" onClick={onOpenKhabri}>
+            Taleem in Khabri ranks what to build next →
+          </button>
+        ) : (
+          <p className="text-[10px] text-ink-soft mt-1">Taleem in Khabri ranks what to build next.</p>
+        ))}
     </div>
   )
 }

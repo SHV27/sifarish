@@ -13,7 +13,9 @@ const CACHE_DAYS = 7
 export async function getIntel(company: string, force = false): Promise<CompanyIntel> {
   const key = company.trim().toLowerCase()
   const cached = await db.intel.get(key)
-  if (!force && cached && Date.now() - new Date(cached.fetchedAt).getTime() < CACHE_DAYS * 86400000) {
+  // A keyless tombstone lives 1 day (so adding a key tomorrow works); real intel lives 7.
+  const ttlDays = cached?.keyless ? 1 : CACHE_DAYS
+  if (!force && cached && Date.now() - new Date(cached.fetchedAt).getTime() < ttlDays * 86400000) {
     return cached
   }
 
@@ -41,8 +43,11 @@ export async function getIntel(company: string, force = false): Promise<CompanyI
   }
 
   const intel: CompanyIntel = { company: key, bullets, fetchedAt: new Date().toISOString(), keyless }
-  // Only cache a real (non-keyless, non-empty) result so a keyless run doesn't poison the cache.
+  // A real (non-keyless, non-empty) result caches for the full window. Session 7.2 (C12): a
+  // KEYLESS result now leaves a short tombstone too (the D72 negative-cache lesson) — before
+  // this, every buildPacket in a keyless setup re-POSTed /api/intel for the same company.
   if (!keyless && bullets.length > 0) await db.intel.put(intel)
+  else if (!cached) await db.intel.put(intel) // tombstone; the 7-day window naturally retries later
   return intel
 }
 

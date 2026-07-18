@@ -23,8 +23,9 @@ export const BUDGET_DEFAULTS: Omit<Budget, 'used' | 'monthKey'>[] = [
   { id: 'tavily', label: 'Tavily (signals + intel + pulse)', monthlyCap: 1000, perRunCap: 8, unit: 'credits' },
   { id: 'groq', label: 'Groq (Guru + polish)', monthlyCap: 5000, perRunCap: 40, unit: 'calls' },
   // v3 two-tier reasoning budgets — a gpt-oss-120b reason call costs more than a gpt-oss-20b classify.
-  { id: 'dimaag', label: 'Dimaag reasoning (gpt-oss-120b)', monthlyCap: 2000, perRunCap: 12, unit: 'calls' },
-  { id: 'chhota', label: 'Dimaag classify (gpt-oss-20b)', monthlyCap: 4000, perRunCap: 20, unit: 'calls' },
+  // Session 7.2 (C12): labels follow the D144 free-brain router (Gemini → Groq chains).
+  { id: 'dimaag', label: 'Dimaag reasoning (Gemini → Groq 120b)', monthlyCap: 2000, perRunCap: 12, unit: 'calls' },
+  { id: 'chhota', label: 'Dimaag classify (Groq 20b → Gemini)', monthlyCap: 4000, perRunCap: 20, unit: 'calls' },
 ]
 
 export async function ensureBudgets(): Promise<void> {

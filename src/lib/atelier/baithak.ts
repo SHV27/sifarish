@@ -1,4 +1,5 @@
 import type { LedgerEntry, Packet } from '../../types'
+import { hasEvidence } from '../baithak/intent'
 
 /**
  * ATELIER BAITHAK (Session 5) — talk to the cover letter. Extends I11 to the letter: an utterance
@@ -44,12 +45,10 @@ const CUE = {
 
 const FAB_SKILLS = /\b(kubernetes|k8s|rust|golang|scala|terraform|hadoop|spark|tensorflow|c\+\+|\.net|php|salesforce)\b/i
 
-function hasEvidence(term: string, ledger: LedgerEntry[]): boolean {
-  const t = term.toLowerCase().trim()
-  if (t.length < 2) return false
-  const re = new RegExp(`(^|[^a-z0-9])${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`, 'i')
-  return ledger.some((e) => re.test(e.title) || e.tags.some((x) => re.test(x)) || e.bullets.some((b) => re.test(b.text) || b.keywords.some((k) => re.test(k))))
-}
+// Session 7.2 (C4): the letter Baithak SHARES the résumé Baithak's evidence rule. Its private
+// copy never got D136's widening (summary + deep-read README context), so a fact he wrote in his
+// own README could still be refused as a fabrication HERE after being fixed THERE — the third
+// copy of the same disease. One rule now (imported above); a fix reaches every surface.
 
 const projName = (e: LedgerEntry) => e.title.split('—')[0].trim()
 

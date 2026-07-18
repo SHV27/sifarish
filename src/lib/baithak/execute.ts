@@ -23,9 +23,17 @@ export async function probeAlive(url: string, fetchFn: typeof fetch = fetch): Pr
     const gh = /^(www\.)?github\.com$/i.exec(u.hostname)
     if (gh) {
       const [, owner, repo] = u.pathname.split('/')
-      if (owner && repo) {
-        const res = await fetchFn(`https://api.github.com/repos/${owner}/${repo}`, { signal: AbortSignal.timeout(6000) })
-        return res.ok
+      // Session 7.2 (C8): his own repos probe through /api/gh (D86) — a direct api.github.com
+      // fetch logs an un-suppressable console 4xx and burns the 60/hr anonymous budget the
+      // proxy exists to protect. Other github repos fall through to the opaque HEAD below
+      // (no CORS-visible failure on the html host).
+      if (owner?.toLowerCase() === 'shv27' && repo) {
+        const res = await fetchFn(`/api/gh?kind=repo&repo=${encodeURIComponent(repo)}`, { signal: AbortSignal.timeout(6000) })
+        if (res.ok) {
+          const data = (await res.json()) as { alive?: boolean }
+          return data.alive !== false
+        }
+        return false
       }
     }
     await fetchFn(u.toString(), { method: 'HEAD', mode: 'no-cors', signal: AbortSignal.timeout(6000) })

@@ -1,4 +1,4 @@
-import type { ApplyPlan, ApplyStep, Job, LedgerEntry, Packet } from '../../types'
+import type { ApplyPlan, ApplyStep, Identity, Job, LedgerEntry, Packet, VisionProfile } from '../../types'
 import { decodeJD } from '../jd/decode'
 import { entryRelevance } from '../match/evidence'
 
@@ -16,8 +16,18 @@ const SCREENING_TEMPLATES: { q: string; match: (jd: string) => boolean }[] = [
   { q: 'When are you available and for how long?', match: () => true },
 ]
 
-export function buildApplyPlan(job: Job, packet: Packet | undefined, ledger: LedgerEntry[]): ApplyPlan {
+export function buildApplyPlan(
+  job: Job,
+  packet: Packet | undefined,
+  ledger: LedgerEntry[],
+  // Session 7.2 (C7): the plan drafts FACTS about him — window, start flexibility, identity —
+  // so it reads the live vision + identity instead of a 2027 hardcode that a vision edit
+  // would silently contradict.
+  opts?: { vision?: VisionProfile; identity?: Identity },
+): ApplyPlan {
   const decode = decodeJD(job.jd || job.title)
+  const vision = opts?.vision
+  const safeName = (opts?.identity?.name ?? 'Shaurya Verma').replace(/\W+/g, '_')
   const topProjects = ledger
     .filter((e) => e.resumeEligible && e.tier === 'shipped' && e.kind === 'project')
     .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
@@ -35,7 +45,7 @@ export function buildApplyPlan(job: Job, packet: Packet | undefined, ledger: Led
       n: 2,
       action: 'Attach your tailored resume',
       detail: hasPacket
-        ? `Upload Shaurya_Verma_${job.company.replace(/\W+/g, '')}.pdf. If the portal is Workday/iCIMS or rejects the PDF, upload the .docx instead — it parses ~100% reliably.`
+        ? `Upload ${safeName}_Resume_${job.company.replace(/\W+/g, '')}.pdf (the exact name the Packet screen exports). If the portal is Workday/iCIMS or rejects the PDF, upload the .docx instead — it parses ~100% reliably.`
         : 'Tailor a packet first (Packet screen) so there is a resume to attach.',
       artifact: hasPacket ? 'resume-pdf' : 'none',
     },
@@ -70,9 +80,11 @@ export function buildApplyPlan(job: Job, packet: Packet | undefined, ledger: Led
 
   const screeningAnswers = SCREENING_TEMPLATES.filter((t) => t.match(job.jd || '')).map((t) => {
     if (/want to work here/i.test(t.q)) {
+      // C7: the identity claim comes from HIS vision statement, not a hardcoded byline.
+      const dreamShort = vision?.dream ? vision.dream.replace(/\.$/, '').split('—')[0].trim() : 'I build agentic-AI tools end to end'
       return {
         q: t.q,
-        a: `I build agentic-AI tools for real Indian problems and this role is squarely that work${decode.mustHave.length ? ` (${decode.mustHave.slice(0, 3).join(', ').replace(/-/g, ' ')})` : ''}. Everything I claim is public on my GitHub — I'd rather be judged on shipped work than words.`,
+        a: `${dreamShort.charAt(0).toUpperCase()}${dreamShort.slice(1)} — and this role is squarely that work${decode.mustHave.length ? ` (${decode.mustHave.slice(0, 3).join(', ').replace(/-/g, ' ')})` : ''}. Everything I claim is public on my GitHub — I'd rather be judged on shipped work than words.`,
         ledgerIds: topProjects.map((p) => p.id),
       }
     }
@@ -92,9 +104,14 @@ export function buildApplyPlan(job: Job, packet: Packet | undefined, ledger: Led
         ledgerIds: p ? [p.id] : [],
       }
     }
+    // C7: window, October flexibility and remote stance all read from the LIVE vision — a
+    // vision edit changes the drafted answer the same moment.
+    const window = vision?.windowStart && vision?.windowEnd ? `${vision.windowStart}–${vision.windowEnd}` : 'January–May 2027'
+    const october = vision?.openToOctoberStart ? ', and I am open to an October start' : ''
+    const remote = vision?.remoteInternational === false ? 'On-site and remote-in-India both work for me.' : 'Remote and remote-international both work for me.'
     return {
       q: t.q,
-      a: 'My compulsory internship window is January–May 2027, and I am open to an October start. Remote and remote-international both work for me.',
+      a: `My compulsory internship window is ${window}${october}. ${remote}`,
       ledgerIds: [],
     }
   })

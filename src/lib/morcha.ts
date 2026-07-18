@@ -14,6 +14,19 @@ export async function markApplied(jobId: string): Promise<void> {
 }
 
 export async function setJobStatus(jobId: string, status: JobStatus): Promise<void> {
+  // Session 7.2 (C2) — CLASS FIX: any path that moves a card to 'applied' goes through
+  // markApplied. The Morcha board's own button used a bare status write, so appliedAt was never
+  // stamped → the day-7/14 nudges never fired, "applied Nd ago" never rendered, and the weekly
+  // counters under-counted. One door now; a future call site cannot re-introduce the bug.
+  // (A re-entry from PREV — e.g. ghosted → applied — keeps its original stamp: applying is a
+  // fact with a date, and walking a card back is not a new application.)
+  if (status === 'applied') {
+    const job = await db.jobs.get(jobId)
+    if (!job?.appliedAt) {
+      await markApplied(jobId)
+      return
+    }
+  }
   await db.jobs.update(jobId, { status })
 }
 
