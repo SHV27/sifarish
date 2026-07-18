@@ -204,8 +204,27 @@ export async function surgeryPass(
 
   const intelText = (intel?.bullets ?? []).slice(0, 2).map((b) => b.text).join(' · ')
 
+  // Session 7 (WS-R4, the D130 pattern applied to the angle): when the JD names must-haves and
+  // this project's own evidence answers ≥2 of them, the jd-focus angle IS the decision — asking
+  // a model to confirm it is a spent call for a foregone conclusion. Recorded as a zero-spend
+  // heuristic hit (never a fallback); a genuinely ambiguous project still gets the reasoner.
+  const projectText = `${project.tags.join(' ')} ${project.bullets.map((b) => `${b.text} ${b.keywords.join(' ')}`).join(' ')}`.toLowerCase()
+  const mustHits = topMust.filter((m) => projectText.includes(m.toLowerCase()))
+  const jdOption = angleOptions.find((o) => o.id === 'jd-focus')
+
   let angleRationale: Rationale
-  if (angleOptions.length > 1) {
+  if (jdOption && mustHits.length >= 2) {
+    angleRationale = {
+      question: `Which angle makes ${title} strongest for a ${arch.label}?`,
+      optionsConsidered: angleOptions.map((o) => o.label),
+      criteria: [...arch.priorities.slice(0, 2), ...topMust.slice(0, 3)],
+      choice: jdOption.label,
+      why: `${title}'s own evidence answers ${mustHits.length} of this role's stated must-haves (${mustHits.join(', ')}) — leading with the JD's priorities is the decided move, no model needed.`,
+      confidence: 0.85,
+      by: 'heuristic',
+      at: new Date().toISOString(),
+    }
+  } else if (angleOptions.length > 1) {
     angleRationale = await decide({
       feature: 'darzi.angle',
       question: `Which angle makes ${title} strongest for a ${arch.label}${company ? ` at ${company}` : ''}?`,
