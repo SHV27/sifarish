@@ -1046,6 +1046,55 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   Owner passcode remains server-side only (D108) — the owner-mode happy path is his own click,
   as designed.
 
+
+--- Session 7.3 "The Studio + The Closure" (owner ran the Studio Protocol, then froze scope with
+  the Closure Protocol: finish list only, then DONE + maintenance triage. 19-Jul-2026) ---
+- D155: STUDIO PHASES 1-3 — AUDIT.md (architecture map, SIX error classes with file:line, 5
+  fragilities, 4 obsolescence risks), PRODUCT_BAR.md (₹1-crore bar per feature; verdict: the
+  compiler is FINISHED, the delta is loops around it), ARCHITECTURE.md (frugal target). Owner
+  approved; W4 product moves were then FROZEN by the Closure Protocol into NOTES.md — written
+  down, deliberately not built.
+- D156: THE ERROR CLASSES, CLOSED. Class A (22 unvalidated `as{}` casts): src/lib/boundary.ts —
+  every external shape parsed at ONE door; a shape change logs + degrades, never rots. Class B
+  (76 bare catches): typed catchAs(category, context) → bounded errlog ring (100 rows, infra
+  table, demo-writable) — I4 still degrades gracefully for the user; the app finally SEES its
+  own failures (the D73/D115 blind spot, closed as data). Class C: autopilot's five
+  fire-and-forget chains categorized. Class D: kv.ts owns cache key names + codecs (the D152
+  rotation-drift class). Class E: the guard-drift gate hashes guardRequest+sha256Hex across all
+  8 metered functions — byte-identical or red (it caught a live comment drift in
+  aggregators.ts on its FIRST run). Class F: pruneAll bounds the six monotonic tables (the
+  encrypted sync blob stops growing forever).
+- D157: CONFIG OVER CODE, D22-SAFE. data/config/routing.json is the model-routing truth (lanes,
+  pinned ids, token budgets); the api functions inline the same values and
+  tests/routing-config.test.ts fails on ANY drift (a 2028 model swap = edit JSON + sync the
+  named constants, gates enforce). data/prompts/registry.json hashes every prompt-bearing file —
+  a craft edit that forgets the version bump (the D140/AUDIT-15 hole) is now a FAILING GATE,
+  not a hope. /api/polish gains the Gemini fallback lane (router parity — one provider's bad
+  day no longer silently kills the polish pass); Guru stays Groq-streaming by constraint,
+  recorded in routing.json notes.
+- D158: CLOSURE F1 — ESTIMATION IS DEAD. The compiler's page estimator counted characters
+  (88/line) while the renderer measured real Helvetica glyphs — THAT gap is how a cast project
+  could silently vanish (his GLOAMING screenshot). The compiler now measures with pdf-lib's own
+  AFM width tables (helvetica-metrics.ts, generated from pdf-lib itself; special WinAnsi glyphs
+  mapped; kerning makes the sum ~0.3-1.7% conservative — the CORRECT direction, parity-gated:
+  never under the drawn width, ≤2% over) and mirrors the renderer's wrap rules exactly
+  (centered contact, bold skills label + hanging indent, right-aligned dates narrowing the left
+  column, bullet indent, heading rule).
+- D159: CLOSURE F3 — THE LAST JUDGE. After EVERY compile (all paths — build, fast, every
+  recompile), the page is checked against the casting sheet: every cast project appears, or
+  compileResume declares it in benchedByPage and the packet's gap note says "Benched by page
+  pressure: <name>" — never silent. With the cast-contract trim levels (S7.2) + real metrics
+  (D158) this state is practically unreachable; the judge exists so that if it EVER happens,
+  it happens out loud. Regression gates: the GLOAMING heavy-cast case renders all 3; a
+  cast-vs-page miss is declared.
+- D160: S7.3 PROOFS + THE FREEZE. 685 passed | 2 skipped · tsc clean · warning-free build ·
+  deployed (served hash verified index-B4OZkDIX) · rendered PDF READ BY EYE (one page, clean
+  typography, zero residue, parse-back 100%) · demo fresh-eyes smoke ERRORS(0) + ₹0 spend ·
+  no-Origin 403 re-verified on the changed functions. THE APP IS IN MAINTENANCE: a future bug
+  = one message → reproduce, name the class, fix at the choke point, regression gate, one
+  commit, deploy. No reopened architecture, no new features without an explicit owner ask.
+  (Ops note: the repo credential helper is now cleared+gh, so plain `git push` works headless.)
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes

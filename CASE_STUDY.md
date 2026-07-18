@@ -740,6 +740,29 @@ identity-ban heuristic had likewise grown two slightly different implementations
 forge). **Lesson: the second copy of a rule is a fork of its future bugs. When a fix lands, grep
 for the rule's siblings — or better, make the copy impossible by exporting the one function.**
 
+### 3.34 · THE ESTIMATOR AND THE RENDERER WERE TWO OPINIONS ABOUT ONE PAGE (Session 7.3)
+
+The compiler estimated page fit by counting characters (88/line); the renderer measured real
+Helvetica glyph widths. Two independent opinions about the same physical page — and the gap
+between them is exactly how a CAST project could pass the estimate and then get silently benched
+(or overflow) on the true page: the owner's GLOAMING screenshot. Cure in two layers: (1) the
+estimator now measures with pdf-lib's own AFM width tables, mirroring the renderer's wrap rules
+exactly, kerning-conservative (never under the drawn width — parity-gated); (2) THE LAST JUDGE —
+after every compile, the page is checked against the casting sheet, and a benched cast project is
+DECLARED in the gap note. **Lesson: when two subsystems each hold a model of the same physical
+truth, they WILL disagree eventually — make one measure and the other verify, and add a judge
+that compares the promise (the cast) against the artifact (the page).**
+
+### 3.35 · GOALS ARE NOT ACCEPTANCE CRITERIA (Session 7.3, the Closure Protocol)
+
+"Zero errors ever" and "beat LinkedIn in every dimension" drove three sessions of real
+improvement — and also an anxiety loop: every found bug read as a broken promise, every session
+ended with a roadmap. The owner's Closure Protocol reframed it: a FINITE finish list is the
+acceptance criteria; new ideas go to NOTES.md unbuilt; after DONE the app is in MAINTENANCE and
+a bug costs one message (reproduce → class → choke-point fix → regression gate → one commit).
+**Lesson: an open-ended goal can only ever be violated, never satisfied. Convert it into a
+closed list plus a triage contract, and both the software and its humans get calmer.**
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.

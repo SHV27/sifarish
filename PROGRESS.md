@@ -2,7 +2,18 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 7.2 "The Sanad" — zero amnesia, honest arithmetic, one copy of every rule ✦
+## Status: Session 7.3 "The Studio + The Closure" — classes closed, scope FROZEN, app in MAINTENANCE ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **685 passed | 2 skipped (687) gates** · tsc
+clean · warning-free build · served hash verified (index-B4OZkDIX) · rendered PDF read by eye ·
+demo smoke ERRORS(0), ₹0 spend. The Studio audit's SIX error classes are closed (D156), config
+is mechanically drift-proof (D157), ESTIMATION IS DEAD — the compiler measures with the
+renderer's own font metrics (D158), and THE LAST JUDGE declares any cast-vs-page miss out loud
+(D159). Parked ideas live in NOTES.md; AUDIT/PRODUCT_BAR/ARCHITECTURE record the studio pass.
+**THE TRIAGE CONTRACT (D160): the app is in maintenance — a bug is one message → class → fix at
+the choke point → regression gate → one commit → deploy. No reopened architecture.**
+
+## Prior: Session 7.2 "The Sanad" — zero amnesia, honest arithmetic, one copy of every rule ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **669 passed | 2 skipped (671) gates** · tsc
 clean · warning-free build · deployed + served-hash verified (index-CbwWssTa) · adversary +
