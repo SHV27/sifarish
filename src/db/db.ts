@@ -21,6 +21,7 @@ import type {
   UstaadRow,
   DakCard,
   BackupSnapshot,
+  ErrLogRow,
 } from '../types'
 
 /**
@@ -47,7 +48,7 @@ export async function withSeedAllowance<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /** Infra/cache tables the DEMO showcase may still write (reasoning cache, budgets — never his story). */
-const INFRA_TABLES = new Set(['dimaagCache', 'dimaagUsage', 'nabzCache', 'budgets'])
+const INFRA_TABLES = new Set(['dimaagCache', 'dimaagUsage', 'nabzCache', 'budgets', 'errlog'])
 
 export class DarbaanLockedError extends Error {
   constructor(table: string) {
@@ -86,6 +87,8 @@ export class SifarishDB extends Dexie {
   dak!: EntityTable<DakCard, 'id'>
   // Session 5 — Tijori: encrypted backups live in their own table (survive main-store corruption).
   backups!: EntityTable<BackupSnapshot, 'id'>
+  // Studio Protocol W1 — bounded categorized failure ring (the app sees what it swallows).
+  errlog!: EntityTable<ErrLogRow, 'id'>
 
   constructor(name: string) {
     super(name)
@@ -123,6 +126,10 @@ export class SifarishDB extends Dexie {
     // Session 5 "Tijori" — encrypted backup snapshots.
     this.version(5).stores({
       backups: 'id, at',
+    })
+    // Studio Protocol W1 — the errlog ring (infra table: demo-writable, never backed up/synced).
+    this.version(6).stores({
+      errlog: 'id, at, category',
     })
   }
 }

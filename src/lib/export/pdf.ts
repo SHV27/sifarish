@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib'
 import type { CompiledDoc, CompiledResume } from '../../types'
 import { CompileError, LINE_METRICS, PAGE } from '../compile/compiler'
+import { sanitizePdfText } from '../compile/typeset'
 
 /**
  * ATS-plain, true-text-layer PDF. Helvetica standard font (metrically Arial-class,
@@ -17,15 +18,7 @@ import { CompileError, LINE_METRICS, PAGE } from '../compile/compiler'
  * keeps its middot. Session 6's lesson stands: the strip's whitelist must name every glyph we
  * keep, or the strip eats it silently (D139).
  */
-export function sanitizePdfText(text: string): string {
-  return text
-    .replace(/₹/g, 'Rs.')
-    .replace(/[‘’]/g, "'")
-    .replace(/[“”]/g, '"')
-    .replace(/•/g, '-')
-    .replace(/[^\x20-\x7E–—·×…]/g, '')
-    .replace(/ {2,}/g, ' ')
-}
+export { sanitizePdfText } from '../compile/typeset'
 
 function wrap(font: PDFFont, text: string, size: number, maxWidth: number): string[] {
   const out: string[] = []

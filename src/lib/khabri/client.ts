@@ -5,6 +5,8 @@ import { fetchHackerNews, fetchRemotive, fetchRemoteOK, fetchArbeitnow, fetchJob
 import { mergeDiscovered } from './normalize'
 import { allowedThisRun, laneSkipReason, recordSpend } from '../budget'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
+import { parse, isJobsResp, isJobRow, isSignalsResp, catchAs } from '../boundary'
+import { getCounter, setCounter, getJsonMap, setJsonMap } from '../kv'
 
 /**
  * The Khabri sweep orchestrator. Runs every enabled lane, normalizes + dedupes, merges into
@@ -125,9 +127,17 @@ async function callJobsApi(hunt: SavedHunt, page = 1): Promise<JobsApiResp | nul
         employmentTypes: hunt.employmentTypes,
       }),
     })
-    if (!res.ok) return null
-    return (await res.json()) as JobsApiResp
-  } catch {
+    if (!res.ok) {
+      catchAs('provider', 'khabri.jobs', `HTTP ${res.status}`)
+      return null
+    }
+    // Studio W1: parsed at the boundary; malformed job rows are dropped INDIVIDUALLY (one bad
+    // row must not cost the whole lane's catch).
+    const data = parse(await res.json(), 'khabri.jobs', isJobsResp)
+    if (!data) return null
+    return { ...data, jobs: data.jobs.filter(isJobRow) } as JobsApiResp
+  } catch (e) {
+    catchAs('network', 'khabri.jobs', e)
     return null // pure vite dev (no serverless) → keyless lanes still run
   }
 }
@@ -140,9 +150,13 @@ async function callSignalsApi(queries: string[]): Promise<SignalsApiResp | null>
       headers: meteredHeaders(),
       body: JSON.stringify({ queries, maxResultsPerQuery: 4 }),
     })
-    if (!res.ok) return null
-    return (await res.json()) as SignalsApiResp
-  } catch {
+    if (!res.ok) {
+      catchAs('provider', 'khabri.signals', `HTTP ${res.status}`)
+      return null
+    }
+    return parse(await res.json(), 'khabri.signals', isSignalsResp) as SignalsApiResp | null
+  } catch (e) {
+    catchAs('network', 'khabri.signals', e)
     return null
   }
 }
@@ -160,9 +174,15 @@ async function callAggregatorApi(src: 'adzuna' | 'workingnomads' | 'weworkremote
       headers: meteredHeaders(),
       body: JSON.stringify(body),
     })
-    if (!res.ok) return null
-    return (await res.json()) as JobsApiResp
-  } catch {
+    if (!res.ok) {
+      catchAs('provider', `khabri.${src}`, `HTTP ${res.status}`)
+      return null
+    }
+    const data = parse(await res.json(), `khabri.${src}`, isJobsResp)
+    if (!data) return null
+    return { ...data, jobs: data.jobs.filter(isJobRow) } as JobsApiResp
+  } catch (e) {
+    catchAs('network', `khabri.${src}`, e)
     return null // pure vite dev (no serverless) → the browser-direct keyless lanes still run
   }
 }
@@ -202,13 +222,12 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   // sweep, forever. Derived and manual now INTERLEAVE (both rotated per sweep), so his own
   // queries share every sweep's budget with the vision-derived ones.
   const allEnabled = (await db.savedHunts.toArray()).filter((h) => h.enabled)
-  const huntOffsetRow = await db.nabzCache.get('jsearch:rotation')
-  const huntOffset = Number(huntOffsetRow?.json ?? 0) || 0
+  const huntOffset = await getCounter('jsearch:rotation')
   const hunts = interleaveHunts(
     rotateHunts(allEnabled.filter((h) => h.derived), huntOffset),
     rotateHunts(allEnabled.filter((h) => !h.derived), huntOffset),
   )
-  await db.nabzCache.put({ key: 'jsearch:rotation', json: String(huntOffset + 1), fetchedAt: new Date().toISOString() })
+  await setCounter('jsearch:rotation', huntOffset + 1)
   const existing = await db.jobs.toArray()
   const bySource: Record<string, number> = {}
   const failed: string[] = []
@@ -238,19 +257,13 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   // land 'in' again (double-spending on India). The non-India markets now rotate in their own
   // list and the offset advances by the WINDOW actually consumed.
   const JSEARCH_REST = ['us', 'gb', 'de', 'fr', 'nl', 'es', 'it', 'ch', 'se', 'pl', 'sg', 'ca', 'au', 'ae']
-  const marketRow = await db.nabzCache.get('jsearch:markets')
-  const marketOffset = Number(marketRow?.json ?? 0) || 0
+  const marketOffset = await getCounter('jsearch:markets')
   const marketFor = (i: number): string => (i === 0 ? 'in' : JSEARCH_REST[(marketOffset + i - 1) % JSEARCH_REST.length])
-  await db.nabzCache.put({
-    key: 'jsearch:markets',
-    json: String(marketOffset + Math.max(1, jsearchBudget - 1)),
-    fetchedAt: new Date().toISOString(),
-  })
+  await setCounter('jsearch:markets', marketOffset + Math.max(1, jsearchBudget - 1))
 
   // Session 7.2 (B3) — DEPTH WHERE IT PAYS: a hunt whose LAST funded run yielded ≥6 rows earns
   // page 2 on this run (one extra credit, ≤2 deep-hunts per sweep, inside the same ration).
-  const yieldsRow = await db.nabzCache.get('jsearch:yields')
-  const lastYields: Record<string, number> = yieldsRow ? (JSON.parse(yieldsRow.json) as Record<string, number>) : {}
+  const lastYields = await getJsonMap('jsearch:yields')
   const newYields: Record<string, number> = { ...lastYields }
   let deepUsed = 0
 
@@ -286,7 +299,7 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     }
   }
   if (jsearchUsed > 0) await recordSpend('jsearch', jsearchUsed)
-  await db.nabzCache.put({ key: 'jsearch:yields', json: JSON.stringify(newYields), fetchedAt: new Date().toISOString() })
+  await setJsonMap('jsearch:yields', newYields)
 
   // --- Keyed aggregator lane (Adzuna), budget-gated (I8) — the global net (Session 5.5) ---
   // One request per country, so perRunCap bounds how many geographies a sweep reaches. The owner's
@@ -299,15 +312,13 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     const adzunaQueries = adzunaQueriesFromHunts(hunts)
     // Rotating window (Session 5.8): persist the offset so every sweep hunts a DIFFERENT slice of
     // the 18 markets ('in' always included) — all corners covered every ~3 sweeps, same budget.
-    const offsetRow = await db.nabzCache.get('adzuna:rotation')
-    const offset = Number(offsetRow?.json ?? 0) || 0
+    const offset = await getCounter('adzuna:rotation')
     const sweepCountries = adzunaCountriesForSweep(offset, adzunaBudget)
-    await db.nabzCache.put({ key: 'adzuna:rotation', json: String(offset + sweepCountries.length - 1), fetchedAt: new Date().toISOString() })
+    await setCounter('adzuna:rotation', offset + sweepCountries.length - 1)
     // Session 7.2 (B8): the query index ROTATES too — the old `i % len` pairing meant a given
     // market met a given core only every ~len sweeps; now every market meets every core in turn.
-    const qOffsetRow = await db.nabzCache.get('adzuna:queries')
-    const qOffset = Number(qOffsetRow?.json ?? 0) || 0
-    await db.nabzCache.put({ key: 'adzuna:queries', json: String(qOffset + 1), fetchedAt: new Date().toISOString() })
+    const qOffset = await getCounter('adzuna:queries')
+    await setCounter('adzuna:queries', qOffset + 1)
     let adzunaUsed = 0
     for (let i = 0; i < sweepCountries.length; i++) {
       if (adzunaUsed >= adzunaBudget) break

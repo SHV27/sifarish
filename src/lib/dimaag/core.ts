@@ -2,6 +2,7 @@ import { db } from '../../db/db'
 import type { Critique, DimaagTier, Rationale } from '../../types'
 import { allowedThisRun, monthKey, recordSpend } from '../budget'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
+import { parse, isDimaagResp, catchAs } from '../boundary'
 
 /**
  * THE DIMAAG CORE — the app's reasoning spine (P9). Every consequential choice runs through
@@ -146,13 +147,20 @@ async function callOnce(tier: DimaagTier, system: string, user: string, maxToken
       headers: meteredHeaders(),
       body: JSON.stringify({ tier, system, user, maxTokens, schema }),
     })
-    if (!res.ok) return null
-    const data = (await res.json()) as { keyless?: boolean; result?: unknown; tokens?: number; error?: string; rateLimited?: boolean; model?: string }
+    if (!res.ok) {
+      catchAs('provider', `dimaag.${tier}`, `HTTP ${res.status}`)
+      return null
+    }
+    // Studio W1: PARSED at the boundary, never assumed (Class A) — a shape change logs and
+    // degrades through the ladder instead of rotting silently.
+    const data = parse(await res.json(), `dimaag.${tier}`, isDimaagResp)
+    if (!data) return null
     if (data.rateLimited) return 'ratelimit' // free-tier TPM hit — the caller backs off, not degrades
     if (data.keyless) return { result: null, tokens: 0, keyless: true }
     if (data.error || data.result == null) return null
     return { result: data.result, tokens: data.tokens ?? 0, keyless: false, model: data.model }
-  } catch {
+  } catch (e) {
+    catchAs('network', `dimaag.${tier}`, e)
     return null
   }
 }

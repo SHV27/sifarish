@@ -165,6 +165,11 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   const outreach = compileOutreach(job, identity, ledger, decode, vision)
   const gapNote = buildGapNote(coverage)
   gapNote.push(...nazarNotes) // the judge's removals are visible, never silent (L4)
+  // Closure F3 — THE LAST JUDGE: the compiled page is checked against the casting sheet.
+  // Everything cast appears, or the bench is DECLARED (the GLOAMING class can never be silent).
+  for (const name of resume.benchedByPage ?? []) {
+    gapNote.push(`Benched by page pressure: ${name} was cast but could not fit even at the tightest layout — drop a bullet elsewhere or bench a project deliberately.`)
+  }
 
   // D29 uniqueness, WIRED (Session 5.10 wiring audit — it only ever ran in tests): this letter's
   // substantive body is compared against his recent letters; too-similar → an honest, visible
@@ -482,10 +487,16 @@ export async function recompilePacket(packet: Packet, changes: RecompileChanges)
     redTeamInventory(ledger, resume),
   ).catch(() => null)
 
+  // Closure F3 — the last judge runs on EVERY recompile path too.
+  const benchNotes = (resume.benchedByPage ?? []).map(
+    (name) => `Benched by page pressure: ${name} was cast but could not fit even at the tightest layout — drop a bullet elsewhere or bench a project deliberately.`,
+  )
+  const baseGap = packet.gapNote.filter((n) => !n.startsWith('Benched by page pressure:'))
   return {
     ...packet,
     resume,
     coverage,
+    gapNote: [...baseGap, ...benchNotes],
     summaryOn,
     excludedIds,
     excludedBulletIds,

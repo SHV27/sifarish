@@ -4,6 +4,7 @@ import { LEXICON } from '../jd/lexicon'
 import { buildContext, forgeBullets, sanitizeBullets, toBullets, FORGE_VERSION } from './forge'
 import { meteredCallsAllowed } from '../apiGuard'
 import { allowedThisRun } from '../budget'
+import { parse, isGhReposResp, isGhReadmeResp, catchAs } from '../boundary'
 
 /**
  * GitHub Nabz — the pulse. Public REST, no key (CORS `*`, 60 req/hr unauth verified WS0).
@@ -68,11 +69,14 @@ export async function fetchRepos(force = false): Promise<SyncNabz> {
 
   // Via /api/gh (D86): server-side fetch with the PAT, so the browser never touches api.github.com
   // and can never log a GitHub 403/404. A non-ok proxy reply falls back to cache exactly as before.
-  let data: { ok?: boolean; repos?: GhRepo[]; budget?: RateBudget; rateLimited?: boolean } | null = null
+  interface ReposProxyResp { ok?: boolean; repos?: GhRepo[]; budget?: RateBudget; rateLimited?: boolean }
+  let data: ReposProxyResp | null = null
   try {
     const res = await fetch(`/api/gh?kind=repos`)
-    if (res.ok) data = await res.json()
-  } catch {
+    // Studio W1: parsed at the boundary (Class A) — a proxy shape change logs + serves cache.
+    if (res.ok) data = parse(await res.json(), 'gh.repos', isGhReposResp) as ReposProxyResp | null
+  } catch (e) {
+    catchAs('network', 'gh.repos', e)
     /* offline / no serverless (local vite dev) — serve cache below */
   }
   if (!data || !data.ok || !data.repos) {
@@ -103,7 +107,8 @@ export async function fetchReadme(repoName: string): Promise<string | null> {
     // so the browser never logs the 404 that SHV27/demo used to throw on every Nabz mount.
     const res = await fetch(`/api/gh?kind=readme&repo=${encodeURIComponent(repoName)}`)
     if (!res.ok) return cached ? JSON.parse(cached.json) : null
-    const data = (await res.json()) as { ok?: boolean; readme?: string | null; rateLimited?: boolean }
+    const data = parse(await res.json(), 'gh.readme', isGhReadmeResp)
+    if (!data) return cached ? JSON.parse(cached.json) : null
     if (!data.ok) {
       if (data.rateLimited) await noteRateLimit(0)
       return cached ? JSON.parse(cached.json) : null

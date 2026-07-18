@@ -2,6 +2,7 @@ import { db } from '../../db/db'
 import type { CompanyIntel, IntelBullet } from '../../types'
 import { recordSpend } from '../budget'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
+import { parse, isIntelResp, isObj, isStr, catchAs } from '../boundary'
 
 /**
  * Company Intel client. Fetches cited intel (I7), caches 7 days per company. Intel changes
@@ -33,12 +34,19 @@ export async function getIntel(company: string, force = false): Promise<CompanyI
       body: JSON.stringify({ company }),
     })
     if (res.ok) {
-      const data = (await res.json()) as { keyless: boolean; bullets: IntelBullet[]; creditsSpent?: number }
-      keyless = data.keyless
-      bullets = data.bullets ?? []
-      if (!data.keyless && data.creditsSpent) await recordSpend('tavily', data.creditsSpent)
+      // Studio W1: parsed at the boundary; malformed bullets dropped individually.
+      const data = parse(await res.json(), 'intel', isIntelResp)
+      if (data) {
+        keyless = data.keyless
+        bullets = data.bullets.filter((b): b is IntelBullet => isObj(b) && isStr(b.text) && isStr(b.url))
+        const spent = (data as { creditsSpent?: number }).creditsSpent
+        if (!data.keyless && typeof spent === 'number' && spent > 0) await recordSpend('tavily', spent)
+      }
+    } else {
+      catchAs('provider', 'intel', `HTTP ${res.status}`)
     }
-  } catch {
+  } catch (e) {
+    catchAs('network', 'intel', e)
     keyless = true
   }
 

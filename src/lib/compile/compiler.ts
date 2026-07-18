@@ -7,8 +7,9 @@ import type {
   LedgerEntry,
 } from '../../types'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
-import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills } from './typeset'
+import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills, sanitizePdfText } from './typeset'
 import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEIGHT, isIdentityBullet } from './overlap'
+import { textWidth } from './helvetica-metrics'
 
 /**
  * Stage 3: deterministic compile under the one-page budget.
@@ -25,8 +26,9 @@ import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEI
  * only for the practically-impossible case (a single project + contact block won't fit).
  *
  * Budget model shared with the PDF renderer (export/pdf.ts): A4, 48pt margins, Helvetica.
- * Estimates here are conservative (chars-per-line 88 vs real ~95), and the renderer
- * re-asserts the page bound with true font metrics as a hard error.
+ * Closure F1: the compiler MEASURES with the same Helvetica AFM widths the renderer draws
+ * with (helvetica-metrics.ts) — estimation is dead; the renderer's overflow guard remains as
+ * the belt-and-braces hard error it should never again reach.
  */
 
 export class CompileError extends Error {
@@ -41,7 +43,6 @@ export class CompileError extends Error {
 // -- Budget constants (points) --
 export const PAGE = { width: 595.28, height: 841.89, margin: 48 }
 export const USABLE_HEIGHT = PAGE.height - PAGE.margin * 2 // 745.89
-const CHARS_PER_LINE = 88
 
 export const LINE_METRICS: Record<CompiledLine['kind'], { size: number; leading: number; before: number; bold: boolean }> = {
   contact: { size: 9.5, leading: 12.5, before: 2, bold: false },
@@ -53,22 +54,66 @@ export const LINE_METRICS: Record<CompiledLine['kind'], { size: number; leading:
   skills: { size: 10.5, leading: 13.5, before: 1.5, bold: false },
   forge: { size: 10.5, leading: 13.5, before: 1.5, bold: false },
 }
-// Name line rides on 'entry-title' metrics scaled up; handled explicitly:
-const NAME_HEIGHT = 24
 
-export function estimateLineHeight(line: CompiledLine): number {
+/**
+ * Closure F1 — ESTIMATION IS DEAD. The old estimator counted characters (88/line); the renderer
+ * measures real Helvetica glyph widths — and the gap between the two is exactly how a cast
+ * project could pass the estimate and then silently overflow (or over-trim) on the true page.
+ * The compiler now MEASURES with the same AFM width tables pdf-lib draws with, mirrors the
+ * renderer's wrap rules (centered contact, bold skills label + hanging indent, right-aligned
+ * dates narrowing the left column, bullet indent), and sanitizes exactly as the PDF will.
+ * The estimator and the renderer can no longer disagree about what fits.
+ */
+const MAXW = PAGE.width - PAGE.margin * 2
+
+function wrapCount(text: string, size: number, font: 'reg' | 'bold' | 'obl', firstWidth: number, fullWidth = firstWidth): number {
+  let count = 1
+  let line = ''
+  let onFirst = true
+  for (const word of text.split(' ')) {
+    const probe = line ? `${line} ${word}` : word
+    const budget = onFirst ? firstWidth : fullWidth
+    if (textWidth(probe, size, font) <= budget || line === '') {
+      line = probe
+    } else {
+      count++
+      onFirst = false
+      line = word
+    }
+  }
+  return count
+}
+
+export function estimateLineHeight(line: CompiledLine, isName = false): number {
   const m = LINE_METRICS[line.kind]
-  // A right-aligned segment (dates) shares the visual line but narrows the left column.
-  const chars = line.text.length + (line.right ? line.right.length + 4 : 0)
-  const wrapped = Math.max(1, Math.ceil(chars / CHARS_PER_LINE))
-  // Headings carry a hairline rule beneath them in the render (Session 7) — 4pt of real page.
-  const rule = line.kind === 'heading' ? 4 : 0
-  return m.before + wrapped * m.leading + rule
+  const size = isName ? 17 : m.size
+  const font: 'reg' | 'bold' | 'obl' = isName || m.bold ? 'bold' : line.kind === 'meta' || line.kind === 'forge' ? 'obl' : 'reg'
+  const text = sanitizePdfText(line.text)
+  const right = line.right ? sanitizePdfText(line.right) : ''
+  const lead = isName ? 21 : m.before + m.leading
+  const extraLead = isName ? m.leading : m.leading
+
+  if (isName || line.kind === 'contact') {
+    return lead + (wrapCount(text, size, font, MAXW) - 1) * extraLead
+  }
+  if (line.kind === 'heading') {
+    return lead + 4 // + the hairline rule's room (mirrors pdf.ts)
+  }
+  if (line.kind === 'skills') {
+    const idx = text.indexOf(': ')
+    if (idx > 0 && idx < 40) {
+      const labelW = textWidth(text.slice(0, idx + 1), size, 'bold') + size * 0.45
+      return lead + (wrapCount(text.slice(idx + 2), size, 'reg', MAXW - labelW, MAXW) - 1) * m.leading
+    }
+  }
+  const rightW = right ? textWidth(right, m.size, 'reg') : 0
+  const leftWidth = (right ? MAXW - rightW - 14 : MAXW) - (line.kind === 'bullet' ? 9 : 0)
+  return lead + (wrapCount(text, size, font, leftWidth) - 1) * m.leading
 }
 
 export function estimateHeight(lines: CompiledLine[]): number {
-  let h = NAME_HEIGHT // name is always line 0 at 16pt bold
-  for (let i = 1; i < lines.length; i++) h += estimateLineHeight(lines[i])
+  let h = 0
+  for (let i = 0; i < lines.length; i++) h += estimateLineHeight(lines[i], i === 0)
   return h
 }
 
@@ -504,9 +549,18 @@ export function compileResume(input: CompileInput): CompiledResume {
 
   // -- Solve the one-page constraint: tighten until it fits --
   // The cast is a contract (S7.2): every level keeps at least the cast count; richness yields first.
-  for (const lv of trimLevelsFor(input.editorial?.order.length ?? 0)) {
+  // Closure F3 (the last judge's input): if a last-resort level ever DOES bench a cast project,
+  // that is declared on the result — never silent (the GLOAMING class, structurally dead).
+  const castIds = input.editorial?.order ?? []
+  const benchNote = (lines: CompiledLine[]): string[] | undefined => {
+    if (castIds.length === 0) return undefined
+    const missing = castIds.filter((id) => !lines.some((l) => l.kind === 'entry-title' && l.ledgerIds.includes(id)))
+    if (missing.length === 0) return undefined
+    return missing.map((id) => displayTitle(ledger.find((e) => e.id === id)?.title ?? id).split('—')[0].trim())
+  }
+  for (const lv of trimLevelsFor(castIds.length)) {
     const lines = assemble(lv)
-    if (estimateHeight(lines) <= USABLE_HEIGHT) return { lines, jobId }
+    if (estimateHeight(lines) <= USABLE_HEIGHT) return { lines, jobId, benchedByPage: benchNote(lines) }
   }
 
   // Practically unreachable: even 1 project × 1 bullet + contact + education won't fit.

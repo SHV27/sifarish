@@ -104,3 +104,18 @@ export function groupSkills(skills: SkillLike[]): SkillGroup[] {
   }
   return out
 }
+
+/**
+ * WinAnsi-safe text (moved from export/pdf.ts in Closure F1 so the COMPILER can measure with
+ * the exact strings the renderer draws — without dragging pdf-lib into the main bundle).
+ * The strip's whitelist must name every glyph we keep, or the strip eats it silently (D139).
+ */
+export function sanitizePdfText(text: string): string {
+  return text
+    .replace(/₹/g, 'Rs.')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/•/g, '-')
+    .replace(/[^ -~–—·×…]/g, '')
+    .replace(/ {2,}/g, ' ')
+}

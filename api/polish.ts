@@ -65,13 +65,47 @@ async function guardRequest(req: Request): Promise<Response | null> {
   return null
 }
 
+/**
+ * Studio W2 (AUDIT #3): polish joins the free-router pattern — Groq lane first (streaming isn't
+ * needed here), Gemini Flash-Lite as the fallback brain. One provider's bad day no longer
+ * silently costs the polish pass (the pre-D124 disease shape). Lane order mirrors
+ * data/config/routing.json `lanes.polish`; the routing gate keeps them in sync.
+ */
+async function polishViaGemini(key: string, system: string, user: string, count: number): Promise<string[] | null> {
+  try {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
+      method: 'POST',
+      headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: [{ text: user }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 2048,
+          responseMimeType: 'application/json',
+          responseSchema: { type: 'object', properties: { lines: { type: 'array', items: { type: 'string' } } }, required: ['lines'] },
+        },
+      }),
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+    const content = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? '').join('')
+    const parsed = JSON.parse(content || '{}') as { lines?: unknown }
+    if (!Array.isArray(parsed.lines) || parsed.lines.length !== count) return null
+    return parsed.lines.map(String)
+  } catch {
+    return null
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   const guarded = await guardRequest(req)
   if (guarded) return guarded
 
   const key = process.env.GROQ_API_KEY
-  if (!key) return json({ polished: null, reason: 'keyless' }, 200)
+  const geminiKey = process.env.GEMINI_API_KEY
+  if (!key && !geminiKey) return json({ polished: null, reason: 'keyless' }, 200)
 
   let body: PolishRequest
   try {
@@ -99,6 +133,11 @@ export default async function handler(req: Request): Promise<Response> {
   const user = JSON.stringify({ lines })
 
   try {
+    // No Groq key → straight to the Gemini lane (W2 router parity).
+    if (!key) {
+      const g = await polishViaGemini(geminiKey!, system, user, lines.length)
+      return json(g ? { polished: g } : { polished: null, reason: 'gemini failed' }, 200)
+    }
     // D74 applied here too (Session 5.10 context audit): openai/gpt-oss-120b measured ~0/3 on
     // json_object — this function was the last call site on the broken mode, so the polish pass
     // was silently degrading to "keep as compiled" on most calls. json_schema + one retry.
@@ -131,13 +170,24 @@ export default async function handler(req: Request): Promise<Response> {
       })
       if (res.ok || res.status === 429) break
     }
-    if (!res || !res.ok) return json({ polished: null, reason: `groq ${res?.status ?? 'no-response'}` }, 200)
-    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
-    const content = data.choices?.[0]?.message?.content ?? '{}'
-    const parsed = JSON.parse(content)
-    const out: unknown = parsed.lines
-    if (!Array.isArray(out) || out.length !== lines.length) return json({ polished: null, reason: 'shape' }, 200)
-    return json({ polished: out.map(String) }, 200)
+    // Groq lane failed (429 / non-ok / bad shape) → the Gemini lane gets its turn (W2).
+    const groqFailed = !res || !res.ok
+    if (!groqFailed) {
+      const data = (await res!.json()) as { choices?: { message?: { content?: string } }[] }
+      const content = data.choices?.[0]?.message?.content ?? '{}'
+      try {
+        const parsed = JSON.parse(content)
+        const out: unknown = parsed.lines
+        if (Array.isArray(out) && out.length === lines.length) return json({ polished: out.map(String) }, 200)
+      } catch {
+        /* non-JSON from the lane → fall through to Gemini */
+      }
+    }
+    if (geminiKey) {
+      const g = await polishViaGemini(geminiKey, system, user, lines.length)
+      if (g) return json({ polished: g }, 200)
+    }
+    return json({ polished: null, reason: groqFailed ? `groq ${res?.status ?? 'no-response'}` : 'shape' }, 200)
   } catch (e) {
     return json({ polished: null, reason: String(e).slice(0, 80) }, 200)
   }

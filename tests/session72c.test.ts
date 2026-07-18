@@ -214,10 +214,11 @@ describe('C12 — the small lies, swept', () => {
       await db.intel.clear()
     }
   })
-  it('the reasoning cache prunes (autopilot housekeeping exists)', () => {
-    const ap = readFileSync('src/lib/autopilot.ts', 'utf8')
-    expect(ap).toContain('dimaagCache')
-    expect(ap).toContain('bulkDelete')
+  it('the infra tables prune (kv.pruneAll wired from autopilot — Closure W3 widened C12)', () => {
+    expect(readFileSync('src/lib/autopilot.ts', 'utf8')).toContain('pruneAll()')
+    const kv = readFileSync('src/lib/kv.ts', 'utf8')
+    expect(kv).toContain('dimaagCache')
+    expect(kv).toContain('bulkDelete')
   })
   it('Guru\'s pulse digest filters dismissed proposals', () => {
     const g = readFileSync('src/lib/guru/client.ts', 'utf8')

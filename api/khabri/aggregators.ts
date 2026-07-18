@@ -40,7 +40,7 @@ async function guardRequest(req: Request): Promise<Response | null> {
   try {
     host = new URL(origin).hostname
   } catch {
-    /* absent/garbled Origin → not a browser session on this app */
+    /* absent or garbled Origin → not a browser session on this app */
   }
   const prodHost = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? ''
   const originOk =

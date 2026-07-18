@@ -1,0 +1,41 @@
+{
+  "version": 5,
+  "comment": "PROMPT REGISTRY (Studio W2, closes AUDIT #15): every prompt-bearing file is hashed here. Changing one WITHOUT bumping `version` (and FORGE_VERSION when the forge/reframe craft changed) fails tests/routing-config.test.ts — a craft edit can never again silently skip the vault-repair banner (the D140 class, now mechanical).",
+  "entries": [
+    {
+      "file": "src/lib/nabz/forge.ts",
+      "versionedBy": "FORGE_VERSION",
+      "sha256": "f582adb015c8a6fa5a10ef2a61c19fe5f0c0ad46558278a2ff3c9fa9eb89ae66"
+    },
+    {
+      "file": "src/lib/polish/reframe.ts",
+      "versionedBy": "FORGE_VERSION (reframe shares the forge craft cycle)",
+      "sha256": "9bad037bf33aaa98585227cf0dd803197b86f66a96f76517fb3dc6b487b9deee"
+    },
+    {
+      "file": "src/lib/baithak/smart.ts",
+      "versionedBy": "PROMPT_VERSION via registry bump",
+      "sha256": "7f54b07f33ffeceeb48da22df23a9b26346bfa91d9481984e165b9825a0de0d1"
+    },
+    {
+      "file": "src/lib/darzi/nazar.ts",
+      "versionedBy": "PROMPT_VERSION via registry bump",
+      "sha256": "4324c85f0e8aab80dcc33b0f551370124fb1fcdbf0d9f5e0c8852f122897ca08"
+    },
+    {
+      "file": "src/lib/darzi/editor.ts",
+      "versionedBy": "PROMPT_VERSION via registry bump",
+      "sha256": "35abb20c87bf39793b31e38186174a99d933b2f93c00afbf44884bc02380c8e1"
+    },
+    {
+      "file": "src/lib/guru/context.ts",
+      "versionedBy": "PROMPT_VERSION via registry bump",
+      "sha256": "c692b072469733025f9e6e70d35b0790acd81aa89ab65940903b7c8808dd6a69"
+    },
+    {
+      "file": "api/polish.ts",
+      "versionedBy": "PROMPT_VERSION via registry bump",
+      "sha256": "4ddf6acdbc6bcd35de158264c563256dfce78fbcaeb247b325fb1dafb80504ed"
+    }
+  ]
+}

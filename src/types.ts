@@ -247,6 +247,12 @@ export interface CompiledResume {
   lines: CompiledLine[]
   /** Which JD this was compiled against. */
   jobId: string
+  /**
+   * Closure F1/F3 — THE LAST JUDGE's input: cast projects the page-pressure last resort had to
+   * bench (practically impossible after the cast-contract levels, but NEVER silent if it
+   * happens). Names, not ids — they render directly in the gap note.
+   */
+  benchedByPage?: string[]
 }
 
 export interface CompiledDoc {
@@ -361,6 +367,17 @@ export interface Packet {
   baithakLog?: BaithakLogEntry[]
   /** Professional summary on the resume (default on) — evidence-linked, Baithak-toggleable. */
   summaryOn?: boolean
+}
+
+// ---------- Boundary errlog (Studio Protocol W1) ----------
+
+/** A categorized, bounded record of a swallowed failure — I4 degrades for the user; the app SEES. */
+export interface ErrLogRow {
+  id: string
+  at: string
+  category: 'auth' | 'ratelimit' | 'budget' | 'network' | 'shape' | 'provider'
+  context: string
+  message: string
 }
 
 // ---------- Tijori (persistence vault — Session 5) ----------

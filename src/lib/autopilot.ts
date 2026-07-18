@@ -2,6 +2,7 @@ import { db } from '../db/db'
 import { runSweep, syncVisionHunts } from './khabri/client'
 import { runPulse, pulseDue } from './pulse/client'
 import { syncRadar } from './radar/feeds'
+import { catchAs } from './boundary'
 
 /**
  * AUTOPILOT (v3, D34) — the app keeps itself current without being asked. On open, if the
@@ -31,12 +32,12 @@ export async function runAutopilot(): Promise<void> {
   // Vision drives the queue (Session 5.6, D68/D85): reconcile his Vision Profile into the hunts on
   // every open BEFORE the sweep — additive + idempotent, so a vision edit made last session takes
   // effect now and his manual hunts are never touched. Then the sweep hunts his queries first.
-  await syncVisionHunts(settings.visionProfile).catch(() => {})
+  await syncVisionHunts(settings.visionProfile).catch((e) => catchAs('provider', 'autopilot.visionSync', e))
 
   // Stagger so we never fire two credit-spending sweeps at the same instant.
   const sweepStale = !settings.lastSweepAt || Date.now() - new Date(settings.lastSweepAt).getTime() > SWEEP_STALE_MS
   if (sweepStale) {
-    runSweep().catch(() => {}) // budget-gated inside; new finds land in the Radar with a NEW stamp
+    runSweep().catch((e) => catchAs('provider', 'autopilot.sweep', e)) // budget-gated inside; NEW stamps land in the Radar
   }
 
   // Session 7 (H5): the board scan joins the autopilot — keyless, board-verified-open truth
@@ -48,30 +49,21 @@ export async function runAutopilot(): Promise<void> {
     setTimeout(() => {
       syncRadar()
         .then(() => db.nabzCache.put({ key: 'radar:lastBoardScan', json: '1', fetchedAt: new Date().toISOString() }))
-        .catch(() => {})
+        .catch((e) => catchAs('provider', 'autopilot.boardScan', e))
     }, 2500)
   }
 
   if (pulseDue(settings.lastPulseAt)) {
     // Delay the pulse a touch so it doesn't contend with the sweep's network burst.
     setTimeout(() => {
-      runPulse().catch(() => {})
+      runPulse().catch((e) => catchAs('provider', 'autopilot.pulse', e))
     }, 4000)
   }
 
-  // Session 7.2 (C12): the reasoning cache had NO pruning — unbounded growth per unique input
-  // hash, forever. Keep the newest 500; identical inputs re-cache on their next real call.
+  // Studio W3 (AUDIT Class F): SIX tables grew monotonically and every byte rode the encrypted
+  // sync blob forever. pruneAll bounds signals/dak/pulse/usage/errlog/dimaagCache — infra rows
+  // only, his story data never.
   setTimeout(() => {
-    void (async () => {
-      try {
-        const n = await db.dimaagCache.count()
-        if (n > 600) {
-          const stale = await db.dimaagCache.orderBy('at').limit(n - 500).primaryKeys()
-          await db.dimaagCache.bulkDelete(stale)
-        }
-      } catch {
-        /* housekeeping only */
-      }
-    })()
+    import('./kv').then((m) => m.pruneAll()).catch((e) => catchAs('provider', 'autopilot.prune', e))
   }, 8000)
 }
