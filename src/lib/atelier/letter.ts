@@ -13,6 +13,8 @@ import type {
 import { entryRelevance } from '../match/evidence'
 import { hookFromIntel } from '../intel/client'
 import { decide } from '../dimaag/core'
+import { cleanUrlForDisplay, stripMarkdownResidue } from '../compile/typeset'
+import { cleanSummaryForDisplay } from '../compile/compiler'
 
 /**
  * THE ATELIER (P11) — cover letters composed, not filled. Each letter could only be his, for
@@ -119,11 +121,13 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
   }
 
   // 3 — Two cast proof points (project + why-this-company).
+  // Session 7.2 (A2): the letter passes the SAME hygiene gates as the résumé — the vault can
+  // hand us "…vercel.app**" residue and it must die here too, not only at the compiler's push().
   for (const p of proofs) {
     const url = p.evidence?.url ?? p.evidence?.repo ?? ''
-    const first = p.bullets[0]?.text ?? p.summary
+    const first = stripMarkdownResidue(cleanSummaryForDisplay(p.bullets[0]?.text ?? p.summary)).replace(/[.]\s*$/, '')
     paragraphs.push({
-      text: `${p.title.split('—')[0].trim()}: ${first}.${url ? ` It's live at ${url.replace(/^https?:\/\//, '')}.` : ''}`,
+      text: `${p.title.split('—')[0].trim()}: ${first}.${url ? ` It's live at ${cleanUrlForDisplay(url)}.` : ''}`,
       ledgerIds: [p.id],
     })
   }
@@ -133,8 +137,10 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
   const forge = ledger.filter((e) => e.tier === 'in_forge' && e.resumeEligible && forgeIds.has(e.id))
   if (forge.length > 0) {
     const names = forge.map((e) => e.title.split('—')[0].trim()).join(' and ')
+    // Session 7.2 (C7): the window reads from his live vision, never a hardcoded year.
+    const window = vision?.windowStart && vision?.windowEnd ? `${vision.windowStart}–${vision.windowEnd}` : 'January–May 2027'
     paragraphs.push({
-      text: `I'm honest about what's still in progress: I'm building ${names} right now (${forge[0].forgeEta ?? 'July 2026'}). My internship window is January–May 2027, so it will be shipped well before day one.`,
+      text: `I'm honest about what's still in progress: I'm building ${names} right now (${forge[0].forgeEta ?? 'July 2026'}). My internship window is ${window}, so it will be shipped well before day one.`,
       ledgerIds: forge.map((e) => e.id),
     })
   }

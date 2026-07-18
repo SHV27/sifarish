@@ -8,7 +8,7 @@ import type {
 } from '../../types'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills } from './typeset'
-import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEIGHT } from './overlap'
+import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEIGHT, isIdentityBullet } from './overlap'
 
 /**
  * Stage 3: deterministic compile under the one-page budget.
@@ -323,8 +323,8 @@ export function compileResume(input: CompileInput): CompiledResume {
     // an agentic job-hunt chief of staff…") is an IDENTITY RESTATEMENT — the title + description
     // line already say what it is; the bullet slot must carry a distinct accomplishment. Dropped
     // whenever the entry has other usable bullets.
-    const nameToken = displayTitle(p.title).split(/[—\-\s]/)[0]?.toLowerCase() ?? ''
-    const isIdentity = (b: PBullet) => nameToken.length >= 4 && renderText(b).toLowerCase().includes(nameToken)
+    // Session 7.2 (A8): the shared identity-ban heuristic — one rule, compiler + forge.
+    const isIdentity = (b: PBullet) => isIdentityBullet(displayTitle(p.title), renderText(b))
     const allRanked = rankedBullets(p)
     const nonIdentity = allRanked.filter((b) => !isIdentity(b))
     const ranked = nonIdentity.length > 0 ? nonIdentity : allRanked
@@ -393,7 +393,9 @@ export function compileResume(input: CompileInput): CompiledResume {
         for (const e of education) {
           // Session 7 typesetter: qualification left, its years/score right-aligned — the
           // classic canon (Session 6's one-coherent-line rule preserved: nothing orphans).
-          const meta = e.summary ? e.summary.replace(/\s+/g, ' ').trim() : displayDate(e.evidence?.date)
+          // Session 7.2 (A7): the same hygiene as project descriptions — a vault summary
+          // carrying a raw URL or "Live:" label must not render on an education line either.
+          const meta = e.summary ? cleanSummaryForDisplay(e.summary) : displayDate(e.evidence?.date)
           push(lines, { kind: 'entry-title', text: e.title, right: meta || undefined, ledgerIds: [e.id] })
         }
       },
@@ -452,7 +454,8 @@ export function compileResume(input: CompileInput): CompiledResume {
         if (keptAch.length === 0 && keptPos.length === 0) return
         push(lines, { kind: 'heading', text: 'ACHIEVEMENTS', ledgerIds: [...keptAch, ...keptPos].map((e) => e.id) })
         for (const h of keptAch) {
-          push(lines, { kind: 'bullet', text: `- ${h.title}${h.summary ? ` — ${h.summary}` : ''}`, ledgerIds: [h.id] })
+          const hs = h.summary ? cleanSummaryForDisplay(h.summary) : '' // A7: same hygiene gate
+          push(lines, { kind: 'bullet', text: `- ${h.title}${hs ? ` — ${hs}` : ''}`, ledgerIds: [h.id] })
         }
         // Session 6 (Defect 3): each position on its own bullet — the old `;`-joined single line
         // crammed three leadership roles into one unreadable run-on. The trim ladder still drops
@@ -466,7 +469,7 @@ export function compileResume(input: CompileInput): CompiledResume {
         push(lines, { kind: 'heading', text: 'CERTIFICATIONS', ledgerIds: certs.map((e) => e.id) })
         for (const c of certs) {
           // Trailing period stripped before wrapping in parens — "(Certificate ID X.)" read broken.
-          const detail = c.summary ? ` (${c.summary.trim().replace(/\.$/, '')})` : ''
+          const detail = c.summary ? ` (${cleanSummaryForDisplay(c.summary).replace(/\.$/, '')})` : '' // A7
           push(lines, { kind: 'bullet', text: `- ${c.title}${detail}`, ledgerIds: [c.id] })
         }
       },

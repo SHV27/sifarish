@@ -1,203 +1,196 @@
-# PLAN.md — Session 7 "The Taaj" (planned 18-Jul-2026, awaiting owner go-ahead)
+# PLAN.md — Session 7.2 "The Sanad" (सनद — the credential no one can question)
 
-> Owner's brief, in one line: **the résumé must look and read like the best selected-student résumés
-> (classic, intense, magnificent, max honest ATS), the hunt must match LinkedIn's breadth/relevance
-> on his own searches, everything fast + token-efficient with zero IQ tradeoff, zero errors, zero
-> unwired features, then ONE "DONE" — no roadmap, no open list.**
-
-This plan was written AFTER three read-only forensic audits (tailor pipeline, discovery pipeline,
-case-study/progress digest). Every root cause below is verified at file:line, not guessed.
-Per the owner's instruction: **nothing is coded until he says go.**
+> Owner's brief: "har cheez ko improvement ki zarurat hai — shuru se shuru karna pade toh kar.
+> Ek ek error main nahi pakdunga; the app must be intelligent enough to prevent them."
+> Method: THREE read-only forensic audits ran before one line was planned — Darzi pipeline,
+> discovery pipeline, full-app sweep (Guru/Baithak/Morcha/Dak/Nabz/Settings/Pulse/Briefing).
+> Every item below is a VERIFIED file:line finding, not a guess. Per the owner's standing law,
+> nothing is coded until he says go.
 
 ---
 
-## 0 · THE ROOT-CAUSE LEDGER (what the audits proved)
+## 0 · WHAT THE AUDITS PROVED (the disease, named)
 
-### Résumé side — why his résumé looks like slop even after Session 6.1
+Session 7's machinery (typesetter, MMR+concept dedupe, Nazar, hunt rebuild, free router) is real
+and wired on the default path — the audits confirm it. What remains is ONE disease in three coats:
 
-| # | Symptom (his screenshot) | Verified root cause |
-|---|---|---|
-| R1 | `…vercel.app**` — markdown residue on the page | `compiler.ts:331-332`: `cleanSummaryForDisplay` cleans only the description half of the meta line; the evidence URL half is appended raw. Ingestion leak: `nabz/github.ts:166` URL regex doesn't exclude `*`, so `**https://…**` captures trailing `**` into the stored URL. PDF sanitizer passes ASCII `*` through. |
-| R2 | "…voice read-outs, and…" — cut mid-sentence | `compiler.ts:331`: hard `truncateAtWord(…, 160)` on the description — a word-safe cut is still a mid-THOUGHT cut. |
-| R3 | Two near-identical SIFARISH bullets | **No near-duplicate detection exists anywhere in the bullet-selection path.** The only Jaccard similarity in the repo (`atelier/uniqueness.ts`) is letters-only. Near-dupes share keywords, so relevance scoring actively REWARDS both. |
-| R4 | Quantification 13/25 while ROC-AUC 0.957 sits in the ledger | Numbered bullets get only a +2 tie-break (`compiler.ts:272-275`, `editor.ts:254-255`) — easily outweighed by keyword overlap; no rule forces ≥1 numbered bullet per project when the entry holds one. The rubric (`quality.ts:165-206`) then honestly reports the miss. |
-| R5 | Formatting "ek line mein kahin kuch kahin kuch" — nothing like Jake's résumé | `pdf.ts`: EVERYTHING is left-aligned at one x. Name not centered, dates cannot right-align, no section rules (no `drawLine` call exists), no italic font embedded, skills are one pipe-separated run with zero grouping (`compiler.ts:314`), no category field on skills at all. The renderer is structurally incapable of the classic layout. |
-| R6 | Red-team advice is career-coach boilerplate | `darzi.ts:110` passes ONLY the flattened résumé text to critique — never the ledger, never the unused-numbers inventory. The model literally cannot ground its fixes. |
-| R7 | Professional summary is generic | `summary.ts` is a pure template (role + domain phrase) — deliberately timeless, but evidence-blind. |
-| R8 | "Trained on nothing" feeling | Library is 69 sources / 33 patterns; the craft patterns reach prompts via `craftClauses` (mechanism works, D118) — the LIBRARY is the thin part, and section-anatomy/layout patterns don't exist in it. |
+1. **State amnesia.** The first compile knows everything (Nazar exclusions, summary, framing
+   overrides, editorial plan); every LATER recompile — Baithak op, summary toggle, overrule,
+   phase-2 failure — forgets a different subset. The résumé is only as good as its last
+   recompile, and most recompiles are amnesiac.
+2. **Arithmetic that lies.** Autopilot 6h sweeps × 6 JSearch credits = the 200/month budget dead
+   by day ~8 — after which the ONLY LinkedIn-reaching lane runs zero times for three weeks,
+   silently. The Groq budget bar is the mirror image: Guru/polish spend is neither gated nor
+   recorded, so the bar reads 0/5000 forever. Both violate I8's "legible" clause.
+3. **Gates guarding one door of a two-door room.** push() sanitizes the résumé — the cover
+   letter never passes through it. MMR dedupes the page — polish mutates lines after it. The
+   derived-hunt cap is sane — and silently discards every Europe/theme/dream-company hunt the
+   vision derives. D136 fixed hasEvidence — in one of its two copies.
 
-### Hunt side — why LinkedIn out-performs the Radar on his own query
-
-| # | Symptom | Verified root cause |
-|---|---|---|
-| H1 | LinkedIn: 200+ India / 99+ Europe; app: a trickle | JSearch `num_pages` hardcoded `'1'`, `page` hardcoded `'1'` (`api/khabri/jobs.ts:104-108`) → ~10 rows per query, page 2 never fetched, ≤10 queries/sweep. THE single biggest breadth cap. |
-| H2 | Results feel off-vision ("Intern"-skewed, research-scientist noise) | `deriveHunts` emits "…Intern" title-variants FIRST; `syncVisionHunts` cap 14 fills entirely with them — plain market queries (`AI engineer`, `LLM engineer`, `agentic AI engineer`) NEVER become funded hunts. Worse: derive emits `research scientist intern` and Adzuna fallback includes `data scientist` — queries he never asked for. |
-| H3 | Same 4-5 companies repeating | NO per-company cap in the top-15 (`Radar.tsx:64,75`); ATS boards return up to 40 roles each; 7 starred AI labs get +5 conviction → one board floods the queue. Dedupe key truncates titles to 14 chars, over-merging distinct roles of one company. |
-| H4 | Manual hunts never run | Derived hunts (14) are processed before manual (5) and the JSearch budget is 10 → the 5 manual hunts NEVER get a JSearch request, any sweep. |
-| H5 | Stale vs LinkedIn's "2 hours ago" | Sweep = once per open, ≥24h apart. And the FRESHEST source — the 32 ATS boards, keyless, board-verified — is NEVER auto-scanned: `syncRadar`'s only caller is the manual button. The freshest lane is the least-run lane. |
-| H6 | One-country-per-query geography | Each JSearch request pins ONE market; a sweep touches ≤10 of 15 markets; full hunt×market coverage takes weeks at current cadence. LinkedIn's "Europe" answers the whole region at once. |
-
-### The meta-lesson (case-study digest)
-- Proofs on the SEED are not proofs on HIS VAULT (D140 / §3.26) — every craft fix ships with its repair path.
-- "Built but not wired" is this codebase's recurring disease (D69/D99/D118/D125) — every fix below names its wire.
-- 533 green gates missed 3 defects only a rendered PDF caught (D139) — visual proof is mandatory, not optional.
+The structural counter (this session's one big idea): **make forgetting impossible, make spend
+visible, make every gate the ONLY door.** Not new features — closures.
 
 ---
 
-## 1 · WORKSTREAMS
+## WS-A · THE RÉSUMÉ: one compile authority, zero amnesia
 
-### WS-R1 — THE TYPESETTER (the résumé must LOOK like the references)
-Rebuild the PDF/DOCX layout to the classic selected-student standard (Jake's-résumé class):
-- **Centered name** (16-17pt bold) + one centered contact line (`email | phone | github | linkedin | location`).
-- **Section headings with a horizontal rule** (`drawLine`) — EDUCATION · SKILLS · PROJECTS · ACHIEVEMENTS.
-- **Right-aligned dates** on title lines: `CompiledLine` gains an optional `rightText` segment; renderer draws
-  left segment then right segment at computed x; parse-back contract updated so `line.text` = left + right in
-  draw order (I5 stays 100% by construction, test updated to assert the new contract).
-- **Bold title + regular subtitle** structure per project/education entry; Helvetica-Oblique embedded for the
-  one place italic earns its keep (project tagline).
-- **Skills grouped into labeled lines** — `Languages:` / `AI & ML:` / `Frameworks & Tools:` / `Cloud & Infra:`.
-  Ledger skill entries gain an optional `category`; a deterministic lexicon categorizer fills the gap for
-  uncategorized skills (his hand-set category always wins). Rendered as 3-5 grouped lines, not one pipe-run.
-- **Description line fixed**: full project description wraps (≤2 lines), trimmed at SENTENCE boundary only —
-  the 160-char mid-thought cut dies. Trim ladder still governs page pressure.
-- **DOCX mirrors all of it** (right tab stops, rule borders, grouped skills).
-- **Proof**: render → screenshot → LOOK (D139 law), plus parse-back green, plus the one-page law intact.
+**A1 — CompileIntent: one persisted truth every recompile reads.** ROOT FIX.
+Five call sites re-assemble compile options ad-hoc (buildPacket, buildPacketFast, Baithak
+recompile, setSummary, overrulePacket), each forgetting different fields. Persist ONE
+`compileIntent` on the Packet — `summaryLine`, `excludedIds`, **`excludedBulletIds` (Nazar's,
+currently never persisted)**, `bulletOverrides`, editorial plan — and every recompile path reads
+it, changing ONLY the field its op targets.
+Kills (audit-verified): Baithak ops silently dropping the professional summary; setSummary
+dropping Nazar exclusions + framing rewrites; overrule dropping summary/exclusions/overrides;
+set-entry discarding the editorial bullet plan.
+Gate: one test per recompile path — summary+exclusion+override survive every op except its own field.
 
-### WS-R2 — THE SELECTION BRAIN (dedupe + numbers, structurally)
-At `bulletsFor` (`compiler.ts:263-277`) — the single gate both selection paths pass through:
-- **Near-duplicate gate**: lift `similarity()` out of `atelier/uniqueness.ts` into a shared lib; any bullet
-  pair (within a project, and across the whole résumé) above a content-word Jaccard threshold → keep the
-  stronger (numbers beat no-numbers, then relevance), drop the twin, promote the next distinct bullet.
-  Regression test built from the EXACT two SIFARISH bullets off his broken résumé.
-- **Quantification guarantee**: if an entry holds ≥1 digit-bearing bullet, the selected set MUST include ≥1
-  (swap the weakest pick if needed). Mirrored in `surgeryPass` scoring so the LLM plan and the compiler agree.
-- **Sanitizer at the choke point**: markdown/URL cleaning moves to the compiler's single `push()` gate so EVERY
-  line (title, meta, URL, bullet) is clean by construction; fix the ingestion regex (`github.ts:166` excludes
-  `*` etc.); vault-repair sweep cleans already-stored polluted URLs (D140 pattern — his data, not just the code).
-- **Red-team grounded**: critique receives the ledger inventory (unused numbered bullets, unused strong
-  evidence) alongside the résumé text — its fixes must cite what the ledger actually holds; heuristics-first
-  fast path stays.
+**A2 — The letter passes the same gates as the résumé.**
+`composeLetter`/atelier read raw `p.summary`/bullets — the `vercel.app**` residue class renders
+verbatim in letters today. Route every letter content line through the shared
+`stripMarkdownResidue` + `cleanSummaryForDisplay`. Gate: dirty-vault fixture → clean letter.
 
-### WS-R3 — THE EXEMPLAR LIBRARY (the "training" he keeps asking for)
-- Grow `data/ustaad/library.json` with a dedicated **résumé-anatomy corpus** distilled from real
-  selected-student résumés (r/EngineeringResumes success threads, hired-AI-engineer writeups, the classic
-  LaTeX-template ecosystem): section order per archetype, bullet formulas, summary formulas, skills taxonomy,
-  date/format conventions, per-section density norms. Target: **100+ cited sources, 50+ patterns** — honest
-  counts, stated as counts (the "500 résumés" ambition lands as distilled patterns-with-receipts, and the
-  library remains Pulse-refreshable versioned DATA, I13 — it keeps growing without code).
-- Patterns reach every prompt via the already-wired `craftClauses` (D118) — including the NEW layout/anatomy
-  patterns reaching the typesetter's choices where deterministic (section order per archetype).
-- **Summary upgraded**: evidence-fed variant — role positioning + strongest proof phrase (shipped-count,
-  flagship metric) — still template-compiled (I1), never LLM-minted.
+**A3 — polishPacket re-enters the gate.** Post-compile polish writes LLM text straight into
+compiled lines (no sanitizer, no overlap re-check). Same sanitizer + `bulletOverlap` vs the page;
+violating polish → original line stands. Gate: mock polish returning `**bold**` twin → rejected.
 
-### WS-R4 — THE FAST BRAIN (fewer calls, same IQ)
-- Consolidate the Editor's Desk: **casting + all per-project angles in ONE structured reasoning call**
-  (schema returns order + per-project angle + why). Reframe stays top-2 parallel. Red-team stays
-  heuristics-first. Signature decision folds into the letter path.
-  Net: worst case ~9 reasoning calls → **≤4**, serial spine shortened by one full hop, free-tier TPM safer.
-- **FREE PREMIUM REASONING ROUTER (owner has zero API budget — by design, not compromise)**: the reasoning
-  tier becomes a provider CHAIN of free tiers — best free lane first (candidates, live-verified at execution
-  start per Law 12: Google AI Studio/Gemini free tier [no card required], Cerebras free tier, GitHub Models
-  via the existing PAT), falling to the Groq gpt-oss-120b lane, falling to the deterministic keyless path.
-  Every lane's usage tracked in the Dimaag Ledger (I8); the app runs fully with zero keys (I4). Three free
-  brains chained beat one paid brain for THIS app: quota exhaustion degrades one step, never to silence.
-  NOTE (root-cause honesty): most of the observed quality loss was selection/wiring, not model IQ — the
-  structural fixes in WS-R1/R2 carry the bulk of the résumé upgrade regardless of which lane answers.
-- Cache, budgets, keyless fallbacks untouched (I4/I8). Live probe re-verifies each consolidated path (D82 law).
+**A4 — Phase-2 failure is visible; the fast packet gets the deterministic floor.**
+If full buildPacket throws, the fast packet ships silently, never Nazar'd. Fix: run the Nazar
+heuristic floor + red-team heuristics (zero-spend) on the fast packet, stamp `enhanced:'failed'`,
+show a retry chip. Gate: forced phase-2 throw → floor results + chip present.
 
-### WS-R5 — VAULT REPAIR v2 (DONE = his data, not the seed)
-- Bump forge/compile version; the existing repair banner (D140) triggers the spaced re-forge; stored packets
-  re-tailor on open; polluted evidence URLs cleaned in the same sweep. Live proof runs on a REAL-vault-shaped
-  ledger, and the rendered PDF is READ, not just parsed.
+**A5 — Re-runs carry full context.** Baithak/overrule re-run `redTeamPass(text)` bare — no
+decode/archetype/inventory (weaker than first compile, D124's payload law). Thread them from A1's
+stored intent. Gate: recompile red-team payload contains decode.
 
-### WS-D1 — BREADTH UNLOCK (the LinkedIn-parity lever)
-- **JSearch pages**: stop hardcoding `num_pages:'1'` — request 2-3 pages per funded query within budget
-  (pricing semantics live-verified first, Law 12; budget math re-stated in Settings, I8). ~10 rows/query
-  becomes ~30-60 rows/query. This single change is most of the breadth gap.
-- **Query mix fixed**: `deriveHunts` interleaves BROAD market queries (`AI engineer`, `agentic AI engineer`,
-  `LLM engineer`, +remote/+India variants) FIRST-CLASS alongside intern variants; `syncVisionHunts` cap raised
-  so both classes get slots; **manual hunts interleave with derived** in the sweep order so they actually run
-  (H4 dies). `research scientist` / `data scientist` queries removed from derive + Adzuna fallback unless his
-  vision names them.
-- **Region queries**: add region-phrased hunts ("AI engineer Europe remote") alongside country rotation —
-  Google-for-Jobs resolves region phrasing; his LinkedIn-Europe comparison gets a direct counterpart.
-- **Adzuna**: page-2 fetch where budget allows; `max_days_old` 60→30 (D65 discards older anyway).
-- Budgets: perRunCap raised within existing monthly honesty (I8; monthly caps re-checked against provider
-  plans live before any raise).
+**A6 — The summary stops being one static line.** `professionalSummary()` ignores the JD; every
+company gets an identical sentence. Deterministically pick the emphasis clause from the decode's
+top must-have theme (zero LLM, same I1 guard). Gate: two JDs → two emphases, no project names.
 
-### WS-D2 — RELEVANCE + VARIETY (the queue must read like HIS list)
-- **Per-company diversity cap** in the default top-15 (max 2 per company; overflow reachable via search /
-  show-all — search stays uncapped, D64). The mechanical cause of "same 4-5 companies" dies.
-- **Role-family lens — DEMOTE, NEVER HIDE**: role families not in his targets (research scientist, data
-  scientist, pure-frontend…) take a real visible penalty unless his vision names them (rendered in "why this
-  score", L4; editable in Settings like the Vision Lens, D96). Nothing is silently discarded, ever — the
-  owner's emotion is "a flood of relevant roles worldwide", so supply explodes and ranking sorts; filters
-  only re-order what he can always still see.
-- **Dedupe key widened** (title 14-char truncation over-merges distinct roles of one company).
-- **LinkedIn-parity chips** (from his screenshots, re-read): one-tap Radar filters — date window / Remote /
-  India / Intern / Full-time / Gen-AI / LLM; a "Be an early applicant" chip on <48h postings (we hold the
-  timestamps already); board-verified-open (D131) promoted to LinkedIn's "Actively reviewing" prominence on
-  the card. Honest boundary: "Under 10 applicants" has no lawful data source outside LinkedIn — not built.
+**A7 — cleanSummaryForDisplay reaches education/achievement/cert lines + Shelf display.**
+(URLs/status labels currently render raw on those kinds.)
 
-### WS-D3 — FRESHNESS (the freshest lane must be the most-run lane)
-- **Autopilot gains the board scan**: `syncRadar` (keyless, board-verified, currently manual-only) runs on
-  open with a 6h cache — the H5 wiring fix. Aggregator sweep staleness window 24h → 6h (still budget-capped,
-  still once per session, still owner-gated).
-- Radar shows "last swept Xh ago · N boards scanned" so freshness is visible, never assumed.
+**A8 — One identity-ban token heuristic.** Compiler and forge use two different name-token rules;
+export one function, both call it. Gate: shared fixture rejects at both sites.
 
-### WS-G — GURU = THE IN-APP GUIDE THAT CAN ALSO STEER
-- Guru answers "meri vision ab aisi hai — radar/hunts mein kya change karun?" with the ACTUAL current config
-  injected (vision, hunts, budgets, watchlist) and proposes the edits as confirm-cards through the existing
-  human-confirm op pattern (vision edit → re-derive, hunt add/retire, budget tweak, watchlist add). Widen the
-  vocabulary, never loosen the guard (D62 law). No auto-apply, ever (I3).
+**A9 — Editor's surgery dedupe upgraded to the concept-aware primitive** (today lexical-only —
+compiler saves the page, but the plan wastes reasoning tokens proposing twins).
 
-### WS-C — DECLUTTER (his explicit asks)
-- Skills he adds by hand need NO repo evidence — a skills line is his own attestation (I1 governs bullets and
-  prose claims; the skill list is a claim he signs). Quick-add stays one field.
-- The loud "excluded from resume" card badge goes; `resumeEligible` survives as a quiet toggle in edit.
-- Redundant space-eating entries: multi-select delete in Shelf (owner-only, confirmed, reversible via re-add).
+## WS-B · THE HUNT: arithmetic that closes, depth that earns page 2
 
-### WS-Z — CERTIFICATION (the Sentinel Protocol, in full)
-- Wiring audit (D125 pattern) across every feature this session touches — an unwired invention is a lie.
-- Full gate suite + new regression gates (every defect above ships its test, built from his exact strings).
-- **The Four Proofs**, executed and pasted: machine · fresh-eyes (wiped profile, 3 breakpoints, 0 console
-  errors) · adversary (all personas vs live deploy) · money (every metered path enumerated + gated).
-- Live tailor proof on a real-vault-shaped ledger; the rendered PDF read by eye (D139).
-- Deploy → verify prod asset hash → owner smoke on the live URL (D76 law).
-- CASE_STUDY.md + README updated. PROGRESS.md gate table un-staled.
-- Then: **ONE message. "✅ DONE." No roadmap, no open-items list** — self-evolving things (library, pulse,
-  hunts) evolve inside the app, and that is the app working, not a gap.
+**B1 — Daily rationing: the budget must survive the month.** ROOT FIX.
+Per-lane daily allowance = floor(monthlyCap/30) (jsearch 6/day, adzuna 10/day); a sweep spends at
+most today's remaining ration; keyless lanes always run (freshness at ₹0 continues even when
+keyed lanes rest). Gate: simulated 30 days × 4 sweeps/day → spend ≤ cap AND keyed lane still
+alive on day 30.
 
----
+**B2 — Budget exhaustion is LEGIBLE.** SweepYield gains `skipped:{lane,reason}`; Radar's swept-line
+and Hunt-now toast name skipped lanes ("JSearch: aaj ka ration spent — kal fir"). Gate: exhausted
+→ yield + UI show it.
 
-## 2 · HONEST BOUNDARIES (stated now so DONE means done)
+**B3 — Depth where it pays.** A hunt whose last run yielded ≥6 relevance-scored roles earns
+page=2 on its next funded run (1 extra credit, ≤2 deep-hunts/sweep, inside the ration).
+Deterministic + visible ("depth 2"). Gate: promotion logic + ration respected.
 
-1. **Third-party "ATS score" numbers are marketing, not physics.** What is controllable — and gated — is:
-   single column, standard headings, clean parse order (I5 100%), keyword coverage where evidence exists,
-   grouped skills, quantified bullets, zero markdown residue, classic typography. That is what those checkers
-   actually measure; we max every controllable factor and never print a fake score (I9).
-2. **"Beat LinkedIn" means**: on HIS searches and HIS vision, the queue matches LinkedIn's relevance and
-   useful breadth, and beats it on vision-ranking + evidence-tailored packets + board-verified-open truth.
-   It does NOT mean replicating the world's largest proprietary jobs graph — enterprise employers on
-   Workday-class ATSes keep arriving via the lawful aggregator door (D122).
-3. **Reasoning = free-tier router (WS-R4), Groq + keyless as structural fallbacks** — the app never
-   depends on any key (I4); every lane is ₹0. No paid API exists anywhere in this plan.
+**B4 — The vision's whole net syncs.** Cap-14 is consumed by role-variants; Europe/theme/
+dream-company hunts NEVER reach savedHunts (D69's disease one layer deeper — built, gate-tested,
+unreachable). Class quotas (roles 8 · regions 2 · themes 2 · dream 2, cap 16). Hunt-panel accepts
+get `derived:true` so Pulse retirement (D123) reaches them. Gate: default vision syncs ≥1 of each
+class; panel-accept marked derived.
 
-## 3 · WHAT THE OWNER PROVIDES WITH THE GO-AHEAD
+**B5 — JSearch honesty + rotation de-drift.** (i) `datePosted:'all'` currently silently becomes
+'month' — honor the owner's explicit choice. (ii) Rotation offset advances by window width (not
++1 → 4/5 overlap today) and never double-funds India in slots i>0. Gate: 15 markets in 3 sweeps,
+no double-India.
 
-1. **A fresh Vercel token** (for deploys + live proofs).
-2. *(Optional, free, no card)* **A Google AI Studio API key** — aistudio.google.com → "Get API key",
-   ~2 minutes — unlocks the top lane of the free reasoning router. Without it the router still runs
-   (GitHub-PAT lane + Groq + keyless).
-   Keys arrive however the owner chooses to send them; they live server-side only (Vercel env /
-   gitignored `.env.local`), never in any committed file. The owner manages his own secret rotation and
-   revocation — standing instruction: no further reminders from the session.
+**B6 — The dedupe key stops eating role identity.** STOP_TITLE strips engineer/scientist/intern/
+senior/junior → "Senior ML Engineer" and "ML Engineer Intern" collide and the newcomer is
+DISCARDED without refreshing the survivor (stale staleness persists). Keep discipline+seniority in
+the key; on duplicate, refresh survivor's updatedAt/salary from the fresher sighting. Gate: both
+roles survive; re-seen role's staleness heals.
 
-## 4 · EXECUTION ORDER
+**B7 — Board scans join the dedupe.** syncRadar writes by raw id → the same role can hold TWO
+cards (aggregator + board). Board version wins on collision (board-verified > ghost) and absorbs
+the aggregator card's status/history. Gate: aggregator find + later board scan → one card.
 
-R1 typesetter → R2 selection brain → R3 library → R4 fast brain → R5 vault repair →
-D1 breadth → D2 relevance → D3 freshness → G guru → C declutter → Z certification.
-Checkpoint commit per workstream (Law 10). Volatile facts (JSearch pricing/num_pages semantics, Adzuna
-pagination, Groq model status, board CORS) live-verified at execution start (Law 12).
+**B8 — Lane-fit queries.** Remotive gets the ≤3-word derived core (full hunt phrases return ~0
+today); Adzuna pairs each country with a ROTATING query index so every market meets every core
+over ~n sweeps. Gates: both mappings unit-tested.
 
-**STATUS: PLANNED. Nothing coded. Awaiting the owner's go-ahead.**
+## WS-C · THE REST: honest meters, no dead ends, one copy of every rule
+
+**C1 — The Groq meter becomes honest (I8).** streamGuru + polishPacket/polishDoc spend with NO
+`allowedThisRun('groq')` gate and NO recordSpend — the Settings bar reads 0/5000 forever while
+real calls burn. Gate + record both; thread the router's `model` field into recordUsage rows so
+the Dimaag Ledger finally says WHICH free brain answered (Gemini flash / Groq 120b — the D144
+observability gap). Gate: a Guru turn moves the meter; ledger rows carry provider.
+
+**C2 — "Mark applied" marks applied.** Morcha's board button calls bare setJobStatus — no
+appliedAt stamp → day-7/14 nudges never fire, "applied Nd ago" never renders, weekly counts
+under-count. Route through markApplied. Gate: board-move → nudge math works.
+
+**C3 — Guru remembers.** `db.guruThreads` is declared, backed up, cloud-synced — and never
+read/written; chat evaporates on screen switch. Persist + restore the last thread. Also: LLM-path
+replies drop citations (I7 exists only on the keyless path) — carry them through. Gate: thread
+survives remount; streamed reply keeps citations.
+
+**C4 — Letter-Baithak parity (the third copy of the same dumbness).** Its hasEvidence never got
+D136's widening (summary/README context) and it has NO smart-LLM fallback (pre-D53 state). Share
+`baithak/intent.ts`'s evidence fn; add the guarded smart fallback with letter context. Gate: the
+22-utterance contract runs against the letter surface too.
+
+**C5 — One addHunt().** Three sites (Guru derive_hunts, Settings VisionDerivation, Khabri signal)
+still write `datePosted:'month'` (D66's exact bug re-introduced) and omit `derived`/`ownerSetDate`
+(so D123 retirement can never reach them). One helper owns id-prefix + freshness + flags; all
+four call sites use it. Stale Guru copy ("toggle in Khabri") updated to the Radar (D138 one-home).
+Gate: every creation site yields week-window, retirement-eligible hunts.
+
+**C6 — Guru's open_radar action gets legs** (defined, returned, never executed — a dead-end
+reply). Wire nav; every Guru action names a door that opens. Gate: action → screen switch.
+
+**C7 — Identity honesty on every surface.** Guru GREETING hardcodes "Namaste Shaurya" (demo sees
+it); applyPlan hardcodes the 2027 window + attachment name that drifts from the real export name.
+Read identity + visionProfile. Gate: demo → Arjun everywhere; vision edit changes the drafted answer.
+
+**C8 — probeAlive uses /api/gh** (direct api.github.com fetch re-introduces the D86 console-404
+class + burns the 60/hr unauth budget the proxy exists to protect).
+
+**C9 — Dak tells the truth.** Expired token ≠ "Nothing new — the watchman keeps watching" (it
+prints exactly that today). Distinguish auth-expired → "Reconnect Gmail" chip. Gate: 401 → honest
+state, legal action offered (I6).
+
+**C10 — The keyless repair loop closes.** A keyless owner can click "Re-forge N" forever
+(deterministic passes never stamp forgeVersion) and each click re-tailors EVERY packet for zero
+content change (token spend on the keyed path). Stamp deterministic completion distinctly; only
+stamp lastReforgeAt when something actually upgraded. Gate: keyless re-forge → banner clears, no
+packet churn.
+
+**C11 — Onboarding lands on the promise.** `void onDone` — the wired first-packet handoff (L7,
+60-second law) is explicitly discarded; finish() dumps the user on the Shelf. Honor the callback.
+
+**C12 — Sweep the small lies.** forceAddRepo dead export deleted (D125's own rule); stale
+provider copy fixed (Why.tsx "gpt-oss-120b", health.ts "check the Groq key", budget label,
+Settings KEY_INFO missing ADZUNA/GEMINI); keyless intel gets a negative cache (every buildPacket
+re-POSTs today); RepairBanner catch; Guru pulse digest filters dismissed; dimaagCache gets a
+size-capped prune; QuickAdd popover anchored; Briefing scoring memoized off jobs identity;
+draftFollowUp reachable any day (not only while the nudge is due); RetroPanel's Taleem line
+becomes a nav link.
+
+## WS-D · PROOFS (§14 — all four, executed, pasted)
+
+1. **Machine:** full gates + tsc + warning-free build (592 current + ~30 new).
+2. **Fresh-eyes:** wiped profile, 3 breakpoints, ERRORS(0).
+3. **Adversary:** no-Origin 403 / fabricated token keyless / demo ₹0 + Arjun / owner happy path.
+4. **Money:** no new fetch sites; B1 ration simulation output pasted; C1 meter movement shown.
+Plus the D140 law: the live tailor proof runs on the REAL vault through prod, and DONE is
+declared only after the served-hash check.
+
+## Sequencing
+
+1. **A1 first** (the intent object) — root under four defects; then A2-A9.
+2. **B1+B2 together** (ration + legibility), then B4, B6+B7, B3, B5+B8.
+3. **C1-C5** (the meters + the copies), then C6-C12.
+4. WS-D, CASE_STUDY.md 3.31, PROGRESS.md, decision lines D151+, deploy, served-hash verify,
+   ONE "✅ DONE" — no roadmap, no open list (owner-communication rule).
+
+Checkpoint commit per workstream. No new metered surface anywhere in this plan.

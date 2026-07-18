@@ -58,10 +58,25 @@ export function buildSummaryLine(args: {
   // Backing evidence (linked for honesty, never named in the text).
   const ledgerIds = [...new Set([...shippedAiProjects.map((e) => e.id), ...aiSkills.map((e) => e.id)])]
 
-  // TIMELESS: [Vision role] who architects and ships [domain] end to end — from first principles to live
-  // deployment.  (Identity + how he works. No tools, no numbers, no geography, no dates → never decays.)
+  // TIMELESS BASE: [Vision role] who architects and ships [domain] end to end.
+  // (Identity + how he works. No tools, no numbers, no geography, no dates → never decays.)
   const role = rolePhrase(vision)
-  const text = `${role} who architects and ships ${domainPhrase(role)} end to end — from first principles to live deployment.`
+  const base = `${role} who architects and ships ${domainPhrase(role)} end to end — from first principles to live deployment`
 
-  return { kind: 'summary', text, ledgerIds }
+  // Session 7.2 (A6) — the summary stops being ONE static line for every company: the emphasis
+  // clause is picked from THIS JD's top must-haves, but only ones the ledger PROVES (I1 — the
+  // words are the market's, the evidence is his). Deterministic, zero LLM. No proven must-have →
+  // the timeless base stands alone (backward compatible).
+  const provenMusts = args.coverage.matched
+    .filter((h) => h.mustHave && h.ledgerIds.length > 0)
+    .slice(0, 2)
+    .map((h) => h.keyword.replace(/-/g, ' '))
+  const emphasis = provenMusts.length > 0 ? `, with shipped proof in ${provenMusts.join(' and ')}` : ''
+  // Evidence links stay inside the ledger view we were HANDED (a suppressed entry must not
+  // ride back in as a summary citation — coverage is computed over the full ledger).
+  const allowed = new Set(ledger.map((e) => e.id))
+  const emphasisIds = args.coverage.matched.filter((h) => h.mustHave).flatMap((h) => h.ledgerIds).filter((id) => allowed.has(id))
+  const text = `${base}${emphasis}.`
+
+  return { kind: 'summary', text, ledgerIds: [...new Set([...ledgerIds, ...emphasisIds])] }
 }

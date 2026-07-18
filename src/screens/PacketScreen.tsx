@@ -170,13 +170,21 @@ function PacketView({ job }: { job: Job }) {
       return
     }
     setFirstBuild(false)
-    // Phase 2: refine in the background. A failure here just leaves the instant packet in place.
+    // Phase 2: refine in the background. Session 7.2 (A4): a failure here no longer ships the
+    // instant packet SILENTLY and unjudged — the zero-spend deterministic floors run on it and
+    // the packet wears a visible "enhance failed — retry" chip.
     try {
       const full = await buildPacket(job)
       await savePacket(full)
     } catch (e) {
       if (e instanceof CompileError) setError({ message: e.message, suggestions: e.suggestions })
-      // else: keep the instant packet silently; it's fully usable.
+      try {
+        const { floorPassPacket } = await import('../lib/darzi')
+        const current = (await db.packets.where('jobId').equals(job.id).toArray())[0]
+        if (current?.enhancing) await savePacket(await floorPassPacket(current))
+      } catch {
+        /* the instant packet remains usable either way */
+      }
     }
   }
 
@@ -335,6 +343,17 @@ function PacketBody({
               <strong>Ready to use now.</strong> The Dimaag is refining the casting, angles, and cover letter in
               the background — this dossier will sharpen in a few seconds.
             </p>
+          </div>
+        )}
+        {packet.enhanceFailed && !packet.enhancing && (
+          <div className="dossier p-3 mb-3 flex items-center justify-between gap-2 animate-dossier-in" aria-live="polite">
+            <p className="text-xs text-ink">
+              <strong>Deep pass didn't finish</strong> — this dossier is compiled, judged by the deterministic
+              floors, and fully usable. The reasoned casting + letter can still be added.
+            </p>
+            <button className="text-xs font-semibold border border-ink-soft px-3 py-1.5 rounded shrink-0" onClick={() => void tailor()}>
+              ↻ Retry deep pass
+            </button>
           </div>
         )}
         {packet.editorial && <CastingSheet packet={packet} />}

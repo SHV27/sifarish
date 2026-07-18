@@ -331,12 +331,30 @@ export interface Packet {
    * guard against the original. Packet-scoped for the same reason. Facts frozen; wording aimed.
    */
   bulletOverrides?: Record<string, string>
+  /**
+   * Nazar exclusions (Session 7.2, A1) — bullet ids the page-level judge removed as twin/broken
+   * claims. Persisted so NO later recompile (Baithak op, summary toggle, overrule) silently
+   * resurrects a judged-out bullet. The judge can only remove real ledger bullets, never write.
+   */
+  excludedBulletIds?: string[]
+  /**
+   * The editorial compile plan AS EXECUTED (Session 7.2, A1) — order + per-project bullet plan +
+   * section order. Before this, every recompile path re-derived the plan from `editorial.chosen`
+   * with `p.bullets.slice(0,3)`, silently discarding the Editor's reasoned bullet ordering.
+   * One persisted truth; a recompile changes only the field its op targets.
+   */
+  compilePlan?: { order: string[]; bullets: Record<string, string[]>; sectionOrder?: import('./lib/compile/compiler').SectionKey[] }
   /** Whether the packet passed the red-team gate — required for "ready". */
   ready?: boolean
   /** Atelier (v3): the Sifarish Signature decision + whether it's currently on. */
   signature?: { on: boolean; rationale: Rationale }
   /** True on the instant deterministic packet while the Dimaag layer refines in the background. */
   enhancing?: boolean
+  /**
+   * Session 7.2 (A4): phase-2 (full Editor's Desk) threw — the deterministic floor passes ran
+   * on this packet instead, and the UI offers a visible retry. Never a silent never-judged ship.
+   */
+  enhanceFailed?: boolean
   /** Compile Quality (P13): honest rubric estimate with itemized remainders. Never a guarantee (I9). */
   quality?: CompileQuality
   /** Baithak decisions trail (P14): every applied conversational edit, logged. */

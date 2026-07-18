@@ -29,7 +29,7 @@ function projectBrief(p: LedgerEntry, cap: number): string {
   return parts.join('\n').slice(0, cap)
 }
 import { entryRelevance, bulletRelevance } from '../match/evidence'
-import { bulletOverlap, HARD_DUPLICATE } from '../compile/overlap'
+import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE } from '../compile/overlap'
 import { scanHonesty } from '../slop/scan'
 import { citePatterns, craftClauses, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
 
@@ -283,7 +283,10 @@ export async function surgeryPass(
   const pickedTexts: string[] = []
   for (const { b } of bulletIdsRanked) {
     if (pickedBullets.length >= 3) break
-    if (pickedTexts.some((t) => bulletOverlap(b.text, t) >= HARD_DUPLICATE)) continue
+    // Session 7.2 (A9): CONCEPT-aware within one project (same primitive as the compiler) —
+    // the plan itself stops proposing semantic twins instead of relying on the compiler to
+    // save the page (fewer wasted reframe tokens downstream).
+    if (pickedTexts.some((t) => bulletOverlapSameProject(b.text, t) >= HARD_DUPLICATE)) continue
     pickedBullets.push(b.id)
     pickedTexts.push(b.text)
   }

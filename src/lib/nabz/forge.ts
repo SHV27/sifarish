@@ -1,7 +1,7 @@
 import type { Bullet, ProjectContext } from '../../types'
 import { generate } from '../dimaag/core'
 import { detectDrift } from '../polish/factGuard'
-import { bulletOverlapSameProject, HARD_DUPLICATE } from '../compile/overlap'
+import { bulletOverlapSameProject, HARD_DUPLICATE, isIdentityBullet } from '../compile/overlap'
 import { craftClauses, startsStrong } from '../ustaad/library'
 import type { GhRepo, ReadmeDistilled } from './github'
 
@@ -289,8 +289,8 @@ export async function forgeBullets(input: { repo: GhRepo; distilled: ReadmeDisti
   //     accomplishment. Dropped at the SOURCE whenever other bullets survive.
   // (2) THEME DEDUPE — two bullets whose primary concept matches are the same claim in
   //     different words (his exact guardrails/human-in-the-loop pair); the first-ranked stays.
-  const nameToken = repo.name.replace(/[-_].*$/, '').toLowerCase()
-  const nonIdentity = kept.filter((b) => !(nameToken.length >= 4 && b.toLowerCase().includes(nameToken)))
+  // Session 7.2 (A8): the shared identity-ban heuristic — one rule, compiler + forge.
+  const nonIdentity = kept.filter((b) => !isIdentityBullet(repo.name, b))
   const identityFiltered = nonIdentity.length > 0 ? nonIdentity : kept
   for (const b of kept) if (!identityFiltered.includes(b)) rejected.push(b)
   const themed: string[] = []

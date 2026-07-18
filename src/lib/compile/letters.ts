@@ -1,5 +1,7 @@
-import type { CompiledDoc, CoverageReport, Identity, IntelBullet, JDDecode, Job, LedgerEntry } from '../../types'
+import type { CompiledDoc, CoverageReport, Identity, IntelBullet, JDDecode, Job, LedgerEntry, VisionProfile } from '../../types'
 import { entryRelevance } from '../match/evidence'
+import { cleanUrlForDisplay, stripMarkdownResidue } from './typeset'
+import { cleanSummaryForDisplay } from './compiler'
 
 /**
  * Cover letter (≤250 words) and outreach draft (≤120 words), compiled — not free-written.
@@ -30,6 +32,7 @@ export function compileCoverLetter(
   decode: JDDecode,
   coverage: CoverageReport,
   intelHook?: IntelBullet | null,
+  vision?: VisionProfile,
 ): CompiledDoc {
   const proofs = topProjects(ledger, decode, 2)
   const forgeIds = new Set(coverage.building.flatMap((h) => h.ledgerIds))
@@ -52,19 +55,23 @@ export function compileCoverLetter(
     })
   }
 
+  // Session 7.2 (A2): letter text passes the same hygiene gates as the résumé — markdown
+  // residue and raw-URL scraps from the vault die here too, not only at the compiler's push().
   for (const p of proofs) {
     const url = p.evidence?.url ?? p.evidence?.repo ?? ''
-    const firstBullet = p.bullets[0]?.text ?? p.summary
+    const firstBullet = stripMarkdownResidue(cleanSummaryForDisplay(p.bullets[0]?.text ?? p.summary)).replace(/[.]\s*$/, '')
     paragraphs.push({
-      text: `${p.title.split('—')[0].trim()}: ${firstBullet}.${url ? ` See it at ${url.replace(/^https?:\/\//, '')}.` : ''}`,
+      text: `${p.title.split('—')[0].trim()}: ${firstBullet}.${url ? ` See it at ${cleanUrlForDisplay(url)}.` : ''}`,
       ledgerIds: [p.id],
     })
   }
 
   if (forge.length > 0) {
     const names = forge.map((e) => e.title.split('—')[0].trim()).join(', ')
+    // Session 7.2 (C7): the window reads from his live vision, never a hardcoded year.
+    const window = vision?.windowStart && vision?.windowEnd ? `${vision.windowStart}–${vision.windowEnd}` : 'January–May 2027'
     paragraphs.push({
-      text: `Honest note on momentum: I'm currently building ${names} (target ${forge[0].forgeEta ?? 'July 2026'}). My internship window is January–May 2027, so what's in the forge today will be shipped and demo-able well before day one.`,
+      text: `Honest note on momentum: I'm currently building ${names} (target ${forge[0].forgeEta ?? 'July 2026'}). My internship window is ${window}, so what's in the forge today will be shipped and demo-able well before day one.`,
       ledgerIds: forge.map((e) => e.id),
     })
   }
@@ -87,13 +94,15 @@ export function compileOutreach(
   identity: Identity,
   ledger: LedgerEntry[],
   decode: JDDecode,
+  vision?: VisionProfile,
 ): CompiledDoc {
   const proof = topProjects(ledger, decode, 1)[0]
   const url = proof?.evidence?.url ?? proof?.evidence?.repo ?? `https://${identity.github}`
+  const window = vision?.windowStart && vision?.windowEnd ? `${vision.windowStart}–${vision.windowEnd}` : 'Jan–May 2027'
 
   const paragraphs: CompiledDoc['paragraphs'] = [
     {
-      text: `Hi — I just applied for ${job.title} at ${job.company}. One reason to open my application instead of the pile: I ship. ${proof ? `${proof.title.split('—')[0].trim()} is live at ${url.replace(/^https?:\/\//, '')} — built end to end, ${proof.bullets[0]?.keywords.slice(0, 3).join('/') ?? 'AI'} included.` : `My work is public at ${identity.github}.`} My window is Jan–May 2027 and I'm applying to very few places, deliberately. If the timing fits, I'd love a look. — ${identity.name.split(' ')[0]}`,
+      text: `Hi — I just applied for ${job.title} at ${job.company}. One reason to open my application instead of the pile: I ship. ${proof ? `${proof.title.split('—')[0].trim()} is live at ${cleanUrlForDisplay(url)} — built end to end, ${proof.bullets[0]?.keywords.slice(0, 3).join('/') ?? 'AI'} included.` : `My work is public at ${identity.github}.`} My window is ${window} and I'm applying to very few places, deliberately. If the timing fits, I'd love a look. — ${identity.name.split(' ')[0]}`,
       ledgerIds: proof ? [proof.id] : [],
     },
   ]

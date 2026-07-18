@@ -6,7 +6,7 @@ import { compileResume, type CompileInput } from './compile/compiler'
 import { compileCoverLetter, compileOutreach, buildGapNote } from './compile/letters'
 import { getIntel, hookFromIntel } from './intel/client'
 import { runEditor, redTeamPass } from './darzi/editor'
-import { nazarPass, bulletIdsForIssues } from './darzi/nazar'
+import { nazarPass, nazarHeuristic, bulletIdsForIssues } from './darzi/nazar'
 import { composeLetter, decideSignature } from './atelier/letter'
 import { estimateQuality } from './ustaad/quality'
 import { buildSummaryLine } from './darzi/summary'
@@ -36,8 +36,8 @@ export async function buildPacketFast(job: Job): Promise<Packet> {
   const settings = await db.settings.get('app')
   const summaryLine = buildSummaryLine({ identity, vision: settings?.visionProfile, ledger, decode, coverage }) ?? undefined
   const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, summaryLine }) // deterministic, no editorial
-  const coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook)
-  const outreach = compileOutreach(job, identity, ledger, decode)
+  const coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook, settings?.visionProfile)
+  const outreach = compileOutreach(job, identity, ledger, decode, settings?.visionProfile)
   const gapNote = buildGapNote(coverage)
 
   return {
@@ -98,6 +98,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   onProgress?.('Compiling the one-page résumé…')
   let resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial, summaryLine, bulletOverrides })
   const nazarNotes: string[] = []
+  let nazarDropIds: string[] | undefined
 
   // -- Pass 4 (red-team) ∥ signature decision — independent judgments, run concurrently (S6,
   // Defect 5): the red-team reads the compiled résumé, the signature call reads company+archetype;
@@ -112,24 +113,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     // digit-bearing bullets that didn't make the page + benched shipped projects. Its fixes
     // must cite this inventory or the page itself; career-coach boilerplate dies here.
     const pageText = resume.lines.map((l) => `${l.text}${l.right ? ` ${l.right}` : ''}`).join('\n')
-    const onPage = pageText.toLowerCase()
-    const unusedNumbered = ledger
-      .filter((e) => e.resumeEligible && e.tier === 'shipped')
-      .flatMap((e) => e.bullets)
-      .filter((b) => /\d/.test(b.text) && !onPage.includes(b.text.slice(0, 40).toLowerCase()))
-      .slice(0, 4)
-      .map((b) => `"${b.text.slice(0, 90)}"`)
-    const benched = shippedProjects
-      .filter((p) => !resume.lines.some((l) => l.ledgerIds.includes(p.id)))
-      .slice(0, 3)
-      .map((p) => p.title.split('—')[0].trim())
-    const inventory =
-      [
-        unusedNumbered.length ? `unused numbered bullets: ${unusedNumbered.join('; ')}` : '',
-        benched.length ? `benched shipped projects: ${benched.join(', ')}` : '',
-      ]
-        .filter(Boolean)
-        .join(' · ') || 'none — everything usable is already on the page'
+    const inventory = redTeamInventory(ledger, resume)
     const [rt, sig, nazar] = await Promise.all([
       redTeamPass(pageText, decode, arch, inventory).catch(() => null),
       decideSignature(job, arch.id, intel).catch(() => null),
@@ -141,6 +125,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     if (nazar && nazar.issues.length > 0) {
       const dropIds = bulletIdsForIssues(nazar.issues, ledger, bulletOverrides)
       if (dropIds.length > 0) {
+        nazarDropIds = dropIds
         resume = compileResume({
           identity,
           ledger,
@@ -175,9 +160,9 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision, editorial, useSignature })
   } else {
     // Keyless / no-editorial path keeps the proven v2 letter (regression-safe).
-    coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook)
+    coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook, vision)
   }
-  const outreach = compileOutreach(job, identity, ledger, decode)
+  const outreach = compileOutreach(job, identity, ledger, decode, vision)
   const gapNote = buildGapNote(coverage)
   gapNote.push(...nazarNotes) // the judge's removals are visible, never silent (L4)
 
@@ -220,6 +205,10 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     quality: estimateQuality(resume, coverage, ledger),
     summaryOn: true,
     bulletOverrides, // Session 5.9: framing rewrites survive later Baithak recompiles
+    // Session 7.2 (A1): the compile plan AS EXECUTED + the Nazar's exclusions persist on the
+    // packet, so no later recompile forgets what the first one knew.
+    compilePlan: compileEditorial,
+    excludedBulletIds: nazarDropIds,
   }
 }
 
@@ -228,27 +217,9 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
  * the summary is always compiled from real ledger evidence, so I1 holds by construction.
  */
 export async function setSummary(packet: Packet, on: boolean): Promise<Packet> {
-  const identity = await db.identity.get('me')
-  const ledger = await db.ledger.toArray()
-  const settings = await db.settings.get('app')
-  if (!identity) return packet
-  const summaryLine = on ? buildSummaryLine({ identity, vision: settings?.visionProfile, ledger, decode: packet.decode, coverage: packet.coverage, editorial: packet.editorial }) ?? undefined : undefined
-  const order = packet.editorial?.chosen.map((c) => c.ledgerId) ?? []
-  const bullets: Record<string, string[]> = {}
-  for (const c of packet.editorial?.chosen ?? []) {
-    const p = ledger.find((e) => e.id === c.ledgerId)
-    if (p) bullets[c.ledgerId] = p.bullets.slice(0, 3).map((b) => b.id)
-  }
-  const resume = compileResume({
-    identity,
-    ledger,
-    decode: packet.decode,
-    coverage: packet.coverage,
-    jobId: packet.jobId,
-    editorial: packet.editorial ? { order, bullets, sectionOrder: packet.editorial.sectionOrder } : undefined,
-    summaryLine,
-  })
-  const updated: Packet = { ...packet, resume, summaryOn: on, quality: estimateQuality(resume, packet.coverage, ledger) }
+  // Session 7.2 (A1): one recompile authority — toggling the summary no longer discards the
+  // Nazar's exclusions, the framing rewrites, or the Editor's reasoned bullet plan.
+  const updated = await recompilePacket(packet, { summaryOn: on })
   await db.packets.put(updated)
   return updated
 }
@@ -372,33 +343,187 @@ export async function overrulePacket(packet: Packet, opts: { promoteId?: string;
   }
 
   const order = chosen.map((c) => c.ledgerId)
+  const prevPlan = planFromPacket(packet, ledger)
   const bullets: Record<string, string[]> = {}
   for (const c of chosen) {
-    const p = ledger.find((e) => e.id === c.ledgerId)
-    if (p) bullets[c.ledgerId] = p.bullets.slice(0, 3).map((b) => b.id)
+    // Session 7.2 (A1): an overrule changes WHO plays, not how their bullets were reasoned —
+    // keep the Editor's per-project bullet plan for projects that stay in the lineup.
+    const planned = prevPlan?.bullets[c.ledgerId]
+    if (planned && planned.length > 0) {
+      bullets[c.ledgerId] = planned
+    } else {
+      const p = ledger.find((e) => e.id === c.ledgerId)
+      if (p) bullets[c.ledgerId] = p.bullets.slice(0, 3).map((b) => b.id)
+    }
   }
 
-  const decode = packet.decode
-  const coverage = packet.coverage
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: { order, bullets, sectionOrder: ed.sectionOrder } })
-  const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
-
+  // One recompile authority (A1): the overrule used to drop the professional summary, the
+  // Baithak suppressions, the framing rewrites AND the Nazar exclusions. Now it changes only
+  // the lineup; everything else survives, and the red-team re-runs with full context (A5).
+  const overruledPacket: Packet = { ...packet, editorial: { ...ed, chosen, benched, overruled: true } }
+  const recompiled = await recompilePacket(overruledPacket, {
+    plan: { order, bullets, sectionOrder: ed.sectionOrder },
+  })
   const updated: Packet = {
-    ...packet,
-    resume,
-    quality: estimateQuality(resume, coverage, ledger),
-    editorial: {
-      ...ed,
-      chosen,
-      benched,
-      overruled: true,
-      redTeam: rt ?? ed.redTeam,
-      redTeamRounds: ed.redTeamRounds + 1,
-    },
-    ready: rt ? rt.verdict === 'PASS' : packet.ready,
+    ...recompiled,
+    editorial: recompiled.editorial ? { ...recompiled.editorial, chosen, benched, overruled: true } : recompiled.editorial,
   }
   await db.packets.put(updated)
   return updated
+}
+
+/**
+ * Session 7.2 (A1) — THE ONE RECOMPILE AUTHORITY. Every post-build recompile (Baithak op,
+ * summary toggle, overrule) used to re-assemble compile options ad-hoc, each forgetting a
+ * different field: Baithak ops dropped the professional summary, setSummary dropped Nazar's
+ * exclusions and the framing rewrites, overrule dropped all three. Root cause: five call
+ * sites, five partial memories. Now the packet's persisted state IS the compile input, and a
+ * recompile may only CHANGE the field its op targets — everything else survives by construction.
+ */
+export interface RecompileChanges {
+  summaryOn?: boolean
+  excludedIds?: string[]
+  excludedBulletIds?: string[]
+  bulletOverrides?: Record<string, string>
+  /** Replace the whole plan (overrule) … */
+  plan?: NonNullable<Packet['compilePlan']>
+  /** …or merge per-project bullet orders into the existing plan (lead-bullet). */
+  planBullets?: Record<string, string[]>
+  sectionOrder?: NonNullable<Packet['compilePlan']>['sectionOrder']
+}
+
+/** The compile plan as the packet remembers it; falls back for pre-7.2 packets. */
+export function planFromPacket(packet: Packet, ledger: Awaited<ReturnType<typeof db.ledger.toArray>>): Packet['compilePlan'] {
+  if (packet.compilePlan) return packet.compilePlan
+  if (!packet.editorial) return undefined
+  const order = packet.editorial.chosen.map((c) => c.ledgerId)
+  const bullets: Record<string, string[]> = {}
+  for (const id of order) {
+    const p = ledger.find((e) => e.id === id)
+    if (p) bullets[id] = p.bullets.slice(0, 3).map((b) => b.id)
+  }
+  return { order, bullets, sectionOrder: packet.editorial.sectionOrder }
+}
+
+/**
+ * Red-team context for RE-runs (A5). The first compile grounds the red-team in the JD decode,
+ * the archetype, and the ledger's unused inventory; re-runs used to call it bare — a weaker
+ * judge on every later edit. One builder, used by both.
+ */
+export function redTeamInventory(ledger: Awaited<ReturnType<typeof db.ledger.toArray>>, resume: Packet['resume']): string {
+  const pageText = resume.lines.map((l) => `${l.text}${l.right ? ` ${l.right}` : ''}`).join('\n')
+  const onPage = pageText.toLowerCase()
+  const unusedNumbered = ledger
+    .filter((e) => e.resumeEligible && e.tier === 'shipped')
+    .flatMap((e) => e.bullets)
+    .filter((b) => /\d/.test(b.text) && !onPage.includes(b.text.slice(0, 40).toLowerCase()))
+    .slice(0, 4)
+    .map((b) => `"${b.text.slice(0, 90)}"`)
+  const benched = ledger
+    .filter((e) => e.resumeEligible && e.tier === 'shipped' && e.kind === 'project')
+    .filter((p) => !resume.lines.some((l) => l.ledgerIds.includes(p.id)))
+    .slice(0, 3)
+    .map((p) => p.title.split('—')[0].trim())
+  return (
+    [
+      unusedNumbered.length ? `unused numbered bullets: ${unusedNumbered.join('; ')}` : '',
+      benched.length ? `benched shipped projects: ${benched.join(', ')}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'none — everything usable is already on the page'
+  )
+}
+
+export async function recompilePacket(packet: Packet, changes: RecompileChanges): Promise<Packet> {
+  const identity = await db.identity.get('me')
+  const ledger = await db.ledger.toArray()
+  const settings = await db.settings.get('app')
+  if (!identity) throw new Error('Identity missing — reseed the app.')
+
+  // Effective state = persisted packet state overlaid with ONLY the op's own changes.
+  const summaryOn = changes.summaryOn ?? packet.summaryOn ?? true
+  const excludedIds = changes.excludedIds ?? packet.excludedIds
+  const excludedBulletIds = changes.excludedBulletIds ?? packet.excludedBulletIds
+  const bulletOverrides = changes.bulletOverrides ?? packet.bulletOverrides
+  const basePlan = changes.plan ?? planFromPacket(packet, ledger)
+  const plan = basePlan
+    ? {
+        ...basePlan,
+        bullets: { ...basePlan.bullets, ...(changes.planBullets ?? {}) },
+        sectionOrder: changes.sectionOrder ?? basePlan.sectionOrder,
+      }
+    : undefined
+
+  const coverage = matchEvidence(packet.decode, ledger)
+  // The summary's evidence links must respect his suppressions too — a dropped entry may not
+  // ride back onto the page as a summary citation (the single-gate law, applied here as well).
+  const excludedSet = new Set(excludedIds ?? [])
+  const summaryLedger = ledger.filter((e) => !excludedSet.has(e.id))
+  const summaryLine = summaryOn
+    ? buildSummaryLine({ identity, vision: settings?.visionProfile, ledger: summaryLedger, decode: packet.decode, coverage, editorial: packet.editorial }) ?? undefined
+    : undefined
+  const resume = compileResume({
+    identity,
+    ledger,
+    decode: packet.decode,
+    coverage,
+    jobId: packet.jobId,
+    editorial: plan,
+    summaryLine,
+    excludedIds,
+    excludedBulletIds,
+    bulletOverrides,
+  })
+  // Re-runs judge with the same context as the first compile (decode + archetype + inventory).
+  const rt = await redTeamPass(
+    resume.lines.map((l) => `${l.text}${l.right ? ` ${l.right}` : ''}`).join('\n'),
+    packet.decode,
+    packet.editorial?.archetype,
+    redTeamInventory(ledger, resume),
+  ).catch(() => null)
+
+  return {
+    ...packet,
+    resume,
+    coverage,
+    summaryOn,
+    excludedIds,
+    excludedBulletIds,
+    bulletOverrides,
+    compilePlan: plan,
+    quality: estimateQuality(resume, coverage, ledger),
+    editorial: packet.editorial
+      ? { ...packet.editorial, sectionOrder: plan?.sectionOrder ?? packet.editorial.sectionOrder, redTeam: rt ?? packet.editorial.redTeam, redTeamRounds: packet.editorial.redTeamRounds + (rt ? 1 : 0) }
+      : packet.editorial,
+    ready: rt ? rt.verdict === 'PASS' : packet.ready,
+  }
+}
+
+/**
+ * Session 7.2 (A4) — when phase-2 (the full Editor's Desk) THROWS, the instant packet used to
+ * ship silently, never judged by any floor. Now the zero-spend deterministic floors run on it
+ * (Nazar heuristic twins → the compiler's exclusion gate; red-team re-runs inside the recompile)
+ * and the packet wears `enhanceFailed` so the UI can offer a visible retry. I4 with eyes open.
+ */
+export async function floorPassPacket(packet: Packet): Promise<Packet> {
+  const ledger = await db.ledger.toArray()
+  const heur = nazarHeuristic(packet.resume)
+  const dropIds = heur.length > 0 ? bulletIdsForIssues(heur, ledger, packet.bulletOverrides) : []
+  let updated = packet
+  if (dropIds.length > 0) {
+    const merged = [...new Set([...(packet.excludedBulletIds ?? []), ...dropIds])]
+    updated = await recompilePacket(packet, { excludedBulletIds: merged })
+    updated = {
+      ...updated,
+      gapNote: [
+        ...updated.gapNote,
+        ...heur
+          .filter((i) => i.type === 'duplicate')
+          .map((i) => `Nazar (floor): removed a twin claim — "${i.drop.slice(0, 70)}…" said what a stronger line already says.`),
+      ],
+    }
+  }
+  return { ...updated, enhancing: false, enhanceFailed: true }
 }
 
 /** Persist the packet and move the job forward — tracking as a side effect, never a chore. */

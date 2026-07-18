@@ -1,10 +1,6 @@
 import { db } from '../../db/db'
 import type { BaithakLogEntry, EditOp, Packet } from '../../types'
-import { compileResume } from '../compile/compiler'
-import { matchEvidence } from '../match/evidence'
-import { redTeamPass } from '../darzi/editor'
-import { overrulePacket, setSummary } from '../darzi'
-import { estimateQuality } from '../ustaad/quality'
+import { overrulePacket, setSummary, recompilePacket } from '../darzi'
 
 /**
  * BAITHAK EXECUTOR (P14, I11) — applies an owner-approved EditOp through the SAME
@@ -52,7 +48,11 @@ async function persist(packet: Packet, utterance: string, summary: string): Prom
   return updated
 }
 
-/** Recompile the packet's resume with overrides; red-team + quality re-run. */
+/**
+ * Recompile the packet's resume with overrides (Session 7.2, A1): delegates to THE one
+ * recompile authority, so a Baithak op no longer drops the professional summary, the Nazar
+ * exclusions, or the Editor's bullet plan — and the red-team re-runs with full context (A5).
+ */
 async function recompile(
   packet: Packet,
   overrides: {
@@ -62,39 +62,12 @@ async function recompile(
     bulletOverrides?: Record<string, string>
   },
 ): Promise<Packet> {
-  const identity = await db.identity.get('me')
-  const ledger = await db.ledger.toArray()
-  if (!identity) throw new Error('Identity missing — reseed the app.')
-  const coverage = matchEvidence(packet.decode, ledger)
-  const editorial = {
-    order: packet.editorial?.chosen.map((c) => c.ledgerId) ?? [],
-    bullets: overrides.bullets ?? {},
-    sectionOrder: overrides.sectionOrder ?? packet.editorial?.sectionOrder,
-  }
-  const resume = compileResume({
-    identity,
-    ledger,
-    decode: packet.decode,
-    coverage,
-    jobId: packet.jobId,
-    editorial,
-    // Baithak state travels with the packet, so every later recompile keeps his decisions.
-    excludedIds: overrides.excludedIds ?? packet.excludedIds,
-    bulletOverrides: overrides.bulletOverrides ?? packet.bulletOverrides,
+  return recompilePacket(packet, {
+    planBullets: overrides.bullets,
+    sectionOrder: overrides.sectionOrder,
+    excludedIds: overrides.excludedIds,
+    bulletOverrides: overrides.bulletOverrides,
   })
-  const rt = await redTeamPass(resume.lines.map((l) => l.text).join('\n')).catch(() => null)
-  return {
-    ...packet,
-    resume,
-    coverage,
-    excludedIds: overrides.excludedIds ?? packet.excludedIds,
-    bulletOverrides: overrides.bulletOverrides ?? packet.bulletOverrides,
-    quality: estimateQuality(resume, coverage, ledger),
-    editorial: packet.editorial
-      ? { ...packet.editorial, sectionOrder: editorial.sectionOrder, redTeam: rt ?? packet.editorial.redTeam, redTeamRounds: packet.editorial.redTeamRounds + (rt ? 1 : 0) }
-      : packet.editorial,
-    ready: rt ? rt.verdict === 'PASS' : packet.ready,
-  }
 }
 
 export async function applyEdit(packet: Packet, op: EditOp, utterance: string, probe: ProbeFn = probeAlive): Promise<ApplyResult> {

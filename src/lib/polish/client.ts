@@ -4,6 +4,8 @@ import { safePolish } from './factGuard'
 import { scanSlop } from '../slop/scan'
 import { scanGuarantee } from '../slop/scan'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
+import { stripMarkdownResidue } from '../compile/typeset'
+import { bulletOverlap, HARD_DUPLICATE } from '../compile/overlap'
 
 /**
  * Client-side polish orchestration. Sends compiled bullet lines to /api/polish, then
@@ -51,9 +53,17 @@ export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
   eligibleIdx.forEach(({ i }, k) => {
     const candidate = polished![k]
     if (!candidate) return
-    const guard = safePolish(newLines[i].text, candidate)
-    const slop = scanSlop(candidate)
-    if (guard.accepted && slop.length === 0) {
+    // Session 7.2 (A3): polish mutates lines AFTER the compiler's push() gate, so it must
+    // re-enter the same gates itself — markdown residue dies here, and a rewording that
+    // collapses two distinct bullets into twins is rejected (the page-wide MMR already ran;
+    // nothing may undo it post-hoc).
+    const cleaned = stripMarkdownResidue(candidate)
+    const guard = safePolish(newLines[i].text, cleaned)
+    const slop = scanSlop(cleaned)
+    const makesTwin =
+      guard.accepted &&
+      newLines.some((other, j) => j !== i && (other.kind === 'bullet' || other.kind === 'forge') && bulletOverlap(guard.text, other.text) >= HARD_DUPLICATE)
+    if (guard.accepted && slop.length === 0 && !makesTwin) {
       newLines[i] = { ...newLines[i], text: guard.text }
       applied += 1
     } else {
@@ -100,8 +110,9 @@ export async function polishDoc(doc: CompiledDoc): Promise<{ doc: CompiledDoc; a
   let rejected = 0
   const paragraphs = doc.paragraphs.slice()
   eligible.forEach(({ i }, k) => {
-    const candidate = polished![k]
-    if (!candidate) return
+    const raw = polished![k]
+    if (!raw) return
+    const candidate = stripMarkdownResidue(raw) // A3: the letter re-enters the hygiene gate too
     const guard = safePolish(paragraphs[i].text, candidate)
     if (guard.accepted && scanSlop(candidate).length === 0 && scanGuarantee(candidate).length === 0) {
       paragraphs[i] = { ...paragraphs[i], text: guard.text }

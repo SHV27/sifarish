@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { EntryKind, LedgerEntry } from '../types'
 import { resumeStrength } from '../lib/strength'
+import { cleanSummaryForDisplay } from '../lib/compile/compiler'
 import { NabzPanel } from '../components/NabzPanel'
 import { Briefing } from '../components/Briefing'
 import RepairBanner from '../components/RepairBanner'
@@ -144,7 +145,9 @@ function EntryCard({
           aria-label="Entry summary"
         />
       ) : (
-        entry.summary && <p className="mt-1.5 text-xs text-ink-soft leading-relaxed">{entry.summary}</p>
+        // Session 7.2 (A7): display passes the same hygiene gate as the résumé; editing still
+        // targets the raw vault value (his data is never rewritten by a renderer).
+        entry.summary && <p className="mt-1.5 text-xs text-ink-soft leading-relaxed">{cleanSummaryForDisplay(entry.summary) || entry.summary}</p>
       )}
 
       {entry.bullets.length > 0 && entry.kind === 'project' && (

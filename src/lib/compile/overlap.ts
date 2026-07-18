@@ -103,6 +103,22 @@ export function primaryConcept(text: string): string | null {
 }
 
 /**
+ * Session 7.2 (A8) — ONE identity-ban heuristic. The compiler and the forge each grew their own
+ * name-token rule (title first-word vs repo-slug prefix), which is exactly how the same defect
+ * survives in one place after dying in the other. Both now call this: first token of the name
+ * (split on dash/underscore/space/em-dash), ≥4 chars, case-blind.
+ */
+export function identityToken(name: string): string {
+  return name.split(/[—–\-_\s]/)[0]?.toLowerCase() ?? ''
+}
+
+/** True when a bullet restates the project's own name — an identity restatement, not an accomplishment. */
+export function isIdentityBullet(projectName: string, bulletText: string): boolean {
+  const tok = identityToken(projectName)
+  return tok.length >= 4 && bulletText.toLowerCase().includes(tok)
+}
+
+/**
  * Within-project comparison: lexical overlap, floored at HARD_DUPLICATE when both bullets'
  * primary theme matches — the semantic-twin case lexical Jaccard cannot see. Cross-project
  * comparisons stay lexical (two projects may honestly both have, say, a security bullet).
