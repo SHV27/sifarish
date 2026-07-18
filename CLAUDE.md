@@ -1119,3 +1119,64 @@ the seal was broken.
   prod with curl omitting Origin (the previously-broken scenario), which now returns 200 instead of 403.
   Lesson for future sessions: adversary/live-proof curl calls must mirror what the REAL client sends,
   not the maximally-authenticated request — an over-privileged test can hide a broken default. (14-Jul-2026)
+
+--- Session 7 "The Taaj" (owner-directed: résumé like the selected-student canon, hunt like
+  LinkedIn, premium reasoning at ₹0, zero unwired anything. 18-Jul-2026) ---
+- D141: THE RENDERER WAS STRUCTURALLY INCAPABLE OF THE CANON. Every line drew left-aligned at one
+  x — centered names, right-aligned dates, section rules, italics, grouped skills could not exist.
+  Rebuilt: CompiledLine gains `right` (dates drawn AFTER the left text, so extracted order = text
+  + right and I5 holds by construction); headings carry a drawn hairline rule (visual, not text);
+  skills render as labeled category lines via a lexicon categorizer (owner `category` wins);
+  descriptions trim at SENTENCE boundaries (the "and…" mid-thought cut is dead); WinAnsi's REAL
+  glyphs (— – · × …) replace the ASCII downgrades. Markdown dies at the compiler's single push()
+  gate — a new code path CANNOT emit an unsanitized line — and the ingestion URL regex no longer
+  swallows `**` (the exact `vercel.app**` defect on his real résumé).
+- D142: NO NEAR-DUPLICATE DETECTION EXISTED ANYWHERE IN BULLET SELECTION (his two twin SIFARISH
+  bullets both rendered because near-dupes share keywords and relevance scoring REWARDED both).
+  bulletsFor is now greedy MMR: ranked position minus redundancy vs everything already on the page
+  (stemmed content-word overlap; ≥0.6 = same claim, never renders twice — page-wide, not just
+  per-project). Plus THE QUANTIFICATION GUARANTEE: an entry holding a digit-bearing bullet always
+  renders one (the +2 tie-break was never a guarantee — D127's fix was necessary, not sufficient).
+  The red-team now receives the ledger's UNUSED inventory (numbered bullets off the page, benched
+  projects) — its fixes must cite real evidence; career-coach boilerplate is structurally dead.
+- D143: LIBRARY v1.3.0 — +13 live-verified sources (Jake's resume.tex read as typesetting ground
+  truth, MIT CAPD, Jobscan ATS research, eye-tracking studies) and +24 patterns (anat-/fmt-/blt-:
+  section anatomy, one-page allocation, dates-right-aligned, bullet formula slots, no-duplicated-
+  fact, first-bullet-strongest). The D118 gate caught 3 new forge patterns overflowing the craft-
+  clause cap — caps sized to the grown library so stored ALWAYS equals in-the-payload.
+- D144: THE FREE REASONING ROUTER + LAW-12 CATCHES. Live-verified 18-Jul: JSearch num_pages=N
+  bills N credits (pages ≠ free breadth; the free plan is 200/mo — our 300 budget default was a
+  silent-burn promise the provider never made; corrective migration ships, owner-set values
+  stand); Gemini free tier is real (structured output included) but quotas are dashboard-only and
+  `-latest` aliases jump models — ids are PINNED. /api/dimaag now chains Gemini 3 Flash preview →
+  Gemini 3.1 Flash-Lite → Groq 120b (classify: Groq 20b → Gemini lite) with per-provider schema
+  dialects (toGeminiSchema: nullable unions → nullable:true — the D80 lesson, reversed); a lane
+  answering non-JSON is a FAILED lane (next brain's turn); rate-limit anywhere → rateLimited →
+  the client backs off and retries the LLM path. Owner's law honored: keyless is a safety net,
+  never a silent destination. Three free brains chained beat one paid brain.
+- D145: THE LINKEDIN GAP WAS SIX MECHANICAL CAUSES, NOT A MYSTERY (two read-only audits, file:line):
+  (1) every JSearch query stopped at page 1's ~10 rows; (2) the plain market query ("AI Engineer")
+  was NEVER funded — all 14 derived slots went to "…Intern" variants (broad core queries now derive
+  FIRST); (3) his 5 hand-written hunts had NEVER received a JSearch request (derived-before-manual
+  + budget 10 < 14 derived = permanent starvation; now interleaved); (4) the 32 keyless ATS boards
+  — the freshest, board-verified source — auto-scanned NEVER (syncRadar's only caller was a manual
+  button; autopilot now scans 6h-cached, sweeps at 6h not 24h); (5) no per-company cap let one
+  board flood the top-15 (default queue now caps 2/company; search/chips/show-all stay uncapped);
+  (6) the dedupe key's 14-char title truncation over-merged distinct roles (now 40). Plus: Adzuna
+  rpp 20→50, keyless lanes 25→40, region-phrased Europe hunts, LinkedIn-parity filter chips +
+  "be an early applicant" (<48h), "swept Xh ago" visible on the Radar.
+- D146: ROLE-FAMILY LENS — DEMOTE, NEVER HIDE. Research-scientist/data-scientist/analyst/frontend/
+  QA titled roles take a visible −12 with the why ("edit your vision to lift this") unless his
+  vision names the family. His stated law: "vision-aligned" means a FLOOD of relevant roles ranked
+  right — supply wide, ranking sorts, nothing silently discarded. 'research scientist intern'
+  removed from deriveHunts (his vision says ENGINEER).
+- D147: GURU STEERS FROM THE LIVE CONFIG. The dossier now carries active hunts (query + derived/
+  hand-set + country), budget meters, and watchlist counts every turn, with the steering rule:
+  propose the SPECIFIC edit + name the human-confirmed door that applies it (Settings Vision
+  editor / Radar Hunt panel / Pulse proposals). Chat never mutates config — I3 by design, stated
+  in the prompt so Guru never claims otherwise.
+- D148: SPEED WITHOUT IQ TRADE — the angle fast-path (D130's pattern applied): when a project's
+  own evidence answers ≥2 of the JD's must-haves, the jd-focus angle IS the decision (zero-spend
+  heuristic hit with the matched musts named); ambiguous projects still get the reasoner.
+  FORGE_VERSION 3 → his vault is offered the Session-7 craft through the one-click repair banner.
+  Declutter: quiet "off-résumé" marker (was a loud badge), confirmed Delete in Shelf edit mode.

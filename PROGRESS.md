@@ -2,7 +2,41 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 6.1 "The Vault Repair" — the craft finally reaches HIS data ✦
+## Status: Session 7 "The Taaj" — the classic résumé + the LinkedIn-parity hunt ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **592 passed | 2 skipped (594) gates** · tsc clean ·
+warning-free build. Owner's brief: résumé like the selected-student canon + hunt like LinkedIn +
+free premium reasoning + zero unwired anything. Shipped:
+
+- **The Typesetter (R1):** PDF/DOCX/preview rebuilt to the Jake's-résumé canon — centered
+  letterhead, ruled headings, right-aligned dates (CompiledLine.right, I5 contract extended),
+  grouped bold skill labels (AI & ML → Languages → Frameworks & Tools), italic taglines,
+  sentence-boundary descriptions, real WinAnsi typography (— – · × … as real glyphs). Markdown
+  is dead at the single push() gate + the ingestion URL regex (his `vercel.app**` defect).
+- **The Selection Brain (R2):** MMR bullet selection with page-wide near-duplicate repulsion
+  (his two twin SIFARISH bullets are a regression test), the quantification GUARANTEE (an entry
+  holding a real number always renders one), red-team grounded in the ledger's unused inventory.
+- **The Library (R3):** v1.3.0 — 82 sources / 57 patterns (+13 live-verified sources incl.
+  Jake's resume.tex ground truth, MIT CAPD, Jobscan; +24 anatomy/typesetting/bullet patterns);
+  craft-clause caps raised so every pattern actually reaches its prompt.
+- **The Free Router (R4):** /api/dimaag chains Gemini 3 Flash preview → Gemini 3.1 Flash-Lite →
+  Groq 120b (classify: Groq 20b → Gemini lite); pinned ids, per-provider schema dialects,
+  rate-limit anywhere → back off + retry the LLM path, never a silent heuristic. Angle
+  fast-path: a JD-decided angle spends no call (D130 pattern).
+- **Vault repair v3 (R5):** FORGE_VERSION 3 — his real vault gets the new craft via the
+  one-click banner; packets self-re-tailor.
+- **The Hunt (D1-D3):** JSearch budget corrected to the provider's REAL free plan (200/mo — the
+  old 300 was a silent burn; corrective migration ships); plain "AI Engineer" market queries
+  derived FIRST; manual hunts interleave (they had NEVER run); region-phrased Europe hunts;
+  Adzuna rpp 50; keyless lanes 40; role-family lens (demote visibly, never hide);
+  dedupe key 14→40 chars; per-company cap (2) in the default top-15; LinkedIn-parity filter
+  chips + "be an early applicant"; autopilot sweeps at 6h AND auto-scans the 32 keyless boards
+  (the freshest lane finally runs itself); "swept Xh ago" visible.
+- **Guru (G):** live config (hunts/budgets/watchlist) injected every turn — steering advice
+  grounded in what IS, each edit naming its human-confirmed door (I3 intact).
+- **Declutter (C):** quiet off-résumé marker, confirmed Delete in edit mode.
+
+## Prior: Session 6.1 "The Vault Repair" — the craft finally reaches HIS data ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **550 passed | 2 skipped (552) gates** · tsc clean ·
 warning-free build. The owner's real résumé exposed what the seed proofs couldn't: his LOCAL-FIRST

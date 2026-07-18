@@ -662,6 +662,51 @@ run where the user lives: the seed proves the machine, only the vault proves the
 
 ---
 
+
+### 3.27 · THE RENDERER COULDN'T DO WHAT THE CRAFT DEMANDED (Session 7)
+
+The owner compared his résumé to the selected-student canon (Jake's-template class) and called it
+embarrassing. The audit's verdict: this wasn't a prompt problem or a data problem — the PDF
+renderer drew every line left-aligned at a single x. Centered names, right-aligned dates, ruled
+headings, grouped bold skill labels, italics: structurally impossible. No amount of better
+"framing" upstream could fix a page the renderer could not draw. **Lesson: when output quality
+stalls, check whether the LAST stage in the pipeline can even express the goal — intelligence
+upstream cannot compensate for a renderer with no vocabulary.** The rebuild kept I5 by
+construction: the right-aligned date draws AFTER the left text, so extraction order equals the
+compiled contract.
+
+### 3.28 · SELECTION HAD NO CONCEPT OF REDUNDANCY (Session 7)
+
+Two bullets making the same claim in different words both rendered on his real résumé — because
+near-duplicates share keywords, and keyword-overlap scoring actively REWARDED the twin. There was
+no similarity primitive anywhere in the bullet path (the only Jaccard in the repo was
+letter-scoped). Fix at the choke point both selection paths share: greedy MMR — ranked position
+minus redundancy against everything already on the page, with a hard ceiling above which the same
+claim never renders twice. **Lesson: a ranking function optimizes what it measures; if it cannot
+see redundancy, it will happily print the same fact twice and call both "relevant."**
+
+### 3.29 · THE FREE ROUTER — PROVIDER DIALECTS ARE THE D80 LESSON, REVERSED (Session 7)
+
+Zero-budget premium reasoning = a chain of free tiers (Gemini 3 Flash preview → Gemini 3.1
+Flash-Lite → Groq). Two traps caught by Law-12 live checks BEFORE they shipped: JSearch's
+num_pages=N bills N credits (proven by the billing header — "unlock pages for breadth" would
+have multiplied spend 1:1 against a free plan that is 200/mo, not the 300 our budget default
+promised), and Gemini rejects raw JSON Schema (nullable unions must become nullable:true) while
+its -latest aliases silently jump models under a pinned schema. **Lesson: every provider speaks
+a dialect; enforce the conversion at the boundary or the request fails in a way indistinguishable
+from a dumb model — and verify the BILLING semantics of a parameter before calling it a breadth
+lever.**
+
+### 3.30 · THE LINKEDIN GAP WAS SIX SMALL VALVES, ALL HALF-CLOSED (Session 7)
+
+"LinkedIn shows 200+ relevant roles, my app shows the same 4-5 companies" decomposed into six
+mechanical causes: page-1-only fetches; the plain market query never funded (every derived hunt
+carried "…Intern"); manual hunts starved forever by ordering + budget; the freshest source (32
+keyless boards) never auto-scanned; no per-company cap in the top-15; a dedupe key that truncated
+titles to 14 chars and over-merged distinct roles. None was a mystery; all were file:line facts.
+**Lesson: "our results are worse than the competitor's" is almost never one big cause — audit the
+pipeline valve by valve, and fix the ordering/caps/keys before dreaming of new sources.**
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.
