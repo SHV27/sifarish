@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { CompiledDoc, Job, Packet } from '../types'
-import { buildPacket, buildPacketFast, savePacket, overrulePacket, toggleSignature } from '../lib/darzi'
+import { buildPacket, buildPacketFast, savePacket, overrulePacket, toggleSignature, floorPassPacket } from '../lib/darzi'
 import { CompileError, LINE_METRICS } from '../lib/compile/compiler'
 import { saveFile } from '../lib/util/download'
 import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
@@ -179,7 +179,6 @@ function PacketView({ job }: { job: Job }) {
     } catch (e) {
       if (e instanceof CompileError) setError({ message: e.message, suggestions: e.suggestions })
       try {
-        const { floorPassPacket } = await import('../lib/darzi')
         const current = (await db.packets.where('jobId').equals(job.id).toArray())[0]
         if (current?.enhancing) await savePacket(await floorPassPacket(current))
       } catch {
@@ -355,7 +354,7 @@ function PacketBody({
               <strong>Deep pass didn't finish</strong> — this dossier is compiled, judged by the deterministic
               floors, and fully usable. The reasoned casting + letter can still be added.
             </p>
-            <button className="text-xs font-semibold border border-ink-soft px-3 py-1.5 rounded shrink-0" onClick={() => void tailor()}>
+            <button className="text-xs font-semibold border border-ink-soft px-3 py-1.5 rounded shrink-0" onClick={onRetailor}>
               ↻ Retry deep pass
             </button>
           </div>

@@ -29,7 +29,7 @@ function projectBrief(p: LedgerEntry, cap: number): string {
   return parts.join('\n').slice(0, cap)
 }
 import { entryRelevance, bulletRelevance } from '../match/evidence'
-import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE } from '../compile/overlap'
+import { bulletOverlapSameProject, HARD_DUPLICATE } from '../compile/overlap'
 import { scanHonesty } from '../slop/scan'
 import { citePatterns, craftClauses, sectionOrderFor, startsWeak, type SectionKey } from '../ustaad/library'
 

@@ -1,4 +1,4 @@
-import type { Job, Packet, EditorialPlan } from '../types'
+import type { Job, LedgerEntry, Packet, EditorialPlan } from '../types'
 import { db } from '../db/db'
 import { decodeJD } from './jd/decode'
 import { matchEvidence } from './match/evidence'
@@ -393,7 +393,7 @@ export interface RecompileChanges {
 }
 
 /** The compile plan as the packet remembers it; falls back for pre-7.2 packets. */
-export function planFromPacket(packet: Packet, ledger: Awaited<ReturnType<typeof db.ledger.toArray>>): Packet['compilePlan'] {
+export function planFromPacket(packet: Packet, ledger: LedgerEntry[]): Packet['compilePlan'] {
   if (packet.compilePlan) return packet.compilePlan
   if (!packet.editorial) return undefined
   const order = packet.editorial.chosen.map((c) => c.ledgerId)
@@ -410,7 +410,7 @@ export function planFromPacket(packet: Packet, ledger: Awaited<ReturnType<typeof
  * the archetype, and the ledger's unused inventory; re-runs used to call it bare — a weaker
  * judge on every later edit. One builder, used by both.
  */
-export function redTeamInventory(ledger: Awaited<ReturnType<typeof db.ledger.toArray>>, resume: Packet['resume']): string {
+export function redTeamInventory(ledger: LedgerEntry[], resume: Packet['resume']): string {
   const pageText = resume.lines.map((l) => `${l.text}${l.right ? ` ${l.right}` : ''}`).join('\n')
   const onPage = pageText.toLowerCase()
   const unusedNumbered = ledger
