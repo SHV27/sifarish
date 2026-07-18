@@ -6,6 +6,7 @@ import { compileResume, type CompileInput } from './compile/compiler'
 import { compileCoverLetter, compileOutreach, buildGapNote } from './compile/letters'
 import { getIntel, hookFromIntel } from './intel/client'
 import { runEditor, redTeamPass } from './darzi/editor'
+import { nazarPass, bulletIdsForIssues } from './darzi/nazar'
 import { composeLetter, decideSignature } from './atelier/letter'
 import { estimateQuality } from './ustaad/quality'
 import { buildSummaryLine } from './darzi/summary'
@@ -95,7 +96,8 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
 
   // -- Compile (v1 compiler is final authority for I1/I2/one-page) --
   onProgress?.('Compiling the one-page résumé…')
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial, summaryLine, bulletOverrides })
+  let resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, editorial: compileEditorial, summaryLine, bulletOverrides })
+  const nazarNotes: string[] = []
 
   // -- Pass 4 (red-team) ∥ signature decision — independent judgments, run concurrently (S6,
   // Defect 5): the red-team reads the compiled résumé, the signature call reads company+archetype;
@@ -128,10 +130,40 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
       ]
         .filter(Boolean)
         .join(' · ') || 'none — everything usable is already on the page'
-    const [rt, sig] = await Promise.all([
+    const [rt, sig, nazar] = await Promise.all([
       redTeamPass(pageText, decode, arch, inventory).catch(() => null),
       decideSignature(job, arch.id, intel).catch(() => null),
+      // Session 7.1 — THE NAZAR: the page-level judge that catches defect CLASSES nobody
+      // hand-coded yet (semantic twins, broken lines). Its verdicts act only through the
+      // compiler's exclusion gate; every removal is visible in the gap note (L4).
+      nazarPass(resume).catch(() => null),
     ])
+    if (nazar && nazar.issues.length > 0) {
+      const dropIds = bulletIdsForIssues(nazar.issues, ledger, bulletOverrides)
+      if (dropIds.length > 0) {
+        resume = compileResume({
+          identity,
+          ledger,
+          decode,
+          coverage,
+          jobId: job.id,
+          editorial: compileEditorial,
+          summaryLine,
+          bulletOverrides,
+          excludedBulletIds: dropIds,
+        })
+        nazarNotes.push(
+          ...nazar.issues
+            .filter((i) => i.type === 'duplicate')
+            .map((i) => `Nazar: removed a twin claim — "${i.drop.slice(0, 70)}…" said what a stronger line already says (${i.why.slice(0, 90)})`),
+        )
+      }
+      nazarNotes.push(
+        ...nazar.issues
+          .filter((i) => i.type === 'broken')
+          .map((i) => `Nazar: a line reads broken/placeholder — "${i.drop.slice(0, 60)}" (${i.why.slice(0, 90)}). Re-forge the entry to heal its source.`),
+      )
+    }
     if (rt) {
       editorial.redTeam = rt
       editorial.redTeamRounds = 1
@@ -147,6 +179,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   }
   const outreach = compileOutreach(job, identity, ledger, decode)
   const gapNote = buildGapNote(coverage)
+  gapNote.push(...nazarNotes) // the judge's removals are visible, never silent (L4)
 
   // D29 uniqueness, WIRED (Session 5.10 wiring audit — it only ever ran in tests): this letter's
   // substantive body is compared against his recent letters; too-similar → an honest, visible

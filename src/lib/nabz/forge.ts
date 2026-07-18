@@ -1,6 +1,7 @@
 import type { Bullet, ProjectContext } from '../../types'
 import { generate } from '../dimaag/core'
 import { detectDrift } from '../polish/factGuard'
+import { bulletOverlapSameProject, HARD_DUPLICATE } from '../compile/overlap'
 import { craftClauses, startsStrong } from '../ustaad/library'
 import type { GhRepo, ReadmeDistilled } from './github'
 
@@ -118,8 +119,11 @@ export function preferAccomplishments(bullets: string[]): string[] {
  * v3 (Session 7) = library v1.3.0 (24 canon patterns: bullet formula slots, no-duplicated-fact,
  * first-bullet-strongest), the clean-URL ingestion regex (no more `**` tails in evidence links),
  * and the Gemini-first reasoning router — a re-forge now writes with the stronger brain.
+ * v4 (Session 7.1, owner-caught on his real page) = identity-restatement ban + one-theme-per-
+ * bullet dedupe at the SOURCE, and the distiller no longer mistakes section headings
+ * ("How it works") for taglines — his vault needs one more banner click to inherit this.
  */
-export const FORGE_VERSION = 3
+export const FORGE_VERSION = 4
 
 export interface ForgeResult {
   summary: string
@@ -177,6 +181,8 @@ EVERY BULLET:
 3. States the HARD PART as an OUTCOME a non-builder grasps ("so a game runs entirely in the browser with no server", "so fabricated claims are impossible", "cutting export failures to zero").
 4. ENDS with IMPACT woven into the sentence — never a bare label. THE NUMBERS RULE: when the README states a real figure (an accuracy, a %, a latency, a count — "ROC-AUC 0.957", "98.6%", "18 markets"), you MUST carry that exact figure into a bullet — a hired résumé's strongest lines are its numbered ones, and leaving a real number in the README is leaving proof on the table. Never invent, round, or infer a number the README doesn't state; when no figure exists, end with the real scale, the failure class eliminated, or the user value. Never end with a category word ("SCALE", "RELIABILITY") or a bracketed tag.
 5. 15-28 words, plain and clear — a smart non-engineer should follow it. Never a terse fragment, never private jargon, never rambling past two lines.
+6. ONE THEME PER BULLET, EVERY BULLET A DIFFERENT THEME. If bullet 1 covers truth-enforcement (guardrails/verification/citations), no other bullet may restate that theme in different words — cover a DIFFERENT dimension (the LLM architecture, the export pipeline, the deployment, the data layer). Two bullets saying one thing is padding a recruiter spots instantly; the app discards the twin.
+7. NEVER name the project itself inside a bullet and NEVER write a bullet that re-describes what the app IS ("Developed <name>, an AI job-hunt assistant that…") — the title and description line above the bullets already say that. Every bullet is a specific engineering accomplishment, not an introduction.
 
 HARD TRUTH RULES (breaking any makes the output useless — the app discards drifting bullets):
 - State ONLY facts present in the README. Re-express, compress, sharpen — but NEVER add a number, metric, model name, company, or technology the README does not contain.
@@ -277,14 +283,33 @@ export async function forgeBullets(input: { repo: GhRepo; distilled: ReadmeDisti
     kept.push(text)
   }
 
+  // Session 7.1 (owner-caught on his REAL résumé — selection cannot fix supply, D56):
+  // (1) IDENTITY BAN — a bullet naming the project itself ("Developed Sifarish, an agentic
+  //     job-hunt chief of staff…") restates the description line; the slot must carry a distinct
+  //     accomplishment. Dropped at the SOURCE whenever other bullets survive.
+  // (2) THEME DEDUPE — two bullets whose primary concept matches are the same claim in
+  //     different words (his exact guardrails/human-in-the-loop pair); the first-ranked stays.
+  const nameToken = repo.name.replace(/[-_].*$/, '').toLowerCase()
+  const nonIdentity = kept.filter((b) => !(nameToken.length >= 4 && b.toLowerCase().includes(nameToken)))
+  const identityFiltered = nonIdentity.length > 0 ? nonIdentity : kept
+  for (const b of kept) if (!identityFiltered.includes(b)) rejected.push(b)
+  const themed: string[] = []
+  for (const b of identityFiltered) {
+    if (themed.some((t) => bulletOverlapSameProject(t, b) >= HARD_DUPLICATE)) {
+      rejected.push(b)
+      continue
+    }
+    themed.push(b)
+  }
+
   // A forge that produced nothing usable is a forge that failed — ship the honest material.
-  if (kept.length === 0) return { summary: fallbackSummary, bullets: deterministic, by: 'deterministic', rejected }
+  if (themed.length === 0) return { summary: fallbackSummary, bullets: deterministic, by: 'deterministic', rejected }
 
   const summaryRaw = String(out.summary ?? '').trim()
   const summary = summaryRaw && detectDrift(source, summaryRaw).ok ? summaryRaw.slice(0, 240) : fallbackSummary
 
   // AI/systems bullets lead; defensive-robustness bullets sink to the back (maximum-scoring truth).
-  return { summary, bullets: rankBullets(kept).slice(0, 4), by: 'dimaag', rejected }
+  return { summary, bullets: rankBullets(themed).slice(0, 4), by: 'dimaag', rejected }
 }
 
 /** Build the stored reading material the Darzi frames from (never rendered verbatim). */

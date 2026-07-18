@@ -64,7 +64,7 @@ export function decodeJD(jd: string): JDDecode {
   let seniority = 'unspecified'
   if (/intern(ship)?\b/.test(lower)) seniority = 'intern'
   else if (/\b(new grad|entry[\s-]level|early[\s-]career|junior|0-2 years|fresh)/.test(lower)) seniority = 'early-career'
-  else if (/\b(senior|staff|principal|lead|8\+ years|10\+ years)\b/.test(lower)) seniority = 'senior'
+  else if (/\b(senior|staff|principal|lead|manager|head of|director|vice president|vp|[5-9]\+ years|1[0-9]\+ years)\b/.test(lower)) seniority = 'senior'
   else if (/\b(engineer|scientist|researcher)\b/.test(lower)) seniority = 'mid'
 
   const locationHints: string[] = []

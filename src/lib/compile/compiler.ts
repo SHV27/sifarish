@@ -8,7 +8,7 @@ import type {
 } from '../../types'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills } from './typeset'
-import { bulletOverlap, HARD_DUPLICATE, REDUNDANCY_WEIGHT } from './overlap'
+import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEIGHT } from './overlap'
 
 /**
  * Stage 3: deterministic compile under the one-page budget.
@@ -192,6 +192,12 @@ export interface CompileInput {
    * the entry's ledgerId, and the guard has already frozen the facts).
    */
   bulletOverrides?: Record<string, string>
+  /**
+   * Nazar verdicts (Session 7.1): specific bullet ids the page-level judge removed (twin
+   * claims). Excluded from the candidate pool so the selector backfills with the next DISTINCT
+   * bullet — the judge can only remove/swap real ledger bullets, never write (I1).
+   */
+  excludedBulletIds?: string[]
 }
 
 export type SectionKey = 'education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs'
@@ -285,14 +291,16 @@ export function compileResume(input: CompileInput): CompiledResume {
   const hasNumber = (b: PBullet) => /\d/.test(renderText(b)) || (b.metrics ? /\d/.test(b.metrics) : false)
 
   /** Ranked candidate list: the editorial plan leads (D28 — Dimaag proposes), relevance backfills. */
+  const excludedBullets = new Set(input.excludedBulletIds ?? [])
   const rankedBullets = (p: LedgerEntry): PBullet[] => {
     const numBonus = (b: PBullet) => (hasNumber(b) ? 2 : 0)
-    const base = p.bullets
+    const pool = p.bullets.filter((b) => !excludedBullets.has(b.id))
+    const base = pool
       .slice()
       .sort((a, b) => bulletRelevance(b.keywords, decode) + numBonus(b) - (bulletRelevance(a.keywords, decode) + numBonus(a)))
     const plan = input.editorial?.bullets[p.id]
     if (plan && plan.length > 0) {
-      const byId = new Map(p.bullets.map((b) => [b.id, b]))
+      const byId = new Map(pool.map((b) => [b.id, b]))
       const planned = plan.map((id) => byId.get(id)).filter((b): b is PBullet => !!b)
       if (planned.length > 0) {
         const inPlan = new Set(planned.map((b) => b.id))
@@ -311,12 +319,22 @@ export function compileResume(input: CompileInput): CompiledResume {
    * one digit-bearing bullet makes the cut — a +2 tie-break was never a guarantee.
    */
   const bulletsFor = (p: LedgerEntry, cap: number, pageTexts: string[]): PBullet[] => {
-    const ranked = rankedBullets(p)
+    // Session 7.1 (owner-caught): a bullet that names the project itself ("Developed Sifarish,
+    // an agentic job-hunt chief of staff…") is an IDENTITY RESTATEMENT — the title + description
+    // line already say what it is; the bullet slot must carry a distinct accomplishment. Dropped
+    // whenever the entry has other usable bullets.
+    const nameToken = displayTitle(p.title).split(/[—\-\s]/)[0]?.toLowerCase() ?? ''
+    const isIdentity = (b: PBullet) => nameToken.length >= 4 && renderText(b).toLowerCase().includes(nameToken)
+    const allRanked = rankedBullets(p)
+    const nonIdentity = allRanked.filter((b) => !isIdentity(b))
+    const ranked = nonIdentity.length > 0 ? nonIdentity : allRanked
     const chosen: PBullet[] = []
     const overlapMax = (b: PBullet) => {
       let m = 0
       for (const t of pageTexts) m = Math.max(m, bulletOverlap(renderText(b), t))
-      for (const c of chosen) m = Math.max(m, bulletOverlap(renderText(b), renderText(c)))
+      // Within one project the comparison is concept-aware: two bullets on the SAME theme are
+      // the same claim even with near-zero shared words (Session 7.1, his real SIFARISH pair).
+      for (const c of chosen) m = Math.max(m, bulletOverlapSameProject(renderText(b), renderText(c)))
       return m
     }
     const baseScore = new Map(ranked.map((b, i) => [b.id, ranked.length - i]))

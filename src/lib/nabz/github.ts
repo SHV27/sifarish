@@ -144,7 +144,10 @@ export interface ReadmeDistilled {
   fullClean: string
 }
 
-const SECTION_WORDS = /^(installation|install|usage|getting started|setup|features|table of contents|contents|license|contributing|contributors|acknowledg|prerequisites|requirements|demo|screenshots?|tech stack|built with|about|overview|run it|make it yours|art direction)\b/i
+// Session 7.1 (owner-caught: SPARK-CORE's résumé description read "How it works" — a README
+// SECTION HEADING the tagline picker mistook for a descriptive line). Every common section-y
+// heading phrase is named here; a tagline must also be ≥18 chars (a real tagline describes).
+const SECTION_WORDS = /^(installation|install|usage|getting started|setup|features|table of contents|contents|license|contributing|contributors|acknowledg|prerequisites|requirements|demo|screenshots?|tech stack|built with|about|overview|run it|make it yours|art direction|how it works|how to|what('|’)s inside|quick ?start|project structure|folder structure|architecture|deployment|configuration|config|environment|roadmap|faq|credits|testing|tests|status|why|examples?)\b/i
 
 function cleanMd(s: string): string {
   return s
@@ -177,7 +180,9 @@ export function distillReadme(md: string): ReadmeDistilled {
     const h = /^#{2,4}\s+(.*)$/.exec(raw.trim())
     if (!h) continue
     const c = cleanMd(h[1])
-    if (c.length >= 12 && !SECTION_WORDS.test(c) && /[a-z]/i.test(c)) {
+    // ≥18 chars: a real tagline DESCRIBES ("The Board That Plays Back"); a 3-word section
+    // heading ("How it works") never reaches 18 with meaning (Session 7.1).
+    if (c.length >= 18 && !SECTION_WORDS.test(c) && /[a-z]/i.test(c)) {
       tagline = c
       break
     }

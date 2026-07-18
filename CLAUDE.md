@@ -1180,3 +1180,24 @@ the seal was broken.
   heuristic hit with the matched musts named); ambiguous projects still get the reasoner.
   FORGE_VERSION 3 → his vault is offered the Session-7 craft through the one-click repair banner.
   Declutter: quiet "off-résumé" marker (was a loud badge), confirmed Delete in Shelf edit mode.
+- D149 (S7.1, owner-caught within hours of the S7 "DONE" — the §14 humility, again): FOUR defects
+  my gates missed, all from HIS screenshots. (1) SEMANTIC TWINS — his exact SIFARISH pair shared
+  2 stems but one claim; lexical Jaccard is structurally blind there. Cure: fine-grained CONCEPT
+  themes (truth/rag/agents/evals/export/deploy/security…) — within one project, same primary
+  theme = same claim (floor 0.6); themes are FINE so a RAG bullet + an agent bullet never
+  collide. Applied in the compiler AND at the forge SOURCE (D56: selection cannot fix supply).
+  (2) IDENTITY BULLETS — "Developed Sifarish, an agentic job-hunt chief of staff…" restates the
+  description line; banned at forge + compiler (when alternatives exist). (3) "How it works" AS
+  A DESCRIPTION — the distiller's tagline picker accepted section headings; section-word list
+  extended + 18-char floor. (4) "Engineering Manager" AT 100 — seniority regex never knew
+  'manager', and the JD's stray "2027" boosted windowFit; leadership TITLES now zero the window
+  LAST (no boost resurrects) + a 'management' role family demotes visibly. FORGE_VERSION 4.
+- D150: THE NAZAR PASS — the owner's dharma made mechanism ("main ek ek error nahi pakdunga; the
+  app must be intelligent enough to prevent them"). A page-level LLM judge reads the FINISHED
+  résumé against the studied craft library (craftClauses — rules stay DATA, I13) and flags
+  GENERIC defect classes nobody hand-coded: twin claims in different words, broken/placeholder
+  lines. Verdicts act ONLY through the compiler's exclusion gate (remove/swap real ledger
+  bullets — I1 untouchable), every removal lands in the gap note (L4), heuristic floor runs
+  first (D130), keyless/over-budget → deterministic floors stand (I4). Wired on the DEFAULT
+  buildPacket path, parallel with red-team + signature. Hand-coded rules kill known classes;
+  the Nazar exists for the unknown ones — that is the self-evolving contract.

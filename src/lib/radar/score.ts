@@ -118,6 +118,13 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
     winFrac = Math.max(winFrac, 0.9)
     winWhy += ' JD explicitly mentions a 2027-adjacent window.'
   }
+  // Session 7.1 (owner-caught: "Engineering Manager, Postman AI" ranked #2 at 100 for a
+  // student) — a leadership-TITLED role is out of an intern window whatever the JD text says,
+  // and this override runs LAST so no JD-keyword boost can resurrect it.
+  if (/\b(manager|director|head of|vp|vice president|principal|staff engineer|chief)\b/i.test(job.title)) {
+    winFrac = 0
+    winWhy = 'Leadership/management-titled role — out of an intern/new-grad window, whatever the JD says.'
+  }
   parts.push({
     key: 'windowFit',
     label: 'Jan–May 2027 window fit',
@@ -211,6 +218,7 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
  * owner's vision names that family — deterministic, bounded, rendered in "why" (L4).
  */
 const ROLE_FAMILIES: { re: RegExp; name: string }[] = [
+  { re: /\b(engineering|product|program|delivery) manager\b|\bhead of\b|\bdirector\b|\bvice president\b|\bvp\b/i, name: 'management' },
   { re: /\bresearch scientist\b/i, name: 'research scientist' },
   { re: /\bdata scientist\b/i, name: 'data scientist' },
   { re: /\b(data|business) analyst\b/i, name: 'analyst' },

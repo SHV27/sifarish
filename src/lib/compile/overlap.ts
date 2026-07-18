@@ -62,3 +62,54 @@ export function bulletOverlap(a: string, b: string): number {
 export const HARD_DUPLICATE = 0.6
 /** MMR redundancy weight: how strongly overlap with already-chosen bullets repels a candidate. */
 export const REDUNDANCY_WEIGHT = 6
+
+/**
+ * Session 7.1 (owner-caught on his REAL résumé): two bullets can make the same claim with
+ * near-ZERO shared words — "Implemented guardrails… reject uncited prose… provably accurate"
+ * vs "…compiles verified role data… human-in-the-loop policy" share 2 stems yet both say
+ * TRUTH-ENFORCEMENT. Lexical overlap is blind to that. So bullets also carry a THEME from a
+ * deterministic concept lexicon; within one project, two bullets whose PRIMARY theme matches
+ * are the same claim (¶blt-no-duplicated-fact) — the stronger one keeps the seat.
+ */
+// Themes are FINE-GRAINED on purpose: an AI-engineer résumé legitimately carries several
+// LLM-adjacent bullets (a RAG pipeline, an agent orchestrator, an eval harness are three
+// DIFFERENT accomplishments) — one broad "llm" bucket would kill honest breadth. A theme is
+// only "the same claim" when it names the same KIND of work.
+const CONCEPT_GROUPS: { id: string; re: RegExp }[] = [
+  { id: 'truth', re: /\b(guardrails?|uncited|cited|verif\w+|unverif\w+|provabl\w+|evidence|ledger|honest\w*|truth\w*|hallucinat\w+|fabricat\w+|human.in.the.loop|drift|integrity)\b/gi },
+  { id: 'export', re: /\b(pdf|docx|parse[- ]?back|round[- ]?trip|fidelity|typeset\w*|text layer)\b/gi },
+  { id: 'deploy', re: /\b(shipp?ed|deploy\w*|vercel|live|production|serverless)\b/gi },
+  { id: 'resilience', re: /\b(keyless|fallbacks?|offline|degrad\w+|rate[- ]?limit\w*|retry|retries|outages?)\b/gi },
+  { id: 'rag', re: /\b(rag|retrieval|embeddings?|vector\w*|semantic search|augmented generation)\b/gi },
+  { id: 'agents', re: /\b(agents?|agentic|orchestrat\w+|multi[- ]?agent|tool[- ]?use|mcp|langgraph|prompts?)\b/gi },
+  { id: 'evals', re: /\b(evals?|benchmarks?|evaluation harness\w*|red[- ]?team\w*)\b/gi },
+  { id: 'models', re: /\b(fine[- ]?tun\w+|lora|model routing|two[- ]?tier|gpt|claude|gemini|groq)\b/gi },
+  { id: 'security', re: /\b(hmac|auth\w*|cookies?|passwords?|encrypt\w+|aes|tokens?|sessions?|constant[- ]?time)\b/gi },
+  { id: 'perf', re: /\b(latency|bundle|cach\w+|throughput|fps|milliseconds|p9\d)\b/gi },
+]
+
+/** The dominant theme of a bullet, or null when no group scores ≥2 hits (too weak to trust). */
+export function primaryConcept(text: string): string | null {
+  let best: string | null = null
+  let bestHits = 0
+  for (const g of CONCEPT_GROUPS) {
+    const hits = (text.match(g.re) ?? []).length
+    if (hits > bestHits) {
+      bestHits = hits
+      best = g.id
+    }
+  }
+  return bestHits >= 2 ? best : null
+}
+
+/**
+ * Within-project comparison: lexical overlap, floored at HARD_DUPLICATE when both bullets'
+ * primary theme matches — the semantic-twin case lexical Jaccard cannot see. Cross-project
+ * comparisons stay lexical (two projects may honestly both have, say, a security bullet).
+ */
+export function bulletOverlapSameProject(a: string, b: string): number {
+  const lex = bulletOverlap(a, b)
+  const ca = primaryConcept(a)
+  if (ca !== null && ca === primaryConcept(b)) return Math.max(lex, HARD_DUPLICATE)
+  return lex
+}
