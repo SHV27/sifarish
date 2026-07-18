@@ -126,7 +126,7 @@ export default function App() {
           {screen === 'khabri' && <Khabri onOpenRadar={() => setScreen('radar')} />}
           {screen === 'radar' && <Radar onTailor={openPacket} />}
           {screen === 'packet' && <PacketScreen jobId={activeJobId} onPickJob={openPacket} />}
-          {screen === 'guru' && <Guru onOpenPacket={openPacket} />}
+          {screen === 'guru' && <Guru onOpenPacket={openPacket} onNav={setScreen} />}
           {screen === 'morcha' && <Morcha onOpenPacket={openPacket} />}
           {screen === 'settings' && <SettingsScreen onNav={setScreen} />}
         </main>

@@ -69,7 +69,10 @@ describe('I8 — budgets', () => {
     await ensureBudgets()
     const b = (await getBudget('jsearch'))! // perRunCap 6, monthlyCap 200
     await recordSpend('jsearch', b.monthlyCap - 4) // 4 left this month
-    expect(await allowedThisRun('jsearch')).toBe(4) // min(perRunCap 6, remaining 4) = 4
+    // Session 7.2 (B1): the spend above also fills TODAY's ration — roll the day ledger back a
+    // day so this gate isolates the monthly-remainder floor it has always asserted.
+    await db.budgets.update('jsearch', { dayKey: '2000-01-01', usedToday: 0 })
+    expect(await allowedThisRun('jsearch')).toBe(4) // min(perRunCap 6, remaining 4, ration 6) = 4
   })
 
   it('blocks (returns 0) once the monthly cap is exhausted', async () => {

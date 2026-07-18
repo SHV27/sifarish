@@ -166,7 +166,9 @@ describe('S6.1 — unpaid postings can never hold a queue slot on keywords alone
 describe('S6.1 — JSearch sweeps the world map, India every sweep (source-level)', () => {
   it('the market rotation exists and pins India first', () => {
     const client = readFileSync('src/lib/khabri/client.ts', 'utf8')
-    expect(client).toMatch(/JSEARCH_MARKETS = \['in', 'us', 'gb', 'de', 'fr'/)
+    // Session 7.2 (B5ii): the non-India markets rotate in their own list (JSEARCH_REST) so a
+    // slot i>0 can never land India twice; India stays pinned at slot 0.
+    expect(client).toMatch(/JSEARCH_REST = \['us', 'gb', 'de', 'fr'/)
     expect(client).toMatch(/i === 0 \? 'in'/)
     expect(client).toMatch(/hunt\.country \|\| marketFor/)
   })

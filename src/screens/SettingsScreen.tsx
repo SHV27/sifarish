@@ -12,7 +12,7 @@ import { saveFile } from '../lib/util/download'
 import { getApiToken } from '../lib/apiGuard'
 import { storagePersisted, autoBackup, restoreFromLatest, requestDurableStorage } from '../db/tijori'
 import { hasSyncKey, lastSyncAt, syncConfigured, pushVault, pullVault, clearSyncKey } from '../lib/sync'
-import { syncVisionHunts, proposeHuntEdits } from '../lib/khabri/client'
+import { addSavedHunt, syncVisionHunts, proposeHuntEdits } from '../lib/khabri/client'
 
 const KEY_INFO = [
   { name: 'GROQ_API_KEY', enables: 'Guru chat + resume polish', without: 'Guru uses its deterministic router; resume stays as compiled' },
@@ -664,14 +664,10 @@ function VisionDerivation({ vision }: { vision: VisionProfile }) {
 
   const derive = () => setHunts(deriveHunts(vision))
 
+  // Session 7.2 (C5): one addHunt() helper — week-fresh + derived:true (retirement-eligible).
+  // This site used to write 'month' windows (the exact D66 bug, re-introduced at an edge).
   const addHunt = async (h: DerivedHunt) => {
-    await db.savedHunts.put({
-      id: `h-vision-${h.query.toLowerCase().replace(/\W+/g, '-')}`,
-      query: h.query,
-      remoteOnly: h.remoteOnly,
-      datePosted: 'month',
-      enabled: true,
-    })
+    await addSavedHunt({ query: h.query, remoteOnly: h.remoteOnly, derived: true })
     setAdded((s) => new Set(s).add(h.query))
   }
 

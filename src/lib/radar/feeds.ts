@@ -1,6 +1,7 @@
 import type { Job, WatchlistCompany } from '../../types'
 import { stripHtml } from '../util/html'
 import { db } from '../../db/db'
+import { withDedupeKey } from '../khabri/normalize'
 
 /**
  * Keyless public ATS feed adapters — shapes verified live 07-Jul-2026 (RESEARCH.md §3),
@@ -264,7 +265,29 @@ export async function syncRadar(onProgress?: (done: number, total: number) => vo
           if (existing) {
             await db.jobs.update(job.id, { jd: job.jd || existing.jd, updatedAt: job.updatedAt, fetchedAt: job.fetchedAt, linkAlive: true, lastSeenOpenAt: scanAt })
           } else {
-            await db.jobs.put({ ...job, linkAlive: true, lastSeenOpenAt: scanAt })
+            // Session 7.2 (B7): board scans JOIN the dedupe. A role the aggregators found first
+            // used to get a SECOND card when its board scan landed (raw-id write, no key pass).
+            // On a key collision the BOARD version wins (board-verified > aggregator ghost) and
+            // absorbs the aggregator card's pipeline state — one role, one card, best source.
+            const keyed = withDedupeKey(job)
+            const twin = await db.jobs.where('dedupeKey').equals(keyed.dedupeKey!).first()
+            if (twin && twin.id !== job.id) {
+              await db.jobs.put({
+                ...keyed,
+                linkAlive: true,
+                lastSeenOpenAt: scanAt,
+                status: twin.status,
+                isNew: twin.isNew,
+                packetId: twin.packetId,
+                appliedAt: twin.appliedAt,
+                dismissed: twin.dismissed,
+                notes: twin.notes,
+                replyDetectedAt: twin.replyDetectedAt,
+              })
+              await db.jobs.delete(twin.id)
+            } else {
+              await db.jobs.put({ ...keyed, linkAlive: true, lastSeenOpenAt: scanAt })
+            }
           }
         }
         // Close what the board itself no longer lists; reopen what returned.

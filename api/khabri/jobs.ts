@@ -23,6 +23,8 @@ interface JobsRequest {
   remoteOnly?: boolean
   datePosted?: 'all' | 'today' | '3days' | 'week' | 'month'
   numPages?: number
+  /** Session 7.2 (B3): page number for depth-promoted hunts (1-3; 1 credit per request). */
+  page?: number
   /** Session 6 (P7): comma-sep JSearch employment types, owner-set per hunt. */
   employmentTypes?: string
 }
@@ -101,11 +103,16 @@ export default async function handler(req: Request): Promise<Response> {
   }
   if (!body?.query) return json({ jobs: [], creditsSpent: 0 })
 
+  // Session 7.2 (B3): a proven hunt may spend ONE extra credit as page 2 of the same query —
+  // depth where it pays, still 1 credit per request (num_pages stays 1, D144's law).
+  const page = String(Math.min(3, Math.max(1, Number(body.page ?? 1) || 1)))
   const params = new URLSearchParams({
     query: body.query,
-    page: '1',
-    num_pages: '1', // I8: never more than one page per run
-    date_posted: body.datePosted && body.datePosted !== 'all' ? body.datePosted : 'month',
+    page,
+    num_pages: '1', // I8: never more than one page per REQUEST
+    // Session 7.2 (B5): the owner's explicit "any age" ('all') is honored — it used to be
+    // silently narrowed to 'month'. Absent still defaults to 'month'.
+    date_posted: body.datePosted ?? 'month',
   })
   if (body.country) params.set('country', body.country)
   if (body.remoteOnly) params.set('work_from_home', 'true')

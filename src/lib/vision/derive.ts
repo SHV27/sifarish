@@ -11,6 +11,12 @@ export interface DerivedHunt {
   query: string
   why: string
   remoteOnly: boolean
+  /**
+   * Session 7.2 (B4) — the hunt's derivation CLASS, so syncVisionHunts can give every class a
+   * quota. Before this, the cap filled entirely with role-variants and the Europe/theme/dream-
+   * company hunts were derived, gate-tested… and never reached savedHunts (D69, one layer deeper).
+   */
+  cls: 'role' | 'region' | 'theme' | 'company'
 }
 
 /**
@@ -51,11 +57,11 @@ export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
   const haystack = `${vision.dream} ${vision.targetRoles.join(' ')}`.toLowerCase()
   const seen = new Set<string>()
   const hunts: DerivedHunt[] = []
-  const add = (query: string, why: string) => {
+  const add = (query: string, why: string, cls: DerivedHunt['cls'] = 'role') => {
     const q = query.trim()
     if (!q || seen.has(q.toLowerCase())) return
     seen.add(q.toLowerCase())
-    hunts.push({ query: q, why, remoteOnly: vision.remoteInternational })
+    hunts.push({ query: q, why, remoteOnly: vision.remoteInternational, cls })
   }
 
   // The explicit target roles he named come first — and Session 7 (H2, the LinkedIn gap): the
@@ -79,7 +85,7 @@ export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
   // his LinkedIn-Europe comparison a direct counterpart alongside the per-country rotation.
   if (vision.remoteInternational && vision.targetRoles.length > 0) {
     const core0 = vision.targetRoles[0].replace(/\s*\b(interns?(hips?)?|residency|resident)\b\s*/gi, ' ').replace(/\s+/g, ' ').trim()
-    if (core0) add(`${core0} Europe remote`, 'Region-wide sweep: one query that answers the whole European market at once, the way LinkedIn\'s region search does.')
+    if (core0) add(`${core0} Europe remote`, 'Region-wide sweep: one query that answers the whole European market at once, the way LinkedIn\'s region search does.', 'region')
   }
 
   // Theme-derived queries: every AI-role corner his vision implies.
@@ -87,7 +93,7 @@ export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
     if (!rule.test.test(haystack)) continue
     const theme = (haystack.match(rule.test) ?? [''])[0]
     for (const q of rule.queries) {
-      add(q, `Your vision mentions "${theme}" — this role type is a market name for that work.`)
+      add(q, `Your vision mentions "${theme}" — this role type is a market name for that work.`, 'theme')
     }
   }
 
@@ -98,7 +104,7 @@ export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
   for (const company of vision.dreamCompanies ?? []) {
     const c = company.trim()
     if (!c) continue
-    add(`${c} AI engineer`, `You named ${c} a dream company — this hunt catches its AI postings via the aggregator lanes, since its ATS publishes no public feed.`)
+    add(`${c} AI engineer`, `You named ${c} a dream company — this hunt catches its AI postings via the aggregator lanes, since its ATS publishes no public feed.`, 'company')
   }
 
   return hunts

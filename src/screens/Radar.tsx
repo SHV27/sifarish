@@ -4,7 +4,7 @@ import { db } from '../db/db'
 import type { Job, ScoreBreakdown } from '../types'
 import { syncRadar, ensureJd, type SyncResult } from '../lib/radar/feeds'
 import { deriveHunts, type DerivedHunt } from '../lib/vision/derive'
-import { pruneStaleFinds, runSweep as runKhabriSweep } from '../lib/khabri/client'
+import { addSavedHunt, pruneStaleFinds, runSweep as runKhabriSweep } from '../lib/khabri/client'
 import { scoreJobCached } from '../lib/radar/score'
 
 const VISIBLE_CAP = 15 // sniper, not spray — the cap is a feature (vision §P3)
@@ -347,14 +347,10 @@ function HuntPanel() {
     setDerived(deriveHunts(settings.visionProfile).filter((d) => !have.has(d.query.trim().toLowerCase())))
   }
 
+  // Session 7.2 (B4/C5): panel-accepted vision hunts are `derived:true` through the ONE helper,
+  // so the Pulse's retirement loop (D123) can reach them when the vision moves on.
   const acceptDerived = async (d: DerivedHunt) => {
-    await db.savedHunts.put({
-      id: `h-vision-${d.query.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-      query: d.query,
-      remoteOnly: d.remoteOnly,
-      datePosted: 'week',
-      enabled: true,
-    })
+    await addSavedHunt({ query: d.query, remoteOnly: d.remoteOnly, derived: true })
     setDerived((xs) => (xs ?? []).filter((x) => x.query !== d.query))
   }
 
@@ -363,12 +359,17 @@ function HuntPanel() {
     setYieldNote(null)
     try {
       const r = await runKhabriSweep((s) => setStep(s))
+      // Session 7.2 (B2): a lane skipped for money is NAMED — "found nothing" and "didn't run"
+      // are different truths, and the owner gets the honest one.
+      const skipNote = (r.skipped ?? [])
+        .map((s) => `${s.lane.split(' (')[0]}: ${s.reason === 'ration' ? 'aaj ka ration spent — back tomorrow' : 'monthly budget spent'}`)
+        .join(' · ')
       setYieldNote(
         r.failed.length && r.found === 0
-          ? `Nothing came back — ${r.failed.join(', ')}.`
+          ? `Nothing came back — ${r.failed.join(', ')}.${skipNote ? ` (${skipNote})` : ''}`
           : `${r.new} new role(s) from ${r.found} found · ${r.duplicate} already had · ${r.creditsSpent} credit(s).${
               r.keyedLanes.length ? ` Lanes: ${r.keyedLanes.join(', ')}.` : ''
-            }`,
+            }${skipNote ? ` · ${skipNote}` : ''}`,
       )
     } catch (e) {
       setYieldNote(`Hunt failed: ${e instanceof Error ? e.message : String(e)}`)
@@ -381,7 +382,7 @@ function HuntPanel() {
   const addHunt = async () => {
     const query = adding.trim()
     if (!query) return
-    await db.savedHunts.put({ id: `h-${Date.now()}`, query, remoteOnly: false, datePosted: 'week', enabled: true })
+    await addSavedHunt({ query }) // C5: one helper owns hunt-creation semantics
     setAdding('')
   }
 

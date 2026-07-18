@@ -60,16 +60,58 @@ export async function getBudget(id: string): Promise<Budget | undefined> {
   return db.budgets.get(id)
 }
 
-/** Remaining spend allowed for one run: min(perRunCap, monthlyCap - used). 0 = blocked. */
+/**
+ * Session 7.2 (B1) — DAILY RATIONING for the sweep-driven lanes. The audit's arithmetic: 6h
+ * autopilot sweeps × 6 JSearch credits = 24-36/day against a 200/month cap → the only
+ * LinkedIn-reaching lane was dead from day ~8, silently, for the rest of every month. The
+ * monthly cap must survive the month: each rationed lane may spend at most ⌊monthlyCap/30⌋
+ * per calendar day. Keyless lanes are never rationed — freshness continues at ₹0.
+ * (User-driven reasoning lanes — dimaag/chhota/groq — are deliberately NOT rationed: a heavy
+ * tailoring day is his call to make; the monthly cap still bounds them.)
+ */
+export const DAILY_PACED: ReadonlySet<string> = new Set(['jsearch', 'adzuna', 'tavily'])
+
+export function dayKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function dailyAllowance(monthlyCap: number): number {
+  return Math.max(1, Math.floor(monthlyCap / 30))
+}
+
+/** Today's remaining ration for a lane (Infinity when the lane is not daily-paced). */
+function rationLeft(b: Budget): number {
+  if (!DAILY_PACED.has(b.id)) return Infinity
+  const today = dayKey()
+  const usedToday = b.dayKey === today ? (b.usedToday ?? 0) : 0
+  return Math.max(0, dailyAllowance(b.monthlyCap) - usedToday)
+}
+
+/** Remaining spend allowed for one run: min(perRunCap, month remainder, today's ration). 0 = blocked. */
 export async function allowedThisRun(id: string): Promise<number> {
   const b = await getBudget(id)
   if (!b) return 0
-  return Math.max(0, Math.min(b.perRunCap, b.monthlyCap - b.used))
+  return Math.max(0, Math.min(b.perRunCap, b.monthlyCap - b.used, rationLeft(b)))
+}
+
+/**
+ * Session 7.2 (B2) — the LEGIBLE half of I8: when a lane cannot spend, say WHY. 'budget' =
+ * the monthly cap is spent; 'ration' = today's allowance is spent (back tomorrow); null = can run.
+ */
+export async function laneSkipReason(id: string): Promise<'budget' | 'ration' | null> {
+  const b = await getBudget(id)
+  if (!b) return 'budget'
+  if (b.monthlyCap - b.used <= 0) return 'budget'
+  if (rationLeft(b) <= 0) return 'ration'
+  return null
 }
 
 export async function recordSpend(id: string, amount: number): Promise<void> {
   if (amount <= 0) return
   await ensureBudgets()
   const b = await db.budgets.get(id)
-  if (b) await db.budgets.update(id, { used: b.used + amount })
+  if (!b) return
+  const today = dayKey()
+  const usedToday = (b.dayKey === today ? (b.usedToday ?? 0) : 0) + amount
+  await db.budgets.update(id, { used: b.used + amount, dayKey: today, usedToday })
 }

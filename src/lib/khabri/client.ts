@@ -3,7 +3,7 @@ import type { AtsSource, Job, SavedHunt, Signal, SweepYield, VisionProfile } fro
 import { deriveHunts } from '../vision/derive'
 import { fetchHackerNews, fetchRemotive, fetchRemoteOK, fetchArbeitnow, fetchJobicy, fetchSimplify } from './keyless'
 import { mergeDiscovered } from './normalize'
-import { allowedThisRun, recordSpend } from '../budget'
+import { allowedThisRun, laneSkipReason, recordSpend } from '../budget'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 
 /**
@@ -108,7 +108,7 @@ interface SignalsApiResp {
   creditsSpent: number
 }
 
-async function callJobsApi(hunt: SavedHunt): Promise<JobsApiResp | null> {
+async function callJobsApi(hunt: SavedHunt, page = 1): Promise<JobsApiResp | null> {
   if (!meteredCallsAllowed()) return null // Darshak/demo: keyed lanes never spend (D44)
   try {
     const res = await fetch('/api/khabri/jobs', {
@@ -120,6 +120,7 @@ async function callJobsApi(hunt: SavedHunt): Promise<JobsApiResp | null> {
         remoteOnly: hunt.remoteOnly,
         datePosted: hunt.datePosted,
         numPages: 1,
+        page, // Session 7.2 (B3): depth-promoted hunts spend one extra credit as page 2
         // P7 lane depth: honored only when HE set it on the hunt — never narrows by default.
         employmentTypes: hunt.employmentTypes,
       }),
@@ -213,6 +214,12 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   const failed: string[] = []
   const keyedLanes: string[] = []
   const keylessLanes: string[] = []
+  // Session 7.2 (B2): a lane skipped for money is NAMED with its reason — never invisible.
+  const skipped: NonNullable<SweepYield['skipped']> = []
+  const noteSkip = async (id: string, lane: string) => {
+    const reason = await laneSkipReason(id)
+    if (reason) skipped.push({ lane, reason })
+  }
   let creditsSpent = 0
   const discovered: Job[] = []
 
@@ -223,13 +230,30 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   // he pinned to a country keeps it; an unpinned hunt now sweeps a rotating window over the
   // markets his vision spans (India every sweep, the rest of the world in turns — the D111
   // pattern). Same budget, the whole map over successive sweeps.
-  const JSEARCH_MARKETS = ['in', 'us', 'gb', 'de', 'fr', 'nl', 'es', 'it', 'ch', 'se', 'pl', 'sg', 'ca', 'au', 'ae']
+  const jsearchBudget = await allowedThisRun('jsearch')
+  if (jsearchBudget <= 0) await noteSkip('jsearch', 'JSearch (LinkedIn/Indeed/…)')
+
+  // Session 7.2 (B5ii) — rotation DE-DRIFT: the old offset advanced +1/sweep while a sweep
+  // consumed a ~5-wide market window, so consecutive sweeps overlapped 4/5 and slot i>0 could
+  // land 'in' again (double-spending on India). The non-India markets now rotate in their own
+  // list and the offset advances by the WINDOW actually consumed.
+  const JSEARCH_REST = ['us', 'gb', 'de', 'fr', 'nl', 'es', 'it', 'ch', 'se', 'pl', 'sg', 'ca', 'au', 'ae']
   const marketRow = await db.nabzCache.get('jsearch:markets')
   const marketOffset = Number(marketRow?.json ?? 0) || 0
-  await db.nabzCache.put({ key: 'jsearch:markets', json: String(marketOffset + 1), fetchedAt: new Date().toISOString() })
-  const marketFor = (i: number): string => (i === 0 ? 'in' : JSEARCH_MARKETS[(marketOffset + i) % JSEARCH_MARKETS.length])
+  const marketFor = (i: number): string => (i === 0 ? 'in' : JSEARCH_REST[(marketOffset + i - 1) % JSEARCH_REST.length])
+  await db.nabzCache.put({
+    key: 'jsearch:markets',
+    json: String(marketOffset + Math.max(1, jsearchBudget - 1)),
+    fetchedAt: new Date().toISOString(),
+  })
 
-  const jsearchBudget = await allowedThisRun('jsearch')
+  // Session 7.2 (B3) — DEPTH WHERE IT PAYS: a hunt whose LAST funded run yielded ≥6 rows earns
+  // page 2 on this run (one extra credit, ≤2 deep-hunts per sweep, inside the same ration).
+  const yieldsRow = await db.nabzCache.get('jsearch:yields')
+  const lastYields: Record<string, number> = yieldsRow ? (JSON.parse(yieldsRow.json) as Record<string, number>) : {}
+  const newYields: Record<string, number> = { ...lastYields }
+  let deepUsed = 0
+
   let jsearchUsed = 0
   let huntIdx = 0
   for (const hunt of hunts) {
@@ -246,8 +270,23 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     if (resp.error) failed.push('JSearch')
     for (const j of resp.jobs) discovered.push(j)
     bySource.jsearch = (bySource.jsearch ?? 0) + resp.jobs.length
+    newYields[hunt.id] = resp.jobs.length
+    // Depth promotion: proven hunt + budget headroom → one page-2 request, visibly logged.
+    if ((lastYields[hunt.id] ?? 0) >= 6 && resp.jobs.length >= 6 && deepUsed < 2 && jsearchUsed < jsearchBudget) {
+      onStep?.(`JSearch ${country.toUpperCase()} · depth 2: "${hunt.query}"`)
+      const deep = await callJobsApi({ ...hunt, country }, 2)
+      if (deep && !deep.keyless) {
+        deepUsed++
+        jsearchUsed += deep.creditsSpent
+        creditsSpent += deep.creditsSpent
+        for (const j of deep.jobs) discovered.push(j)
+        bySource.jsearch = (bySource.jsearch ?? 0) + deep.jobs.length
+        newYields[hunt.id] = resp.jobs.length + deep.jobs.length
+      }
+    }
   }
   if (jsearchUsed > 0) await recordSpend('jsearch', jsearchUsed)
+  await db.nabzCache.put({ key: 'jsearch:yields', json: JSON.stringify(newYields), fetchedAt: new Date().toISOString() })
 
   // --- Keyed aggregator lane (Adzuna), budget-gated (I8) — the global net (Session 5.5) ---
   // One request per country, so perRunCap bounds how many geographies a sweep reaches. The owner's
@@ -255,6 +294,7 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   // fixed global set. This is the "duniya ka har corner" lane: India + US + UK + CA + DE + SG + AU + NL
   // each hunt, all real postings with salaries, deduped against everything else by mergeDiscovered.
   const adzunaBudget = await allowedThisRun('adzuna')
+  if (adzunaBudget <= 0) await noteSkip('adzuna', 'Adzuna (global · 19 countries)')
   if (adzunaBudget > 0) {
     const adzunaQueries = adzunaQueriesFromHunts(hunts)
     // Rotating window (Session 5.8): persist the offset so every sweep hunts a DIFFERENT slice of
@@ -263,11 +303,16 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     const offset = Number(offsetRow?.json ?? 0) || 0
     const sweepCountries = adzunaCountriesForSweep(offset, adzunaBudget)
     await db.nabzCache.put({ key: 'adzuna:rotation', json: String(offset + sweepCountries.length - 1), fetchedAt: new Date().toISOString() })
+    // Session 7.2 (B8): the query index ROTATES too — the old `i % len` pairing meant a given
+    // market met a given core only every ~len sweeps; now every market meets every core in turn.
+    const qOffsetRow = await db.nabzCache.get('adzuna:queries')
+    const qOffset = Number(qOffsetRow?.json ?? 0) || 0
+    await db.nabzCache.put({ key: 'adzuna:queries', json: String(qOffset + 1), fetchedAt: new Date().toISOString() })
     let adzunaUsed = 0
     for (let i = 0; i < sweepCountries.length; i++) {
       if (adzunaUsed >= adzunaBudget) break
       const country = sweepCountries[i]
-      const query = adzunaQueries[i % adzunaQueries.length]
+      const query = adzunaQueries[(qOffset + i) % adzunaQueries.length]
       onStep?.(`Adzuna ${country.toUpperCase()}: "${query}"`)
       // Session 7 (Law-12): Adzuna serves up to 50 rows/page — the old 20 left 60% of every
       // credit's breadth on the table. Same request count, 2.5× the catch.
@@ -289,7 +334,10 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
   // (D85) never reached the free lanes. Remotive now runs the top distinct hunts, RemoteOK gets
   // all their keywords to match on — more corners at zero budget cost.
   const keywords = hunts.flatMap((h) => h.query.toLowerCase().split(/\s+/)).filter((w) => w.length > 3)
-  const topQueries = [...new Set(hunts.map((h) => h.query))].slice(0, 6)
+  // Session 7.2 (B8): Remotive's `search=` is a keyword match — a full hunt phrase like
+  // "AI engineer intern India remote" over-constrains and returns ~0. The free lanes get the
+  // same ≤3-word AI-core the Adzuna lane already extracts.
+  const topQueries = [...new Set(hunts.map((h) => cleanAdzunaQuery(h.query)))].filter(Boolean).slice(0, 6)
   const laneRuns: [string, () => Promise<Job[]>][] = [
     ['Hacker News · Who is Hiring', () => fetchHackerNews(keywords)],
     [
@@ -374,6 +422,7 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
 
   // --- Signal lane (Tavily), budget-gated ---
   const tavilyBudget = await allowedThisRun('tavily')
+  if (tavilyBudget <= 0) await noteSkip('tavily', 'Tavily (hiring signals)')
   if (tavilyBudget > 0) {
     onStep?.('Signals: hiring news sweep')
     const resp = await callSignalsApi(SEED_SIGNAL_QUERIES)
@@ -400,6 +449,7 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     keylessLanes,
     keyedLanes,
     failed,
+    skipped,
   }
 }
 
@@ -459,6 +509,44 @@ export async function proposeBoardsFromJobs(jobs: Job[]): Promise<number> {
 }
 
 /**
+ * Session 7.2 (C5) — ONE addHunt(). Four call sites (Radar panel, Guru action, Settings
+ * derivation, Khabri signal) each grew their own shape: three still wrote `datePosted:'month'`
+ * (the exact D66 bug re-introduced at the edges) and omitted `derived`, which orphaned them from
+ * the Pulse's retirement loop (D123). One helper now owns id-prefix, the 'week' freshness
+ * default, and the derived/ownerSetDate semantics — a new call site CANNOT re-introduce the bug.
+ */
+export async function addSavedHunt(input: {
+  query: string
+  remoteOnly?: boolean
+  country?: string
+  /** Vision/market-derived → Pulse retirement may propose disabling it when the vision moves on. */
+  derived?: boolean
+  employmentTypes?: string
+}): Promise<SavedHunt | null> {
+  const query = input.query.trim()
+  if (!query) return null
+  const key = query.toLowerCase()
+  const existing = await db.savedHunts.toArray()
+  const dup = existing.find((h) => h.query.trim().toLowerCase() === key)
+  if (dup) {
+    if (!dup.enabled) await db.savedHunts.update(dup.id, { enabled: true })
+    return dup
+  }
+  const hunt: SavedHunt = {
+    id: `${input.derived ? 'vh' : 'h'}-${key.replace(/[^a-z0-9]+/g, '-').slice(0, 48)}`,
+    query,
+    remoteOnly: input.remoteOnly ?? false,
+    country: input.country,
+    datePosted: 'week',
+    enabled: true,
+    derived: input.derived || undefined,
+    employmentTypes: input.employmentTypes,
+  }
+  await db.savedHunts.put(hunt)
+  return hunt
+}
+
+/**
  * VISION → HUNTS (Session 5.6 — closes D68/D85, "the top 15 aren't mine"). His vision IS his
  * instruction: the queries the Radar goes looking for should BE the roles he named plus the market
  * names his dream implies. `deriveHunts(vision)` has always produced these — but nothing wrote them
@@ -471,17 +559,27 @@ export async function proposeBoardsFromJobs(jobs: Job[]): Promise<number> {
  * toggled by hand (the D59/D88 local-first rule). Capped so the hunt panel stays readable. Zero
  * budget, zero key — pure DB. Owner-gated by its caller (autopilot is owner-only).
  */
-export async function syncVisionHunts(vision?: VisionProfile, cap = 14): Promise<number> {
+export async function syncVisionHunts(vision?: VisionProfile, cap = 16): Promise<number> {
   if (!vision) return 0
   const existing = await db.savedHunts.toArray()
   const seen = new Set(existing.map((h) => h.query.trim().toLowerCase()))
-  // `cap` bounds the TOTAL number of derived hunts, not this run — so repeated opens are idempotent
-  // once the cap is reached, and the hunt panel never grows unbounded as the vision is re-derived.
-  const budget = cap - existing.filter((h) => h.derived).length
-  if (budget <= 0) return 0
+  // Session 7.2 (B4) — CLASS QUOTAS. The old single cap (14) was consumed entirely by the first
+  // target roles' variants, so the Europe hunt, every theme hunt, and every dream-company hunt
+  // were derived, gate-tested… and never reached savedHunts on the default path (the D69 disease
+  // one layer deeper — cap math, not wiring). Every class the vision implies now gets seats.
+  const derived = deriveHunts(vision)
+  const QUOTA: Record<NonNullable<(typeof derived)[number]['cls']>, number> = { role: 8, region: 2, theme: 4, company: 2 }
+  const clsOf = new Map(derived.map((d) => [d.query.trim().toLowerCase(), d.cls]))
+  const counts: Record<string, number> = { role: 0, region: 0, theme: 0, company: 0 }
+  for (const h of existing.filter((h) => h.derived)) {
+    counts[clsOf.get(h.query.trim().toLowerCase()) ?? 'role']++
+  }
+  // `cap` still bounds the TOTAL derived set, so repeated opens converge (idempotent).
+  let total = existing.filter((h) => h.derived).length
   let added = 0
-  for (const d of deriveHunts(vision)) {
-    if (added >= budget) break
+  for (const d of derived) {
+    if (total >= cap) break
+    if (counts[d.cls] >= QUOTA[d.cls]) continue
     const key = d.query.trim().toLowerCase()
     if (!key || seen.has(key)) continue
     seen.add(key)
@@ -493,6 +591,8 @@ export async function syncVisionHunts(vision?: VisionProfile, cap = 14): Promise
       enabled: true,
       derived: true,
     })
+    counts[d.cls]++
+    total++
     added++
   }
   return added

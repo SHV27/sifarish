@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { PulseBrief, Signal, SweepYield } from '../types'
-import { runSweep } from '../lib/khabri/client'
+import { addSavedHunt, runSweep } from '../lib/khabri/client'
 import { runPulse, acceptPulse, dismissPulse, pulseDue } from '../lib/pulse/client'
 import TaleemPanel from '../components/TaleemPanel'
 
@@ -264,6 +264,11 @@ function YieldReport({ result, newJobs, onOpenRadar }: { result: SweepYield; new
             {l} quiet
           </span>
         ))}
+        {(result.skipped ?? []).map((s) => (
+          <span key={s.lane} className="stamp stamp-red !text-[9px] !rotate-0" title={s.reason === 'ration' ? "Today's ration is spent — the lane returns tomorrow (I8 pacing)." : 'Monthly budget spent — the lane returns next month.'}>
+            {s.lane} · {s.reason === 'ration' ? 'ration spent, back tomorrow' : 'monthly budget spent'}
+          </span>
+        ))}
       </div>
       {newJobs > 0 && (
         <button onClick={onOpenRadar} className="mt-3 text-sm font-semibold text-stamp hover:underline">
@@ -295,7 +300,8 @@ function SignalCard({ signal }: { signal: Signal }) {
           disabled={hunted}
           onClick={async () => {
             const q = signal.headline.split(/[—:|]/)[0].trim().slice(0, 60)
-            await db.savedHunts.put({ id: `h-sig-${signal.id}`, query: q, remoteOnly: false, datePosted: 'month', enabled: true })
+            // Session 7.2 (C5): the one helper — week-fresh, retirement-eligible (D123).
+            await addSavedHunt({ query: q, derived: true })
             await db.signals.update(signal.id, { seen: true })
             setHunted(true)
           }}

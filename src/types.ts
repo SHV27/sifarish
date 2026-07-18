@@ -657,6 +657,12 @@ export interface SweepYield {
   keylessLanes: string[]
   keyedLanes: string[]
   failed: string[]
+  /**
+   * Session 7.2 (B2) — I8's missing half: a keyed lane skipped for money is now NAMED with its
+   * reason ('budget' = monthly cap spent, 'ration' = today's allowance spent, back tomorrow).
+   * A skipped lane used to be indistinguishable from a lane that found nothing.
+   */
+  skipped?: { lane: string; reason: 'budget' | 'ration' }[]
 }
 
 // ---------- Intel (Darzi v2) ----------
@@ -683,6 +689,9 @@ export interface Budget {
   monthlyCap: number
   perRunCap: number
   unit: string // 'credits' | 'requests' | 'calls'
+  /** Session 7.2 (B1) — daily pacing state for rationed lanes: today's key + today's spend. */
+  dayKey?: string
+  usedToday?: number
 }
 
 // ---------- Pulse ----------
