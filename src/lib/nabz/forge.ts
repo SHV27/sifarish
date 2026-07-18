@@ -205,7 +205,7 @@ export function forgeSystem(): string {
   // the model — a studied rule that misses the payload is a library the firm never opens (D118).
   // ~350 extra tokens against the 16k system cap; the D105 discipline is the compact BRIEF, not
   // starving the craft.
-  const craft = craftClauses('forge', undefined, 12)
+  const craft = craftClauses('forge', undefined, 24)
   if (craft.length === 0) return SYSTEM
   return `${SYSTEM}\n\nSTUDIED CRAFT (patterns from résumés that got AI engineers hired — cited in-app):\n${craft.map((c) => `- ${c}`).join('\n')}`
 }

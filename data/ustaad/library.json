@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "updatedAt": "2026-07-17",
+  "version": "1.3.0",
+  "updatedAt": "2026-07-18",
   "honestyNote": "This library encodes CRAFT PATTERNS with citations. There is no public database of 'resumes selected at company X' and this library does not pretend one exists. Per-company insight comes from Intel/JD analysis at tailor time. Every pattern below carries the source(s) it was derived from and the date it was verified. Stale entries (>12 months) must be flagged by Pulse, never silently trusted.",
   "sources": [
     {
@@ -416,6 +416,84 @@
       "title": "freeCodeCamp — the résumé that got a software engineer hired at Google",
       "url": "https://www.freecodecamp.org/news/heres-the-resume-i-used-to-get-a-job-at-google-as-a-software-engineer-26516526f29a/",
       "accessed": "2026-07-17"
+    },
+    {
+      "id": "S70",
+      "title": "GitHub — jakegut/resume: Jake's Resume LaTeX template (2.8k stars, the de-facto SWE student standard)",
+      "url": "https://github.com/jakegut/resume",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S71",
+      "title": "Jake's Resume — resume.tex source (typesetting ground truth: scshape headings + titlerule, tabular* right-aligned dates, bold/italic hierarchy, pdfgentounicode=1)",
+      "url": "https://raw.githubusercontent.com/jakegut/resume/master/resume.tex",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S72",
+      "title": "Overleaf — Jake's Resume template page (Jake Gutierrez; 'machine readable/ATS parsable' by design)",
+      "url": "https://www.overleaf.com/latex/templates/jakes-resume/syzfjbzwjncs",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S73",
+      "title": "Rejectless — Jake's Resume Template: Complete Guide (2026): section order by seniority, bullet pattern, skills categories",
+      "url": "https://www.rejectless.app/guides/jakes-resume-template-guide",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S74",
+      "title": "SWE Resume — Jake's Resume template: single column, titlerule headings, right-aligned dates, categorized skills",
+      "url": "https://www.sweresume.app/articles/jakes-resume/",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S75",
+      "title": "MIT CAPD — Resumes (10pt floor, half-inch margins, one page, action verbs, quantify, omit personal data/references)",
+      "url": "https://capd.mit.edu/resources/resumes/",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S76",
+      "title": "MIT CAPD — Career Toolkit: Crafting an Effective Resume (24-page PDF)",
+      "url": "https://cdn.uconnectlabs.com/wp-content/uploads/sites/123/2025/01/MIT-CAPDs-Career-Toolkit-Crafting-an-effective-resume.pdf",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S77",
+      "title": "Careerflow — The 6-Second Rule: what eye-tracking actually shows (7.4s filter, F-pattern, six data points get 80% of fixation)",
+      "url": "https://www.careerflow.ai/blog/6-second-rule-resume",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S78",
+      "title": "Jobscan — Resume date format guide (Month YYYY / MM-YYYY, right-aligned, one format throughout, parse risks)",
+      "url": "https://www.jobscan.co/blog/resume-dates/",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S79",
+      "title": "Jobscan — 5 critical ATS formatting mistakes (columns/tables/graphics, headers-footers, custom fonts, creative headings, date formats; 99.7% recruiter ATS use)",
+      "url": "https://www.jobscan.co/blog/ats-formatting-mistakes/",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S80",
+      "title": "AIResume Guru — margins/fonts/spacing exact settings (body 10-12pt/11 ideal, name 18-24pt, headings 14-16pt, margins 0.5-1in, 1.0-1.15 spacing)",
+      "url": "https://airesume.guru/blog/resume-margins-fonts-spacing",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S81",
+      "title": "Resume Genius — Recent college graduate resume: intro objective vs summary, detailed education for new grads, section order",
+      "url": "https://resumegenius.com/blog/resume-help/college-graduate-resume",
+      "accessed": "2026-07-18"
+    },
+    {
+      "id": "S82",
+      "title": "r/EngineeringResumes — community wiki (section order, one page, STAR/CAR/XYZ bullets) [UNVERIFIED — corroborated via S70/S73/S74]",
+      "url": "https://www.reddit.com/r/EngineeringResumes/wiki/index/",
+      "accessed": "2026-07-18"
     }
   ],
   "patterns": [
@@ -1006,6 +1084,424 @@
         "reframe"
       ],
       "exemplar": "AI engineer specializing in LLM agents, RAG, and evals — 6 shipped production systems, B.Tech CS 2027."
+    },
+    {
+      "id": "anat-student-section-order",
+      "rule": "No formal work experience: Contact → Summary(optional) → Skills → Projects → Education → Honors, with Projects carrying the page. The moment ANY real internship/work exists it becomes its own Experience section ABOVE Projects — never folded into Projects, never below them.",
+      "why": "The Jake's-template ecosystem and university guides converge: experience outranks projects when it exists, and projects fill the slot when it doesn't; misfiling an internship as a 'project' discards its strongest signal (someone paid for the work).",
+      "sourceIds": [
+        "S73",
+        "S81",
+        "S68",
+        "S13"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "archetype",
+        "casting",
+        "estimator"
+      ],
+      "exemplar": "Variant A (no work): SKILLS · PROJECTS (3-4 deep) · EDUCATION. Variant B (has internship): EXPERIENCE (the internship, 3-4 bullets) · PROJECTS (2-3) · EDUCATION."
+    },
+    {
+      "id": "anat-one-page-allocation",
+      "rule": "One-page A4 density budget: header ≤3 lines, summary ≤3 lines, ~55-65% of the body to Projects/Experience, Education 2-3 lines, Skills 3-4 labeled lines, Honors ≤2 lines. If a section wants more, a project bullet pays for it — never the margins or the font.",
+      "why": "The 7.4-second F-pattern skim spends its fixations on the top third and the block titles; a section that sprawls past its budget steals fixation slots from the projects that carry the argument.",
+      "sourceIds": [
+        "S77",
+        "S73",
+        "S80"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "estimator"
+      ],
+      "exemplar": "Trim ladder honors the budget: bullets shrink before projects drop; Education never grows past 3 lines to fill space."
+    },
+    {
+      "id": "anat-education-block-student",
+      "rule": "Education for a current student is 2-3 lines: institute, degree+branch, dates, CGPA (only if it helps) — detailed enough to place the candidate, never bulleted coursework padding once real projects exist.",
+      "why": "New-grad guides call for detailed education ONLY when experience is minimal; for a project-strong candidate every coursework bullet is a project bullet not written.",
+      "sourceIds": [
+        "S81",
+        "S75",
+        "S60"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "estimator"
+      ],
+      "exemplar": "B.Tech CSE — Institute, City · 2023–2027 · CGPA 8.1/10 — and nothing else; the projects prove the education."
+    },
+    {
+      "id": "anat-summary-2-lines-or-omit",
+      "rule": "A student summary is 2-3 lines max, role-positioned, made of verifiable facts (degree, strongest shipped proof, target specialty in market vocabulary). OMIT it entirely when space is tight or when the #1 project block would land inside the skim window anyway — never run an 'objective seeking opportunities' line.",
+      "why": "The first fixations go to the top third; a fact-dense summary buys alignment in one second, but a fluffy one costs the exact real estate eye-tracking says matters most.",
+      "sourceIds": [
+        "S81",
+        "S77",
+        "S61"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "reframe",
+        "estimator"
+      ],
+      "exemplar": "Keep: 'AI engineer — 6 shipped LLM/agent systems with evals and guardrails; B.Tech CS 2027.' Cut: 'Motivated student seeking a challenging internship…'"
+    },
+    {
+      "id": "anat-standard-headings-only",
+      "rule": "Section headings are the standard tokens ATS parsers key on — Experience, Projects, Education, Skills (or Technical Skills), Honors — never creative alternatives ('My Journey', 'What I Built', 'Toolbox').",
+      "why": "Jobscan documents parsers mapping content to fields BY heading name; a creative heading orphans an entire section's content in the parsed record.",
+      "sourceIds": [
+        "S79",
+        "S18"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "PROJECTS parses; 'THINGS I'VE SHIPPED' becomes unclassified text in Workday/Taleo."
+    },
+    {
+      "id": "anat-honors-compact",
+      "rule": "Honors/certifications render as one line each at the bottom — name, issuer, Month YYYY — only where evidence exists, and they are the first section the trim ladder sacrifices.",
+      "why": "University guides treat awards as optional supporting sections; a skim never reaches them, so they must cost near-zero page area.",
+      "sourceIds": [
+        "S68",
+        "S75"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "estimator"
+      ],
+      "exemplar": "Finalist, Smart India Hackathon — MoE · Dec 2025 — one line, no bullet block."
+    },
+    {
+      "id": "fmt-centered-name-oneline-contact",
+      "rule": "Header = centered name in large bold (18-24pt class), then ONE centered line of contact: phone · email · LinkedIn · GitHub as plain clickable text separated by pipes/dots — no icons, no second address line, never inside a header/footer region.",
+      "why": "The canonical selected-résumé header (Jake's template: Huge scshape name + one small contact line); ATS parsers ignore header/footer layers and choke on icon glyphs, so contact data must live in body text.",
+      "sourceIds": [
+        "S71",
+        "S73",
+        "S79"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "SHAURYA VERMA ⏎ +91-XXXXX · name@mail.com · linkedin.com/in/x · github.com/SHV27 — one line, plain text."
+    },
+    {
+      "id": "fmt-heading-smallcaps-rule",
+      "rule": "Section headings are set larger than body in small-caps (or bold caps), flush left, with a full-width horizontal rule directly beneath — the rule IS the section divider; no boxes, no background fills.",
+      "why": "The exact convention of the SWE-standard template (scshape large + titlerule) that recruiters have been trained on by thousands of selected résumés; it gives the F-pattern skim its anchor points without any parser-hostile decoration.",
+      "sourceIds": [
+        "S71",
+        "S74"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "EXPERIENCE ⏎ ───────────────── — small caps + rule, ~14pt class, left-aligned."
+    },
+    {
+      "id": "fmt-dates-right-aligned",
+      "rule": "Every dated line pairs its title flush-left with its date range flush-right on the SAME line (fill space between); dates never open a line and never float alone.",
+      "why": "Jake's template implements this with tabular* fill and every major date guide endorses right-alignment — it exploits dead right-margin whitespace while keeping the left edge (where fixations land) for content.",
+      "sourceIds": [
+        "S71",
+        "S78",
+        "S77"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "SIFARISH — TypeScript, Groq, Dexie ............................ Jun 2026 – Present"
+    },
+    {
+      "id": "fmt-bold-title-italic-subtitle",
+      "rule": "Two-level emphasis hierarchy, applied identically to every block: primary line (project name / employer / institute) in bold, secondary line (role / stack / location) in italic at a slightly smaller size. Bold appears nowhere else in body text.",
+      "why": "The selected-résumé canon's visual grammar (textbf title + textit small subtitle); MIT explicitly teaches bold 'sparingly' — indiscriminate bolding destroys the skim's landmark system.",
+      "sourceIds": [
+        "S71",
+        "S75"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "GLOAMING (bold) ⏎ Agentic interactive-fiction engine — TypeScript, Claude API (italic) — bold what, italic how."
+    },
+    {
+      "id": "fmt-month-yyyy-dates",
+      "rule": "One date format everywhere: 'Mon YYYY' (or Month YYYY), ranges with an en dash, ongoing work as 'Mon YYYY – Present'. Never year-only, never apostrophe years ('21), never day-level dates, never mixed formats.",
+      "why": "ATS systems compute experience duration from parsed dates; Jobscan documents inconsistent/abbreviated formats mis-parsing (apostrophe years read as noise).",
+      "sourceIds": [
+        "S78",
+        "S79"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "Jun 2026 – Present ✓ · 2026 ✗ · '26 ✗ · 06/12/2026 ✗ — one format, the whole page."
+    },
+    {
+      "id": "fmt-body-font-margins",
+      "rule": "Body text 10.5-11pt (absolute floor 10pt), name 18-24pt class, section headings 14-16pt class, margins 0.5-0.75in, line spacing 1.0-1.15. Never solve overflow by dropping below the floor — trim content instead.",
+      "why": "MIT's floor is 10pt with half-inch margins; the 2026 formatting consensus centers on 11pt body — below the floor the page reads as poor prioritization to the human and prints illegibly.",
+      "sourceIds": [
+        "S75",
+        "S80"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "Structural in SIFARISH (≥10.5pt one-page gate + D32 trim ladder): the compiler trims bullets, never the font."
+    },
+    {
+      "id": "fmt-web-safe-font",
+      "rule": "One web-safe standard font for the whole document — Arial/Calibri/Helvetica/Georgia class — never a custom, decorative, or downloaded face.",
+      "why": "Jobscan documents custom fonts converting to gibberish at parse time; the standard faces are the only ones every ATS's text extraction maps cleanly to unicode.",
+      "sourceIds": [
+        "S79",
+        "S80"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "Structural in SIFARISH (D9: pdf-lib Helvetica standard font = guaranteed text layer); this pattern is the estimator's check that it stays true."
+    },
+    {
+      "id": "fmt-no-graphics-icons",
+      "rule": "Zero icons, skill bars, rating dots, photos, charts, text boxes, or background art anywhere on the résumé — including 'harmless' phone/email/GitHub glyphs in the contact line.",
+      "why": "ATS parsers drop or garble non-text elements (Jobscan lists graphics and skill charts among the five critical failures); a skill bar also converts a verifiable claim into an unverifiable decoration.",
+      "sourceIds": [
+        "S79",
+        "S62",
+        "S19"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator",
+        "redteam"
+      ],
+      "exemplar": "'Python ▮▮▮▮▯' ✗ → 'Python (4 shipped projects)' ✓ — text makes the claim checkable."
+    },
+    {
+      "id": "fmt-machine-readable-text-layer",
+      "rule": "The exported PDF must carry a true unicode text layer — select-all-copy-paste must reproduce every line in reading order. A résumé that fails the copy-paste test fails, whatever it looks like.",
+      "why": "Jake's template ships pdfgentounicode=1 with the comment 'Ensure that generated pdf is machine readable/ATS parsable' — the canon treats the text layer as a hard requirement, not a nicety.",
+      "sourceIds": [
+        "S71",
+        "S72"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "Structural in SIFARISH (I5 parse-back: extracted PDF text must equal compiled content 100%, in order)."
+    },
+    {
+      "id": "fmt-left-edge-verbs",
+      "rule": "The left margin is the skim's vertical rail: every bullet starts flush at the same left edge with its verb as the first word — no deep indents, no decorative bullet glyphs, no lead-in phrases before the verb.",
+      "why": "Eye-tracking shows the F-pattern's vertical pass runs down the left side; whatever sits in the first two words of each line is ALL the vertical pass reads.",
+      "sourceIds": [
+        "S77",
+        "S64"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "estimator"
+      ],
+      "exemplar": "The left-edge column read alone must argue the case: Built… / Cut… / Shipped… / Engineered… — not 'As part of… / In this project…'"
+    },
+    {
+      "id": "fmt-skills-labeled-lines",
+      "rule": "Skills render as 3-4 labeled single lines — 'Languages:', 'AI/LLM:', 'Frameworks:', 'Tools:' — comma-separated plain text; never a table, grid, column pair, or rating widget.",
+      "why": "The exact skills form of the selected-résumé canon (Jake's Technical Skills block); labeled lines parse as clean key-value text in every ATS while a grid scrambles.",
+      "sourceIds": [
+        "S71",
+        "S74",
+        "S79"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator"
+      ],
+      "exemplar": "Languages: Python, TypeScript ⏎ AI/LLM: RAG, agent orchestration, evals, prompt engineering ⏎ Tools: Git, Docker, Vercel"
+    },
+    {
+      "id": "fmt-project-title-line",
+      "rule": "A project's title line carries: bold name, separator, italic 2-4 item stack, the live/GitHub URL as bare text, and its Mon YYYY date right-aligned — all on one line (subtitle line allowed when the stack is long).",
+      "why": "The canonical project header (Jake's resumeProjectHeading: bold name | emph stack + right date) — it gives the skim name, credibility, and recency in a single fixation.",
+      "sourceIds": [
+        "S71",
+        "S73",
+        "S47"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "estimator",
+        "casting"
+      ],
+      "exemplar": "SIFARISH | TypeScript, Groq, Dexie · sifarish.vercel.app .................... Jun 2026 – Present"
+    },
+    {
+      "id": "blt-verb-system-hardpart-number",
+      "rule": "The full bullet formula, checked as four slots in 15-25 words: [strong verb] + [the named system/tech] + [the hard part] + [the measured outcome]. A bullet missing two slots is rewritten or cut; one that needs 30+ words is two ideas and must split.",
+      "why": "The convergent formula of the template ecosystem ('[Action verb] + [what you built] + [technology] + [measurable impact]') and CMU's Verb+Context+Result — length-bounded because the skim reads exactly one line per bullet.",
+      "sourceIds": [
+        "S73",
+        "S58",
+        "S66"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "surgery",
+        "redteam"
+      ],
+      "exemplar": "'Cut export failures to zero (100% parse-back) by drawing PDF text line-by-line with a deterministic renderer' — verb/system/hard-part/number, 17 words."
+    },
+    {
+      "id": "blt-one-quantified-per-project",
+      "rule": "Every project block carries at least one bullet with a real evidenced number, and that bullet renders FIRST in the block. If the ledger truly holds no number for a project, the first bullet states a concrete state-change instead — never an invented figure.",
+      "why": "MIT's 'quantify if you can' plus eye-tracking: digits are the pattern-interrupt that stops the skim, and only block-first bullets are guaranteed to be read.",
+      "sourceIds": [
+        "S75",
+        "S77",
+        "S10"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "surgery",
+        "estimator"
+      ],
+      "exemplar": "Block order: the '0.957 ROC-AUC' bullet leads; the architecture bullet follows. No number in evidence → 'from X state to Y state' leads (I1 holds)."
+    },
+    {
+      "id": "blt-no-duplicated-fact",
+      "rule": "Each fact — a number, a named technology, a feature, a metric — appears in exactly ONE bullet on the page. Two bullets sharing a fact merge into the stronger one; the freed line goes to an unstated true fact or to whitespace.",
+      "why": "One key idea per bullet is the craft consensus; a repeated fact spends a second precious skim-line to say nothing new and reads as padding to a hostile reviewer.",
+      "sourceIds": [
+        "S66",
+        "S13"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "surgery",
+        "redteam"
+      ],
+      "exemplar": "If bullet 1 claims '100% parse-back fidelity', bullet 3 may not re-claim it as 'fully verified exports' — merge or replace."
+    },
+    {
+      "id": "blt-block-bullet-count",
+      "rule": "2-3 bullets per project, 3-5 per internship/job — never a lone orphan bullet (fold it into the tagline or cut the block), never 6+ (the block loses its shape and the reader samples randomly).",
+      "why": "The template ecosystem's density norm; blocks outside this band either signal a padded non-project or bury their own best line.",
+      "sourceIds": [
+        "S73",
+        "S66",
+        "S46"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "casting",
+        "surgery",
+        "estimator"
+      ],
+      "exemplar": "A project worth one bullet is a one-line Honors-style mention, not a block; a project wanting 6 bullets keeps its best 3."
+    },
+    {
+      "id": "blt-first-bullet-strongest",
+      "rule": "Within every block, bullets are ordered by strength, not chronology or build order: the most quantified, most role-relevant claim first, setup/context bullets last (or cut).",
+      "why": "The F-pattern's vertical scan reads block titles and first bullets only; anything below the first bullet is read solely on a second pass that most résumés never earn.",
+      "sourceIds": [
+        "S77",
+        "S3"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "surgery",
+        "casting"
+      ],
+      "exemplar": "Wrong: 'Designed the schema… / Built the pipeline… / Cut latency 65%.' Right: 'Cut latency 65%…' first — the outcome earns the reading of the rest."
+    },
+    {
+      "id": "blt-no-first-person-fragments",
+      "rule": "Bullets are verb-first sentence fragments — no 'I/me/my', no complete-sentence subjects, grammatically parallel within each block, terminal punctuation consistent across the whole page (all periods or none).",
+      "why": "MIT teaches fragments without first person as the résumé register; broken parallelism is one of the fastest 'careless' tells in a 7-second skim.",
+      "sourceIds": [
+        "S75",
+        "S58"
+      ],
+      "archetypes": [
+        "*"
+      ],
+      "passes": [
+        "forge",
+        "surgery",
+        "redteam"
+      ],
+      "exemplar": "'I built a resume compiler and it was…' ✗ → 'Built a resume compiler that…' ✓ — same voice, every bullet, every block."
     }
   ],
   "archetypeGuides": [

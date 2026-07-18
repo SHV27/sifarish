@@ -213,7 +213,7 @@ describe('Ustaad library v1.2.0 — Session 6 hired-résumé research landed as 
 
   it('every forge pattern actually reaches the forge prompt (cap covers the set)', () => {
     const forgePatterns = lib.patterns.filter((p) => p.passes.includes('forge'))
-    const clauses = craftClauses('forge', undefined, 12)
+    const clauses = craftClauses('forge', undefined, 24)
     expect(clauses.length).toBe(forgePatterns.length)
     expect(forgeSystem()).toContain('metric-first-half')
   })

@@ -42,7 +42,7 @@ Re-express every bullet you are given, reusing its EXACT id.`
 
 /** The system prompt AS SENT — static rules + the library's studied reframe craft (Session 5.9, I13). */
 export function reframeSystem(): string {
-  const craft = craftClauses('reframe', undefined, 5)
+  const craft = craftClauses('reframe', undefined, 12)
   if (craft.length === 0) return SYSTEM
   return `${SYSTEM}\n\nSTUDIED CRAFT (patterns from résumés that got AI engineers hired — cited in-app):\n${craft.map((c) => `- ${c}`).join('\n')}`
 }

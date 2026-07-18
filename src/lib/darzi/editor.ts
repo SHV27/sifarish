@@ -124,7 +124,7 @@ export async function castingPass(
       ...(intel?.bullets.slice(0, 2).map((b) => ({ title: 'company intel', url: b.url })) ?? []),
     ],
     // Session 5.9 — the library's casting rules IN the payload (citations above are display-only).
-    craft: craftClauses('casting', arch.id),
+    craft: craftClauses('casting', arch.id, 12),
     heuristic,
   })
 
@@ -221,7 +221,7 @@ export async function surgeryPass(
       // substance matters most; a single-project evidence payload has ample headroom at 4000.
       evidence: [{ ref: project.id, text: `${project.title}: ${projectBrief(project, 4000)}` }],
       citations: citePatterns(['xyz-formula', 'verb-strength-ladder'], 2),
-      craft: craftClauses('surgery', arch.id), // Session 5.9 — studied rules reach the model
+      craft: craftClauses('surgery', arch.id, 10), // Session 5.9 — studied rules reach the model (S7: cap sized to the grown library)
     })
   } else {
     angleRationale = {
