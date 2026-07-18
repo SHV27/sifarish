@@ -108,3 +108,21 @@ describe('S7 — angle fast-path: evidence answering ≥2 must-haves decides wit
     expect(r.choice.angleId).toBe('jd-focus')
   })
 })
+
+// ---------- WS-R5: the vault repair reaches Session-7 craft ----------
+
+import { needsReforge } from '../src/components/RepairBanner'
+import { FORGE_VERSION } from '../src/lib/nabz/forge'
+
+describe('S7 — vault repair v3: Session-6-forged entries are offered the new craft', () => {
+  it('FORGE_VERSION is 3 and a v2-forged repo project needs re-forge', () => {
+    expect(FORGE_VERSION).toBe(3)
+    const v2entry = {
+      ...(SEED_LEDGER.find((e) => e.kind === 'project' && e.tier === 'shipped') as LedgerEntry),
+      id: 'proj-v2',
+      forgeVersion: 2,
+      evidence: { repo: 'https://github.com/SHV27/x', date: '2026-07', note: '' },
+    }
+    expect(needsReforge([v2entry])).toContain('proj-v2')
+  })
+})

@@ -115,8 +115,11 @@ export function preferAccomplishments(bullets: string[]): string[] {
  * meaningfully; entries forged under an older version (or never LLM-forged at all) are what the
  * one-click vault repair re-forges. v2 = numbers rule mandatory + honest keyword mirroring +
  * reader test + library v1.2.0.
+ * v3 (Session 7) = library v1.3.0 (24 canon patterns: bullet formula slots, no-duplicated-fact,
+ * first-bullet-strongest), the clean-URL ingestion regex (no more `**` tails in evidence links),
+ * and the Gemini-first reasoning router — a re-forge now writes with the stronger brain.
  */
-export const FORGE_VERSION = 2
+export const FORGE_VERSION = 3
 
 export interface ForgeResult {
   summary: string
