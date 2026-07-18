@@ -123,6 +123,6 @@ describe('S7 — vault repair v3: Session-6-forged entries are offered the new c
       forgeVersion: 2,
       evidence: { repo: 'https://github.com/SHV27/x', date: '2026-07', note: '' },
     }
-    expect(needsReforge([v2entry])).toContain('proj-v2')
+    expect(needsReforge([v2entry]).map((e) => e.id)).toContain('proj-v2')
   })
 })
