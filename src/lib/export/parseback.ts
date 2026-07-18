@@ -35,7 +35,9 @@ export function verifyLines(resume: CompiledResume, extracted: string): Parsebac
   const outOfOrder: string[] = []
   let cursor = 0
   for (const line of resume.lines) {
-    const needle = norm(sanitizePdfText(line.text))
+    // Session 7 contract: a right-aligned segment is drawn AFTER the left text on the same
+    // visual line, so extracted order is text-then-right — verified as one contiguous needle.
+    const needle = norm(sanitizePdfText(line.text) + sanitizePdfText(line.right ?? ''))
     if (needle.length === 0) continue
     const at = hay.indexOf(needle, cursor)
     if (at === -1) {

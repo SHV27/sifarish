@@ -115,14 +115,15 @@ describe('Defect 3 — the page reads like a typesetter set it', () => {
     const lines = resume.lines
     const eduHeading = lines.findIndex((l) => l.kind === 'heading' && l.text === 'EDUCATION')
     expect(eduHeading).toBeGreaterThanOrEqual(0)
-    // Every education line is an entry-title carrying its year/score inline; a bare-year meta
-    // line ("2021" floating alone) must not exist anywhere in the section.
+    // Every education line is ONE entry-title; its year/score rides the right-aligned segment
+    // (Session 7). A bare-year line ("2021" floating alone as its own line) must not exist.
     for (let i = eduHeading + 1; i < lines.length && lines[i].kind !== 'heading'; i++) {
       expect(lines[i].kind).toBe('entry-title')
       expect(/^\d{4}$/.test(lines[i].text.trim())).toBe(false)
     }
-    const xii = lines.find((l) => l.text.includes('Class X,'))
-    expect(xii?.text).toMatch(/98\.6%.*2021/)
+    const classX = lines.find((l) => l.text.includes('Class X,'))
+    expect(classX?.text).toContain('98.6%')
+    expect(classX?.right).toContain('2021') // same visual line, right-aligned — never orphaned
     // Session 6 (live-proof catch): education is reverse-chronological — B.Tech, then XII, then X
     // (Dexie's primary-key order had put Class X above Class XII).
     const eduLines = []
@@ -166,11 +167,15 @@ describe('Defect 3 — the page reads like a typesetter set it', () => {
 })
 
 describe('Defect 3 — the PDF sanitizer keeps the typesetting (caught by READING the PDF)', () => {
-  it('ellipsis and multiplication sign survive as ASCII, never vanish', async () => {
+  it('canon punctuation survives as REAL glyphs (WinAnsi encodes them), never vanishes', async () => {
     const { sanitizePdfText } = await import('../src/lib/export/pdf')
-    expect(sanitizePdfText('with a hand-authored…')).toBe('with a hand-authored...')
-    expect(sanitizePdfText('TIET × LinkedIn Learning')).toBe('TIET x LinkedIn Learning')
+    // Session 7: these are WinAnsi-1252 glyphs — kept verbatim, not downgraded to ASCII.
+    expect(sanitizePdfText('with a hand-authored…')).toBe('with a hand-authored…')
+    expect(sanitizePdfText('TIET × LinkedIn Learning')).toBe('TIET × LinkedIn Learning')
+    expect(sanitizePdfText('GLOAMING — 2023–2027 · CGPA')).toBe('GLOAMING — 2023–2027 · CGPA')
     expect(sanitizePdfText('a  b')).toBe('a b')
+    // Anything outside the named whitelist still dies rather than corrupting the encoder.
+    expect(sanitizePdfText('emoji 🚀 gone')).toBe('emoji gone')
   })
 })
 

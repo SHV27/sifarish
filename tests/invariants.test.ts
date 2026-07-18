@@ -148,10 +148,14 @@ describe('One-page budget (compiler)', () => {
       identity: SEED_IDENTITY, ledger: projects, decode, coverage, jobId: 'x',
       editorial: { order: ['proj-a', 'proj-c'], bullets: {} }, // cast only A and C
     })
-    const titles = resume.lines.filter((l) => l.kind === 'entry-title').map((l) => l.text)
-    expect(titles).toContain('Project A (Jan 2026)') // Month-Year display (S6.1)
-    expect(titles).toContain('Project C (Jan 2026)')
-    expect(titles).not.toContain('Project B (Jan 2026)') // benched
-    expect(titles).not.toContain('Project D (01/2026)')
+    // Session 7 typesetter: the date is a right-aligned segment on the title line.
+    const titleLines = resume.lines.filter((l) => l.kind === 'entry-title')
+    const titles = titleLines.map((l) => l.text)
+    expect(titles).toContain('Project A')
+    expect(titles).toContain('Project C')
+    expect(titles).not.toContain('Project B') // benched
+    expect(titles).not.toContain('Project D')
+    const projA = titleLines.find((l) => l.text === 'Project A')
+    expect(projA?.right).toBe('Jan 2026') // Month-Year display (S6.1), right-aligned (S7)
   })
 })

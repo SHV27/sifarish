@@ -1,26 +1,54 @@
-import { Document, Packer, Paragraph, TextRun } from 'docx'
+import { AlignmentType, BorderStyle, Document, Packer, Paragraph, TabStopType, TextRun } from 'docx'
 import type { CompiledDoc, CompiledResume } from '../../types'
 import { LINE_METRICS } from '../compile/compiler'
 
 /**
  * DOCX export — the parse-reliability king (RESEARCH.md F6). Same compiled lines,
  * same order, plain single-column paragraphs, standard font, no tables/columns/images.
+ *
+ * Session 7 "The Taaj": mirrors the classic PDF layout with Word-native primitives —
+ * centered name/contact, a bottom border under headings (a border, not a table), a right
+ * TAB STOP for dates (plain text runs in reading order: left text, tab, date — parses
+ * exactly like the PDF), bold inline skill labels, italic project taglines.
  */
+
+// A4 usable width in twips: 11906 - 960*2 margins.
+const RIGHT_TAB = 11906 - 960 * 2
 
 function buildDoc(resume: CompiledResume): Document {
   const children = resume.lines.map((line, i) => {
     const isName = i === 0
     const m = LINE_METRICS[line.kind]
+    const size = Math.round((isName ? 17 : m.size) * 2) // half-points
+    const font = 'Calibri'
+    const centered = isName || line.kind === 'contact'
+    const italics = line.kind === 'meta'
+
+    const runs: TextRun[] = []
+    if (line.kind === 'skills') {
+      const idx = line.text.indexOf(': ')
+      if (idx > 0 && idx < 40) {
+        runs.push(new TextRun({ text: line.text.slice(0, idx + 1), bold: true, size, font }))
+        runs.push(new TextRun({ text: ` ${line.text.slice(idx + 2)}`, size, font }))
+      }
+    }
+    if (runs.length === 0) {
+      runs.push(new TextRun({ text: line.text, bold: isName || m.bold, italics, size, font }))
+    }
+    if (line.right) {
+      runs.push(new TextRun({ children: ['\t'], size, font }))
+      runs.push(new TextRun({ text: line.right, size: Math.round(m.size * 2), font }))
+    }
+
     return new Paragraph({
       spacing: { before: Math.round(m.before * 20), after: 0, line: Math.round(m.leading * 20), lineRule: 'atLeast' },
-      children: [
-        new TextRun({
-          text: line.text,
-          bold: isName || m.bold,
-          size: Math.round((isName ? 16 : m.size) * 2), // half-points
-          font: 'Calibri',
-        }),
-      ],
+      alignment: centered ? AlignmentType.CENTER : undefined,
+      tabStops: line.right ? [{ type: TabStopType.RIGHT, position: RIGHT_TAB }] : undefined,
+      border:
+        line.kind === 'heading'
+          ? { bottom: { style: BorderStyle.SINGLE, size: 6, space: 2, color: '0D1729' } }
+          : undefined,
+      children: runs,
     })
   })
 

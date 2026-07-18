@@ -29,8 +29,9 @@ describe('set-entry — "ye skill hata" is honest tailoring, not a lie', () => {
     const before = compile(base)
     const after = compile({ ...base, excludedIds: [skill!.id] })
 
-    const skillsLineBefore = before.lines.find((l) => l.kind === 'skills')?.text ?? ''
-    const skillsLineAfter = after.lines.find((l) => l.kind === 'skills')?.text ?? ''
+    // Session 7: skills render as MULTIPLE labeled category lines — search them all.
+    const skillsLineBefore = before.lines.filter((l) => l.kind === 'skills').map((l) => l.text).join(' | ')
+    const skillsLineAfter = after.lines.filter((l) => l.kind === 'skills').map((l) => l.text).join(' | ')
     expect(skillsLineBefore).toContain(skill!.title)
     expect(skillsLineAfter).not.toContain(skill!.title)
   })

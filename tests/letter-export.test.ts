@@ -30,10 +30,12 @@ describe('cover letter export', () => {
     const bytes = await renderLetterPdf(letter)
     const extracted = (await extractPdfText(bytes)).replace(/\s+/g, ' ')
 
+    const { sanitizePdfText } = await import('../src/lib/export/pdf')
     let cursor = 0
     for (const p of letter.paragraphs) {
-      // Match the renderer's WinAnsi sanitization before comparing.
-      const expected = p.text.replace(/—/g, '--').replace(/[‘’]/g, "'").replace(/\s+/g, ' ')
+      // Match the renderer's WinAnsi sanitization before comparing (Session 7: real glyphs
+      // survive — em dashes stay em dashes on the page).
+      const expected = sanitizePdfText(p.text).replace(/\s+/g, ' ')
       const at = extracted.indexOf(expected, cursor)
       expect(at, `missing or out of order in the extracted PDF: "${p.text.slice(0, 50)}…"`).toBeGreaterThanOrEqual(0)
       cursor = at + expected.length // strictly increasing → order preserved

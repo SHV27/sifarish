@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { Job, JobStatus } from '../types'
 import { nudgeState, setJobStatus, clearFound } from '../lib/morcha'
-import { rejectionRetro } from '../lib/sahayak'
+import { rejectionRetro, draftFollowUp } from '../lib/sahayak'
 import { buildDossier, type InterviewDossier } from '../lib/dossier'
 import DakPanel from '../components/DakPanel'
 
@@ -272,7 +272,6 @@ function MorchaCard({ job, onOpenPacket, onDossier }: { job: Job; onOpenPacket: 
             onClick={async () => {
               const [identity, ledger] = await Promise.all([db.identity.get('me'), db.ledger.toArray()])
               if (!identity) return
-              const { draftFollowUp } = await import('../lib/sahayak')
               await navigator.clipboard.writeText(draftFollowUp(job, nudge.day ?? 7, identity, ledger))
               setCopied(true)
               setTimeout(() => setCopied(false), 2000)

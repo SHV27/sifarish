@@ -63,7 +63,8 @@ describe('S6.1 — the description line is recruiter-clean whatever the vault ho
     const coverage = matchEvidence(decode, ledger)
     const resume = compileResume({ identity: SEED_IDENTITY, ledger, decode, coverage, jobId: 'j' })
     const title = resume.lines.find((l) => l.kind === 'entry-title' && l.ledgerIds.includes('proj-dirty'))
-    expect(title?.text).toContain('SIFARISH (Jul 2026)')
+    expect(title?.text).toContain('SIFARISH')
+    expect(title?.right).toBe('Jul 2026') // Session 7: date right-aligned on the same line
     const meta = resume.lines.find((l) => l.kind === 'meta' && l.ledgerIds.includes('proj-dirty'))
     expect(meta?.text).not.toMatch(/\*\*|▶|https?:\/\/.*https?:\/\//)
     expect(meta?.text).toContain('A job-hunt chief of staff')

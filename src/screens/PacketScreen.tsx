@@ -7,6 +7,7 @@ import { CompileError, LINE_METRICS } from '../lib/compile/compiler'
 import { saveFile } from '../lib/util/download'
 import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
 import { markApplied } from '../lib/morcha'
+import { draftReferralAsk } from '../lib/sahayak'
 import { buildApplyPlan } from '../lib/guru/applyPlan'
 import { Why } from '../components/Why'
 import QualityPanel from '../components/QualityPanel'
@@ -341,7 +342,7 @@ function PacketBody({
         <div className="dossier p-6 sm:p-8 bg-white relative" aria-label="Compiled resume preview">
           <span className="stamp stamp-red absolute -top-2 -right-2 animate-stamp-down">Compiled · {new Date(packet.createdAt).toLocaleDateString('en-IN')}</span>
           {packet.resume.lines.map((line, i) => (
-            <ResumeLine key={i} text={line.text} kind={line.kind} isName={i === 0} count={line.ledgerIds.length} />
+            <ResumeLine key={i} text={line.text} right={line.right} kind={line.kind} isName={i === 0} count={line.ledgerIds.length} />
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -441,25 +442,41 @@ function PacketBody({
   )
 }
 
-function ResumeLine({ text, kind, isName, count }: { text: string; kind: keyof typeof LINE_METRICS; isName: boolean; count: number }) {
+function ResumeLine({ text, right, kind, isName, count }: { text: string; right?: string; kind: keyof typeof LINE_METRICS; isName: boolean; count: number }) {
   // I1 at the renderer: content lines must show their evidence anchors.
+  // Session 7: the preview mirrors the classic PDF — centered letterhead, ruled headings,
+  // right-aligned dates, bold skill labels — so what he sees IS what exports.
   const cls: Record<string, string> = {
-    contact: 'text-[11px] text-neutral-700',
-    heading: 'text-[12px] font-bold text-neutral-900 mt-3 tracking-wide',
+    contact: 'text-[11px] text-neutral-700 text-center',
+    heading: 'text-[12px] font-bold text-neutral-900 mt-3 tracking-wide border-b border-neutral-800 pb-0.5',
     'entry-title': 'text-[12px] font-semibold text-neutral-900 mt-1.5',
-    meta: 'text-[11px] text-neutral-600',
+    meta: 'text-[11px] text-neutral-600 italic',
     bullet: 'text-[11.5px] text-neutral-800 leading-snug mt-0.5',
     skills: 'text-[11.5px] text-neutral-800 mt-0.5',
     forge: 'text-[11.5px] text-neutral-800 italic mt-1.5',
   }
+  const skillLabelIdx = kind === 'skills' ? text.indexOf(': ') : -1
+  const body =
+    skillLabelIdx > 0 && skillLabelIdx < 40 ? (
+      <>
+        <strong>{text.slice(0, skillLabelIdx + 1)}</strong> {text.slice(skillLabelIdx + 2)}
+      </>
+    ) : (
+      text
+    )
   return (
-    <p className={`${isName ? 'text-lg font-bold text-neutral-900' : cls[kind]} font-[Arial,Helvetica,sans-serif] group relative`}>
-      {text}
-      {(kind === 'bullet' || kind === 'forge') && (
-        <span className="ml-1.5 font-mono text-[9px] text-shipped align-middle" title={`${count} ledger evidence link(s)`}>
-          ⛁{count}
-        </span>
-      )}
+    <p
+      className={`${isName ? 'text-lg font-bold text-neutral-900 text-center' : cls[kind]} font-[Arial,Helvetica,sans-serif] group relative ${right ? 'flex items-baseline justify-between gap-3' : ''}`}
+    >
+      <span>
+        {body}
+        {(kind === 'bullet' || kind === 'forge') && (
+          <span className="ml-1.5 font-mono text-[9px] text-shipped align-middle" title={`${count} ledger evidence link(s)`}>
+            ⛁{count}
+          </span>
+        )}
+      </span>
+      {right && <span className="shrink-0 text-[11px] text-neutral-700 font-normal">{right}</span>}
     </p>
   )
 }
@@ -789,7 +806,6 @@ function ReferralAskPanel({ job }: { job: Job }) {
   const reveal = async () => {
     const [identity, ledger] = await Promise.all([db.identity.get('me'), db.ledger.toArray()])
     if (!identity) return
-    const { draftReferralAsk } = await import('../lib/sahayak')
     setText(draftReferralAsk(job, identity, ledger))
   }
   return (

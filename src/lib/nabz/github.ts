@@ -163,7 +163,9 @@ export function distillReadme(md: string): ReadmeDistilled {
   const lines = noCode.split('\n')
 
   // Best live URL: prefer a deployment host; else any http link that isn't github/shields.
-  const urls = [...noCode.matchAll(/(https?:\/\/[^\s)"'\]]+)/gi)].map((m) => m[1])
+  // Session 7 (defect R1, his real résumé): a bare URL wrapped in markdown bold captured the
+  // trailing `**` into the stored evidence URL — markdown emphasis chars are never URL chars.
+  const urls = [...noCode.matchAll(/(https?:\/\/[^\s)"'\]*`]+)/gi)].map((m) => m[1].replace(/[*_`~.,;]+$/, ''))
   const liveUrl =
     urls.find((u) => /(vercel\.app|netlify\.app|github\.io|pages\.dev|\.web\.app|streamlit\.app|onrender\.com|railway\.app)/i.test(u)) ??
     urls.find((u) => !/github\.com|shields\.io|img\.|badge/i.test(u))

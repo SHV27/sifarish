@@ -7,6 +7,7 @@ import type {
   LedgerEntry,
 } from '../../types'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
+import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills } from './typeset'
 
 /**
  * Stage 3: deterministic compile under the one-page budget.
@@ -56,8 +57,12 @@ const NAME_HEIGHT = 24
 
 export function estimateLineHeight(line: CompiledLine): number {
   const m = LINE_METRICS[line.kind]
-  const wrapped = Math.max(1, Math.ceil(line.text.length / CHARS_PER_LINE))
-  return m.before + wrapped * m.leading
+  // A right-aligned segment (dates) shares the visual line but narrows the left column.
+  const chars = line.text.length + (line.right ? line.right.length + 4 : 0)
+  const wrapped = Math.max(1, Math.ceil(chars / CHARS_PER_LINE))
+  // Headings carry a hairline rule beneath them in the render (Session 7) — 4pt of real page.
+  const rule = line.kind === 'heading' ? 4 : 0
+  return m.before + wrapped * m.leading + rule
 }
 
 export function estimateHeight(lines: CompiledLine[]): number {
@@ -132,11 +137,22 @@ export function truncateAtWord(s: string, max: number): string {
   return `${(lastSpace > max * 0.5 ? cut.slice(0, lastSpace) : cut).replace(/[,;:\-–—]$/, '')}…`
 }
 
+/**
+ * Session 7 — THE single line-emission gate. Every compiled line passes through here, so
+ * markdown residue is structurally impossible on the page (WS-R2: the `**` on his real
+ * résumé survived because sanitization was fragmented across call sites; now a new code
+ * path CANNOT emit an unsanitized line — it has no other door).
+ */
 function push(lines: CompiledLine[], line: CompiledLine) {
   if (line.kind === 'bullet' && line.ledgerIds.length === 0) {
     throw new CompileError(`I1 violation: bullet "${line.text.slice(0, 60)}…" has no ledger evidence link.`)
   }
-  lines.push(line)
+  let text = stripMarkdownResidue(line.text)
+  // Terminal punctuation is consistent across the page (¶blt-no-first-person-fragments):
+  // bullets render without trailing periods — mixed ./no-. is a careless tell in the skim.
+  if (line.kind === 'bullet') text = text.replace(/(?<!\.)\.$/, '')
+  const right = line.right ? stripMarkdownResidue(line.right) : undefined
+  lines.push(right ? { ...line, text, right } : { ...line, text, right: undefined })
 }
 
 export interface CompileInput {
@@ -178,7 +194,10 @@ export interface CompileInput {
 }
 
 export type SectionKey = 'education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs'
-const DEFAULT_SECTION_ORDER: SectionKey[] = ['education', 'skills', 'projects', 'forge', 'achievements', 'certs']
+// Session 7 (¶anat-student-section-order): a project-strong student leads with Skills +
+// Projects — the projects ARE the experience; Education places him afterward. An archetype
+// guide's sectionOrder still overrides per-reviewer (Ustaad P13).
+const DEFAULT_SECTION_ORDER: SectionKey[] = ['skills', 'projects', 'forge', 'education', 'achievements', 'certs']
 
 /** Progressive trim levels — applied in order until the page fits (sniper over spray). */
 interface TrimLevel {
@@ -281,14 +300,14 @@ export function compileResume(input: CompileInput): CompiledResume {
   const assemble = (lv: TrimLevel): CompiledLine[] => {
     const lines: CompiledLine[] = []
 
-    // Contact block (always first — the skim starts here)
+    // Contact block (always first — the skim starts here). Session 7: the classic canon —
+    // centered name, ONE contact line under it (renderers center both by kind).
     push(lines, { kind: 'contact', text: identity.name, ledgerIds: [] })
     push(lines, {
       kind: 'contact',
-      text: `${identity.email} | ${identity.phone} | ${identity.github} | ${identity.linkedin}`,
+      text: `${identity.email} | ${identity.phone} | ${identity.github} | ${identity.linkedin} | ${identity.location}`,
       ledgerIds: [],
     })
-    push(lines, { kind: 'contact', text: identity.location, ledgerIds: [] })
 
     // Professional summary (top-third, first fixation) — evidence-linked, orchestrator-compiled.
     if (input.summaryLine && input.summaryLine.text.trim()) push(lines, input.summaryLine)
@@ -299,10 +318,10 @@ export function compileResume(input: CompileInput): CompiledResume {
         if (education.length === 0) return
         push(lines, { kind: 'heading', text: 'EDUCATION', ledgerIds: education.map((e) => e.id) })
         for (const e of education) {
-          // Session 6 (Defect 3): one coherent line per qualification — title and its year/score
-          // joined, never a bold degree line followed by an orphan "2021" floating alone.
-          const text = e.summary ? `${e.title} · ${e.summary.replace(/\s+/g, ' ').trim()}` : e.title
-          push(lines, { kind: 'entry-title', text, ledgerIds: [e.id] })
+          // Session 7 typesetter: qualification left, its years/score right-aligned — the
+          // classic canon (Session 6's one-coherent-line rule preserved: nothing orphans).
+          const meta = e.summary ? e.summary.replace(/\s+/g, ' ').trim() : displayDate(e.evidence?.date)
+          push(lines, { kind: 'entry-title', text: e.title, right: meta || undefined, ledgerIds: [e.id] })
         }
       },
       skills: () => {
@@ -311,7 +330,11 @@ export function compileResume(input: CompileInput): CompiledResume {
         if (skills.length === 0) return
         const shown = skills.slice(0, lv.skillsCap)
         push(lines, { kind: 'heading', text: 'SKILLS', ledgerIds: shown.map((e) => e.id) })
-        push(lines, { kind: 'skills', text: shown.map((e) => e.title).join(' | '), ledgerIds: shown.map((e) => e.id) })
+        // Session 7: labeled category lines (AI & ML first — the market's vocabulary leads),
+        // the selected-résumé canon instead of one undifferentiated pipe-run.
+        for (const g of groupSkills(shown.map((e) => ({ id: e.id, title: e.title, category: e.category })))) {
+          push(lines, { kind: 'skills', text: `${g.label}: ${g.titles.join(', ')}`, ledgerIds: g.ids })
+        }
       },
       projects: () => {
         const projects = projectPool.slice(0, lv.maxProjects)
@@ -321,15 +344,17 @@ export function compileResume(input: CompileInput): CompiledResume {
           const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
           push(lines, {
             kind: 'entry-title',
-            text: `${displayTitle(p.title)}${p.evidence?.date ? ` (${displayDate(p.evidence.date)})` : ''}`,
+            text: displayTitle(p.title),
+            right: p.evidence?.date ? displayDate(p.evidence.date) : undefined,
             ledgerIds: [p.id],
           })
           // Session 5.7 (owner: "these are not app descriptions") — a project's bullets are engineering
           // ACHIEVEMENTS; without a one-line "what it IS" a recruiter can't tell that sifarish is a
           // job-hunt assistant. Render the project's own summary (its product description) + the live
           // link on one line, so the achievements below have context. Never trimmed away (it IS the point).
-          const desc = truncateAtWord(cleanSummaryForDisplay(p.summary ?? ''), 160)
-          const metaText = [desc, evidenceUrl.replace(/^https?:\/\//, '')].filter(Boolean).join(' · ')
+          // Session 7 (defect R2): SENTENCE-boundary trim — the page never ends a thought mid-clause.
+          const desc = sentenceTrim(cleanSummaryForDisplay(p.summary ?? ''), 230)
+          const metaText = [desc, cleanUrlForDisplay(evidenceUrl)].filter(Boolean).join(' · ')
           if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [p.id] })
           for (const b of bulletsFor(p, lv.bulletsPerProject)) {
             // A Baithak rephrasing renders in place of the original, under the SAME evidence link.
