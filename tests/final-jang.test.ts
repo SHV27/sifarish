@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'fs'
+import { adzunaWhatFor } from '../src/lib/khabri/client'
+import { fetchBoard } from '../src/lib/radar/feeds'
+import type { WatchlistCompany } from '../src/types'
 import { getLibrary, isValidLibrary, craftClauses, patternById } from '../src/lib/ustaad/library'
 import { forgeSystem, FORGE_VERSION, SYSTEM } from '../src/lib/nabz/forge'
 import { buildSummaryLine } from '../src/lib/darzi/summary'
@@ -95,5 +98,78 @@ describe('W1d — the slop scan knows the 2026 tells', () => {
   })
   it("the NOUN 'orchestration' stays legal (honest keyword mirroring must survive the ban)", () => {
     expect(scanSlop('Built multi-agent orchestration with LLM routing')).toEqual([])
+  })
+})
+
+describe('W3 — discovery: more catch per credit, self-healing seasons', () => {
+  it('adzunaWhatFor widens an AI-role core to what_or (one credit, the whole synonym family)', () => {
+    expect(adzunaWhatFor('ai engineer')).toEqual({ query: 'engineer', whatOr: 'ai ml llm genai agentic mlops nlp' })
+    expect(adzunaWhatFor('machine learning engineer').query).toBe('engineer')
+    expect(adzunaWhatFor('machine learning engineer').whatOr).toBeTruthy()
+    // Non-AI or role-less cores pass through untouched (never over-widen).
+    expect(adzunaWhatFor('data scientist')).toEqual({ query: 'data scientist' })
+    expect(adzunaWhatFor('artificial intelligence')).toEqual({ query: 'artificial intelligence' })
+  })
+  it('the aggregator proxy accepts what_or bounded; WWR sweeps the whole programming family', () => {
+    const src = readFileSync('api/khabri/aggregators.ts', 'utf8')
+    expect(src).toContain('what_or: whatOr')
+    expect(src).toMatch(/whatOr[\s\S]{0,120}slice\(0, 120\)/)
+    for (const feed of ['remote-programming-jobs', 'remote-full-stack-programming-jobs', 'remote-back-end-programming-jobs', 'remote-devops-sysadmin-jobs']) {
+      expect(src).toContain(`${feed}.rss`)
+    }
+  })
+  it('JSearch endpoint is an env lever (JSEARCH_PATH) — a provider migration needs zero code', () => {
+    const src = readFileSync('api/khabri/jobs.ts', 'utf8')
+    expect(src).toContain("process.env.JSEARCH_PATH || '/jsearch/search'")
+  })
+  it('SimplifyJobs candidate list carries the FUTURE season — the lane self-heals when the repo appears', () => {
+    const src = readFileSync('src/lib/khabri/keyless.ts', 'utf8')
+    expect(src).toContain('Summer2027-Internships')
+    expect(src).toContain('Summer2026-Internships')
+    expect(src).toContain('New-Grad-Positions')
+  })
+
+  describe('Greenhouse two-pass (probed live 19-Jul-2026)', () => {
+    afterEach(() => vi.unstubAllGlobals())
+    const W: WatchlistCompany = { id: 'gh:x', company: 'X', source: 'greenhouse', token: 'x', enabled: true } as WatchlistCompany
+    const lightJob = (id: number, title: string) => ({ id, title, updated_at: '2026-07-19T00:00:00Z', absolute_url: `https://x.dev/${id}`, location: { name: 'Remote' } })
+
+    it('small board: light scan + ONE content=true call fills every jd', async () => {
+      const calls: string[] = []
+      vi.stubGlobal('fetch', async (url: string) => {
+        calls.push(String(url))
+        const u = String(url)
+        if (u.endsWith('/jobs')) return new Response(JSON.stringify({ jobs: [lightJob(1, 'AI Engineer'), lightJob(2, 'Chef')] }))
+        if (u.includes('content=true')) return new Response(JSON.stringify({ jobs: [{ ...lightJob(1, 'AI Engineer'), content: '<p>LLM work</p>' }] }))
+        throw new Error(`unexpected ${u}`)
+      })
+      const scan = await fetchBoard(W)
+      expect(scan.openIds).toHaveLength(2) // closure reconciler still sees EVERY open id
+      expect(scan.jobs).toHaveLength(1)
+      expect(scan.jobs[0].jd).toContain('LLM work')
+      expect(calls.some((c) => c.includes('content=true'))).toBe(true)
+    })
+
+    it('big board (>80 open): per-job content ONLY for the relevant slice — no 3.9MB dump', async () => {
+      const many = Array.from({ length: 90 }, (_, i) => lightJob(i, i < 3 ? `ML Engineer ${i}` : `Warehouse Associate Chef ${i}`))
+      const perJob: string[] = []
+      vi.stubGlobal('fetch', async (url: string) => {
+        const u = String(url)
+        if (u.endsWith('/jobs')) return new Response(JSON.stringify({ jobs: many }))
+        if (u.includes('content=true')) throw new Error('big board must never pay the content=true dump')
+        const m = /\/jobs\/(\d+)$/.exec(u)
+        if (m) {
+          perJob.push(m[1])
+          return new Response(JSON.stringify({ content: `<p>detail ${m[1]}</p>` }))
+        }
+        throw new Error(`unexpected ${u}`)
+      })
+      const scan = await fetchBoard(W)
+      expect(scan.openIds).toHaveLength(90)
+      expect(perJob.length).toBeGreaterThan(0)
+      expect(perJob.length).toBeLessThanOrEqual(40) // bounded by PER_BOARD_CAP
+      const ml = scan.jobs.find((j) => j.title === 'ML Engineer 1')
+      expect(ml?.jd).toContain('detail 1')
+    })
   })
 })

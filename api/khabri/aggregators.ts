@@ -80,6 +80,13 @@ interface AggRequest {
   country?: string
   query?: string
   resultsPerPage?: number
+  /**
+   * Final Jang W3a (Adzuna swagger, verified 19-Jul-2026): `what_or` — ANY-of terms alongside
+   * the ALL-words `what`. One credit covers the whole AI synonym family ("engineer" AND any of
+   * ai/ml/llm/…) instead of missing every posting that says "Machine Learning" but never "AI".
+   * WIDENS the catch, hides nothing (demote-never-hide extends to fetching).
+   */
+  whatOr?: string
 }
 
 // ---- Adzuna ----
@@ -125,6 +132,7 @@ async function handleAdzuna(req: Request): Promise<Response> {
   }
   const country = (String(body.country ?? 'in').toLowerCase().replace(/[^a-z]/g, '').slice(0, 2)) || 'in'
   const what = String(body.query ?? 'AI engineer').slice(0, 120)
+  const whatOr = String(body.whatOr ?? '').replace(/[^a-z\s-]/gi, '').slice(0, 120).trim()
   const rpp = Math.min(Math.max(Number(body.resultsPerPage) || 20, 1), 50) // I8: bounded payload (Adzuna serves up to 50/page, Law-12 verified 18-Jul-2026)
 
   const params = new URLSearchParams({
@@ -132,6 +140,7 @@ async function handleAdzuna(req: Request): Promise<Response> {
     app_key: appKey,
     results_per_page: String(rpp),
     what,
+    ...(whatOr ? { what_or: whatOr } : {}),
     // Session 6 (P7, verified against Adzuna's own swagger 17-Jul-2026): freshest first, and
     // nothing older than 60 days — the staleness deduction (D65) would sink those anyway, so
     // requesting them wasted the per-country credit on postings the queue discards.
@@ -266,17 +275,41 @@ export function parseWwrRss(xml: string): Array<Record<string, unknown>> {
   return jobs
 }
 
+// Final Jang W3c: the whole PROGRAMMING FAMILY of WWR feeds (each probed 200 on 19-Jul-2026) —
+// the single remote-programming feed missed the full-stack/back-end/devops corners where AI
+// infra roles post. Free, keyless, deduped by link; one dead feed never blocks the others.
+const WWR_FEEDS = [
+  'https://weworkremotely.com/categories/remote-programming-jobs.rss',
+  'https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss',
+  'https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss',
+  'https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss',
+]
+
 async function handleWeWorkRemotely(): Promise<Response> {
-  try {
-    const res = await fetch('https://weworkremotely.com/categories/remote-programming-jobs.rss', {
-      headers: { Accept: 'application/rss+xml, application/xml, text/xml' },
-    })
-    if (!res.ok) return json({ keyless: false, jobs: [], creditsSpent: 0, error: `weworkremotely ${res.status}` })
-    const xml = await res.text()
-    return json({ keyless: false, jobs: parseWwrRss(xml), creditsSpent: 0 })
-  } catch (e) {
-    return json({ keyless: false, jobs: [], creditsSpent: 0, error: String(e).slice(0, 100) })
+  const seen = new Set<string>()
+  const jobs: Array<Record<string, unknown>> = []
+  let lastError = ''
+  for (const feed of WWR_FEEDS) {
+    try {
+      const res = await fetch(feed, { headers: { Accept: 'application/rss+xml, application/xml, text/xml' } })
+      if (!res.ok) {
+        lastError = `weworkremotely ${res.status}`
+        continue
+      }
+      for (const j of parseWwrRss(await res.text())) {
+        const key = String(j.id ?? '')
+        if (seen.has(key)) continue
+        seen.add(key)
+        jobs.push(j)
+        if (jobs.length >= 40) break
+      }
+      if (jobs.length >= 40) break
+    } catch (e) {
+      lastError = String(e).slice(0, 100)
+    }
   }
+  if (jobs.length === 0 && lastError) return json({ keyless: false, jobs: [], creditsSpent: 0, error: lastError })
+  return json({ keyless: false, jobs, creditsSpent: 0 })
 }
 
 export default async function handler(req: Request): Promise<Response> {

@@ -208,7 +208,9 @@ export async function fetchArbeitnow(): Promise<Job[]> {
 
 // ---- Jobicy (D90) — global remote board, keyless, CORS `*` (verified live 16-Jul-2026). ----
 export async function fetchJobicy(): Promise<Job[]> {
-  const res = await fetch('https://jobicy.com/api/v2/remote-jobs?count=50')
+  // Final Jang W3c: count=100 verified honored live 19-Jul-2026 (2× the commonly-cited 50 max).
+  // NOTE (probed): `tag` must be 3-50 chars — `tag=ai` is a 400; we filter client-side instead.
+  const res = await fetch('https://jobicy.com/api/v2/remote-jobs?count=100')
   if (!res.ok) return []
   const data = await res.json()
   const now = new Date().toISOString()
@@ -284,7 +286,15 @@ export function mapSimplifyListings(listings: SimplifyListing[], now = new Date(
     )
 }
 
+/**
+ * Final Jang W3e (anti-obsolescence, probed 19-Jul-2026): SimplifyJobs rolls a NEW repo each
+ * season (Summer2027-Internships does not exist yet — it will appear ~Aug-Sep and the 2026 repo
+ * will go quietly stale). The candidate list carries the future seasons NOW; fetchSimplify
+ * already tolerates a 404 per URL, so the lane self-heals the day each new repo appears —
+ * zero code, zero owner action (Lock 4: current in 3 months with zero edits).
+ */
 const SIMPLIFY_URLS = [
+  'https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/.github/scripts/listings.json',
   'https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json',
   'https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json',
 ]

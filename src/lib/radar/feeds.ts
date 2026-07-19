@@ -27,38 +27,71 @@ export interface BoardScan {
   openIds: string[]
 }
 
+interface GhLightJob {
+  id: number
+  title: string
+  updated_at: string
+  location?: { name: string }
+  content?: string
+  absolute_url: string
+  company_name?: string
+}
+
+/** A big board only pays content bytes for the roles that survived the title filter. */
+const GH_TWO_PASS_THRESHOLD = 80
+
 async function fetchGreenhouse(w: WatchlistCompany): Promise<BoardScan> {
-  const res = await fetch(`https://boards-api.greenhouse.io/v1/boards/${w.token}/jobs?content=true`)
-  if (!res.ok) throw new Error(`greenhouse ${w.token}: HTTP ${res.status}`)
-  const data = await res.json()
+  // Final Jang W3b (probed live 19-Jul-2026): `content=true` inflates a big board ~12×
+  // (Stripe: 331KB light vs 3.9MB with content). LIGHT scan first — it carries every open id
+  // (the closure reconciler's input) — then content arrives either as one content=true call
+  // (small board: 2 small requests) or per-job fetches for ONLY the title-relevant slice
+  // (big board: the per-job endpoint returns `content`, verified live).
+  const base = `https://boards-api.greenhouse.io/v1/boards/${w.token}/jobs`
+  const lightRes = await fetch(base)
+  if (!lightRes.ok) throw new Error(`greenhouse ${w.token}: HTTP ${lightRes.status}`)
+  const light = await lightRes.json()
+  const all: GhLightJob[] = light.jobs ?? []
   const now = new Date().toISOString()
-  const openIds = (data.jobs ?? []).map((j: { id: number }) => jobId(w, j.id))
-  const jobs = (data.jobs ?? [])
-    .filter((j: { title: string }) => TITLE_RELEVANT.test(j.title))
-    .slice(0, PER_BOARD_CAP)
-    .map(
-      (j: {
-        id: number
-        title: string
-        updated_at: string
-        location?: { name: string }
-        content?: string
-        absolute_url: string
-        company_name?: string
-      }): Job => ({
-        id: jobId(w, j.id),
-        source: 'greenhouse',
-        externalId: String(j.id),
-        company: j.company_name ?? w.company,
-        title: j.title,
-        location: j.location?.name ?? '',
-        url: j.absolute_url,
-        jd: stripHtml(j.content ?? ''),
-        updatedAt: j.updated_at,
-        fetchedAt: now,
-        status: 'found',
+  const openIds = all.map((j) => jobId(w, j.id))
+  const relevant = all.filter((j) => TITLE_RELEVANT.test(j.title)).slice(0, PER_BOARD_CAP)
+
+  const contentById = new Map<number, string>()
+  if (all.length <= GH_TWO_PASS_THRESHOLD) {
+    const res = await fetch(`${base}?content=true`)
+    if (res.ok) {
+      const data = await res.json()
+      for (const j of (data.jobs ?? []) as GhLightJob[]) if (j.content) contentById.set(j.id, j.content)
+    }
+  } else {
+    await Promise.all(
+      relevant.map(async (j) => {
+        try {
+          const res = await fetch(`${base}/${j.id}`)
+          if (!res.ok) return
+          const detail = (await res.json()) as { content?: string }
+          if (detail.content) contentById.set(j.id, detail.content)
+        } catch {
+          /* one job's content missing never blocks the scan — the title still ranks */
+        }
       }),
     )
+  }
+
+  const jobs = relevant.map(
+    (j): Job => ({
+      id: jobId(w, j.id),
+      source: 'greenhouse',
+      externalId: String(j.id),
+      company: j.company_name ?? w.company,
+      title: j.title,
+      location: j.location?.name ?? '',
+      url: j.absolute_url,
+      jd: stripHtml(contentById.get(j.id) ?? ''),
+      updatedAt: j.updated_at,
+      fetchedAt: now,
+      status: 'found',
+    }),
+  )
   return { jobs, openIds }
 }
 

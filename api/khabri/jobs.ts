@@ -127,7 +127,13 @@ export default async function handler(req: Request): Promise<Response> {
   if (emp.length > 0) params.set('employment_types', emp.join(','))
 
   try {
-    const res = await fetch(`https://api.openwebninja.com/jsearch/search?${params.toString()}`, {
+    // Final Jang W3 (Law 12, anti-obsolescence): OpenWeb Ninja's docs now lead with /jsearch/
+    // search-v2 (cursor pagination); the legacy /search still serves us. If it ever deprecates,
+    // the owner flips JSEARCH_PATH=/jsearch/search-v2 in the Vercel env — zero code, the seal
+    // holds. Verified 19-Jul-2026: legacy path live; v2 not adopted blind (cursor semantics
+    // unproven against our page param — the env lever exists for the day the provider forces it).
+    const path = process.env.JSEARCH_PATH || '/jsearch/search'
+    const res = await fetch(`https://api.openwebninja.com${path}?${params.toString()}`, {
       headers: { 'X-API-Key': key },
     })
     if (!res.ok) return json({ keyless: false, jobs: [], creditsSpent: 1, error: `jsearch ${res.status}` })

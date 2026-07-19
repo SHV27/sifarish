@@ -98,6 +98,26 @@ export function adzunaQueriesFromHunts(hunts: SavedHunt[]): string[] {
   return (cores.length ? cores : fallback).slice(0, 8)
 }
 
+/** The AI synonym family one Adzuna credit should cover via `what_or` (single tokens only). */
+const ADZUNA_AI_OR = 'ai ml llm genai agentic mlops nlp'
+const ADZUNA_AI_WORD = /\b(ai|ml|llm|genai|agentic|mlops|nlp|intelligence|learning|generative)\b/i
+
+/**
+ * Final Jang W3a — one credit, the whole synonym family. `what` is ALL-words, so the old
+ * "AI engineer" query MISSED every posting titled "Machine Learning Engineer" that never says
+ * "AI". When the core is an AI-role query anchored on a role word, we anchor `what` on the role
+ * word and put the AI family in `what_or` (ANY-of): engineer AND (ai|ml|llm|genai|…).
+ * Widens the catch per credit; hides nothing. Pure + unit-tested.
+ */
+export function adzunaWhatFor(core: string): { query: string; whatOr?: string } {
+  const words = core.toLowerCase().split(/\s+/).filter(Boolean)
+  const roleWords = words.filter((w) => /^(engineer|engineering|developer|scientist|architect|researcher)$/.test(w))
+  if (roleWords.length > 0 && words.some((w) => ADZUNA_AI_WORD.test(w))) {
+    return { query: roleWords.join(' '), whatOr: ADZUNA_AI_OR }
+  }
+  return { query: core }
+}
+
 interface JobsApiResp {
   keyless: boolean
   jobs: Job[]
@@ -323,11 +343,13 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     for (let i = 0; i < sweepCountries.length; i++) {
       if (adzunaUsed >= adzunaBudget) break
       const country = sweepCountries[i]
-      const query = adzunaQueries[(qOffset + i) % adzunaQueries.length]
-      onStep?.(`Adzuna ${country.toUpperCase()}: "${query}"`)
+      const core = adzunaQueries[(qOffset + i) % adzunaQueries.length]
+      // W3a: an AI-role core widens to `what_or` — engineer AND (ai|ml|llm|…) on the same credit.
+      const { query, whatOr } = adzunaWhatFor(core)
+      onStep?.(`Adzuna ${country.toUpperCase()}: "${core}"`)
       // Session 7 (Law-12): Adzuna serves up to 50 rows/page — the old 20 left 60% of every
       // credit's breadth on the table. Same request count, 2.5× the catch.
-      const resp = await callAggregatorApi('adzuna', { country, query, resultsPerPage: 50 })
+      const resp = await callAggregatorApi('adzuna', { country, query, whatOr, resultsPerPage: 50 })
       if (!resp) continue
       if (resp.keyless) break // no key → skip the lane, keyless lanes carry the sweep (I4)
       if (!keyedLanes.includes('Adzuna (global · 18 countries)')) keyedLanes.push('Adzuna (global · 18 countries)')
