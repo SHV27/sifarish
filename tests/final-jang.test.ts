@@ -129,6 +129,20 @@ describe('W3 — discovery: more catch per credit, self-healing seasons', () => 
     expect(src).toContain('New-Grad-Positions')
   })
 
+  it('W4 — every self-evolving write-half is on a default path: retire-on-autopilot, library door, current models', () => {
+    const autopilot = read('src/lib/autopilot.ts')
+    expect(autopilot).toContain('proposeHuntEdits(settings.visionProfile)') // the RETIRE half fires on open
+    const khabri = read('src/screens/Khabri.tsx')
+    expect(khabri).toContain("brief.id.startsWith('pulse-ustaad-')") // the library brief has a door
+    expect(read('src/App.tsx')).toContain('onOpenSettings')
+    // Law-12 currency: the reasoning chain leads with the current stable flagship flash.
+    const routing = JSON.parse(read('data/config/routing.json'))
+    expect(routing.lanes.reasoning[0]).toBe('gemini-3.5-flash')
+    // No raw model id spliced into a fetch URL — every lane id is a named constant.
+    expect(read('api/polish.ts')).toContain('const GEMINI_MODEL =')
+    expect(read('api/polish.ts')).not.toContain('models/gemini-3.1-flash-lite:generateContent')
+  })
+
   describe('Greenhouse two-pass (probed live 19-Jul-2026)', () => {
     afterEach(() => vi.unstubAllGlobals())
     const W: WatchlistCompany = { id: 'gh:x', company: 'X', source: 'greenhouse', token: 'x', enabled: true } as WatchlistCompany

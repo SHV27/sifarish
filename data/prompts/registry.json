@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "comment": "PROMPT REGISTRY (Studio W2, closes AUDIT #15): every prompt-bearing file is hashed here. Changing one WITHOUT bumping `version` (and FORGE_VERSION when the forge/reframe craft changed) fails tests/routing-config.test.ts \u2014 a craft edit can never again silently skip the vault-repair banner (the D140 class, now mechanical).",
   "entries": [
     {
@@ -35,7 +35,7 @@
     {
       "file": "api/polish.ts",
       "versionedBy": "PROMPT_VERSION via registry bump",
-      "sha256": "ffd6b6685f62ebe2f91df182689b140632b975ab4f88c7892baee28148326a0b"
+      "sha256": "9f46b0ac30838d69734017f9bb83a5a5a902a45dee8ec3c9db6acb0cd87b7243"
     }
   ]
 }

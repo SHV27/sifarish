@@ -10,7 +10,7 @@ import TaleemPanel from '../components/TaleemPanel'
  * Khabri — the jasoos. Multi-source discovery + a hiring-signal feed. "Reel pe dekha,
  * app ko pehle se pata tha." Every signal carries a source (I7); nothing auto-applies (I3).
  */
-export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
+export function Khabri({ onOpenRadar, onOpenSettings }: { onOpenRadar: () => void; onOpenSettings?: () => void }) {
   const hunts = useLiveQuery(() => db.savedHunts.toArray()) ?? []
   const signals = useLiveQuery(() => db.signals.orderBy('fetchedAt').reverse().toArray()) ?? []
   const settings = useLiveQuery(() => db.settings.get('app'))
@@ -67,7 +67,7 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
 
       {result && <YieldReport result={result} newJobs={newJobs} onOpenRadar={onOpenRadar} />}
 
-      <PulsePanel lastPulseAt={settings?.lastPulseAt} />
+      <PulsePanel lastPulseAt={settings?.lastPulseAt} onOpenSettings={onOpenSettings} />
 
       <TaleemPanel />
 
@@ -133,7 +133,7 @@ export function Khabri({ onOpenRadar }: { onOpenRadar: () => void }) {
   )
 }
 
-function PulsePanel({ lastPulseAt }: { lastPulseAt?: string }) {
+function PulsePanel({ lastPulseAt, onOpenSettings }: { lastPulseAt?: string; onOpenSettings?: () => void }) {
   const briefs = useLiveQuery(() => db.pulse.where('status').equals('pending').reverse().toArray()) ?? []
   const [running, setRunning] = useState(false)
   const [note, setNote] = useState<string | null>(null)
@@ -169,7 +169,7 @@ function PulsePanel({ lastPulseAt }: { lastPulseAt?: string }) {
       {briefs.length > 0 && (
         <ul className="mt-3 space-y-2">
           {briefs.map((b) => (
-            <PulseBriefRow key={b.id} brief={b} />
+            <PulseBriefRow key={b.id} brief={b} onOpenSettings={onOpenSettings} />
           ))}
         </ul>
       )}
@@ -177,7 +177,7 @@ function PulsePanel({ lastPulseAt }: { lastPulseAt?: string }) {
   )
 }
 
-function PulseBriefRow({ brief }: { brief: PulseBrief }) {
+function PulseBriefRow({ brief, onOpenSettings }: { brief: PulseBrief; onOpenSettings?: () => void }) {
   return (
     <li className="ledger-rule pt-2">
       <a href={brief.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-ink hover:underline">
@@ -219,6 +219,13 @@ function PulseBriefRow({ brief }: { brief: PulseBrief }) {
               }
             })()} ↗
           </a>
+        )}
+        {/* Final Jang W4b: the library-freshness brief pointed at a Settings control with no
+            door — the I13 write-half's LAST dead end. The proposal now walks you to it. */}
+        {brief.id.startsWith('pulse-ustaad-') && onOpenSettings && (
+          <button className="font-medium text-ink underline decoration-dotted" onClick={onOpenSettings}>
+            Review in Settings →
+          </button>
         )}
         <button className="ml-auto font-medium text-shipped hover:underline" onClick={() => acceptPulse(brief)}>
           {brief.proposedBoard ? 'Watch board ✓' : brief.proposedHuntRemoval ? 'Retire hunt ✓' : brief.proposedHunt ? 'Add hunt ✓' : brief.suggestion ? 'Log it ✓' : 'Got it ✓'}

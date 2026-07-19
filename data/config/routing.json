@@ -1,15 +1,15 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "comment": "THE ROUTING TRUTH (Studio W2). Model ids + lane order live HERE; the api/* functions inline the same values (D22 forbids cross-file imports in serverless), and tests/routing-config.test.ts FAILS if any function drifts from this file. Swapping a 2028 model = edit this file, sync the named constants, gates go green.",
   "lanes": {
-    "reasoning": ["gemini-3-flash-preview", "gemini-3.1-flash-lite", "openai/gpt-oss-120b"],
+    "reasoning": ["gemini-3.5-flash", "gemini-3.1-flash-lite", "openai/gpt-oss-120b"],
     "classify": ["openai/gpt-oss-20b", "gemini-3.1-flash-lite"],
     "guru": ["openai/gpt-oss-120b"],
     "polish": ["openai/gpt-oss-120b", "gemini-3.1-flash-lite"]
   },
   "notes": {
     "guru": "Streaming SSE — Groq-only by constraint (Gemini streaming speaks a different wire protocol); keyless fallback is the deterministic router. Revisit when a free OpenAI-compatible streaming Gemini endpoint exists.",
-    "pinned": "Ids are PINNED (D144): -latest aliases jump models under a schema. gemini-3-flash-preview is a preview id — the Law-12 session-start check owns its rotation."
+    "pinned": "Ids are PINNED (D144): -latest aliases jump models under a schema. Final Jang (19-Jul-2026, Law-12): gemini-3-flash-preview was two generations behind → gemini-3.5-flash (current STABLE flagship flash, ai.google.dev models page); gemini-3.1-flash-lite is now stable. The lane chain protects against a quota surprise: a failed lane is the next brain's turn."
   },
   "tokenBudgets": {
     "classify": { "inTokens": 1200, "maxOut": 300 },

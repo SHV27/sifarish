@@ -1,5 +1,5 @@
 import { db } from '../db/db'
-import { runSweep, syncVisionHunts } from './khabri/client'
+import { proposeHuntEdits, runSweep, syncVisionHunts } from './khabri/client'
 import { runPulse, pulseDue } from './pulse/client'
 import { syncRadar } from './radar/feeds'
 import { catchAs } from './boundary'
@@ -33,6 +33,12 @@ export async function runAutopilot(): Promise<void> {
   // every open BEFORE the sweep — additive + idempotent, so a vision edit made last session takes
   // effect now and his manual hunts are never touched. Then the sweep hunts his queries first.
   await syncVisionHunts(settings.visionProfile).catch((e) => catchAs('provider', 'autopilot.visionSync', e))
+
+  // Final Jang W4a — the RETIRE half joins the default path (it only ever ran from a manual
+  // Settings edit, so a vision outgrown between sessions left stale derived hunts running
+  // forever — the D69 wiring disease, final instance). Idempotent (proposed-once per hunt id),
+  // human-confirmed (Pulse brief), hand-set hunts untouchable (D59). Zero budget, zero key.
+  await proposeHuntEdits(settings.visionProfile).catch((e) => catchAs('provider', 'autopilot.huntRetire', e))
 
   // Stagger so we never fire two credit-spending sweeps at the same instant.
   const sweepStale = !settings.lastSweepAt || Date.now() - new Date(settings.lastSweepAt).getTime() > SWEEP_STALE_MS

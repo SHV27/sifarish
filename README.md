@@ -33,7 +33,7 @@
 > makes sending structurally impossible. **Darbaan** locks every mutation behind Owner Mode *at the
 > database level*; the public URL is a read-only showcase on a fictional demo persona, and the real ledger
 > travels only as an AES-256-GCM encrypted backup. **Taleem Radar** ranks the gap between market demand
-> and the ledger, with receipts. **231/231 gates. Sealed: future change = data, not code.**
+> and the ledger, with receipts. **708 gates (incl. a 1,000-case generated-input matrix). Sealed: future change = data, not code.**
 
 SIFARISH is a personal hiring agent for one candidate — a 4th-year CSE student hunting a
 compulsory AI-engineering internship in a market where **91% of recruiters now actively hunt
@@ -238,8 +238,10 @@ compiled truth as the floor. The Guru's honesty-router intercepts fabrication-ba
 
 ## Gate results
 
-All gates run in `npm run gates` (Vitest). Latest: **231/231 green** (65 v1 + 46 v2 + 35 v3 + 85 v4:
-ustaad 15 · baithak 22 · guru-v3 20 · dak 9 · darbaan 13 · taleem 6).
+All gates run in `npm run gates` (Vitest). Latest: **708 green** (2 live-key-only skips) — grown
+session over session from v1's 65; the Final Jang added the owner-mode matrix: a seeded generator
+drives 1,000 vault × JD × edit-op cases through compile → sanitize → dedupe → cast-contract, with
+sampled real-PDF parse-back round-trips (`SIFARISH_MATRIX=1` runs the 5× deep pass).
 
 | Gate | Target | Status |
 |---|---|---|

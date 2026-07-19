@@ -23,7 +23,9 @@ const GROQ_MODELS = {
   classify: 'openai/gpt-oss-20b',
 } as const
 
-const GEMINI_REASONING = ['gemini-3-flash-preview', 'gemini-3.1-flash-lite'] as const
+// Final Jang W4c (Law-12, 19-Jul-2026): gemini-3-flash-preview was two generations behind;
+// gemini-3.5-flash is the current STABLE flagship flash. Chain order mirrors routing.json.
+const GEMINI_REASONING = ['gemini-3.5-flash', 'gemini-3.1-flash-lite'] as const
 const GEMINI_CLASSIFY = ['gemini-3.1-flash-lite'] as const
 
 function json(body: unknown, status = 200): Response {

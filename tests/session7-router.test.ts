@@ -56,8 +56,12 @@ describe('S7 — the router lane order is law (source-level, keyless-determinist
   const src = readFileSync('api/dimaag.ts', 'utf8')
 
   it('pins explicit Gemini model ids — never the silently-jumping -latest aliases', () => {
-    expect(src).toContain("'gemini-3-flash-preview'")
-    expect(src).toContain("'gemini-3.1-flash-lite'")
+    // Final Jang: the pinned ids come from routing.json (config over code) — this gate asserts
+    // PINNING and sync, never a frozen id that breaks on every legitimate Law-12 rotation.
+    const routing = JSON.parse(readFileSync('data/config/routing.json', 'utf8')) as { lanes: { reasoning: string[] } }
+    for (const id of routing.lanes.reasoning.filter((m) => m.startsWith('gemini'))) {
+      expect(src).toContain(`'${id}'`)
+    }
     expect(src).not.toMatch(/gemini-flash-latest|gemini-pro-latest/)
   })
 

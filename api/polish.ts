@@ -13,6 +13,9 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 // llama-3.3-70b-versatile deprecated by Groq 17-Jun-2026 (shutdown 16-Aug-2026) → gpt-oss-120b (D35).
 const MODEL = 'openai/gpt-oss-120b'
+// Final Jang W4c: the fallback-lane id was spliced RAW into the fetch URL — the one model id the
+// routing drift gate could see but a future editor could miss. Named, like every other lane.
+const GEMINI_MODEL = 'gemini-3.1-flash-lite'
 
 interface PolishRequest {
   lines: string[]
@@ -80,7 +83,7 @@ async function guardRequest(req: Request): Promise<Response | null> {
  */
 async function polishViaGemini(key: string, system: string, user: string, count: number): Promise<string[] | null> {
   try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
       method: 'POST',
       headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
       body: JSON.stringify({
