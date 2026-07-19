@@ -102,7 +102,9 @@ export function compileOutreach(
 
   const paragraphs: CompiledDoc['paragraphs'] = [
     {
-      text: `Hi — I just applied for ${job.title} at ${job.company}. One reason to open my application instead of the pile: I ship. ${proof ? `${proof.title.split('—')[0].trim()} is live at ${cleanUrlForDisplay(url)} — built end to end, ${proof.bullets[0]?.keywords.slice(0, 3).join('/') ?? 'AI'} included.` : `My work is public at ${identity.github}.`} My window is ${window} and I'm applying to very few places, deliberately. If the timing fits, I'd love a look. — ${identity.name.split(' ')[0]}`,
+      // W2 matrix-found: `?? 'AI'` never fired — an EMPTY keywords array joins to '' (not
+      // nullish), leaving a double space on the letter. `||` is the honest operator here.
+      text: `Hi — I just applied for ${job.title} at ${job.company}. One reason to open my application instead of the pile: I ship. ${proof ? `${proof.title.split('—')[0].trim()} is live at ${cleanUrlForDisplay(url)} — built end to end, ${proof.bullets[0]?.keywords.slice(0, 3).join('/') || 'AI'} included.` : `My work is public at ${identity.github}.`} My window is ${window} and I'm applying to very few places, deliberately. If the timing fits, I'd love a look. — ${identity.name.split(' ')[0]}`,
       ledgerIds: proof ? [proof.id] : [],
     },
   ]

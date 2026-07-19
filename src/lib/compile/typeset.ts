@@ -45,12 +45,20 @@ export function cleanUrlForDisplay(url: string): string {
 /** Markdown has no business on a résumé, whatever the data holds. Safe for real text:
  *  "C#" keeps its #; only leading markdown-heading hashes and emphasis runs die. */
 export function stripMarkdownResidue(s: string): string {
-  return s
-    .replace(/[*`]+/g, '')
-    .replace(/~{2,}/g, '')
-    .replace(/^#+\s+/, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
+  return (
+    s
+      // Final Jang W2 (matrix-found, seed 12648464): a markdown link renders as its TEXT — and a
+      // link whose URL an upstream cleaner already ate ("[demo](") must not dangle. Before the
+      // [*`] strip, which would otherwise orphan the brackets.
+      .replace(/\[([^\]]{0,80})\]\(\S*\)?/g, '$1')
+      .replace(/[*`]+/g, '')
+      .replace(/~{2,}/g, '')
+      .replace(/^#+\s+/, '')
+      // W2 (matrix-found): the "▶" status marker is residue ANYWHERE, not only at line start.
+      .replace(/▶\s*/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  )
 }
 
 // ---------- Skills grouping (WS-R1: labeled category lines, the selected-résumé canon) ----------
