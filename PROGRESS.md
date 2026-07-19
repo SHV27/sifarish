@@ -2,7 +2,26 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 7.3 "The Studio + The Closure" — classes closed, scope FROZEN, app in MAINTENANCE ✦
+## Status: Session 8 "THE FINAL JANG" — the last elevation, delivered under six locks. ✅ COMPLETE ✦
+
+Live: https://sifarish-shv-s-projects.vercel.app · **707 passed | 2 live-only skips (709) gates**
+· tsc clean · warning-free build · deployed + served-bundle verified (index-C7QVSe-x carries the
+session's code) · deep matrix (5,000 generated cases + 100 PDF round-trips) green · adversary
+(no-Origin 403 ×4, fabricated token → keyless) + fresh-eyes demo (7 screens, Arjun, ₹0,
+ERRORS 0) + live LLM proofs (forge v5 real-model, gemini-3.5-flash structured output) executed.
+Delivered (D161–D168): Movement-1 research as RESEARCH.md §8 (cited, honest counts) → library
+v2.0.0 (93 · 63, summary+letter passes) + FORGE_VERSION 5 authorship register → the owner-mode
+MATRIX (zero-error earned; found 2 real bugs its first run) → discovery per-credit widening
+(Adzuna what_or, Greenhouse two-pass, WWR family, Simplify self-heal, JSEARCH_PATH lever) →
+every self-evolving loop on the default path (retire-on-autopilot, library door, routing
+v1.1.0). **THE APP IS COMPLETE and permanently in the D160 maintenance triage contract.**
+
+## ONE next action (the owner's, ~2 min)
+→ Open Owner Mode: the repair banner offers "Re-forge (v5 craft)" — ONE click and your vault
+  inherits the authorship register (packets re-tailor themselves). Then revoke the Vercel token
+  pasted in chat this session (Vercel → Settings → Tokens).
+
+## Prior: Session 7.3 "The Studio + The Closure" — classes closed, scope FROZEN, app in MAINTENANCE ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **685 passed | 2 skipped (687) gates** · tsc
 clean · warning-free build · served hash verified (index-B4OZkDIX) · rendered PDF read by eye ·

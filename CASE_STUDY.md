@@ -763,6 +763,35 @@ a bug costs one message (reproduce → class → choke-point fix → regression 
 **Lesson: an open-ended goal can only ever be violated, never satisfied. Convert it into a
 closed list plus a triage contract, and both the software and its humans get calmer.**
 
+### 3.36 · ZERO-ERROR WAS EARNED BY A GENERATOR, NOT A PROMISE (Session 8, The Final Jang)
+
+The owner's closing brief made a claim most software can never make honest: "error-free."
+The reframe that made it testable: one user + owner mode + a compiler pipeline = a FINITE input
+space. So enumerate it — a seeded generator (ledger axis × JD axis × edit-op axis: unicode and
+Devanagari titles, markdown residue, near-twin bullets, 4.5k-char JDs, exclusions, overrides,
+editorial casts) driving 1,000 cases (5,000 in the deep run) through compile → sanitize →
+dedupe → cast-contract, with sampled real-PDF parse-back round-trips. **On its first run it
+found two real bugs** the 700-gate suite had never seen: `stripMarkdownResidue` had no rule for
+markdown links (an upstream cleaner ate the URL and left `[demo](` dangling on the page), and
+the outreach letter's `keywords.join('/') ?? 'AI'` never fired — an empty array joins to `''`,
+which is not nullish, leaving a double space in a rendered letter. Both fixed at the choke
+point; every failure replays by seed forever.
+**Lesson: "no known errors" and "no errors on the input space" are different claims. Only a
+generator can close the gap — and the day it exists, it pays for itself before lunch.**
+
+### 3.37 · THE RESEARCH SAID THE FORMAT WAR IS OVER (Session 8)
+
+Four research agents (15 + 11 primary sources fetched live, myths traced to their dead-company
+origins) converged on one strategic fact: every ATS-formatting rule the compiler enforces was
+already satisfied — the 2026 battleground is AUTHORSHIP SIGNAL (verb-carousel bans, varied
+bullet rhythm, eval-tool-named numbers, footprint-that-matches-the-page). The elevation
+therefore landed as versioned library DATA (v2.0.0: 93 sources · 63 patterns, new summary +
+letter passes) + FORGE_VERSION 5, not as new machinery. And two "new" capabilities from the
+research turned out to already exist in the repo (the HN who-is-hiring lane; most of the
+anatomy patterns) — verified before building, honestly not rebuilt.
+**Lesson: research that mostly CONFIRMS the build is a deliverable, not a disappointment — it
+converts "we think it's right" into "we checked, and here is the delta, and it is small."**
+
 ## PART 4 — RECURRING FAILURE PATTERNS (the meta-analysis)
 
 Across every problem above, six patterns repeat. They *are* the Sentinel Protocol.

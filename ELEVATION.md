@@ -170,3 +170,24 @@ Change rejected for its own sake — that restraint is part of the delivery.
 
 **Not in scope (frozen by their own protocols):** NOTES.md product ideas; any Send/auto-apply
 capability (I3, forever); anything the research did not prove necessary.
+
+---
+
+## DELIVERY CLOSE-OUT (19-Jul-2026 — what shipped vs the plan, stated honestly)
+
+Shipped as planned: E1 (library v2.0.0, summary/letter passes, FORGE_VERSION 5, slop delta),
+E2 (the matrix — which found and fixed 2 real bugs its first run), E4 (retire-on-autopilot,
+library door, routing v1.1.0 with gemini-3.5-flash live-proven), E5 (Guru untouched, as
+planned), E6 (all proofs executed — see PROGRESS.md and D166).
+
+Honest deltas from the plan:
+- **HN "Who is hiring" was found ALREADY BUILT** (a v2-era lane) — not rebuilt.
+- **Rejected during build, under the owner's own demote-never-hide law (D146):** Adzuna
+  `what_exclude` + salary floors, Lever team filters, SmartRecruiters `q=` (each would HIDE
+  upstream what the rubric should DEMOTE visibly); SR `updated_since` (closure reconciliation
+  needs the full dump). Himalayas: still marginal, not adopted.
+- **JSearch `/search-v2`** shipped as the JSEARCH_PATH env lever, not a blind migration —
+  cursor semantics are unverifiable without burning credits; the day the provider forces it,
+  the fix is a Vercel env edit.
+- **The real-vault half of Lock 2/D140:** his IndexedDB inherits v5 through the repair banner's
+  one click — the click is his by design (Nabz pattern); the banner trigger is gate-asserted.

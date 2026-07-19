@@ -1095,6 +1095,65 @@ workstream. Resume line: **"read PROGRESS.md and continue."** A limit hit costs 
   commit, deploy. No reopened architecture, no new features without an explicit owner ask.
   (Ops note: the repo credential helper is now cleared+gh, so plain `git push` works headless.)
 
+--- Session 8 "The Final Jang" (owner-approved elevation under SIX LOCKS — ELEVATION.md; the
+  LAST build session. 19-Jul-2026) ---
+- D161: MOVEMENT-1 RESEARCH (RESEARCH.md §8, 4 parallel agents, honest counts: 15 + 11 primary
+  sources fetched live, ~10 SEO stats dropped as unverifiable). Verdict: the ATS format war is
+  WON (every primary-source rule already satisfied; "75% auto-rejected" traced to a 2012 sales
+  pitch; 92% of recruiters run no auto-reject); the 2026 battleground is AUTHORSHIP SIGNAL
+  (verb-carousel, uniform rhythm, undemonstrated skills = manual-reject tells); AI graders
+  (Workday A–D, Oracle 0–5) reward plainly-stated role-relevant substance — machine and human
+  readers have converged.
+- D162: LIBRARY v2.0.0 (93 sources · 63 patterns; +11 live-fetched primary sources incl. the
+  Greenhouse parse-failure list, Workday HiredScore datasheet, CMU bullet formula) + NEW
+  `summary`/`letter` passes — the two library-blind consumers finally read the studied craft
+  (letter clauses ride /api/polish via a bounded `craft` field; summary is gate-enforced) —
+  + FORGE_VERSION 5 (authorship register: carousel-verb + inflation-modifier ban, varied
+  rhythm, metric NAMED with its number and front-loaded) + the slop lexicon learns the 2026
+  tells (phrases + distinctive words only; 'orchestration' the noun stays legal). His vault
+  inherits it all through the ONE-CLICK repair banner (D140 law).
+- D163: ZERO-ERROR EARNED, NOT PROMISED (Lock 3) — tests/matrix.test.ts: a seeded generator
+  enumerates the owner-mode input space (ledger × JD × op axes) and drives 1,000 cases
+  (SIFARISH_MATRIX=1 → 5,000) through compile → sanitize → dedupe → cast-contract → I1, with
+  sampled real-PDF parse-back, letter hygiene over 150 vaults, the empty-ledger case, and the
+  sole documented CompileError proven reachable only by its designed trigger. FOUND TWO REAL
+  BUGS ON ITS FIRST RUN (markdown-link residue dangling `[demo](`; the outreach
+  `join('/') ?? 'AI'` never firing on an empty array → double space) — both fixed at the choke
+  point; every failure replays by seed.
+- D164: DISCOVERY, MORE CATCH PER CREDIT — Adzuna `what_or` (one credit = engineer AND any of
+  ai/ml/llm/genai/…; the old ALL-words query missed every "Machine Learning Engineer" posting);
+  Greenhouse TWO-PASS (per-job endpoint probed live: big boards pay content only for the
+  title-relevant slice, 331KB vs 3.9MB on Stripe, openIds intact for the closure reconciler);
+  WWR sweeps the 4-feed programming family; Jobicy count=100 (verified honored); SimplifyJobs
+  candidate list carries Summer2027 NOW (the lane self-heals the day the repo appears);
+  JSEARCH_PATH env lever (the provider's /search-v2 migration = a Vercel env edit, zero code).
+  HONEST: the HN who-is-hiring lane was found ALREADY BUILT and not rebuilt; Lever/SR
+  server-side filters and Adzuna what_exclude/salary floors were REJECTED — demote-never-hide
+  (D146) extends to fetching.
+- D165: EVERY LOOP ON THE DEFAULT PATH (Lock 4) — proposeHuntEdits (vision→hunt RETIRE) joins
+  runAutopilot (the final D69-class instance); the Pulse library-freshness brief gains its
+  "Review in Settings →" door (the I13 write-half's last dead end); routing.json v1.1.0:
+  gemini-3-flash-preview (two generations behind) → gemini-3.5-flash STABLE at the head of the
+  reasoning chain — LIVE-PROVEN (structured-output probe returned clean JSON); polish's
+  URL-spliced Gemini id became a named const under the drift gate; version-pin gates rewritten
+  to ≥/config-driven semantics so legitimate growth never breaks them again.
+- D166: THE FOUR PROOFS, EXECUTED — machine: 707 passed | 2 live-only skips (709) · tsc clean ·
+  warning-free build · deep matrix green; deployed + SERVED-BUNDLE verified (index-C7QVSe-x
+  carries the session's strings — the D76/D83 lesson applied); adversary: no-Origin POST → 403
+  on all 4 changed functions, fabricated token → keyless; fresh-eyes demo smoke: 7 screens,
+  Arjun persona, 0 metered POSTs, ERRORS(0); live LLM: forge v5 real-model proof over his real
+  README (bullets survive isResumeBullet + detectDrift + the banned-register scan) and the new
+  Gemini lane. Money: ZERO new metered surface (craft rides the existing polish call; Adzuna
+  what_or rides the existing credit; two-pass/WWR/Simplify are keyless; retire + library door
+  are pure DB).
+- D167: SECURITY — a Vercel token was pasted into plaintext chat this session; the stored
+  .env.local token (D109 flow) was used instead and the pasted one was never written anywhere.
+  Owner action: revoke the pasted token. (Values never recorded — the D108 rule held.)
+- D168: THE FINAL SEAL. The app returns to the D160 maintenance triage contract permanently.
+  His remaining click: open Owner Mode → the repair banner offers the v5 re-forge → confirm.
+  Future change arrives as DATA (ledger, vision, hunts, budgets, library versions, routing env
+  levers); a bug is one message. This was the last build session, by design.
+
 ## 14 · THE SENTINEL PROTOCOL (post-mortem law — read BEFORE any change, follow to the letter)
 
 Written after the v4/v4.1/v4.2 sequence, where "final" had to be declared three times because two holes
