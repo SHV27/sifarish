@@ -7,6 +7,7 @@ import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 import { allowedThisRun, recordSpend } from '../budget'
 import { stripMarkdownResidue } from '../compile/typeset'
 import { bulletOverlap, HARD_DUPLICATE } from '../compile/overlap'
+import { craftClauses } from '../ustaad/library'
 
 /**
  * Client-side polish orchestration. Sends compiled bullet lines to /api/polish, then
@@ -39,7 +40,8 @@ export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
     const res = await fetch('/api/polish', {
       method: 'POST',
       headers: meteredHeaders(),
-      body: JSON.stringify({ lines, voiceSamples: voice }),
+      // W1b: the résumé phrasing pass reads the studied forge craft (library data, I13).
+      body: JSON.stringify({ lines, voiceSamples: voice, craft: craftClauses('forge', undefined, 6) }),
     })
     const data = await res.json()
     polished = data.polished
@@ -102,7 +104,8 @@ export async function polishDoc(doc: CompiledDoc): Promise<{ doc: CompiledDoc; a
   let polished: string[] | null = null
   let keyless = false
   try {
-    const res = await fetch('/api/polish', { method: 'POST', headers: meteredHeaders(), body: JSON.stringify({ lines, voiceSamples: voice }) })
+    // W1b: the letter phrasing pass finally reads the studied LETTER craft (library v2.0.0).
+    const res = await fetch('/api/polish', { method: 'POST', headers: meteredHeaders(), body: JSON.stringify({ lines, voiceSamples: voice, craft: craftClauses('letter', undefined, 6) }) })
     const data = await res.json()
     polished = data.polished
     keyless = data.reason === 'keyless' || polished === null

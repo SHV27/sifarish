@@ -20,7 +20,19 @@ export interface UstaadSource {
   accessed: string // YYYY-MM-DD
 }
 
-export type UstaadPass = 'archetype' | 'casting' | 'surgery' | 'redteam' | 'estimator' | 'forge' | 'reframe'
+export type UstaadPass =
+  | 'archetype'
+  | 'casting'
+  | 'surgery'
+  | 'redteam'
+  | 'estimator'
+  | 'forge'
+  | 'reframe'
+  // Final Jang (library v2.0.0): the professional summary and the cover letter finally read the
+  // studied craft too — 'summary' rules are gate-enforced over the deterministic builder;
+  // 'letter' clauses ride the /api/polish phrasing pass.
+  | 'summary'
+  | 'letter'
 
 export interface UstaadPattern {
   id: string

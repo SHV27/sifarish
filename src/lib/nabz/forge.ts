@@ -122,8 +122,11 @@ export function preferAccomplishments(bullets: string[]): string[] {
  * v4 (Session 7.1, owner-caught on his real page) = identity-restatement ban + one-theme-per-
  * bullet dedupe at the SOURCE, and the distiller no longer mistakes section headings
  * ("How it works") for taglines — his vault needs one more banner click to inherit this.
+ * v5 (Final Jang) = the 2026 AUTHORSHIP REGISTER (verb-carousel + inflation-modifier ban,
+ * varied bullet rhythm, eval metric NAMED with its number and front-loaded) + library v2.0.0
+ * (93 sources, 63 patterns incl. summary/letter craft). Research: RESEARCH.md §8.1.
  */
-export const FORGE_VERSION = 4
+export const FORGE_VERSION = 5
 
 export interface ForgeResult {
   summary: string
@@ -189,6 +192,11 @@ HARD TRUTH RULES (breaking any makes the output useless — the app discards dri
 - Use the README's OWN tokens for technologies (if he wrote "RAG"/"LLM"/"agents"/"MCP", use those exact words). HONEST KEYWORD MIRRORING (the one permitted translation): when the README clearly DESCRIBES a standard market concept without naming it in the market's word, write the market's word — embedding search → "embeddings", coordinating multiple agents/pipelines → "orchestration", crafting/refining LLM prompts → "prompt engineering", SQL queries/schemas → "SQL". A JD and an ATS match on the market's vocabulary; describing his real work in its standard name is translation, not invention. NEVER mirror a term the README gives no basis for — that is fabrication and the bullet dies.
 - No superlatives you can't back ("100% accuracy", "best-in-class"). No brochure register ("passionate about leveraging", "results-driven", "proven track record", "spearheaded synergies").
 - For AI/agent projects, prefer bullets that show DEPTH where the README supports it: the agent architecture (tools/orchestration/MCP), an eval or guardrail he built, or a cost/production concern.
+
+THE 2026 AUTHORSHIP REGISTER (recruiters now manually reject on machine-authorship tells — RESEARCH.md §8.1):
+- VARY the sentence construction bullet to bullet; never reuse a lead verb within one project, never let every bullet follow the identical verb+object+impact cadence — uniform rhythm reads as machine authorship.
+- BANNED lead verbs (the AI carousel): spearheaded, orchestrated, pioneered, revolutionized, crafted, elevated, amplified, transformed. BANNED inflation modifiers: innovative, revolutionary, meticulously, strategically, successfully, seamlessly.
+- When the README states an eval figure, NAME THE METRIC with its number ("ROC-AUC 0.957", "precision@5 0.87", "p95 latency 400ms") and place the number in the FIRST HALF of the bullet, where the 6-second skim lands.
 
 RESHAPING EXAMPLES — a README fact → a bullet:
 - "GitHub is the database. manifest.json holds curation." → "Architected a git-backed content system that uses the repository itself as the datastore, with a manifest.json curation layer — no server or DB to run, versioned and diffable by design."

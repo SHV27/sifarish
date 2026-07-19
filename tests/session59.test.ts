@@ -26,8 +26,9 @@ describe('Ustaad library v1.1.0 — hundreds-of-résumés research landed as DAT
     // ≥ semantics (Session 6): the library is self-evolving DATA (I13) — this gate asserts growth
     // and validity, never a frozen version string that breaks on every legitimate update.
     const [maj, min] = lib.version.split('.').map(Number)
-    expect(maj).toBe(1)
-    expect(min).toBeGreaterThanOrEqual(1)
+    // Final Jang: the major moved to 2 — this gate keeps its own stated rule (growth, never a pin).
+    expect(maj).toBeGreaterThanOrEqual(1)
+    expect(maj > 1 || min >= 1).toBe(true)
     expect(new Date(lib.updatedAt).getTime()).toBeGreaterThanOrEqual(new Date('2026-07-16').getTime())
     expect(lib.sources.length).toBeGreaterThanOrEqual(55)
     expect(lib.patterns.length).toBeGreaterThanOrEqual(28)

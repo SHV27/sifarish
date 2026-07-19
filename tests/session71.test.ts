@@ -192,6 +192,7 @@ describe('S7.1 — the Nazar: the page-level judge (deterministic floor + exclus
 
 describe('S7.1 — vault repair v4', () => {
   it('FORGE_VERSION is 4 so his vault inherits the source-side fixes via the banner', () => {
-    expect(FORGE_VERSION).toBe(4)
+    // ≥ semantics: v5 (Final Jang) supersedes v4; older-forged entries still trigger the banner.
+    expect(FORGE_VERSION).toBeGreaterThanOrEqual(4)
   })
 })

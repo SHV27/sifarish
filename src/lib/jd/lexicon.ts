@@ -116,6 +116,12 @@ export const SLOP_PHRASES: string[] = [
   'hit the ground running',
   'wear many hats',
   'i am reaching out',
+  // Final Jang (W1d, RESEARCH.md §8.1) — the 2026 verb-carousel / inflation tells. Distinctive
+  // words only (no legit generated line needs them; 'orchestration' as a NOUN stays legal —
+  // substring 'orchestrated' does not match it).
+  'spearheaded',
+  'revolutionized',
+  'meticulously',
 ]
 
 /** I9 — guarantee language. Banned in UI copy, Guru replies, and generated documents. */

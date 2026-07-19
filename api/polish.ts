@@ -17,6 +17,13 @@ const MODEL = 'openai/gpt-oss-120b'
 interface PolishRequest {
   lines: string[]
   voiceSamples: string[]
+  /**
+   * Final Jang (W1b): studied craft clauses from the client's Ustaad library (¶letter for cover
+   * letters, ¶forge for résumé bullets) — knowledge stays DATA (I13): a Pulse library update
+   * upgrades this pass's craft with zero code change. Bounded server-side; same trust class as
+   * lines/voiceSamples (phrasing input only — the authoritative drift guard runs client-side).
+   */
+  craft?: string[]
 }
 
 export const config = { runtime: 'edge' }
@@ -117,6 +124,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (lines.length === 0) return json({ polished: null, reason: 'empty' }, 200)
 
   const voice = (body.voiceSamples ?? []).slice(0, 6).join('\n')
+  const craft = (Array.isArray(body.craft) ? body.craft : []).slice(0, 10).map((c) => String(c).slice(0, 400))
   const system = [
     'You are a resume line editor. You rephrase bullet points for flow and concision ONLY.',
     'ABSOLUTE RULES:',
@@ -125,6 +133,7 @@ export default async function handler(req: Request): Promise<Response> {
     '- Keep every proper noun and technology exactly as written.',
     '- Match this writing voice (terse, concrete, no corporate filler):',
     voice || '(no samples; default to plain, concrete, active voice)',
+    ...(craft.length > 0 ? ['STUDIED CRAFT (cited in-app — obey while rephrasing):', ...craft.map((c) => `- ${c}`)] : []),
     // D74/D79: the schema owns the STRUCTURE — spelling the JSON shape out in prose here fights
     // the json_schema response_format and reintroduces the 400s. Content rule only:
     'Rephrase every input line, same order, same count.',
