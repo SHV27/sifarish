@@ -112,10 +112,14 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
   }
 
   // 2 — Vision bridge: his dream ↔ this role, one honest sentence.
+  // Re-brief owner-standard pass: the dream is free text (often a bare verb phrase — "Break
+  // into agentic-AI engineering by…"), and splicing it after "because" produced broken English
+  // a recruiter winces at ("because break into…"). A colon introduction is grammatical for ANY
+  // dream phrasing — the sentence frames it, never bends around it.
   if (vision?.dream) {
     const dreamShort = vision.dream.replace(/\.$/, '').split('—')[0].trim()
     paragraphs.push({
-      text: `That matters to me because ${dreamShort.charAt(0).toLowerCase()}${dreamShort.slice(1)} — and ${job.company}'s ${keywordPhrase(decode)} work is squarely on that path, not a detour from it.`,
+      text: `That matters to me because it sits exactly on the path I've set for myself — ${dreamShort.charAt(0).toLowerCase()}${dreamShort.slice(1)} — and ${job.company}'s ${keywordPhrase(decode)} work is that path, not a detour from it.`,
       ledgerIds: [],
     })
   }

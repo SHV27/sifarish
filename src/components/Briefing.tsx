@@ -16,6 +16,17 @@ export function Briefing({ onNav, onTailor }: { onNav: (t: NavTarget) => void; o
   const settings = useLiveQuery(() => db.settings.get('app'))
   const identity = useLiveQuery(() => db.identity.get('me'))
   const watchlist = useLiveQuery(() => db.watchlist.toArray())
+  // Re-brief owner-standard pass ("bringing me the latest"): the Pulse already gathers cited
+  // market intelligence weekly — it just never reached the landing screen. Read-only, fresh
+  // (≤14d), pending-only, capped at 2; every line carries its source (I7).
+  const pulse = useLiveQuery(() => db.pulse.toArray())
+  const market = useMemo(() => {
+    const cutoff = Date.now() - 14 * 86400000
+    return (pulse ?? [])
+      .filter((p) => p.status === 'pending' && new Date(p.at).getTime() >= cutoff && p.headline)
+      .sort((a, b) => b.at.localeCompare(a.at))
+      .slice(0, 2)
+  }, [pulse])
 
   // Session 7.2 (C12): buildBriefing scores every found role — on a 1,000-role radar that is an
   // O(n) sweep, and it used to run on EVERY render tick of the LANDING screen. Memoized off the
@@ -105,6 +116,28 @@ export function Briefing({ onNav, onTailor }: { onNav: (t: NavTarget) => void; o
           </button>
         )}
       </div>
+
+      {market.length > 0 && (
+        <>
+          <div className="ledger-rule my-3" />
+          <div>
+            <button onClick={() => onNav('khabri')} className="text-xs font-medium text-ink-soft mb-1.5 hover:text-stamp">
+              The market this week — what the field is asking for right now →
+            </button>
+            <ul className="space-y-1">
+              {market.map((p) => (
+                <li key={p.id} className="text-[11.5px] text-ink leading-snug">
+                  {p.headline}
+                  {p.insight ? <span className="text-ink-soft"> — {p.insight.slice(0, 140)}</span> : null}{' '}
+                  <a href={p.url} target="_blank" rel="noreferrer" className="font-mono text-[10px] text-ink-soft underline decoration-dotted">
+                    source ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
 
       {quiet && (
         <p className="text-xs text-ink-soft">
