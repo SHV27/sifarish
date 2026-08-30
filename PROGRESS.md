@@ -2,7 +2,20 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: RE-BRIEF CYCLE (VISION-BRIEF-sifarish.md, full studio run) — ✅ DONE (30-Aug-2026)
+## Status: FINAL-BAR PASS — ✅ DONE, THE APP IS HIS NOW (30-Aug-2026, served: index-BM8xfCyB)
+
+The owner's acceptance message + heart-statement, closed the same day: his dictated VISION is
+now the data that drives everything (vault migration, union-safe); the resume HEADLINE speaks
+in his own words ('finds the real problem and ships the thing that solves it') with live
+shipped-count proof; FORGE v6 carries the extreme-care / full-strength mandate (repair banner
+re-offers his vault); hunts match his LinkedIn stream (LLM-systems + Bengaluru/Delhi-NCR) and
+his not-my-heart families (data engineering, pure SDE, research, frontend) rank down with the
+reason said plainly; every packet opens with the WORTH-IT verdict (vision fit + coverage +
+rubric + pre-flight → apply / eyes-open / skip, reasons named, never a promise); and 'my
+vision is …' / 'add X to the radar' are one chat message away. 778 gates incl. deep matrix ·
+warning-free build · deployed via REST · served-bundle verified · prod demo smoke ERRORS(0), ₹0.
+
+## Prior status: RE-BRIEF CYCLE — ✅ DONE (30-Aug-2026)
 
 Live: https://sifarish-shv-s-projects.vercel.app · **766 passed | 2 live-only skips (768 gates)**
 · tsc clean · warning-free build · deployed via REST (CLI can't auth a team token, RB-6) ·
