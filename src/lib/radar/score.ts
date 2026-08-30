@@ -32,7 +32,8 @@ export function scoreJobCached(job: Job, ledger: LedgerEntry[], rubric: RubricWe
   // visionSig joins it too (D85): the same job re-ranks when his vision changes.
   // lastSeenOpenAt joins the key (Session 6): a board scan that re-verifies a posting open must
   // re-score it — a softened staleness deduction served from a stale cache would be invisible.
-  const key = `${job.id}|${job.fetchedAt}|${job.updatedAt ?? ''}|${job.lastSeenOpenAt ?? ''}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}|${visionSig(vision)}`
+  // eligibility joins the key (re-brief): a backfilled/restored verdict must re-score.
+  const key = `${job.id}|${job.fetchedAt}|${job.updatedAt ?? ''}|${job.lastSeenOpenAt ?? ''}|${job.jd.length}|${rubricSig(rubric)}|${starred ? 1 : 0}|${visionSig(vision)}|${job.eligibility?.verdict ?? ''}${job.eligibilityOverride ? '*' : ''}`
   const hit = scoreCache.get(key)
   if (hit) return hit
   const result = scoreJob(job, ledger, rubric, starred, vision)
@@ -76,11 +77,25 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
         : `${coverage.matched.length} of ${totalKw} JD keywords have shipped evidence in the ledger (${coverage.building.length} more in the forge).`,
   })
 
-  // 3 · Remote / India-eligible
+  // 3 · Remote / India-eligible — driven by the persisted Haq verdict when one exists
+  // (re-brief Pillar 3: computed ONCE at ingest, never re-derived here), decode fallback for
+  // jobs that predate the filter.
   const loc = decode.locationHints
   let locFrac = 0.45
   let locWhy = 'Location not stated — assumed uncertain.'
-  if (loc.includes('authorization-constrained')) {
+  const elig = job.eligibility
+  if (elig && elig.source !== 'none') {
+    if (elig.verdict === 'ineligible') {
+      locFrac = 0
+      locWhy = `${elig.reason} — this role should not be in your queue (restore it from the hidden list if the classifier is wrong).`
+    } else if (elig.verdict === 'ambiguous') {
+      locFrac = 0.1
+      locWhy = `${elig.reason} — demoted, not hidden.`
+    } else {
+      locFrac = /india/i.test(elig.reason) ? 1 : 0.9
+      locWhy = elig.reason + '.'
+    }
+  } else if (loc.includes('authorization-constrained')) {
     locFrac = 0.15
     locWhy = 'JD mentions work-authorization constraints — risky for a remote-international candidate.'
   } else if (loc.includes('india')) {

@@ -1,7 +1,8 @@
 import type { Job, WatchlistCompany } from '../../types'
 import { stripHtml } from '../util/html'
 import { db } from '../../db/db'
-import { withDedupeKey } from '../khabri/normalize'
+import { finalizeIngest } from '../khabri/normalize'
+import { assessEligibility } from '../khabri/eligibility'
 
 /**
  * Keyless public ATS feed adapters — shapes verified live 07-Jul-2026 (RESEARCH.md §3),
@@ -296,13 +297,24 @@ export async function syncRadar(onProgress?: (done: number, total: number) => vo
         for (const job of jobs) {
           const existing = await db.jobs.get(job.id)
           if (existing) {
-            await db.jobs.update(job.id, { jd: job.jd || existing.jd, updatedAt: job.updatedAt, fetchedAt: job.fetchedAt, linkAlive: true, lastSeenOpenAt: scanAt })
+            // Re-brief: an already-known posting gets its Haq verdict stamped if it predates the
+            // filter, or re-checked when the JD text changed (owner override always stands).
+            const jd = job.jd || existing.jd
+            const needsVerdict = !existing.eligibility || (jd !== existing.jd && !existing.eligibilityOverride)
+            await db.jobs.update(job.id, {
+              jd,
+              updatedAt: job.updatedAt,
+              fetchedAt: job.fetchedAt,
+              linkAlive: true,
+              lastSeenOpenAt: scanAt,
+              ...(needsVerdict ? { eligibility: assessEligibility({ ...existing, ...job, jd }) } : {}),
+            })
           } else {
             // Session 7.2 (B7): board scans JOIN the dedupe. A role the aggregators found first
             // used to get a SECOND card when its board scan landed (raw-id write, no key pass).
             // On a key collision the BOARD version wins (board-verified > aggregator ghost) and
             // absorbs the aggregator card's pipeline state — one role, one card, best source.
-            const keyed = withDedupeKey(job)
+            const keyed = finalizeIngest(job)
             const twin = await db.jobs.where('dedupeKey').equals(keyed.dedupeKey!).first()
             if (twin && twin.id !== job.id) {
               await db.jobs.put({
@@ -316,6 +328,8 @@ export async function syncRadar(onProgress?: (done: number, total: number) => vo
                 dismissed: twin.dismissed,
                 notes: twin.notes,
                 replyDetectedAt: twin.replyDetectedAt,
+                // The board absorbs the aggregator card's pipeline state — his restore does too.
+                ...(twin.eligibilityOverride ? { eligibility: twin.eligibility, eligibilityOverride: true } : {}),
               })
               await db.jobs.delete(twin.id)
             } else {

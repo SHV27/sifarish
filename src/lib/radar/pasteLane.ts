@@ -1,5 +1,16 @@
 import type { Job } from '../../types'
 import { stripHtml } from '../util/html'
+import { finalizeIngest } from '../khabri/normalize'
+
+/**
+ * Re-brief (Haq filter): a pasted role is HIS deliberate choice — it gets a verdict (so the
+ * pre-flight can warn "this says US citizens only") but is never hidden by it, so an
+ * ineligible verdict carries the owner-override flag from birth.
+ */
+function stampPasted(job: Job): Job {
+  const j = finalizeIngest(job)
+  return j.eligibility?.verdict === 'ineligible' ? { ...j, eligibilityOverride: true } : j
+}
 
 /**
  * Paste Lane: how LinkedIn finds (and anything else) enter — a URL or raw JD text.
@@ -32,7 +43,7 @@ export async function fetchJobFromUrl(url: string): Promise<Job | null> {
     const res = await fetch(`https://boards-api.greenhouse.io/v1/boards/${match.token}/jobs/${match.externalId}`)
     if (!res.ok) return null
     const j = await res.json()
-    return {
+    return stampPasted({
       id: `paste-gh-${match.externalId}`,
       source: 'paste',
       externalId: match.externalId,
@@ -44,7 +55,7 @@ export async function fetchJobFromUrl(url: string): Promise<Job | null> {
       updatedAt: j.updated_at,
       fetchedAt: now,
       status: 'found',
-    }
+    })
   }
 
   if (match.source === 'lever') {
@@ -54,7 +65,7 @@ export async function fetchJobFromUrl(url: string): Promise<Job | null> {
     const lists = (j.lists ?? [])
       .map((l: { text: string; content: string }) => `${l.text}\n${stripHtml(l.content)}`)
       .join('\n\n')
-    return {
+    return stampPasted({
       id: `paste-lv-${match.externalId}`,
       source: 'paste',
       externalId: match.externalId,
@@ -66,7 +77,7 @@ export async function fetchJobFromUrl(url: string): Promise<Job | null> {
       updatedAt: j.createdAt ? new Date(j.createdAt).toISOString() : undefined,
       fetchedAt: now,
       status: 'found',
-    }
+    })
   }
 
   // Ashby: the public feed is board-level; find the posting inside it.
@@ -75,7 +86,7 @@ export async function fetchJobFromUrl(url: string): Promise<Job | null> {
   const board = await res.json()
   const j = (board.jobs ?? []).find((x: { id: string }) => x.id === match.externalId)
   if (!j) return null
-  return {
+  return stampPasted({
     id: `paste-ab-${match.externalId}`,
     source: 'paste',
     externalId: match.externalId,
@@ -87,12 +98,12 @@ export async function fetchJobFromUrl(url: string): Promise<Job | null> {
     updatedAt: j.publishedAt,
     fetchedAt: now,
     status: 'found',
-  }
+  })
 }
 
 /** Manual lane: raw JD text pasted in, with company/title typed by hand. */
 export function makePastedJob(company: string, title: string, jd: string, url?: string): Job {
-  return {
+  return stampPasted({
     id: `paste-manual-${Date.now()}`,
     source: 'paste',
     company: company.trim() || 'Unknown company',
@@ -102,5 +113,5 @@ export function makePastedJob(company: string, title: string, jd: string, url?: 
     jd: jd.trim(),
     fetchedAt: new Date().toISOString(),
     status: 'found',
-  }
+  })
 }

@@ -2,7 +2,20 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: Session 8 "THE FINAL JANG" — the last elevation, delivered under six locks. ✅ COMPLETE ✦
+## Status: RE-BRIEF PIPELINE (30-Aug-2026) — VISION-BRIEF-sifarish.md, full studio run
+
+Stages 0–5 DONE: recon (RESEARCH.md re-brief verdicts, 5 live lanes) → boardroom (DECISIONS.md
+RB-1: 5 pillars, cut list, 3 vetoable calls) → architecture (ARCHITECTURE.md re-brief lock, no
+teardown, 5 contradictions resolved) → constitution (CLAUDE.md 1368→60 lines, D-log archived to
+HISTORY.md, pre-commit secret+gate hook validated, ship-verify skill) → ARC_PLAN.md (5 arcs,
+frozen acceptance). Baseline 707/709 green at commit 577663a.
+
+**Current arc: Arc 1 — HAQ FILTER + KHABRI REFRESH** (eligibility verdict at ingest + hidden-
+count UI + two-sided gates; LinkedIn-alert Dak lane; JSearch v2 cursor; Jobicy 200; Simplify
+category). ONE next action: implement `src/lib/khabri/eligibility.ts` + `Job.eligibility` at the
+normalize choke point.
+
+## Prior: Session 8 "THE FINAL JANG" — the last elevation, delivered under six locks. ✅ COMPLETE ✦
 
 Live: https://sifarish-shv-s-projects.vercel.app · **707 passed | 2 live-only skips (709) gates**
 · tsc clean · warning-free build · deployed + served-bundle verified (index-C7QVSe-x carries the

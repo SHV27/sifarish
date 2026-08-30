@@ -1,4 +1,5 @@
 import type { Job } from '../../types'
+import { withEligibility, type WorkAuth, DEFAULT_WORK_AUTH } from './eligibility'
 
 /**
  * Cross-source normalization + dedupe for the Khabri Engine.
@@ -29,6 +30,15 @@ export function withDedupeKey(job: Job): Job {
 }
 
 /**
+ * THE ingest finalizer (re-brief): dedupe key + Haq eligibility verdict, stamped at the ONE
+ * choke point every lane passes through. New code paths that persist discovered jobs must call
+ * this — never withDedupeKey alone (gate-enforced).
+ */
+export function finalizeIngest(job: Job, auth: WorkAuth = DEFAULT_WORK_AUTH): Job {
+  return withEligibility(withDedupeKey(job), auth)
+}
+
+/**
  * Merge freshly-discovered jobs into the existing set.
  * - existing jobs (same id) keep their pipeline status; only jd/updatedAt refresh.
  * - a discovered job whose dedupeKey already exists (different source) is a DUPLICATE, dropped.
@@ -41,7 +51,7 @@ export interface MergeResult {
   duplicate: number
 }
 
-export function mergeDiscovered(discovered: Job[], existing: Job[]): MergeResult {
+export function mergeDiscovered(discovered: Job[], existing: Job[], auth: WorkAuth = DEFAULT_WORK_AUTH): MergeResult {
   const existingById = new Map(existing.map((j) => [j.id, j]))
   const existingByKey = new Map(existing.map((j) => [j.dedupeKey ?? dedupeKey(j.company, j.title, j.location), j]))
   const seenThisRun = new Set<string>()
@@ -51,12 +61,15 @@ export function mergeDiscovered(discovered: Job[], existing: Job[]): MergeResult
   let duplicate = 0
 
   for (const raw of discovered) {
-    const job = withDedupeKey(raw)
+    const job = finalizeIngest(raw, auth)
     const key = job.dedupeKey!
     if (existingById.has(job.id)) {
-      // Same posting re-seen: refresh volatile fields, keep status.
+      // Same posting re-seen: refresh volatile fields, keep status. A refreshed JD re-runs the
+      // Haq verdict (the posting may have added/dropped an authorization line); an owner
+      // override always stands (withEligibility respects it).
       const prev = existingById.get(job.id)!
-      toPersist.push({ ...prev, jd: job.jd || prev.jd, updatedAt: job.updatedAt ?? prev.updatedAt, fetchedAt: job.fetchedAt, salary: job.salary ?? prev.salary })
+      const refreshedJob = { ...prev, jd: job.jd || prev.jd, updatedAt: job.updatedAt ?? prev.updatedAt, fetchedAt: job.fetchedAt, salary: job.salary ?? prev.salary }
+      toPersist.push(prev.eligibility && refreshedJob.jd === prev.jd ? refreshedJob : withEligibility(refreshedJob, auth))
       continue
     }
     if (existingByKey.has(key) || seenThisRun.has(key)) {

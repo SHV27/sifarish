@@ -6,6 +6,7 @@ import { syncRadar, ensureJd, type SyncResult } from '../lib/radar/feeds'
 import { deriveHunts, type DerivedHunt } from '../lib/vision/derive'
 import { addSavedHunt, pruneStaleFinds, runSweep as runKhabriSweep } from '../lib/khabri/client'
 import { scoreJobCached } from '../lib/radar/score'
+import { isIneligible } from '../lib/khabri/eligibility'
 
 const VISIBLE_CAP = 15 // sniper, not spray — the cap is a feature (vision §P3)
 
@@ -85,10 +86,24 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
     return jobs
       // A closed posting cannot occupy a slot — "jisne hiring band kar di wo company na aaye" (S5.10).
       // Session 6 (P5): nor can one HE dismissed ("not for me" is his verdict; the board's is `closed`).
-      .filter((j) => j.status === 'found' && !j.closed && !j.dismissed)
+      // Re-brief (Haq filter): a CONFIRMED work-auth-ineligible role never surfaces — but it is
+      // counted below and inspectable/restorable, never silently gone (RB-1 open call 2).
+      .filter((j) => j.status === 'found' && !j.closed && !j.dismissed && !isIneligible(j))
       .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
       .sort((a, b) => b.score.total - a.score.total || visionPts(b.score) - visionPts(a.score))
   }, [jobs, ledger, settings, starred])
+
+  // The hidden-as-ineligible ledger: visible count + inspectable list + one-click restore.
+  const ineligible = useMemo(
+    () => jobs.filter((j) => j.status === 'found' && !j.closed && !j.dismissed && isIneligible(j)),
+    [jobs],
+  )
+  const [showIneligible, setShowIneligible] = useState(false)
+  const restoreJob = (id: string) =>
+    db.jobs.update(id, {
+      eligibilityOverride: true,
+      isNew: true, // resurface it — restoring is a deliberate ask to see it ranked
+    })
 
   const terms = useMemo(() => termsOf(query), [query])
   const filtered = useMemo(() => {
@@ -288,6 +303,40 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
               </button>
             )}
           </p>
+
+          {/* Haq filter (re-brief): hidden roles are counted + inspectable + restorable — never
+              silently gone. Confirmed evidence only hides; his restore outranks the classifier. */}
+          {ineligible.length > 0 && (
+            <div className="mb-3">
+              <button
+                className="font-mono text-[11px] text-ink-soft underline decoration-dotted"
+                onClick={() => setShowIneligible((v) => !v)}
+              >
+                {showIneligible ? '▾' : '▸'} hidden as work-auth ineligible: {ineligible.length}
+              </button>
+              {showIneligible && (
+                <div className="mt-2 space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                  {ineligible.map((j) => (
+                    <div key={j.id} className="dossier p-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-ink truncate">
+                          {j.title} · <span className="text-ink-soft">{j.company}</span>
+                        </p>
+                        <p className="text-[11px] text-ink-soft mt-0.5">{j.eligibility?.reason}</p>
+                      </div>
+                      <button
+                        className="font-mono text-[11px] text-ink underline decoration-dotted shrink-0"
+                        onClick={() => restoreJob(j.id)}
+                        title="Your word outranks the classifier — restores this role to the ranked queue"
+                      >
+                        restore ↑
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {visible.length === 0 ? (
             <div className="dossier p-6 text-center">

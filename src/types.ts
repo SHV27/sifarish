@@ -189,6 +189,15 @@ export interface Job {
    * posted date says. Board sources only; aggregator jobs have no board to verify against.
    */
   lastSeenOpenAt?: string
+  /**
+   * Re-brief Pillar 3 (HAQ FILTER) — work-authorization verdict, computed ONCE at ingest
+   * (khabri/eligibility.ts) and persisted. 'ineligible' (confirmed evidence only) never
+   * surfaces in queue/briefing but stays countable + inspectable; 'ambiguous' demotes with
+   * the reason rendered.
+   */
+  eligibility?: { verdict: 'eligible' | 'ambiguous' | 'ineligible'; reason: string; source: 'field' | 'jd-text' | 'none' }
+  /** Owner restored a hidden role — his word outranks the classifier, permanently. */
+  eligibilityOverride?: boolean
 }
 
 export type AtsSource = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters'
@@ -598,6 +607,11 @@ export interface VisionProfile {
    * JSearch reaches those via Google-for-Jobs.
    */
   dreamCompanies?: string[]
+  /**
+   * Re-brief Pillar 3 — where he may legally work (drives the Haq eligibility filter).
+   * Lowercase country names; editable in Settings.
+   */
+  workAuth?: { home: string; authorizedIn: string[]; remoteOk: boolean }
 }
 
 export interface RubricChange {

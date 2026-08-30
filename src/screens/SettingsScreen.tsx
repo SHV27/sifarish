@@ -660,6 +660,33 @@ function VisionEditor({ vision }: { vision: VisionProfile }) {
         Open to an October start
       </label>
 
+      {/* Re-brief Pillar 3 (Haq filter): where you may legally work. Drives the eligibility
+          verdict stamped on every discovered role — confirmed-ineligible roles never surface
+          (they sit in the Radar's "hidden as ineligible" list, restorable). */}
+      <label className="block text-xs font-medium text-ink mt-3 mb-1">
+        Work authorization — countries where you can legally work (one per line)
+      </label>
+      <textarea
+        className="w-full bg-paper-sunken px-3 py-2 rounded text-xs mb-1 font-mono"
+        rows={2}
+        value={(vision.workAuth?.authorizedIn ?? ['india']).join('\n')}
+        onChange={(e) =>
+          save({
+            workAuth: {
+              home: vision.workAuth?.home ?? 'india',
+              remoteOk: vision.workAuth?.remoteOk ?? true,
+              authorizedIn: e.target.value.split('\n').map((s) => s.trim().toLowerCase()).filter(Boolean),
+            },
+          })
+        }
+        aria-label="Work authorization countries"
+        placeholder={'india'}
+      />
+      <p className="text-[11px] text-ink-soft mb-1">
+        A role that provably requires authorization outside this list is hidden from the queue —
+        counted and restorable on the Radar, never silently gone.
+      </p>
+
       <VisionDerivation vision={vision} />
     </section>
   )

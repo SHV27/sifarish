@@ -10,6 +10,7 @@ import { WATCHLIST_SEED, WATCHLIST_ADDITIONS_V58 } from '../lib/radar/watchlist.
 import { SEED_HUNTS, migrateHuntFreshness } from '../lib/khabri/client'
 import { BUDGET_DEFAULTS, monthKey } from '../lib/budget'
 import { getMode } from '../lib/pehchaan'
+import { assessEligibility } from '../lib/khabri/eligibility'
 
 export const DEFAULT_VISION: VisionProfile = {
   dream:
@@ -24,6 +25,9 @@ export const DEFAULT_VISION: VisionProfile = {
   windowEnd: 'May 2027',
   remoteInternational: true,
   openToOctoberStart: true,
+  // Re-brief Pillar 3 (Haq filter): India-based, no foreign work authorization — a role that
+  // provably needs authorization outside this list never surfaces (VISION-BRIEF law).
+  workAuth: { home: 'india', authorizedIn: ['india'], remoteOk: true },
 }
 
 export function isoWeekKey(d = new Date()): string {
@@ -166,11 +170,28 @@ export async function backfillV2(): Promise<void> {
       await db.budgets.bulkPut(BUDGET_DEFAULTS.map((b) => ({ ...b, used: 0, monthKey: mk })))
     }
     if (!s.visionProfile) await db.settings.update('app', { visionProfile: DEFAULT_VISION })
+    else if (!s.visionProfile.workAuth) await db.settings.update('app', { visionProfile: { ...s.visionProfile, workAuth: DEFAULT_VISION.workAuth } })
     // Session 5.8 — additive watchlist migration (the D59 lesson: a seed change reaches nobody
     // with an existing vault). Flag-guarded so it runs ONCE: if he later deletes one of these
     // boards, it never comes back uninvited.
     await migrateWatchlistV58().catch(() => 0)
+    // Re-brief (Haq filter): stamp eligibility on vault jobs that predate the filter — the
+    // D59 lesson again: an ingest-time verdict reaches nobody's existing vault without this.
+    await backfillEligibility().catch(() => 0)
   })
+}
+
+export async function backfillEligibility(): Promise<number> {
+  const s = await db.settings.get('app')
+  const auth = s?.visionProfile?.workAuth
+  const jobs = await db.jobs.toArray()
+  let stamped = 0
+  for (const j of jobs) {
+    if (j.eligibility) continue
+    await db.jobs.update(j.id, { eligibility: assessEligibility(j, auth ?? undefined) })
+    stamped++
+  }
+  return stamped
 }
 
 export async function migrateWatchlistV58(): Promise<number> {

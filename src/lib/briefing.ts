@@ -1,6 +1,7 @@
 import type { Job, LedgerEntry, ScoreBreakdown, Settings } from '../types'
 import { scoreJobCached } from './radar/score'
 import { nudgeState } from './morcha'
+import { isIneligible } from './khabri/eligibility'
 
 /**
  * THE CHIEF-OF-STAFF BRIEFING (Session 5.6) — what a real assistant hands you the moment you sit
@@ -40,7 +41,7 @@ const visionPoints = (s: ScoreBreakdown) => s.parts.find((p) => p.key === 'visio
 
 export function buildBriefing(jobs: Job[], ledger: LedgerEntry[], settings: Settings, starred: Set<string> = new Set()): BriefingData {
   const ranked = jobs
-    .filter((j) => j.status === 'found' && !j.closed && !j.dismissed) // closed/dismissed never brief him
+    .filter((j) => j.status === 'found' && !j.closed && !j.dismissed && !isIneligible(j)) // closed/dismissed/work-auth-ineligible never brief him
     .map((j) => ({ job: j, score: scoreJobCached(j, ledger, settings.rubric, starred.has(j.company), settings.visionProfile) }))
     // Vision breaks ties at the score ceiling — his target-role matches surface above generic AI.
     .sort((a, b) => b.score.total - a.score.total || visionPoints(b.score) - visionPoints(a.score))

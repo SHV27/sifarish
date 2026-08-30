@@ -247,7 +247,8 @@ describe('B6 — the dedupe key keeps role identity; re-sighting heals staleness
 describe('B7 — board scans join the dedupe (source gate: board wins, absorbs state)', () => {
   it('syncRadar passes new board jobs through the key and absorbs the aggregator twin', () => {
     const src = readFileSync('src/lib/radar/feeds.ts', 'utf8')
-    expect(src).toContain('withDedupeKey(job)')
+    // Re-brief: finalizeIngest = withDedupeKey + Haq eligibility — the stricter successor.
+    expect(src).toContain('finalizeIngest(job)')
     expect(src).toMatch(/where\('dedupeKey'\)/)
     expect(src).toContain('db.jobs.delete(twin.id)')
     expect(src).toContain('status: twin.status')

@@ -439,8 +439,9 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     if (wwr.error) failed.push('We Work Remotely')
   }
 
-  // --- Merge + dedupe into the Radar queue ---
-  const merge = mergeDiscovered(discovered, existing)
+  // --- Merge + dedupe into the Radar queue (Haq eligibility stamped at this choke point) ---
+  const workAuth = (await db.settings.get('app'))?.visionProfile?.workAuth
+  const merge = mergeDiscovered(discovered, existing, workAuth ?? undefined)
   await db.jobs.bulkPut(merge.toPersist)
 
   // --- THE WATCHLIST GROWS ITSELF (Session 6, lawful) --- Aggregator jobs whose apply URL
