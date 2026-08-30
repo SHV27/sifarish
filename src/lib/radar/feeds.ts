@@ -284,6 +284,9 @@ export function reconcileClosures(
  */
 export async function syncRadar(onProgress?: (done: number, total: number) => void): Promise<SyncResult> {
   const watch = (await db.watchlist.toArray()).filter((w) => w.enabled)
+  // Hunter finding #5: the board-scan lane was the one ingest door ignoring his EDITED work
+  // authorization (silently defaulting) — every lane now reads the same vision truth.
+  const workAuth = (await db.settings.get('app'))?.visionProfile?.workAuth ?? undefined
   const failed: string[] = []
   let found = 0
   let closed = 0
@@ -307,14 +310,14 @@ export async function syncRadar(onProgress?: (done: number, total: number) => vo
               fetchedAt: job.fetchedAt,
               linkAlive: true,
               lastSeenOpenAt: scanAt,
-              ...(needsVerdict ? { eligibility: assessEligibility({ ...existing, ...job, jd }) } : {}),
+              ...(needsVerdict ? { eligibility: assessEligibility({ ...existing, ...job, jd }, workAuth) } : {}),
             })
           } else {
             // Session 7.2 (B7): board scans JOIN the dedupe. A role the aggregators found first
             // used to get a SECOND card when its board scan landed (raw-id write, no key pass).
             // On a key collision the BOARD version wins (board-verified > aggregator ghost) and
             // absorbs the aggregator card's pipeline state — one role, one card, best source.
-            const keyed = finalizeIngest(job)
+            const keyed = finalizeIngest(job, workAuth)
             const twin = await db.jobs.where('dedupeKey').equals(keyed.dedupeKey!).first()
             if (twin && twin.id !== job.id) {
               await db.jobs.put({

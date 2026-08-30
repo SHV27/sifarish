@@ -1,3 +1,4 @@
+import { isIneligible } from '../khabri/eligibility'
 import type { GuruMessage, Job, LedgerEntry, VisionProfile } from '../../types'
 import { scanGuarantee } from '../slop/scan'
 import { pathBriefs, sourcesOf, citePatterns } from '../ustaad/library'
@@ -145,7 +146,9 @@ export function whatToLearn(ledger: LedgerEntry[]): RoutedReply {
 }
 
 export function statusReply(jobs: Job[]): RoutedReply {
-  const c = (s: string) => jobs.filter((j) => j.status === s).length
+  // Hunter finding #7: 'found' counts what the queue actually shows — a Haq-hidden role must
+  // not be steered toward by the Guru while the Radar refuses to show it.
+  const c = (s: string) => jobs.filter((j) => j.status === s && !(s === 'found' && isIneligible(j))).length
   return {
     intent: 'status',
     text:

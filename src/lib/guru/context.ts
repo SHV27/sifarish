@@ -1,3 +1,4 @@
+import { isIneligible } from '../khabri/eligibility'
 import type { Job, LedgerEntry, PulseBrief, Settings } from '../../types'
 import { pathBriefs } from '../ustaad/library'
 
@@ -64,7 +65,7 @@ export function configSummary(config?: GuruConfigSnapshot): string {
 export function buildSystemPrompt(ledger: LedgerEntry[], settings: Settings, jobs: Job[], pulse: PulseBrief[] = [], config?: GuruConfigSnapshot): string {
   const v = settings.visionProfile
   const pipeline = {
-    found: jobs.filter((j) => j.status === 'found').length,
+    found: jobs.filter((j) => j.status === 'found' && !isIneligible(j)).length, // Haq-hidden roles don't brief (hunter #7)
     tailored: jobs.filter((j) => j.status === 'tailored').length,
     applied: jobs.filter((j) => j.status === 'applied' || j.status === 'followup').length,
     interview: jobs.filter((j) => j.status === 'interview').length,

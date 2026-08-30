@@ -24,7 +24,12 @@ export default function DakPanel() {
   // become Radar candidates (zero credits, daily-fresh, lawful). Rides every mail check.
   const runAlerts = async () => {
     const r = await sweepAlerts()
-    if (r.alerts > 0 || r.unparsed.length > 0) setAlertNote(r)
+    // Hunter finding #4: every non-quiet outcome surfaces — expiry and fetch misses included.
+    if (r.authExpired) {
+      setConnected(false)
+      setNote('Gmail session expired mid-alert-sweep — reconnect to keep the job-alert lane alive.')
+    }
+    if (r.alerts > 0 || r.unparsed.length > 0 || (r.failed ?? 0) > 0) setAlertNote(r)
     return r
   }
 
@@ -109,6 +114,7 @@ export default function DakPanel() {
         <p className="mt-1 text-[11px] font-mono text-ink-soft">
           Job-alert lane: {alertNote.alerts} alert email(s) → {alertNote.jobsParsed} roles parsed, {alertNote.added} new on the Radar
           {alertNote.duplicate > 0 ? `, ${alertNote.duplicate} already known` : ''}.
+          {(alertNote.failed ?? 0) > 0 && <span> {alertNote.failed} alert(s) failed to fetch — they retry next check.</span>}
           {alertNote.unparsed.map((u) => (
             <span key={u.id}>
               {' '}

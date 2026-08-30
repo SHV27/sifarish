@@ -201,6 +201,33 @@ export function Radar({ onTailor }: { onTailor: (jobId: string) => void }) {
 
       <HuntPanel />
 
+      {/* Hunter finding #2: this block must render even when the QUEUE is empty — an all-
+          ineligible catch is exactly when the count matters most (nothing vanishes silently). */}
+      {ranked.length === 0 && ineligible.length > 0 && (
+        <div className="mb-3">
+          <button className="font-mono text-[11px] text-ink-soft underline decoration-dotted" onClick={() => setShowIneligible((v) => !v)}>
+            {showIneligible ? '▾' : '▸'} hidden as work-auth ineligible: {ineligible.length}
+          </button>
+          {showIneligible && (
+            <div className="mt-2 space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+              {ineligible.map((j) => (
+                <div key={j.id} className="dossier p-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-ink truncate">
+                      {j.title} · <span className="text-ink-soft">{j.company}</span>
+                    </p>
+                    <p className="text-[11px] text-ink-soft mt-0.5">{j.eligibility?.reason}</p>
+                  </div>
+                  <button className="font-mono text-[11px] text-ink underline decoration-dotted shrink-0" onClick={() => restoreJob(j.id)}>
+                    restore ↑
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {ranked.length === 0 ? (
         <EmptyRadar synced={result !== null} onSync={runSync} />
       ) : (

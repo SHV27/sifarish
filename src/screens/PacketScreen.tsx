@@ -57,7 +57,13 @@ function PasteLane({ onPickJob }: { onPickJob: (id: string) => void }) {
       return
     }
     const job = makePastedJob(company, title, jd, url)
-    await db.jobs.put(job)
+    try {
+      await db.jobs.put(job)
+    } catch {
+      // Demo vault is write-locked by design (I12) — the click must say so, not die silently (I6).
+      setErr('Demo mode is a read-only showcase — open Owner Mode to tailor real packets.')
+      return
+    }
     onPickJob(job.id)
   }
 

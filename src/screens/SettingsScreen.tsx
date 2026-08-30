@@ -13,6 +13,7 @@ import { getApiToken } from '../lib/apiGuard'
 import { storagePersisted, autoBackup, restoreFromLatest, requestDurableStorage } from '../db/tijori'
 import { hasSyncKey, lastSyncAt, syncConfigured, pushVault, pullVault, clearSyncKey } from '../lib/sync'
 import { addSavedHunt, syncVisionHunts, proposeHuntEdits } from '../lib/khabri/client'
+import { reassessAllEligibility } from '../db/seed'
 
 // Session 7.2 (C12): two sessions of new providers finally reach this panel — Adzuna (D92) and
 // Gemini (D144, now the PRIMARY reasoning lane) were live in prod and absent here.
@@ -670,15 +671,20 @@ function VisionEditor({ vision }: { vision: VisionProfile }) {
         className="w-full bg-paper-sunken px-3 py-2 rounded text-xs mb-1 font-mono"
         rows={2}
         value={(vision.workAuth?.authorizedIn ?? ['india']).join('\n')}
-        onChange={(e) =>
-          save({
+        onChange={(e) => {
+          void save({
             workAuth: {
               home: vision.workAuth?.home ?? 'india',
               remoteOk: vision.workAuth?.remoteOk ?? true,
               authorizedIn: e.target.value.split('\n').map((s) => s.trim().toLowerCase()).filter(Boolean),
             },
           })
-        }
+          // Hunter finding #6: re-verdict the existing catch NOW (debounced like the hunt sync).
+          clearTimeout((window as unknown as { __haqT?: number }).__haqT)
+          ;(window as unknown as { __haqT?: number }).__haqT = window.setTimeout(() => {
+            void reassessAllEligibility()
+          }, 1200)
+        }}
         aria-label="Work authorization countries"
         placeholder={'india'}
       />

@@ -249,7 +249,8 @@ describe('B7 — board scans join the dedupe (source gate: board wins, absorbs s
   it('syncRadar passes new board jobs through the key and absorbs the aggregator twin', () => {
     const src = readFileSync('src/lib/radar/feeds.ts', 'utf8')
     // Re-brief: finalizeIngest = withDedupeKey + Haq eligibility — the stricter successor.
-    expect(src).toContain('finalizeIngest(job)')
+    // Hunter #5: the board lane passes his edited work-auth too — no silent default.
+    expect(src).toContain('finalizeIngest(job, workAuth)')
     expect(src).toMatch(/where\('dedupeKey'\)/)
     expect(src).toContain('db.jobs.delete(twin.id)')
     expect(src).toContain('status: twin.status')

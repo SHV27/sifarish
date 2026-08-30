@@ -181,6 +181,27 @@ export async function backfillV2(): Promise<void> {
   })
 }
 
+/**
+ * Hunter finding #6 (the D116 law applied to work-auth): editing `vision.workAuth` must
+ * re-verdict the EXISTING catch now, not whenever each JD happens to change. Owner overrides
+ * are never touched — his word outranks the classifier, permanently.
+ */
+export async function reassessAllEligibility(): Promise<number> {
+  const s = await db.settings.get('app')
+  const auth = s?.visionProfile?.workAuth ?? undefined
+  const jobs = await db.jobs.toArray()
+  let changed = 0
+  for (const j of jobs) {
+    if (j.eligibilityOverride) continue
+    const next = assessEligibility(j, auth)
+    if (next.verdict !== j.eligibility?.verdict || next.reason !== j.eligibility?.reason) {
+      await db.jobs.update(j.id, { eligibility: next })
+      changed++
+    }
+  }
+  return changed
+}
+
 export async function backfillEligibility(): Promise<number> {
   const s = await db.settings.get('app')
   const auth = s?.visionProfile?.workAuth

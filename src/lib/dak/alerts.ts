@@ -132,6 +132,8 @@ export interface AlertSweepResult {
   duplicate: number
   /** Alerts that parsed to zero jobs — counted + linked, never silently dropped. */
   unparsed: { id: string; subject: string; gmailUrl: string }[]
+  /** Per-message fetch misses — counted, never invisible (hunter finding #4). */
+  failed?: number
   authExpired?: boolean
 }
 
@@ -220,9 +222,13 @@ export async function sweepAlerts(): Promise<AlertSweepResult> {
     const discovered: Job[] = []
     const unparsed: AlertSweepResult['unparsed'] = []
     let alerts = 0
+    let failed = 0
     for (const id of fresh) {
       const msg = await get<{ id: string; payload?: GmailPart & { headers?: { name: string; value: string }[] } }>(`/messages/${id}?format=full`)
-      if (!msg) continue
+      if (!msg) {
+        failed++
+        continue
+      }
       alerts++
       seen.add(id)
       const from = msg.payload?.headers?.find((h) => h.name.toLowerCase() === 'from')?.value ?? ''
@@ -241,7 +247,7 @@ export async function sweepAlerts(): Promise<AlertSweepResult> {
     const workAuth = (await db.settings.get('app'))?.visionProfile?.workAuth
     const merge = mergeDiscovered(discovered, await db.jobs.toArray(), workAuth ?? undefined)
     await db.jobs.bulkPut(merge.toPersist)
-    return { alerts, jobsParsed: discovered.length, added: merge.added, duplicate: merge.duplicate, unparsed }
+    return { alerts, jobsParsed: discovered.length, added: merge.added, duplicate: merge.duplicate, unparsed, failed }
   } catch (e) {
     if (e instanceof GmailAuthError) return { ...empty, authExpired: true }
     return empty

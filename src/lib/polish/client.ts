@@ -6,6 +6,7 @@ import { scanGuarantee } from '../slop/scan'
 import { meteredCallsAllowed, meteredHeaders } from '../apiGuard'
 import { allowedThisRun, recordSpend } from '../budget'
 import { stripMarkdownResidue } from '../compile/typeset'
+import { applyEmphasis } from '../compile/emphasis'
 import { bulletOverlap, HARD_DUPLICATE } from '../compile/overlap'
 import { craftClauses } from '../ustaad/library'
 
@@ -77,9 +78,15 @@ export async function polishPacket(packet: Packet): Promise<PolishOutcome> {
     }
   })
 
+  // Re-brief hunter finding #1: a polished line kept its PRE-polish emphasis runs, so every
+  // renderer (runs-first) drew the old wording while text held the new one — and the
+  // concat(runs)===sanitized(text) contract silently broke. Emphasis re-derives from the
+  // FINAL text at the one authority (deterministic, so this is pure re-computation).
+  const emphasized = applied > 0 && packet.decode ? applyEmphasis(newLines, packet.decode) : newLines
+
   const updated: Packet = {
     ...packet,
-    resume: { ...packet.resume, lines: newLines },
+    resume: { ...packet.resume, lines: emphasized },
     polished: applied > 0,
   }
   await db.packets.put(updated)

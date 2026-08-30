@@ -1,3 +1,4 @@
+import { isIneligible } from '../lib/khabri/eligibility'
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
@@ -46,7 +47,12 @@ export function Morcha({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) 
 
   const byStatus = useMemo(() => {
     const map = new Map<JobStatus, Job[]>()
-    for (const j of visibleJobs) map.set(j.status, [...(map.get(j.status) ?? []), j])
+    // Hunter finding #8: the Found column is a queue surface — the Haq filter's hide applies
+    // here too (pipeline statuses are HIS record and always render, whatever the verdict).
+    for (const j of visibleJobs) {
+      if (j.status === 'found' && isIneligible(j)) continue
+      map.set(j.status, [...(map.get(j.status) ?? []), j])
+    }
     return map
   }, [visibleJobs])
 
@@ -65,7 +71,9 @@ export function Morcha({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) 
         <p className="font-mono text-xs text-ink-soft">{tracked} in the pipeline</p>
       </div>
 
-      {tracked > 0 && <DakPanel />}
+      {/* Hunter finding #3: the Dak panel carries the job-ALERT lane (discovery), so gating it
+          behind an existing pipeline made a discovery feature unreachable for a fresh hunt. */}
+      <DakPanel />
 
       {jobs.length > 8 && (
         <div className="flex flex-wrap items-center gap-2 my-3">

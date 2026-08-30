@@ -1,3 +1,4 @@
+import { isIneligible } from '../lib/khabri/eligibility'
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
@@ -20,7 +21,7 @@ export function Onboarding({ onDone }: { onDone: (jobId: string) => void }) {
     // then explicitly discarded, dumping the user on the Shelf. If a role is already known,
     // land on its packet (which auto-tailors) — taste of success before any input is demanded.
     const jobs = await db.jobs.toArray()
-    const first = jobs.find((j) => j.status === 'found' && !j.closed && !j.dismissed) ?? jobs[0]
+    const first = jobs.find((j) => j.status === 'found' && !j.closed && !j.dismissed && !isIneligible(j)) ?? jobs[0]
     if (first) onDone(first.id)
   }
 
