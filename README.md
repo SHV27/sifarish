@@ -33,7 +33,14 @@
 > makes sending structurally impossible. **Darbaan** locks every mutation behind Owner Mode *at the
 > database level*; the public URL is a read-only showcase on a fictional demo persona, and the real ledger
 > travels only as an AES-256-GCM encrypted backup. **Taleem Radar** ranks the gap between market demand
-> and the ledger, with receipts. **708 gates (incl. a 1,000-case generated-input matrix). Sealed: future change = data, not code.**
+> and the ledger, with receipts. The **re-brief cycle (30-Aug-2026)** added the **Haq filter** (work-authorization
+verdicts at ingest — confirmed-ineligible roles never surface, counted and restorable), the **canon resume register**
+(Times, ruled sections, deterministic bold-inline tech/metrics — the register the selected-student resumes wear),
+**Ek Baat** (tell the app things conversationally — ledger adds, vision edits, hunts, mark-applied — proposed, you
+confirm), the **Apply Cockpit** (pre-flight mistake-proofing + an install-once autofill bookmarklet that fills facts
+in your browser and structurally cannot submit), and the **job-alert email lane** (your own LinkedIn/Indeed/Wellfound
+alert emails become Radar candidates via `gmail.readonly` — zero credits, no platform contact).
+**768 gates (incl. the generated-input matrix).**
 
 SIFARISH is a personal hiring agent for one candidate — a 4th-year CSE student hunting a
 compulsory AI-engineering internship in a market where **91% of recruiters now actively hunt

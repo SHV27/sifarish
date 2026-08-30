@@ -98,3 +98,18 @@ Two-sided gates pin both directions.
 Core survives adversarial review — no teardown. Constraints locked: no new runtime deps, no new
 Vercel function slots this cycle, every new Dexie field joins the sync table-list in the same
 commit, bookmarklet may contain no keys/no API calls/no submit-control activation (gated).
+
+## RB-6 · The deploy path (30-Aug-2026)
+The supplied Vercel token is TEAM-scoped: the API accepts it (project reads, deployments) but
+the CLI cannot (it requires account-level /v2/user, which 404s for team tokens). Production
+deploys therefore go through scripts/rest-deploy.mjs (v13/deployments, inlined files, poll to
+READY) — same target, same aliases, served-hash verified after every deploy. docs/ (README
+images) is excluded from the payload; it is not a build input.
+
+## RB-7 · Arc 5 close — THE FOUR PROOFS (30-Aug-2026, evidence in PROGRESS.md)
+Machine 768 gates + deep matrix + tsc + warning-free build · Journey on the DEPLOYED artifact
+(index-Br6AzxRf carries all five session strings; wires watched live) · Adversary (fresh-context
+hunter's NINE findings fixed same-day; 403 no-Origin ×4; fabricated token → keyless; demo ₹0;
+bookmarklet structural gates) · Money: ZERO new metered surface this cycle. Owner actions
+remaining: rotate the Vercel token pasted in chat (Vercel → Settings → Tokens), and connect
+Gmail once so the alert lane starts feeding the Radar.
