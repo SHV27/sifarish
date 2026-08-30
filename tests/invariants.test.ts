@@ -149,13 +149,15 @@ describe('One-page budget (compiler)', () => {
       editorial: { order: ['proj-a', 'proj-c'], bullets: {} }, // cast only A and C
     })
     // Session 7 typesetter: the date is a right-aligned segment on the title line.
+    // Re-brief Arc 2: the header carries the canon formula `Name | Tech, Tech` — match the NAME.
     const titleLines = resume.lines.filter((l) => l.kind === 'entry-title')
     const titles = titleLines.map((l) => l.text)
-    expect(titles).toContain('Project A')
-    expect(titles).toContain('Project C')
-    expect(titles).not.toContain('Project B') // benched
-    expect(titles).not.toContain('Project D')
-    const projA = titleLines.find((l) => l.text === 'Project A')
+    const hasTitle = (name: string) => titles.some((t) => t === name || t.startsWith(`${name} | `))
+    expect(hasTitle('Project A')).toBe(true)
+    expect(hasTitle('Project C')).toBe(true)
+    expect(hasTitle('Project B')).toBe(false) // benched
+    expect(hasTitle('Project D')).toBe(false)
+    const projA = titleLines.find((l) => l.text === 'Project A' || l.text.startsWith('Project A | '))
     expect(projA?.right).toBe('Jan 2026') // Month-Year display (S6.1), right-aligned (S7)
   })
 })

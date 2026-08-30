@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib'
 import type { CompiledDoc, CompiledResume } from '../../types'
 import { CompileError, LINE_METRICS, PAGE } from '../compile/compiler'
 import { sanitizePdfText } from '../compile/typeset'
+import { layoutRuns } from '../compile/emphasis'
 
 /**
  * ATS-plain, true-text-layer PDF. Helvetica standard font (metrically Arial-class,
@@ -65,9 +66,12 @@ function wrapIndent(font: PDFFont, text: string, size: number, firstWidth: numbe
 export async function renderResumePdf(resume: CompiledResume): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
   const page = doc.addPage([PAGE.width, PAGE.height])
-  const regular = await doc.embedFont(StandardFonts.Helvetica)
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold)
-  const oblique = await doc.embedFont(StandardFonts.HelveticaOblique)
+  // Re-brief Arc 2 — THE CAMPUS-LaTeX-CANON REGISTER: Times standard fonts (zero embedding
+  // risk, same WinAnsi text layer; the parse-killers are columns/graphics, not serifs — D5
+  // narrowed by DECISIONS.md RB-2). All 8 of the owner's best-in-class samples wear this face.
+  const regular = await doc.embedFont(StandardFonts.TimesRoman)
+  const bold = await doc.embedFont(StandardFonts.TimesRomanBold)
+  const oblique = await doc.embedFont(StandardFonts.TimesRomanItalic)
   const maxWidth = PAGE.width - PAGE.margin * 2
   const ink = rgb(0.05, 0.09, 0.16)
 
@@ -141,6 +145,30 @@ export async function renderResumePdf(resume: CompiledResume): Promise<Uint8Arra
     const rightW = right ? regular.widthOfTextAtSize(right, m.size) : 0
     const leftWidth = (right ? maxWidth - rightW - 14 : maxWidth) - (line.kind === 'bullet' ? 9 : 0)
     const firstY = y
+
+    // Styled runs (re-brief Arc 2): bold-inline tech/metrics in bullets, roman stack suffix on
+    // headers. SAME wrap algorithm as the estimator (emphasis.layoutRuns), measured here with
+    // pdf-lib's true widths; runs arrive pre-sanitized (the concat contract) — drawn verbatim,
+    // segments left-to-right so extraction order stays exactly the line's text (I5).
+    if (line.runs && line.runs.length > 0) {
+      const fontOf = (b: boolean) => (b ? bold : regular)
+      const visual = layoutRuns(line.runs, (t, b) => (b ? bold : regular).widthOfTextAtSize(t, size), leftWidth, leftWidth)
+      for (const [j, segs] of visual.entries()) {
+        if (j > 0) y -= m.leading
+        guard(segs.map((s) => s.text).join(''))
+        let x = line.kind === 'bullet' && j > 0 ? PAGE.margin + 9 : PAGE.margin
+        for (const s of segs) {
+          const f = fontOf(s.bold)
+          page.drawText(s.text, { x, y, size, font: f, color: ink })
+          x += f.widthOfTextAtSize(s.text, size)
+        }
+      }
+      if (right) {
+        page.drawText(right, { x: PAGE.width - PAGE.margin - rightW, y: firstY, size: m.size, font: regular, color: ink })
+      }
+      return
+    }
+
     for (const [j, piece] of wrap(font, text, size, leftWidth).entries()) {
       if (j > 0) y -= m.leading
       guard(piece)

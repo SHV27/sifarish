@@ -252,6 +252,13 @@ export interface CompiledLine {
    * in that order, so extracted text = text + right and I5 parse-back holds by construction.
    */
   right?: string
+  /**
+   * Re-brief Arc 2 (the LaTeX-canon register): styled inline runs — bold tech/metrics inside
+   * bullets, roman stack suffix on project headers. CONTRACT (gated): concat(runs.text) equals
+   * sanitizePdfText(text), so extraction order and I5 are untouched; emphasis derivation is
+   * deterministic (compile/emphasis.ts), never LLM-chosen.
+   */
+  runs?: { text: string; bold?: boolean }[]
 }
 
 export interface CompiledResume {
@@ -326,6 +333,8 @@ export interface Packet {
   id: string
   jobId: string
   createdAt: string
+  /** Re-brief Arc 2: which typeset register compiled this page — older packets re-tailor on open. */
+  typesetVersion?: number
   resume: CompiledResume
   coverLetter: CompiledDoc
   outreach: CompiledDoc

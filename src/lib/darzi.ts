@@ -537,12 +537,19 @@ export async function floorPassPacket(packet: Packet): Promise<Packet> {
   return { ...updated, enhancing: false, enhanceFailed: true }
 }
 
+/**
+ * Re-brief Arc 2 — the typeset register's version. A stored packet compiled under an older
+ * register re-tailors itself on open (the D140 repair law, applied to typography): bump this
+ * when the page's LOOK changes even though no ledger content did.
+ */
+export const TYPESET_VERSION = 2 // 1 = Helvetica plain (S7 "Taaj") · 2 = Times canon register
+
 /** Persist the packet and move the job forward — tracking as a side effect, never a chore. */
 export async function savePacket(packet: Packet): Promise<void> {
   await db.transaction('rw', [db.packets, db.jobs], async () => {
     // One packet per job: replace any previous tailoring.
     await db.packets.where('jobId').equals(packet.jobId).delete()
-    await db.packets.put(packet)
+    await db.packets.put({ ...packet, typesetVersion: TYPESET_VERSION })
     const job = await db.jobs.get(packet.jobId)
     if (job && job.status === 'found') {
       await db.jobs.update(packet.jobId, { status: 'tailored', packetId: packet.id })

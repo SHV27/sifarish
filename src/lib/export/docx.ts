@@ -20,12 +20,19 @@ function buildDoc(resume: CompiledResume): Document {
     const isName = i === 0
     const m = LINE_METRICS[line.kind]
     const size = Math.round((isName ? 17 : m.size) * 2) // half-points
-    const font = 'Calibri'
+    // Re-brief Arc 2: the canon register in Word terms — Times New Roman, the same face every
+    // strong sample wears (parses identically; D5 narrowed by RB-2).
+    const font = 'Times New Roman'
     const centered = isName || line.kind === 'contact'
     const italics = line.kind === 'meta'
 
     const runs: TextRun[] = []
-    if (line.kind === 'skills') {
+    // Styled inline runs (bold tech/metrics in bullets, roman stack on headers) — same
+    // deterministic emphasis the PDF draws; concat equals the line text, so parsing is identical.
+    if (line.runs && line.runs.length > 0) {
+      for (const r of line.runs) runs.push(new TextRun({ text: r.text, bold: !!r.bold, italics, size, font }))
+    }
+    if (runs.length === 0 && line.kind === 'skills') {
       const idx = line.text.indexOf(': ')
       if (idx > 0 && idx < 40) {
         runs.push(new TextRun({ text: line.text.slice(0, idx + 1), bold: true, size, font }))

@@ -9,7 +9,10 @@ import type {
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills, sanitizePdfText } from './typeset'
 import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEIGHT, isIdentityBullet } from './overlap'
-import { textWidth } from './helvetica-metrics'
+// Re-brief Arc 2: the résumé register is TIMES (the campus-LaTeX canon) — the estimator
+// measures with the Times AFM tables the renderer draws with (same D158/F1 discipline).
+import { timesWidth as textWidth } from './times-metrics'
+import { applyEmphasis, wrapCountRuns } from './emphasis'
 
 /**
  * Stage 3: deterministic compile under the one-page budget.
@@ -108,6 +111,11 @@ export function estimateLineHeight(line: CompiledLine, isName = false): number {
   }
   const rightW = right ? textWidth(right, m.size, 'reg') : 0
   const leftWidth = (right ? MAXW - rightW - 14 : MAXW) - (line.kind === 'bullet' ? 9 : 0)
+  // Runs line (re-brief): bold segments are wider — count wrapped lines over the styled words
+  // with the SAME shared layout algorithm the renderer uses (emphasis.ts, authority 2).
+  if (line.runs && line.runs.length > 0) {
+    return lead + (wrapCountRuns(line.runs, size, leftWidth, leftWidth) - 1) * m.leading
+  }
   return lead + (wrapCount(text, size, font, leftWidth) - 1) * m.leading
 }
 
@@ -199,6 +207,25 @@ function push(lines: CompiledLine[], line: CompiledLine) {
   if (line.kind === 'bullet') text = text.replace(/(?<!\.)\.$/, '')
   const right = line.right ? stripMarkdownResidue(line.right) : undefined
   lines.push(right ? { ...line, text, right } : { ...line, text, right: undefined })
+}
+
+/**
+ * Re-brief Arc 2: tag slugs on a project HEADER read as data, not craft ("typescript",
+ * "agentic-ai"). Lift them to the market's casing; unknown tokens just capitalize.
+ */
+const TECH_CASE: Record<string, string> = {
+  typescript: 'TypeScript', javascript: 'JavaScript', python: 'Python', react: 'React',
+  nodejs: 'Node.js', node: 'Node.js', nextjs: 'Next.js', langchain: 'LangChain',
+  langgraph: 'LangGraph', pytorch: 'PyTorch', tensorflow: 'TensorFlow', llm: 'LLM',
+  rag: 'RAG', mcp: 'MCP', api: 'API', ai: 'AI', ml: 'ML', groq: 'Groq', gemini: 'Gemini',
+  claude: 'Claude', dexie: 'Dexie', vite: 'Vite', vercel: 'Vercel', serverless: 'Serverless',
+  tailwind: 'Tailwind', docker: 'Docker', sql: 'SQL', mongodb: 'MongoDB', fastapi: 'FastAPI',
+}
+export function displayTech(tag: string): string {
+  return tag
+    .split(/[-_\s]+/)
+    .map((w) => TECH_CASE[w.toLowerCase()] ?? (w.length <= 3 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)))
+    .join(' ')
 }
 
 export interface CompileInput {
@@ -485,9 +512,15 @@ export function compileResume(input: CompileInput): CompiledResume {
         const pageTexts: string[] = []
         for (const p of projects) {
           const evidenceUrl = p.evidence?.url ?? p.evidence?.repo ?? ''
+          // Re-brief Arc 2 (¶the canon's project-header formula): `NAME | Tech, Tech, Tech` —
+          // the stack rides the HEADER (every strong sample the owner supplied does this), from
+          // his own deep-read stack (D58) or tags. Emphasis pass keeps NAME bold, stack roman.
+          const stack = (p.context?.stack?.length ? p.context.stack : p.tags.map(displayTech)).slice(0, 4).join(', ')
+          const baseTitle = displayTitle(p.title)
+          const headerText = stack && (baseTitle.length + stack.length) < 90 ? `${baseTitle} | ${stack}` : baseTitle
           push(lines, {
             kind: 'entry-title',
-            text: displayTitle(p.title),
+            text: headerText,
             right: p.evidence?.date ? displayDate(p.evidence.date) : undefined,
             ledgerIds: [p.id],
           })
@@ -559,12 +592,14 @@ export function compileResume(input: CompileInput): CompiledResume {
     return missing.map((id) => displayTitle(ledger.find((e) => e.id === id)?.title ?? id).split('—')[0].trim())
   }
   for (const lv of trimLevelsFor(castIds.length)) {
-    const lines = assemble(lv)
+    // Emphasis BEFORE the fit check: bold segments are wider, and a page that fits must fit
+    // with its real (styled) widths — the estimator sees exactly what the renderer draws.
+    const lines = applyEmphasis(assemble(lv), decode)
     if (estimateHeight(lines) <= USABLE_HEIGHT) return { lines, jobId, benchedByPage: benchNote(lines) }
   }
 
   // Practically unreachable: even 1 project × 1 bullet + contact + education won't fit.
-  const minimal = assemble(TRIM_LEVELS[TRIM_LEVELS.length - 1])
+  const minimal = applyEmphasis(assemble(TRIM_LEVELS[TRIM_LEVELS.length - 1]), decode)
   throw new CompileError(
     `Page overflow even at maximum trim: ${Math.ceil(estimateHeight(minimal))}pt of ${Math.floor(USABLE_HEIGHT)}pt available.`,
     ['A single entry in the Ledger is extremely long — shorten its title or bullets.'],

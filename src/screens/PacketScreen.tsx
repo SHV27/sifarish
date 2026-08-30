@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { CompiledDoc, Job, Packet } from '../types'
-import { buildPacket, buildPacketFast, savePacket, overrulePacket, toggleSignature, floorPassPacket } from '../lib/darzi'
+import { buildPacket, buildPacketFast, savePacket, overrulePacket, toggleSignature, floorPassPacket, TYPESET_VERSION } from '../lib/darzi'
 import { CompileError, LINE_METRICS } from '../lib/compile/compiler'
 import { saveFile } from '../lib/util/download'
 import { fetchJobFromUrl, makePastedJob } from '../lib/radar/pasteLane'
@@ -194,7 +194,10 @@ function PacketView({ job }: { job: Job }) {
   useEffect(() => {
     if (!packet || firstBuild) return
     const reforgedAt = settings?.lastReforgeAt
-    if (reforgedAt && packet.createdAt < reforgedAt && startedFor.current !== `stale-${packet.id}`) {
+    // Re-brief Arc 2: a packet compiled under an older typeset register is stale the same way —
+    // the page's LOOK upgraded even though the ledger didn't (one recompile, then stamped).
+    const oldRegister = (packet.typesetVersion ?? 1) < TYPESET_VERSION
+    if (((reforgedAt && packet.createdAt < reforgedAt) || oldRegister) && startedFor.current !== `stale-${packet.id}`) {
       startedFor.current = `stale-${packet.id}`
       void tailor()
     }
@@ -364,7 +367,7 @@ function PacketBody({
         <div className="dossier p-6 sm:p-8 bg-white relative" aria-label="Compiled resume preview">
           <span className="stamp stamp-red absolute -top-2 -right-2 animate-stamp-down">Compiled · {new Date(packet.createdAt).toLocaleDateString('en-IN')}</span>
           {packet.resume.lines.map((line, i) => (
-            <ResumeLine key={i} text={line.text} right={line.right} kind={line.kind} isName={i === 0} count={line.ledgerIds.length} />
+            <ResumeLine key={i} text={line.text} right={line.right} runs={line.runs} kind={line.kind} isName={i === 0} count={line.ledgerIds.length} />
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -464,7 +467,7 @@ function PacketBody({
   )
 }
 
-function ResumeLine({ text, right, kind, isName, count }: { text: string; right?: string; kind: keyof typeof LINE_METRICS; isName: boolean; count: number }) {
+function ResumeLine({ text, right, runs, kind, isName, count }: { text: string; right?: string; runs?: { text: string; bold?: boolean }[]; kind: keyof typeof LINE_METRICS; isName: boolean; count: number }) {
   // I1 at the renderer: content lines must show their evidence anchors.
   // Session 7: the preview mirrors the classic PDF — centered letterhead, ruled headings,
   // right-aligned dates, bold skill labels — so what he sees IS what exports.
@@ -478,17 +481,22 @@ function ResumeLine({ text, right, kind, isName, count }: { text: string; right?
     forge: 'text-[11.5px] text-neutral-800 italic mt-1.5',
   }
   const skillLabelIdx = kind === 'skills' ? text.indexOf(': ') : -1
-  const body =
-    skillLabelIdx > 0 && skillLabelIdx < 40 ? (
-      <>
-        <strong>{text.slice(0, skillLabelIdx + 1)}</strong> {text.slice(skillLabelIdx + 2)}
-      </>
-    ) : (
-      text
-    )
+  // Re-brief Arc 2: the preview shows the SAME deterministic emphasis the PDF/DOCX draw —
+  // what he sees IS what exports (bold tech/metrics inline, roman stack on headers).
+  const body = runs?.length ? (
+    <>
+      {runs.map((r, j) => (r.bold ? <strong key={j}>{r.text}</strong> : <span key={j}>{r.text}</span>))}
+    </>
+  ) : skillLabelIdx > 0 && skillLabelIdx < 40 ? (
+    <>
+      <strong>{text.slice(0, skillLabelIdx + 1)}</strong> {text.slice(skillLabelIdx + 2)}
+    </>
+  ) : (
+    text
+  )
   return (
     <p
-      className={`${isName ? 'text-lg font-bold text-neutral-900 text-center' : cls[kind]} font-[Arial,Helvetica,sans-serif] group relative ${right ? 'flex items-baseline justify-between gap-3' : ''}`}
+      className={`${isName ? 'text-lg font-bold text-neutral-900 text-center' : cls[kind]} font-['Times_New_Roman',Georgia,serif] group relative ${right ? 'flex items-baseline justify-between gap-3' : ''}`}
     >
       <span>
         {body}

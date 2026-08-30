@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { PDFDocument, StandardFonts } from 'pdf-lib'
 import { textWidth } from '../src/lib/compile/helvetica-metrics'
+import { timesWidth } from '../src/lib/compile/times-metrics'
 import { compileResume } from '../src/lib/compile/compiler'
 import { sanitizePdfText } from '../src/lib/compile/typeset'
 import { decodeJD } from '../src/lib/jd/decode'
@@ -48,7 +49,37 @@ describe('F1 — the estimator measures with the renderer\'s EXACT font metrics'
   it('character-count estimation is gone from the compiler (the concept is dead)', () => {
     const src = readFileSync('src/lib/compile/compiler.ts', 'utf8')
     expect(src).not.toContain('CHARS_PER_LINE')
-    expect(src).toContain("from './helvetica-metrics'")
+    // Re-brief Arc 2: the register is Times — the estimator measures with the Times AFM tables
+    // the renderer draws with (same F1 law, new face).
+    expect(src).toContain("from './times-metrics'")
+  })
+
+  it('timesWidth() parity with pdf-lib Times (reg/bold/italic) — never under, ≤3% over (kerning)', async () => {
+    const doc = await PDFDocument.create()
+    const fonts = {
+      reg: await doc.embedFont(StandardFonts.TimesRoman),
+      bold: await doc.embedFont(StandardFonts.TimesRomanBold),
+      obl: await doc.embedFont(StandardFonts.TimesRomanItalic),
+    } as const
+    const samples = [
+      'Engineered a keyless core so every pillar runs without API keys',
+      sanitizePdfText('SEHAT-SAARTHI — 0.957 ROC-AUC · 2023–2027 · CGPA 7.7 × evals…'),
+      'AI & ML: RAG + Guardrails + Evals, Prompt & Agent Design (Claude Code)',
+      'SIFARISH | TypeScript, React, Dexie, pdf-lib',
+      'shaurya.verma2705@gmail.com | +91-9041523296 | github.com/SHV27',
+    ]
+    for (const s of samples) {
+      for (const f of ['reg', 'bold', 'obl'] as const) {
+        for (const size of [9.5, 10.5, 17]) {
+          const est = timesWidth(s, size, f)
+          const drawn = fonts[f].widthOfTextAtSize(s, size)
+          expect(est, `"${s.slice(0, 30)}…" ${f}@${size} must not under-measure`).toBeGreaterThanOrEqual(drawn - 0.05)
+          // Times kern pairs are heavier than Helvetica's (measured ~2.1-2.3% on kern-heavy
+          // text, 30-Aug-2026) — conservative over-measure bounded at 3%, never under.
+          expect(est - drawn, `"${s.slice(0, 30)}…" ${f}@${size} within 3%`).toBeLessThanOrEqual(Math.max(0.6, drawn * 0.03))
+        }
+      }
+    }
   })
 })
 
