@@ -2,22 +2,43 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: RE-BRIEF PIPELINE (30-Aug-2026) — VISION-BRIEF-sifarish.md, full studio run
+## Status: RE-BRIEF CYCLE (VISION-BRIEF-sifarish.md, full studio run) — ✅ DONE (30-Aug-2026)
 
-Stages 0–5 DONE: recon (RESEARCH.md re-brief verdicts, 5 live lanes) → boardroom (DECISIONS.md
-RB-1: 5 pillars, cut list, 3 vetoable calls) → architecture (ARCHITECTURE.md re-brief lock, no
-teardown, 5 contradictions resolved) → constitution (CLAUDE.md 1368→60 lines, D-log archived to
-HISTORY.md, pre-commit secret+gate hook validated, ship-verify skill) → ARC_PLAN.md (5 arcs,
-frozen acceptance). Baseline 707/709 green at commit 577663a.
+Live: https://sifarish-shv-s-projects.vercel.app · **766 passed | 2 live-only skips (768 gates)**
+· tsc clean · warning-free build · deployed via REST (CLI can't auth a team token, RB-6) ·
+SERVED-BUNDLE verified: index-Br6AzxRf carries all five session strings (Haq list · Apply
+Cockpit · Sifarish Autofill · market brief · letter bridge).
 
-**Arc 1 — HAQ FILTER + KHABRI REFRESH: ✅ CLOSED** (736 passed | 2 skipped, tsc clean).
-Eligibility verdict at ingest (ONE authority, all lanes incl. paste + board scans), hidden-as-
-ineligible count + restore on Radar, workAuth editable in Settings, boot backfill; LinkedIn/
-Indeed/Wellfound job-alert emails → Radar via gmail.readonly (parse fixtures, unparsed counted);
-JSearch /search-v2 cursor (shape probed LIVE, server+client+gates), Jobicy 200, Simplify fields
-re-verified live. Deviation noted: Arc-1 eye-pass (small UI delta) rides Arc 2's dev-server
-visual pass. **Current arc: Arc 2 — CANON RESUME (the LaTeX register).** ONE next action:
-segment-aware CompiledLine runs + measureLine() over Times+Helvetica AFM.
+Pipeline ran whole: recon (5 live lanes) → boardroom (RB-1: 5 pillars + cut list) → architecture
+(no teardown, 5 contradictions resolved in writing) → constitution (CLAUDE.md 1368→60 lines,
+D-log → HISTORY.md, validated pre-commit secret+gate hook) → 5 arcs, each closed with evidence:
+
+- **Arc 1 · HAQ FILTER + KHABRI REFRESH** — work-auth verdict at the ONE ingest door (every
+  lane); confirmed-ineligible never surfaces, counted + restorable; workAuth editable (edits
+  re-verdict the catch NOW); LinkedIn/Indeed/Wellfound ALERT-EMAIL lane via gmail.readonly
+  (zero credits, fixtures, unparsed counted); JSearch /search-v2 cursor (shape probed live);
+  Jobicy 200; two-sided gates throughout.
+- **Arc 2 · CANON RESUME** — the campus-LaTeX register: Times (real AFM tables generated from
+  pdf-lib, parity-gated), deterministic bold-inline tech/metrics (word-snapped after READING
+  the page caught phantom spaces), `NAME | Tech, Tech` headers, DOCX + preview parity, stored
+  packets self-heal via TYPESET_VERSION; I5 + one-page + 5,000-case matrix green; page read by eye.
+- **Arc 3 · EK BAAT** — the global op registry (ledger adds via the Shelf door, vision edits,
+  hunts, mark-applied, sweep, navigate): deterministic Hinglish parser is the keyless core, LLM
+  lane re-validated, honesty router FIRST always; proposal cards, he confirms (RB-4/RB-5).
+- **Arc 4 · APPLY COCKPIT** — pre-flight poka-yoke (work-auth · register · pay-floor ·
+  freshness · link) + install-once autofill bookmarklet (structurally cannot submit/fetch;
+  demographic fields DENY-listed after the LIVE Greenhouse proof caught 'ethniCITY') + honest
+  dossier + mailto lane; proven on a real application form, screenshot evidence.
+- **Arc 5 · SHIP** — Four Proofs executed (RB-7): machine + journey-on-deployed-artifact +
+  adversary (fresh-context hunter's NINE findings fixed same-day; 403 ×4; fake token → keyless;
+  demo ₹0, ERRORS 0, Arjun persona) + money (ZERO new metered surface). Owner-standard pass:
+  letter vision-bridge grammar fixed; Pulse market intelligence now on the landing Briefing.
+
+## ONE next action (the owner's, ~3 min)
+→ Open Owner Mode once: the packet screen re-tailors stored packets into the canon register by
+  itself; connect Gmail on the Morcha so the ALERT LANE starts feeding the Radar; then rotate
+  the Vercel token you pasted in chat (Vercel → Settings → Tokens) — it deployed this cycle and
+  should die with it.
 
 ## Prior: Session 8 "THE FINAL JANG" — the last elevation, delivered under six locks. ✅ COMPLETE ✦
 
