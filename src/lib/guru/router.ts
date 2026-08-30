@@ -51,8 +51,14 @@ export function detectIntent(text: string, ledger: LedgerEntry[]): Intent {
     return 'refuse_guarantee'
   }
 
-  // I1 — fabrication-bait: "put X on my resume / say I know X" where X isn't in the ledger.
-  if (/\b(add|put|say i know|claim|pretend|write that i|tell them i know|include)\b/.test(t)) {
+  // I1 — fabrication-bait: "put X on my RESUME / say I know X" where X isn't in the ledger.
+  // Re-brief (Ek Baat): a bare "add skill X" is now a LEDGER-add proposal (his own sworn entry,
+  // the Shelf Quick-add door) — the refusal fires on RESUME-claim phrasing, which is the actual
+  // I1 surface. Two-sided gates cover both directions (agent-ops.test.ts).
+  if (
+    /\b(say i know|claim|pretend|write that i|tell them i know)\b/.test(t) ||
+    (/\b(add|put|include|likh|daal)\b/.test(t) && /\b(resume|résumé|cv)\b/.test(t))
+  ) {
     const skillMatch = t.match(FABRICATION_SKILLS)
     if (skillMatch) {
       const has = ledger.some(

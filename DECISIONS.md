@@ -78,6 +78,22 @@ graphics — NOT serif faces or bold runs; the campus canon (Jake's-template reg
 the ATS-safe standard. D5 becomes: **single column, standard fonts (Times/Helvetica family),
 no graphics/tables/columns.** The LaTeX register ships inside that boundary.
 
+## RB-4 · Ek Baat = ONE BRAIN, TWO MOUNTS (30-Aug-2026, complexity-budget call)
+The unified agent ships as one op family with two mounts: Guru (global scope: ledger adds,
+vision edits, hunts, mark-applied, sweep, navigate — registry-validated proposals he confirms)
+and the packet Baithak (packet scope, its existing 10-op vocabulary + fixture). Full chat-in-
+chat unification was rejected: it would bury the packet's live preview (L2, one screen one
+decision) and re-open a 22-utterance regression surface for zero new capability. The brief's
+"one conversation" is delivered as one MENTAL MODEL — same propose→confirm law, same honesty
+router first, no dead ends — not one DOM node. Vetoable in one word.
+
+## RB-5 · Ledger-adds via chat vs the fabrication refusal (30-Aug-2026)
+"Add skill X to my RESUME" still refuses (I1 surface). "Add skill/achievement X" now PROPOSES a
+ledger entry through the exact Shelf Quick-add door — the ledger is his sworn truth, and Shelf
+already accepts the same statement silently; chat adds a visible caveat ("only add what you can
+defend in an interview") plus a confirm step, which is MORE friction than the form, not less.
+Two-sided gates pin both directions.
+
 ## RB-3 · Architecture review verdict (30-Aug-2026)
 Core survives adversarial review — no teardown. Constraints locked: no new runtime deps, no new
 Vercel function slots this cycle, every new Dexie field joins the sync table-list in the same

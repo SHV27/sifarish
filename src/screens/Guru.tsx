@@ -7,6 +7,9 @@ import { planTurn, runAction, streamGuru } from '../lib/guru/client'
 import { buildApplyPlan } from '../lib/guru/applyPlan'
 import { addSavedHunt } from '../lib/khabri/client'
 import { deriveHunts } from '../lib/vision/derive'
+import { parseGlobal } from '../lib/agent/parse'
+import { smartGlobal, looksActionish } from '../lib/agent/smart'
+import { executeGlobalOp, type AgentContext, type GlobalProposal } from '../lib/agent/ops'
 
 // Session 7.2 (C7): the greeting reads the LIVE identity — a demo visitor is Arjun's guest,
 // never greeted as Shaurya (the D102 rule, applied to the last hardcoded surface).
@@ -17,6 +20,8 @@ function greetingFor(name?: string): GuruMessage {
     content:
       `Namaste${who ? ` ${who}` : ''}. I'm Guru — I know your ledger, your targets, and your pipeline. I can find you roles, ` +
       'explain any score, build a step-by-step apply plan, or tell you honestly what to learn next. ' +
+      'You can also just tell me things — "add achievement: …", "mark Netomi as applied", "hunt for RAG engineer", ' +
+      '"not interested in devops" — I\'ll propose the change and you confirm. ' +
       "I only ever claim what's in your ledger, and I never promise outcomes. What do you want to do?",
   }
 }
@@ -26,6 +31,7 @@ const SUGGESTIONS = [
   'What should I learn next?',
   'Where am I in my hunt?',
   'Build an apply plan',
+  'Add achievement: …',
 ]
 
 const THREAD_ID = 'main'
@@ -38,6 +44,11 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
   const [streaming, setStreaming] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const jobs = useLiveQuery(() => db.jobs.toArray()) ?? []
+  // EK BAAT (re-brief Pillar 1): the conversation can now PROPOSE app-level ops — ledger adds,
+  // vision edits, hunts, mark-applied — through the ONE registry; he confirms, then it executes.
+  const hunts = useLiveQuery(() => db.savedHunts.toArray()) ?? []
+  const appSettings = useLiveQuery(() => db.settings.get('app'))
+  const [proposals, setProposals] = useState<GlobalProposal[]>([])
 
   // Session 7.2 (C3): the conversation PERSISTS — `db.guruThreads` existed, was backed up and
   // cloud-synced, and was never read or written; a screen switch destroyed the chat. The last
@@ -62,7 +73,26 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages, streaming])
+  }, [messages, streaming, proposals])
+
+  const pushAssistant = (content: string) =>
+    setMessages((m) => {
+      const next = [...(m ?? []), { role: 'assistant' as const, content }]
+      persistThread(next)
+      return next
+    })
+
+  // Confirm = the ONLY door from proposal to mutation (Nabz pattern). Demo mode: the Darbaan
+  // DBCore rejects story-table writes — surfaced honestly, never a crash.
+  const applyProposal = async (p: GlobalProposal) => {
+    setProposals((xs) => xs.filter((x) => x.id !== p.id))
+    try {
+      const note = await executeGlobalOp(p.op, (s) => onNav?.(s as Screen))
+      pushAssistant(note)
+    } catch {
+      pushAssistant('Demo mode is read-only — open Owner Mode to make real changes.')
+    }
+  }
 
   const send = async (text: string) => {
     if (!text.trim() || busy || messages === null) return
@@ -84,6 +114,28 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
 
     try {
       const { routed, useLLM } = await planTurn(text)
+
+      // EK BAAT op lanes — ONLY when the honesty router found nothing critical (it always runs
+      // first; refusals/I9 are decided before any op or LLM sees the turn).
+      if (routed.intent === 'freeform') {
+        const ctx: AgentContext = { hunts, jobs, vision: appSettings?.visionProfile }
+        // Lane 1: deterministic cue grammar (keyless core, zero spend).
+        const det = parseGlobal(text, ctx)
+        if (det && (det.proposals.length > 0 || det.reply)) {
+          if (det.reply) append({ role: 'assistant', content: det.reply })
+          setProposals(det.proposals)
+          return
+        }
+        // Lane 2: the LLM op lane for action-shaped asks (json_schema; registry re-validates).
+        if (looksActionish(text)) {
+          const smart = await smartGlobal(history, text, ctx)
+          if (smart) {
+            append({ role: 'assistant', content: smart.reply })
+            setProposals(smart.proposals)
+            return
+          }
+        }
+      }
 
       // Try the LLM voice for non-critical intents; fall back to the router's honest text.
       let finalText: string | null = null
@@ -153,6 +205,31 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
           </div>
         )}
       </div>
+
+      {proposals.length > 0 && (
+        <div className="my-2 space-y-2" aria-label="Proposed actions">
+          {proposals.map((p) => (
+            <div key={p.id} className="dossier p-3 border-l-4 border-l-shipped animate-dossier-in">
+              <p className="text-xs font-semibold text-ink">{p.label}</p>
+              {p.detail && <p className="text-[11px] text-ink-soft mt-0.5 leading-relaxed">{p.detail}</p>}
+              {p.invariants.length > 0 && (
+                <p className="font-mono text-[9px] text-ink-faint mt-1">{p.invariants.join(' · ')}</p>
+              )}
+              <div className="flex gap-2 mt-2">
+                <button className="text-[11px] font-semibold bg-ink text-paper px-3 py-1 rounded" onClick={() => void applyProposal(p)}>
+                  ✓ Confirm
+                </button>
+                <button
+                  className="text-[11px] text-ink-soft hover:underline"
+                  onClick={() => setProposals((xs) => xs.filter((x) => x.id !== p.id))}
+                >
+                  not now
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {(messages?.length ?? 0) <= 1 && (
         <div className="flex flex-wrap gap-2 my-3">
