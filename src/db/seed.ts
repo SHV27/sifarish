@@ -13,12 +13,34 @@ import { getMode } from '../lib/pehchaan'
 import { assessEligibility } from '../lib/khabri/eligibility'
 
 export const DEFAULT_VISION: VisionProfile = {
+  // FINAL-BAR (30-Aug-2026) — the owner's heart-statement, dictated verbatim-close in the founder
+  // channel. This text DRIVES ranking, hunts, headline voice, and letters; edit it and everything
+  // re-derives.
   dream:
-    'Break into agentic-AI engineering by building real tools that solve Indian public problems — ' +
-    'ship things people actually use, learn the hard ML underneath, and land at a team that builds ' +
-    'with LLMs seriously.',
-  targetRoles: ['AI Engineer Intern', 'Agentic AI Intern', 'LLM Engineer Intern', 'Applied AI Intern', 'AI Residency'],
-  notInterested: ['Generic SDE / mass-MNC roles', 'Pure frontend', 'Non-AI QA/support'],
+    'Understand a real problem deeply, then direct AI to build the thing that solves it — and ship it. ' +
+    'Building agents, RAG, orchestration, evals, guardrails — production systems, not model training. ' +
+    'Small teams with end-to-end ownership, ambiguity as normal, variety over grinding one narrow thing; ' +
+    'work that visibly helps actual people. Not a generic candidate — someone who finds the real problem ' +
+    'and ships the thing that solves it. The long arc: build my own things, so judgement, ownership and ' +
+    'range beat a bigger title.',
+  targetRoles: [
+    'AI Engineer',
+    'Agentic AI Engineer',
+    'AI Agent Engineer',
+    'Applied AI Engineer',
+    'LLM Systems Engineer',
+    'AI Solutions Architect',
+    'Forward Deployed Engineer',
+    'AI Engineer Intern',
+  ],
+  notInterested: [
+    'DSA-gated pure SDE',
+    'Frontend-heavy',
+    'SQL / data-pipeline work',
+    'Research / thesis-style positions',
+    'Generic SDE / mass-MNC roles',
+    'Non-AI QA/support',
+  ],
   compFloorStipend: 35000,
   ppoFloorLpa: 16,
   windowStart: 'Jan 2027',
@@ -178,7 +200,34 @@ export async function backfillV2(): Promise<void> {
     // Re-brief (Haq filter): stamp eligibility on vault jobs that predate the filter — the
     // D59 lesson again: an ingest-time verdict reaches nobody's existing vault without this.
     await backfillEligibility().catch(() => 0)
+    // FINAL-BAR (30-Aug-2026): the owner dictated his vision in the founder channel — the ONE
+    // authority above D59's hands-off rule is his own word. Flag-guarded (runs once); roles and
+    // avoids he added by hand are UNION-merged, never dropped; dream is replaced with his text.
+    await migrateVisionFinalBar().catch(() => 0)
   })
+}
+
+export async function migrateVisionFinalBar(): Promise<boolean> {
+  const FLAG = 'migrated:vision-final-bar'
+  if (await db.nabzCache.get(FLAG)) return false
+  const s = await db.settings.get('app')
+  if (s?.visionProfile) {
+    const v = s.visionProfile
+    const union = (a: string[], b: string[]) => {
+      const seen = new Set(a.map((x) => x.toLowerCase()))
+      return [...a, ...b.filter((x) => !seen.has(x.toLowerCase()))]
+    }
+    await db.settings.update('app', {
+      visionProfile: {
+        ...v,
+        dream: DEFAULT_VISION.dream,
+        targetRoles: union(DEFAULT_VISION.targetRoles, v.targetRoles),
+        notInterested: union(DEFAULT_VISION.notInterested, v.notInterested),
+      },
+    })
+  }
+  await db.nabzCache.put({ key: FLAG, json: 'true', fetchedAt: new Date().toISOString() })
+  return true
 }
 
 /**

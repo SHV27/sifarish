@@ -23,6 +23,7 @@ export type GlobalOp =
   | { kind: 'vision-add-avoid'; term: string }
   | { kind: 'vision-drop-avoid'; term: string }
   | { kind: 'vision-add-company'; company: string }
+  | { kind: 'vision-set-dream'; dream: string }
   | { kind: 'add-hunt'; query: string; country?: string }
   | { kind: 'toggle-hunt'; huntId: string; enabled: boolean }
   | { kind: 'sweep' }
@@ -113,6 +114,16 @@ export function validateGlobalOp(raw: Record<string, unknown>, ctx: AgentContext
         ['I3: lawful aggregator APIs only'],
       )
     }
+    case 'vision-set-dream': {
+      const dream = s('dream')
+      if (dream.length < 20 || dream.length > 900) return null
+      return mk(
+        { kind, dream },
+        'Rewrite your vision statement',
+        `"${dream.slice(0, 140)}${dream.length > 140 ? '…' : ''}" — this text DRIVES ranking, derived hunts, the resume headline's voice, and the letters. Confirming replaces the current dream (roles/avoids stay).`,
+        ['re-ranks the queue', 'hunts re-derive (hand-set untouched)', 'headline re-voices'],
+      )
+    }
     case 'add-hunt': {
       const query = s('query')
       if (query.length < 4 || query.length > 90) return null
@@ -189,7 +200,8 @@ export async function executeGlobalOp(op: GlobalOp, onNav?: (screen: string) => 
     case 'vision-drop-role':
     case 'vision-add-avoid':
     case 'vision-drop-avoid':
-    case 'vision-add-company': {
+    case 'vision-add-company':
+    case 'vision-set-dream': {
       const settings = await db.settings.get('app')
       const v = settings?.visionProfile
       if (!v) return 'No Vision Profile yet — set one up in Settings first.'
@@ -199,6 +211,7 @@ export async function executeGlobalOp(op: GlobalOp, onNav?: (screen: string) => 
       if (op.kind === 'vision-add-avoid') next.notInterested = [...v.notInterested, op.term]
       if (op.kind === 'vision-drop-avoid') next.notInterested = v.notInterested.filter((r) => r.toLowerCase() !== op.term.toLowerCase())
       if (op.kind === 'vision-add-company') next.dreamCompanies = [...(v.dreamCompanies ?? []), op.company]
+      if (op.kind === 'vision-set-dream') next.dream = op.dream
       await db.settings.update('app', { visionProfile: next })
       // The D116 law: a vision edit re-derives hunts NOW, not on the next app open.
       await syncVisionHunts(next).catch(() => 0)

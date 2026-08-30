@@ -51,7 +51,8 @@ describe('W1a — library v2.0.0: the 2026 research is data, cited, and reaches 
 
 describe('W1c — the forge writes in the 2026 authorship register (FORGE_VERSION 5)', () => {
   it('FORGE_VERSION is 5 so the vault-repair banner reaches his real data (D140 law)', () => {
-    expect(FORGE_VERSION).toBe(5)
+    // ≥ semantics (the D165 law): craft only moves forward; v6 = the extreme-care mandate.
+    expect(FORGE_VERSION).toBeGreaterThanOrEqual(5)
   })
   it('the SYSTEM prompt bans the verb carousel and demands named, front-loaded metrics', () => {
     expect(SYSTEM).toContain('AUTHORSHIP REGISTER')

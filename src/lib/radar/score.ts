@@ -240,6 +240,10 @@ const ROLE_FAMILIES: { re: RegExp; name: string }[] = [
   { re: /\bfront[- ]?end\b|\bui developer\b/i, name: 'pure frontend' },
   { re: /\bqa engineer\b|\btest engineer\b|\bquality assurance\b/i, name: 'QA' },
   { re: /\bdevops\b|\bsite reliability\b/i, name: 'DevOps/SRE' },
+  // Final-bar pass (owner's heart-statement): two more families he named as not-his, ranked
+  // down WITH the reason said plainly — never silently padding the list.
+  { re: /\bdata engineer\b|\betl developer\b|\bdata pipeline engineer\b/i, name: 'data engineering' },
+  { re: /\bsde\b|\bsoftware development engineer\b/i, name: 'pure SDE' },
 ]
 
 export function roleFamilyPart(job: Job, vision?: VisionProfile): ScorePart | null {

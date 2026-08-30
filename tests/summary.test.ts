@@ -30,7 +30,9 @@ describe('professional summary — evidence-dense, never minted (I1)', () => {
     for (const id of line!.ledgerIds) expect(ids.has(id)).toBe(true)
     // The director/builder identity, vision-framed.
     expect(line!.text).toMatch(/Agentic-AI engineer/i)
-    expect(line!.text).toMatch(/architects and ships/i)
+    // Final-bar: the line now carries HIS OWN voice clause (mined from the dream) when one exists,
+    // with the timeless base as fallback — either way it says who he IS and how he works.
+    expect(line!.text).toMatch(/who (architects and ships|finds the real problem)/i)
     // NO project names.
     for (const name of ['GLOAMING', 'SUTRADHAR', 'DARYA', 'MUNSHI', 'KATHA', 'YOJANA', 'BRAILLIX']) {
       expect(line!.text).not.toContain(name)

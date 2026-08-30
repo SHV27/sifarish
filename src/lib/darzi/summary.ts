@@ -30,6 +30,30 @@ function rolePhrase(vision?: VisionProfile): string {
   return 'AI engineer'
 }
 
+/**
+ * HIS conviction, third-personed — mined from the dream HE wrote, never generated. Deterministic:
+ * prefers the "by building/shipping…" clause, then a "ship things people actually use" clause;
+ * returns null when the dream offers neither (the timeless base stands). Tool names are stripped
+ * of nothing — the dream is prose about intent, not a stack list.
+ */
+export function voiceClause(dream?: string): string | null {
+  if (!dream) return null
+  // His own self-definition wins outright when the dream states one ("someone who finds the
+  // real problem and ships the thing that solves it") — that IS the voice the headline wants.
+  const self = /someone who ([^—.;]{8,90})/i.exec(dream)
+  if (self) return self[1].trim().replace(/\s+/g, ' ')
+  const first = dream.split(/[.\n]/)[0]
+  const by = /\bby\s+(build|ship|mak|creat|solv)(?:ing)?([^—.;]*)/i.exec(first)
+  if (by) {
+    const verb = { build: 'builds', ship: 'ships', mak: 'makes', creat: 'creates', solv: 'solves' }[by[1].toLowerCase() as 'build']
+    const rest = by[2].trim().replace(/\s+/g, ' ')
+    if (verb && rest.length >= 8 && rest.length <= 90) return `${verb} ${rest}`
+  }
+  const ship = /\bship\s+([^—.;,]{8,80}?(?:use|used|need|needs|serve|serves|help|helps)[^—.;,]{0,20})/i.exec(dream)
+  if (ship) return `ships ${ship[1].trim().replace(/\s+/g, ' ')}`
+  return null
+}
+
 /** The stable DOMAIN the role builds in (no tools, no dates) — derived from the vision role. */
 function domainPhrase(role: string): string {
   if (/agentic/i.test(role)) return 'production LLM and agent systems'
@@ -58,10 +82,18 @@ export function buildSummaryLine(args: {
   // Backing evidence (linked for honesty, never named in the text).
   const ledgerIds = [...new Set([...shippedAiProjects.map((e) => e.id), ...aiSkills.map((e) => e.id)])]
 
-  // TIMELESS BASE: [Vision role] who architects and ships [domain] end to end.
-  // (Identity + how he works. No tools, no numbers, no geography, no dates → never decays.)
+  // FINAL-BAR PASS (30-Aug-2026, owner: "the headline isn't my voice and doesn't carry my
+  // vision"): the base line now carries (a) HIS OWN conviction clause, mined deterministically
+  // from the dream he wrote (his words, third-personed — updates the moment his vision does),
+  // and (b) the live shipped-project count as proof (recompiled per packet, so it only ever
+  // grows — never a stale claim). Tools/geography stay out; the guard rules stand.
   const role = rolePhrase(vision)
-  const base = `${role} who architects and ships ${domainPhrase(role)} end to end — from first principles to live deployment`
+  const voice = voiceClause(vision?.dream)
+  const proofCount = shippedAiProjects.length
+  const proof = proofCount >= 2 ? `${proofCount} shipped systems, architected end to end and live` : `architected end to end and live`
+  const base = voice
+    ? `${role} who ${voice} — ${proof}`
+    : `${role} who architects and ships ${domainPhrase(role)} end to end — from first principles to live deployment`
 
   // Session 7.2 (A6) — the summary stops being ONE static line for every company: the emphasis
   // clause is picked from THIS JD's top must-haves, but only ones the ledger PROVES (I1 — the

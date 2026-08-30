@@ -74,6 +74,12 @@ export function parseGlobal(utterance: string, ctx: AgentContext): GlobalParse |
   }
 
   // --- Vision edits ---
+  // "My vision is …" / "mera vision …" — the whole point of Ek Baat (final-bar pass).
+  m = /^(?:my vision(?:\s+now)? is|mera vision(?:\s+(?:hai|ye hai|ab ye hai))?[:,]?|vision\s*[:\-–—])\s+(.{20,})$/i.exec(t)
+  if (m) return propose({ kind: 'vision-set-dream', dream: clean(m[1]) }, 'Confirm and everything re-derives around it — ranking, hunts, the headline\'s voice, the letters.')
+  // "add X to the radar" — his own phrasing for a new hunt.
+  m = /^(?:add|daal(?:o)?)\s+["']?(.+?)["']?\s+(?:to|on|pe)\s+(?:the\s+)?radar$/i.exec(t)
+  if (m) return propose({ kind: 'add-hunt', query: clean(m[1]) }, 'Confirm and the Radar starts hunting it (budget-rationed).')
   m = /^(?:add\s+)?["']?(.+?)["']?\s+(?:to|in)\s+(?:my\s+)?(?:target\s+roles?|vision)$/i.exec(t) ?? /^target\s+role\s+(?:add|jodo)\s*[:\-]?\s*(.+)$/i.exec(t)
   if (m) return propose({ kind: 'vision-add-role', role: clean(m[1]) }, 'Confirm and the Radar starts ranking this title at the top of the score.')
   m = /^(?:i(?:'| a)?m\s+)?not\s+interested\s+in\s+(.+)$/i.exec(t) ?? /^(.+?)\s+(?:mein|me)\s+interest\s+nahi(?:\s+hai)?$/i.exec(t)

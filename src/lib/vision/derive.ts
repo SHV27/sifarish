@@ -28,7 +28,9 @@ const PHRASE_RULES: { test: RegExp; queries: string[] }[] = [
   { test: /agent|agentic|tool.?use|orchestrat/i, queries: ['AI agent engineer', 'agentic AI engineer', 'agent engineer intern'] },
   { test: /architect|solution|forward.?deployed|deploy|customer/i, queries: ['AI solutions engineer', 'forward deployed engineer', 'solutions engineer AI'] },
   { test: /applied|real.?world|real problem|ship|product/i, queries: ['applied AI engineer', 'applied scientist intern', 'AI product engineer'] },
-  { test: /claude|anthropic|openai|gpt|llm|language model|generative|gen.?ai/i, queries: ['LLM engineer', 'generative AI engineer', 'GenAI engineer intern'] },
+  // Final-bar pass (30-Aug-2026): "LLM Systems Engineer" joined the market's title vocabulary —
+  // it's on the owner's own LinkedIn stream and boards index it as its own name.
+  { test: /claude|anthropic|openai|gpt|llm|language model|generative|gen.?ai/i, queries: ['LLM engineer', 'LLM systems engineer', 'generative AI engineer', 'GenAI engineer intern'] },
   { test: /rag|retrieval|search|knowledge|vector|embedding/i, queries: ['RAG engineer', 'AI search engineer', 'retrieval engineer'] },
   { test: /eval|guardrail|safety|alignment|trust|reliab/i, queries: ['AI evaluation engineer', 'LLM evals engineer', 'trustworthy AI intern'] },
   // Session 7 (H2): 'research scientist intern' removed — the owner's vision is ENGINEER; the
@@ -86,6 +88,16 @@ export function deriveHunts(vision: VisionProfile): DerivedHunt[] {
   if (vision.remoteInternational && vision.targetRoles.length > 0) {
     const core0 = vision.targetRoles[0].replace(/\s*\b(interns?(hips?)?|residency|resident)\b\s*/gi, ' ').replace(/\s+/g, ' ').trim()
     if (core0) add(`${core0} Europe remote`, 'Region-wide sweep: one query that answers the whole European market at once, the way LinkedIn\'s region search does.', 'region')
+  }
+  // Final-bar pass (owner's LinkedIn stream is Bengaluru/Noida/Delhi-heavy): CITY-scoped hunts —
+  // a board ranks "AI engineer Bengaluru" postings under exactly that query; the plain "India"
+  // variant lets city-tagged startup roles sink. Two hub queries, region class (quota-bounded).
+  if (vision.targetRoles.length > 0) {
+    const core0 = vision.targetRoles[0].replace(/\s*\b(interns?(hips?)?|residency|resident)\b\s*/gi, ' ').replace(/\s+/g, ' ').trim()
+    if (core0) {
+      add(`${core0} Bengaluru`, "India's densest AI-hiring hub, queried the way its boards index it.", 'region')
+      add(`${core0} Delhi NCR`, 'The Delhi/Noida/Gurugram belt in one query — the phrasing boards use for it.', 'region')
+    }
   }
 
   // Theme-derived queries: every AI-role corner his vision implies.

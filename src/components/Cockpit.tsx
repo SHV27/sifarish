@@ -4,6 +4,8 @@ import { db } from '../db/db'
 import type { Job, Packet } from '../types'
 import { buildDossierFields, mailtoFromJd, preflight, preflightSummary } from '../lib/cockpit/dossier'
 import { buildBookmarklet, buildProfile } from '../lib/cockpit/bookmarklet'
+import { applyVerdict } from '../lib/cockpit/verdict'
+import { scoreJobCached } from '../lib/radar/score'
 
 /**
  * THE APPLY COCKPIT (re-brief Pillar 2) — the lawful ceiling of "auto-apply":
@@ -18,8 +20,14 @@ export default function Cockpit({ job, packet }: { job: Job; packet: Packet }) {
   const [copied, setCopied] = useState<string | null>(null)
   const [showFields, setShowFields] = useState(false)
 
+  const ledger = useLiveQuery(() => db.ledger.toArray()) ?? []
   const checks = useMemo(() => preflight(job, packet, settings?.visionProfile), [job, packet, settings?.visionProfile])
   const summary = preflightSummary(checks)
+  // Final-bar: ONE composed judgement — is this role worth his hour? (deterministic, L4, I9)
+  const verdict = useMemo(() => {
+    const score = settings ? scoreJobCached(job, ledger, settings.rubric, false, settings.visionProfile) : undefined
+    return applyVerdict({ score, coverage: packet.coverage, preflight: checks })
+  }, [job, ledger, settings, packet.coverage, checks])
 
   if (!identity) return null
   const fields = buildDossierFields(identity, education, settings?.visionProfile, job)
@@ -44,6 +52,23 @@ export default function Cockpit({ job, packet }: { job: Job; packet: Packet }) {
       <h2 className="font-display font-semibold text-ink text-sm">
         🎯 Apply Cockpit <span className="text-ink-soft font-normal">— everything staged, you fire</span>
       </h2>
+
+      {/* WORTH IT? — the one composed judgement, before any effort is spent. */}
+      <div
+        className={`mt-2 rounded px-3 py-2 border-l-4 ${
+          verdict.call === 'apply' ? 'border-l-shipped bg-paper-sunken' : verdict.call === 'skip' ? 'border-l-stamp bg-paper-sunken' : 'border-l-amber-500 bg-paper-sunken'
+        }`}
+      >
+        <p className="text-sm font-semibold text-ink">{verdict.headline}</p>
+        <ul className="mt-1 space-y-0.5">
+          {verdict.reasons.map((r, i) => (
+            <li key={i} className="text-[11px] text-ink-soft leading-snug">
+              {r}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-1 font-mono text-[9px] text-ink-faint">a judgement to spend your hours well — never a promised outcome</p>
+      </div>
 
       {/* PRE-FLIGHT — mistakes die here, not on the application. */}
       <div className="mt-2">

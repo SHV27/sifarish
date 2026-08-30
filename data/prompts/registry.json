@@ -1,11 +1,11 @@
 {
-  "version": 8,
-  "comment": "PROMPT REGISTRY (Studio W2, closes AUDIT #15): every prompt-bearing file is hashed here. Changing one WITHOUT bumping `version` (and FORGE_VERSION when the forge/reframe craft changed) fails tests/routing-config.test.ts — a craft edit can never again silently skip the vault-repair banner (the D140 class, now mechanical). v8 (30-Aug-2026): guru context pipeline.found excludes Haq-hidden roles (re-brief hunter #7) — count filter, no craft change.",
+  "version": 9,
+  "comment": "PROMPT REGISTRY (Studio W2, closes AUDIT #15): every prompt-bearing file is hashed here. Changing one WITHOUT bumping `version` (and FORGE_VERSION when the forge/reframe craft changed) fails tests/routing-config.test.ts — a craft edit can never again silently skip the vault-repair banner (the D140 class, now mechanical). v8 (30-Aug-2026): guru context pipeline.found excludes Haq-hidden roles (re-brief hunter #7) — count filter, no craft change. v9 (30-Aug-2026): FORGE_VERSION 6 — extreme-care mandate + full-strength framing + 3-5 bullets (final-bar pass).",
   "entries": [
     {
       "file": "src/lib/nabz/forge.ts",
       "versionedBy": "FORGE_VERSION",
-      "sha256": "80bedf6d54538acc26f1c1b139c84f5cbe634f53007fc6b98fa348d4a3595a86"
+      "sha256": "a96670dba78782d61c54c837cab6c9f3bcecebd49ccd687dbc40e9878a4c9434"
     },
     {
       "file": "src/lib/polish/reframe.ts",
