@@ -14,6 +14,7 @@ import QualityPanel from '../components/QualityPanel'
 import Baithak from '../components/Baithak'
 import AtelierBaithak from '../components/AtelierBaithak'
 import AlignmentMap from '../components/AlignmentMap'
+import Cockpit from '../components/Cockpit'
 import type { EditorialPlan } from '../types'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
@@ -429,6 +430,8 @@ function PacketBody({
         <p className="text-[11px] text-ink-soft text-center px-2 leading-relaxed">
           Research-backed fit — outcomes depend on interviews. No tool can guarantee selection.
         </p>
+
+        <Cockpit job={job} packet={packet} />
 
         {packet.gapNote.length > 0 && (
           <section className="dossier p-4" aria-label="Gap note">
