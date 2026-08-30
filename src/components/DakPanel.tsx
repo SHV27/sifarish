@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { connectGmail, disconnectGmail, isConnected } from '../lib/dak/gis'
 import { sweepMail, confirmStage, dismissCard, ackCard, sortCards } from '../lib/dak/watch'
+import { sweepAlerts, type AlertSweepResult } from '../lib/dak/alerts'
 import { useDarbaan } from './DarbaanControl'
 
 /**
@@ -17,6 +18,15 @@ export default function DakPanel() {
   const [connected, setConnected] = useState(isConnected())
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
+  const [alertNote, setAlertNote] = useState<AlertSweepResult | null>(null)
+
+  // Re-brief Pillar 5 — the ALERT LANE: his own LinkedIn/Indeed/Wellfound job-alert emails
+  // become Radar candidates (zero credits, daily-fresh, lawful). Rides every mail check.
+  const runAlerts = async () => {
+    const r = await sweepAlerts()
+    if (r.alerts > 0 || r.unparsed.length > 0) setAlertNote(r)
+    return r
+  }
 
   // Darshak/demo: a visitor should never wire THEIR Gmail into a showcase — the watchman
   // works only for the owner (I12; the card writes are db-blocked anyway).
@@ -29,7 +39,11 @@ export default function DakPanel() {
     if (r.ok) {
       setConnected(true)
       const sweep = await sweepMail()
-      setNote(sweep.newCards > 0 ? `${sweep.newCards} reply card(s) found.` : 'Connected — no new replies matching your pipeline right now.')
+      const alerts = await runAlerts()
+      setNote(
+        (sweep.newCards > 0 ? `${sweep.newCards} reply card(s) found.` : 'Connected — no new replies matching your pipeline right now.') +
+          (alerts.added > 0 ? ` ${alerts.added} fresh role(s) from your job-alert emails → Radar.` : ''),
+      )
     } else {
       setNote(`Connect failed: ${r.error}. (In Testing mode Google shows an "unverified app" warning — proceed through it.)`)
     }
@@ -45,7 +59,11 @@ export default function DakPanel() {
       setConnected(false)
       setNote('Gmail session expired (the token lives only in memory, by design). Reconnect to keep watching.')
     } else {
-      setNote(sweep.newCards > 0 ? `${sweep.newCards} new reply card(s).` : 'Nothing new — the watchman keeps watching.')
+      const alerts = await runAlerts()
+      setNote(
+        (sweep.newCards > 0 ? `${sweep.newCards} new reply card(s).` : 'Nothing new — the watchman keeps watching.') +
+          (alerts.added > 0 ? ` ${alerts.added} fresh role(s) from your job-alert emails → Radar.` : ''),
+      )
     }
     setBusy(false)
   }
@@ -86,6 +104,21 @@ export default function DakPanel() {
         modify mail (I3). Mail is read in your browser and never sent to any server of ours.
       </p>
       {note && <p className="mt-1.5 text-[11px] font-mono text-ink-soft">{note}</p>}
+      {/* An alert that parsed to zero jobs is COUNTED and linked — never silently dropped. */}
+      {alertNote && (
+        <p className="mt-1 text-[11px] font-mono text-ink-soft">
+          Job-alert lane: {alertNote.alerts} alert email(s) → {alertNote.jobsParsed} roles parsed, {alertNote.added} new on the Radar
+          {alertNote.duplicate > 0 ? `, ${alertNote.duplicate} already known` : ''}.
+          {alertNote.unparsed.map((u) => (
+            <span key={u.id}>
+              {' '}
+              <a className="underline decoration-dotted" href={u.gmailUrl} target="_blank" rel="noreferrer" title={u.subject}>
+                1 unparsed alert ↗
+              </a>
+            </span>
+          ))}
+        </p>
+      )}
 
       {cards.length > 0 && (
         <>

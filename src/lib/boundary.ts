@@ -90,9 +90,18 @@ export interface JobsResp {
   jobs: unknown[]
   creditsSpent: number
   error?: string
+  /** /search-v2 cursor for depth requests (re-brief; optional, legacy path never sets it). */
+  nextCursor?: string
 }
 export function isJobsResp(v: unknown): v is JobsResp {
-  return isObj(v) && isBool(v.keyless) && isArr(v.jobs) && isNum(v.creditsSpent) && (v.error === undefined || isStr(v.error))
+  return (
+    isObj(v) &&
+    isBool(v.keyless) &&
+    isArr(v.jobs) &&
+    isNum(v.creditsSpent) &&
+    (v.error === undefined || isStr(v.error)) &&
+    (v.nextCursor === undefined || isStr(v.nextCursor))
+  )
 }
 
 /** A discovered job row must carry the fields the radar/compiler actually rely on. */

@@ -10,10 +10,14 @@ teardown, 5 contradictions resolved) → constitution (CLAUDE.md 1368→60 lines
 HISTORY.md, pre-commit secret+gate hook validated, ship-verify skill) → ARC_PLAN.md (5 arcs,
 frozen acceptance). Baseline 707/709 green at commit 577663a.
 
-**Current arc: Arc 1 — HAQ FILTER + KHABRI REFRESH** (eligibility verdict at ingest + hidden-
-count UI + two-sided gates; LinkedIn-alert Dak lane; JSearch v2 cursor; Jobicy 200; Simplify
-category). ONE next action: implement `src/lib/khabri/eligibility.ts` + `Job.eligibility` at the
-normalize choke point.
+**Arc 1 — HAQ FILTER + KHABRI REFRESH: ✅ CLOSED** (736 passed | 2 skipped, tsc clean).
+Eligibility verdict at ingest (ONE authority, all lanes incl. paste + board scans), hidden-as-
+ineligible count + restore on Radar, workAuth editable in Settings, boot backfill; LinkedIn/
+Indeed/Wellfound job-alert emails → Radar via gmail.readonly (parse fixtures, unparsed counted);
+JSearch /search-v2 cursor (shape probed LIVE, server+client+gates), Jobicy 200, Simplify fields
+re-verified live. Deviation noted: Arc-1 eye-pass (small UI delta) rides Arc 2's dev-server
+visual pass. **Current arc: Arc 2 — CANON RESUME (the LaTeX register).** ONE next action:
+segment-aware CompiledLine runs + measureLine() over Times+Helvetica AFM.
 
 ## Prior: Session 8 "THE FINAL JANG" — the last elevation, delivered under six locks. ✅ COMPLETE ✦
 

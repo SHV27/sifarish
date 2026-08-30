@@ -123,6 +123,8 @@ interface JobsApiResp {
   jobs: Job[]
   creditsSpent: number
   error?: string
+  /** /search-v2 only: the cursor the next depth request must carry (re-brief). */
+  nextCursor?: string
 }
 interface SignalsApiResp {
   keyless: boolean
@@ -130,7 +132,7 @@ interface SignalsApiResp {
   creditsSpent: number
 }
 
-async function callJobsApi(hunt: SavedHunt, page = 1): Promise<JobsApiResp | null> {
+async function callJobsApi(hunt: SavedHunt, page = 1, cursor?: string): Promise<JobsApiResp | null> {
   if (!meteredCallsAllowed()) return null // Darshak/demo: keyed lanes never spend (D44)
   try {
     const res = await fetch('/api/khabri/jobs', {
@@ -143,6 +145,9 @@ async function callJobsApi(hunt: SavedHunt, page = 1): Promise<JobsApiResp | nul
         datePosted: hunt.datePosted,
         numPages: 1,
         page, // Session 7.2 (B3): depth-promoted hunts spend one extra credit as page 2
+        // Re-brief: on /search-v2 depth is a CURSOR, not a page number — the server returns
+        // nextCursor from page 1 and we hand it back (probed live 30-Aug-2026).
+        cursor,
         // P7 lane depth: honored only when HE set it on the hunt — never narrows by default.
         employmentTypes: hunt.employmentTypes,
       }),
@@ -307,7 +312,7 @@ export async function runSweep(onStep?: (label: string) => void): Promise<SweepY
     // Depth promotion: proven hunt + budget headroom → one page-2 request, visibly logged.
     if ((lastYields[hunt.id] ?? 0) >= 6 && resp.jobs.length >= 6 && deepUsed < 2 && jsearchUsed < jsearchBudget) {
       onStep?.(`JSearch ${country.toUpperCase()} · depth 2: "${hunt.query}"`)
-      const deep = await callJobsApi({ ...hunt, country }, 2)
+      const deep = await callJobsApi({ ...hunt, country }, 2, resp.nextCursor)
       if (deep && !deep.keyless) {
         deepUsed++
         jsearchUsed += deep.creditsSpent

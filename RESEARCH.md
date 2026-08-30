@@ -83,6 +83,14 @@ Later stages read the Verdicts; details follow. Prior evidence base (07-Jul-2026
   noted (prose paragraphs, two-column project blocks, "guaranteed" wording in the weak sample).
 - **§V Prior evidence base** — everything below this line predates the re-brief and remains cited.
 
+### Arc-1 live probe log (30-Aug-2026, own key, shapes measured not guessed)
+- JSearch `/jsearch/search-v2`: 200 → `{status, request_id, parameters, data:{jobs[10], cursor(len 760)}}`;
+  row keys unchanged vs legacy (job_id/job_title/…/job_salary_string). 2 credits spent. [VOLATILE]
+- SimplifyJobs Summer2027 listings.json first row keys: source, category ("AI/ML/Data"),
+  company_name, id, title, active, terms, date_updated, date_posted, url, locations, company_url,
+  is_visible, sponsorship ("Other"/"Does Not Offer Sponsorship"/…), degrees. [VOLATILE]
+- Jobicy `count=200`: 200 rows returned (ceiling honored); jobGeo field live ("USA" etc.). [VOLATILE]
+
 ---
 
 # RESEARCH.md — SIFARISH · Evidence Base (compiled 07-Jul-2026)

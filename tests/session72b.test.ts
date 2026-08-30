@@ -117,7 +117,8 @@ describe('B3/B5 — depth where it pays; the owner\'s freshness window honored',
     expect(client).toContain("'jsearch:yields'")
     expect(client).toMatch(/deepUsed < 2/)
     expect(client).toMatch(/jsearchUsed < jsearchBudget/)
-    expect(client).toMatch(/callJobsApi\(\{ \.\.\.hunt, country \}, 2\)/)
+    // Re-brief: depth carries the /search-v2 cursor from page 1 (v2 has no page numbers).
+    expect(client).toMatch(/callJobsApi\(\{ \.\.\.hunt, country \}, 2, resp\.nextCursor\)/)
   })
   it('market rotation advances by the consumed window and never double-funds India', () => {
     expect(client).toContain('JSEARCH_REST')

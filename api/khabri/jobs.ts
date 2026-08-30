@@ -25,6 +25,8 @@ interface JobsRequest {
   numPages?: number
   /** Session 7.2 (B3): page number for depth-promoted hunts (1-3; 1 credit per request). */
   page?: number
+  /** Re-brief: /search-v2 depth — the cursor the previous response returned (v2 has no page numbers). */
+  cursor?: string
   /** Session 6 (P7): comma-sep JSearch employment types, owner-set per hunt. */
   employmentTypes?: string
 }
@@ -127,19 +129,27 @@ export default async function handler(req: Request): Promise<Response> {
   if (emp.length > 0) params.set('employment_types', emp.join(','))
 
   try {
-    // Final Jang W3 (Law 12, anti-obsolescence): OpenWeb Ninja's docs now lead with /jsearch/
-    // search-v2 (cursor pagination); the legacy /search still serves us. If it ever deprecates,
-    // the owner flips JSEARCH_PATH=/jsearch/search-v2 in the Vercel env — zero code, the seal
-    // holds. Verified 19-Jul-2026: legacy path live; v2 not adopted blind (cursor semantics
-    // unproven against our page param — the env lever exists for the day the provider forces it).
+    // Re-brief (30-Aug-2026, probed LIVE with the real key): /search-v2 is the documented
+    // primary — response shape { status, data: { jobs: [...], cursor } }, row keys unchanged.
+    // Depth on v2 rides the returned cursor (v2 has no page numbers); legacy /search keeps the
+    // page param. JSEARCH_PATH env lever still picks the path — v2 default when unset stays
+    // legacy until the client-side depth logic has shipped a full cycle (flip is zero code).
     const path = process.env.JSEARCH_PATH || '/jsearch/search'
+    const isV2 = path.includes('search-v2')
+    if (isV2) {
+      params.delete('page')
+      if (body.cursor) params.set('cursor', String(body.cursor).slice(0, 2000))
+    }
     const res = await fetch(`https://api.openwebninja.com${path}?${params.toString()}`, {
       headers: { 'X-API-Key': key },
     })
     if (!res.ok) return json({ keyless: false, jobs: [], creditsSpent: 1, error: `jsearch ${res.status}` })
-    const data = (await res.json()) as { data?: JSearchJob[] }
+    const data = (await res.json()) as { data?: JSearchJob[] | { jobs?: JSearchJob[]; cursor?: string } }
+    // Shape-agnostic row extraction: legacy = data[], v2 = data.jobs[] (both measured live).
+    const rows: JSearchJob[] = Array.isArray(data.data) ? data.data : (data.data?.jobs ?? [])
+    const nextCursor = Array.isArray(data.data) ? undefined : data.data?.cursor
     const now = new Date().toISOString()
-    const jobs = (data.data ?? []).map((j) => ({
+    const jobs = rows.map((j) => ({
       id: `jsearch:${j.job_id}`,
       source: 'jsearch' as const,
       externalId: j.job_id,
@@ -154,7 +164,7 @@ export default async function handler(req: Request): Promise<Response> {
       fetchedAt: now,
       status: 'found' as const,
     }))
-    return json({ keyless: false, jobs, creditsSpent: 1 })
+    return json({ keyless: false, jobs, creditsSpent: 1, nextCursor })
   } catch (e) {
     return json({ keyless: false, jobs: [], creditsSpent: 0, error: String(e).slice(0, 100) })
   }

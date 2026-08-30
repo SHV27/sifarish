@@ -208,9 +208,9 @@ export async function fetchArbeitnow(): Promise<Job[]> {
 
 // ---- Jobicy (D90) — global remote board, keyless, CORS `*` (verified live 16-Jul-2026). ----
 export async function fetchJobicy(): Promise<Job[]> {
-  // Final Jang W3c: count=100 verified honored live 19-Jul-2026 (2× the commonly-cited 50 max).
-  // NOTE (probed): `tag` must be 3-50 chars — `tag=ai` is a 400; we filter client-side instead.
-  const res = await fetch('https://jobicy.com/api/v2/remote-jobs?count=100')
+  // Re-brief (docs re-verified 30-Aug-2026): count ceiling is now 200 (default 200, was 100) —
+  // the full free window, same one request. `tag` must be 3-50 chars (tag=ai 400s); client filter.
+  const res = await fetch('https://jobicy.com/api/v2/remote-jobs?count=200')
   if (!res.ok) return []
   const data = await res.json()
   const now = new Date().toISOString()

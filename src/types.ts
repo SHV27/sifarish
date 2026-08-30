@@ -117,6 +117,8 @@ export type JobSource =
   | 'workingnomads'
   | 'weworkremotely'
   | 'simplify'
+  /** Re-brief Pillar 5 — parsed from HIS OWN job-alert emails (gmail.readonly; lawful, zero credits). */
+  | 'mail-alert'
 
 export type JobStatus =
   | 'found'
