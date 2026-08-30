@@ -1,95 +1,117 @@
-# ARCHITECTURE.md — Studio Protocol Phase 3 (target architecture, frugal constraints)
+# ARCHITECTURE — SIFARISH re-brief (30-Aug-2026)
 
-> Input: AUDIT.md (6 live error classes, 5 fragilities, 4 obsolescence risks) + PRODUCT_BAR.md
-> (13 ranked product moves). Constraint set: ₹0 new spend, free tiers must last the month,
-> local-first, I1-I13 inviolable, keyless-degradable, human-confirmed mutation.
-> STATUS: AWAITING OWNER APPROVAL — no code until "approved".
+> Input: RESEARCH.md re-brief verdicts + DECISIONS.md RB-1 pillars. Supersedes the executed
+> S7.3 phase plan. Verdict up front: **the core survives review — no teardown.** The five
+> pillars land as extensions inside the existing system; the ruinous-to-change decisions are
+> locked below.
 
-## 0 · What the audit says we already have (don't rebuild what's past the bar)
+## System sketch
 
-One reasoning router (/api/dimaag: Gemini 3 Flash → Gemini Lite → Groq 120b, per-provider schema
-dialects, rateLimited backoff), content-hash response cache (re-calls=0 gate), daily budget
-rations (S7.2), deterministic keyless twin for every LLM feature (I4), per-model usage ledger,
-~670 invariant gates. The compiler core is FINISHED (PRODUCT_BAR verdict). This phase closes the
-6 error classes and builds the loops AROUND the compiler.
+```
+Browser (Vite+React+TS, Dexie local-first, owner/demo split vaults)
+ ├─ Discovery: ATS feeds + keyless lanes (direct) ─┐
+ │  keyed lanes → /api/khabri/{jobs,aggregators}    ├─→ normalize+dedupe+ELIGIBILITY → jobs table → score → Radar/Briefing
+ │  Dak (gmail.readonly): replies + NEW LinkedIn-alert parsing ┘
+ ├─ Darzi: ledger → decode(JD) → editor(cast) → COMPILER (I1/I5/one-page) → SEGMENT RENDERER (pdf-lib Times register) + docx
+ ├─ EK BAAT agent: deterministic router FIRST → LLM lane (/api/guru stream, /api/dimaag ops) → typed OP REGISTRY → validated apply
+ ├─ Apply Cockpit: packet → dossier field-map → bookmarklet prefill / mailto / copy panel → PRE-FLIGHT → human submits → Mark-as-Applied
+ └─ /api/darbaan (identity) · /api/vault (E2E sync) · /api/{polish,intel,pulse,gh,guru,dimaag,khabri×2} — 10 functions, cap 12
+```
 
-## 1 · Model routing layer — ONE orchestrator, rules as data
+## The state authorities (named — the second copy of a rule is a fork of its bugs)
 
-- **Gap (AUDIT #3):** /api/guru and /api/polish are Groq-only single points bypassing the router.
-- **Target:** both route through the same provider chain as /api/dimaag. Routing RULES move to
-  `data/config/routing.json` (versioned, shipped as a static asset): per task-type →
-  lane order, model ids, maxTokens, temperature. The three API functions read the same JSON at
-  build time (inlined by the bundler — D22's self-contained rule holds). Swapping a 2028 model =
-  edit routing.json, redeploy. No code change.
-- Classification/extraction stays on the cheap lane; reasoning-depth tasks (casting, angle,
-  Nazar, critique) on the strong lane — exactly the current split, now declared in data.
+1. **`opRegistry`** (new, `src/lib/agent/ops.ts`): THE typed vocabulary of every mutation the
+   agent surface can perform. Consumed by the deterministic parser, the LLM schema, and the
+   executor — three readers, ONE definition. Baithak's `EditOp` union migrates in; nothing else
+   may define an op.
+2. **`measureLine()`** (extended `compile/helvetica-metrics.ts` → `metrics.ts`): the ONE width
+   model, now segment-aware (font × weight per segment, Times + Helvetica AFM tables). Compiler
+   estimate and pdf renderer both call it; the D158 parity gate (never under drawn width, ≤2%
+   over) extends to segments and Times.
+3. **`eligibility()`** (new, `src/lib/khabri/eligibility.ts`): computed ONCE at the normalize
+   choke point, persisted on `Job.eligibility`, never re-derived downstream. Score/Radar/agent
+   all read the stored verdict.
+4. **`recompilePacket()`** stays the single recompile authority (S7.2 law) — cockpit dossier and
+   agent ops both route through it.
+5. **`pehchaan`/Darbaan** stay the identity authority — unchanged, re-verified not re-opened.
 
-## 2 · Token discipline — budgets measured, prompts versioned
+## Choke points & enforcers (money · identity · privacy)
 
-- Prompt SKELETONS today live in code (forge.ts, reframe.ts, smart.ts — AUDIT #14: every craft
-  fix was a code edit). **Target:** skeletons move to `data/prompts/*.json` with `version` +
-  `tokenBudget` fields; `PROMPT_VERSION` feeds cache keys and FORGE_VERSION (closing AUDIT #15's
-  procedural hole: a prompt edit that forgets the version bump is now a failing gate — the gate
-  hashes the prompt file and compares against the recorded version).
-- **Token-budget table** (measured, kept in the same config; gate asserts payloads stay inside):
-  classify ~1.2k in/150 out · decide ~4k/550 · forge ~1.5k/700 · Nazar ~2k/700 · critique
-  ~2.5k/400 · Guru turn ~12k/800 · polish ~2k/600.
-- Caching: exact-match content-hash exists; ADD prompt-version to every key (already partial).
-  No semantic cache — embedding calls would COST more than they save at one user's volume
-  (frugality is the design input; decision recorded).
+- Metered spend: 8 keyed functions require origin allowlist + x-sifarish-token (server env) —
+  UNCHANGED; new pillars add ZERO new metered surface (agent rides guru/dimaag; alert-lane is
+  client-side Gmail; bookmarklet is a generated client artifact).
+- Gmail: `gmail.readonly` remains the ONLY scope; token in memory; the I3 grep gate (send-scope
+  strings banned across src/+api/) now ALSO walks the bookmarklet source.
+- Bookmarklet: generated from packet data in-browser; may contain NO key material, NO fetch to
+  our API, and NO `submit()`/`.click()` on submit controls — enforced by a dedicated gate
+  (structural, not promised).
+- Vault: E2E encryption unchanged; every NEW/CHANGED Dexie table (job.eligibility rides `jobs`;
+  agent threads unify into `guruThreads`) must be added to the sync/backup table list in the
+  same commit that creates it (gate asserts table-list parity with the schema).
 
-## 3 · Degradation ladder — typed, central, visible
+## Data model deltas (≤10 lines)
 
-- **One boundary module `src/lib/boundary.ts`:** `parse<T>(raw, guard)` — hand-rolled runtime
-  guards (no zod; +0 deps, ~1.5KB) for every external shape: dimaag/guru/polish responses,
-  JSearch/Adzuna/ATS feeds, GitHub, Gmail, vault. Kills CLASS A (22 casts) at one door: internal
-  code NEVER receives unvalidated external data.
-- **Typed error categories** `AppError = 'auth' | 'ratelimit' | 'budget' | 'network' | 'shape' |
-  'provider'` — the 76 bare `catch {}` (CLASS B) collapse to `catchAs(category, context)` which
-  records to a bounded `errlog` ring (100 rows, prunable) — I4 keeps degrading silently for the
-  USER, but the app itself finally SEES its failures (the D73 blind spot, closed as data).
-  dimaagHealth reads errlog too.
-- **Ladder per feature (declared in routing.json):** down → next lane → deterministic twin;
-  rate-limited → backoff+retry (never silent downgrade, D140); slow >12s → fast-packet stays with
-  the S7.2 retry chip; garbage output → schema reject → next lane (already live in the router).
+```
+Job        += eligibility: { verdict: 'eligible'|'ambiguous'|'ineligible',
+                             reason: string, source: 'field'|'jd-text'|'none' }   // persisted at ingest
+Packet     += applyDossier: { fields: {label, value, ledgerIds?}[], atsKind?, mailto? } // derived, cached
+AgentThread = guruThreads (existing table): messages + proposed/applied ops (Baithak threads merge in)
+VisionProfile += workAuth: { homeCountry:'IN', authorizedIn:['IN'], remoteOk:true }     // seeded, editable
+```
+No new tables. No schema version bump beyond Dexie's additive field pattern.
 
-## 4 · Config over code — the anti-obsolescence rule
+## Failure modes & their visible notices (observable degradation)
 
-- `data/config/`: routing.json (models/lanes/thresholds) · prompts/*.json (skeletons+budgets) ·
-  hunts/watchlist seeds (already data) · Ustaad library (already data, I13).
-- CLASS E (guard copied into 10 functions, D22 forbids sharing): a **build-time diff gate** —
-  tests hash the guard block in every api/*.ts and fail on drift. The copies stay (Vercel
-  constraint), the DRIFT dies.
-- CLASS D (nabzCache junk drawer): typed accessors module `src/lib/kv.ts` (one place owns
-  key names + codecs); CLASS F: one `pruneAll()` in autopilot (signals/dak/pulse/usage/errlog
-  bounded; sync blob stops growing monotonically).
+- Eligibility classifier uncertain → verdict `ambiguous` + demote-with-reason; NEVER `ineligible`
+  without named evidence (source+phrase stored). Radar shows "hidden as ineligible: N →" opening
+  the hidden list. Two-sided honesty gates ship WITH the guard: a false-hide test (eligible role
+  with "visa sponsorship available") and a false-show test ("US citizens only" role).
+- LinkedIn-alert parse miss → card renders as "unparsed alert (open in Gmail)" — counted, never
+  silently dropped; Dak's expired-token notice pattern reused.
+- Bookmarklet on an unknown/changed ATS form → fills what it matched, reports "N of M fields —
+  finish by hand", dossier copy panel always present as the floor. An ATS DOM change is a rot
+  event: the cockpit shows per-ATS last-verified dates.
+- Segment metrics drift → the extended parity gate fails red at build, not on his PDF.
+- JSearch /search-v2 cursor failure → lane skip named in SweepYield (existing ration pattern).
+- LLM op emission invalid (bad ledgerId/unknown op) → op discarded + agent says which validation
+  failed; deterministic router remains the keyless full path (I4).
 
-## 5 · Self-evolving loop — measurement, not magic
+## Design laws (adapted set for this cycle)
 
-- **Outcome memory (PRODUCT_BAR #2):** every packet already carries casting/angle/quality; jobs
-  carry status transitions. A pure `outcomes.ts` aggregates: which angle/archetype/lineup got
-  replies/interviews FOR HIM (≥5 samples before any advisory line — poker hand-history, never a
-  guess). Renders in Retro + steers future casting as a PROPOSAL (Nabz pattern).
-- **Eval replay:** `scripts/eval-replay.mts` re-runs logged failed/abandoned interactions
-  against current prompts/routing (uses the cache-busting prompt version) and prints a
-  before/after table — the honest "improves from its own usage" loop.
+- The wire is the deliverable: every pillar lands on the DEFAULT path (agent replaces both chats;
+  eligibility runs in every lane's ingest; cockpit lives on the packet screen) — a capability
+  reachable only from Settings is NOT BUILT (the D69 disease, pre-outlawed).
+- Structural impossibility: submit-is-human is enforced by gates on the artifact, not by policy.
+- Two-sided honesty: eligibility, op validation, and drift guards each get accept-true AND
+  reject-false tests the day they ship.
+- Storage is not integration: a verdict/dossier/op not in the payload or on screen doesn't exist.
+- Observable degradation: every fallback names its mode (badge + errlog), per S7.3 law.
 
-## 6 · Product moves (PRODUCT_BAR top-5, in the same execution wave)
+## STACK LOCK (verified 30-Aug-2026 — RESEARCH.md verdicts 5-7)
 
-1. **Campaign pace line** in the Briefing (Aug-Dec clock vs applications/replies — trivial, #1).
-2. **Outcome memory** (§5).
-3. **Dak date-extraction** — interview emails yield date/time/interviewer into the dossier.
-4. **Gap Sprint** — Taleem gap → one-click in_forge entry → Nabz auto-promotes on ship.
-5. **Interview-prep sheet** — the packet's evidence recompiled as a prep dossier (same I1 lines).
+- KEEP (survives adversarial review): Vite+React+TS · Dexie · pdf-lib + docx + pdfjs parse-back ·
+  Vercel Hobby static + 10 self-contained functions (cap 12: **budget = spend NO new slot this
+  cycle**) · Groq gpt-oss-120b/20b + Gemini chain via routing.json · Tailwind tokens · Vitest.
+- ADD: **zero new runtime dependencies.** Times register = pdf-lib StandardFonts (no embedding);
+  bookmarklet = generated string; alert-lane = existing Gmail client; agent = existing endpoints.
+- DATA-level upgrades queued (not code): routing.json head → gemini-3.7-flash; qwen/qwen3.6-27b
+  as fourth free brain; JSEARCH_PATH → /search-v2 (+ cursor handling IS code, small); Jobicy
+  count 200.
+- Version pins: unchanged from package.json (all healthy per audit); Law-12 re-verify at each
+  arc open.
 
-## 7 · Execution law (Phase 4, on approval)
+## Contradictions found & resolutions (attack 1)
 
-Fix by CLASS with every sibling in the same commit · run+show output before "done" · boundary
-validation before internal consumption · every failure through catchAs → errlog · gate per fix ·
-Four Proofs before the final DONE · CLAUDE.md/DECISIONS updated (Phase 6).
-
-**Sequencing:** W1 boundary+errlog (Class A+B) → W2 routing/prompt config + guru/polish through
-the router (Class E-drift gate, prompt-version gate) → W3 kv.ts + pruneAll (Class C/D/F) →
-W4 product moves 1-5 → W5 proofs + docs.
-
-— STOP. Awaiting owner approval to execute. —
+1. Brief "auto-apply" × Charter "account loss is irreversible" → resolved by evidence: prefill
+   ceiling, human submit (DECISIONS RB-1 open call 1).
+2. Brief "never surface ineligible" × standing "demote never hide" → hide only on CONFIRMED
+   evidence + visible count; ambiguity demotes with reason (open call 2).
+3. "One Claude-like conversation" × "deterministic router owns honesty" → router runs FIRST on
+   every turn (refusals/I9 pre-LLM); LLM freedom lives in phrasing + op PROPOSAL; ops validate
+   against the registry + real ledger ids before apply. Freedom in words, determinism in writes.
+4. LaTeX register × D5 "deliberately plain because the parser reads first" → research shows the
+   parse-killers are columns/tables/graphics, not serif/bold; D5 narrows to "single column,
+   standard fonts, no graphics" — logged as RB-2 in DECISIONS.md.
+5. Bold-inline runs × I5 byte-parity parse-back → segments concatenate in draw order; parse-back
+   compares text content (unchanged); width model becomes per-segment (authority 2). No conflict
+   left standing.

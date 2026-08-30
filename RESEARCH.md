@@ -1,3 +1,90 @@
+# RESEARCH — SIFARISH RE-BRIEF RECON — 30-Aug-2026
+
+Re-brief pipeline run (VISION-BRIEF-sifarish.md). Five parallel lanes, all live-verified today.
+Later stages read the Verdicts; details follow. Prior evidence base (07-Jul-2026 →) preserved below §V.
+
+## Verdicts (the findings that change decisions)
+
+1. **"Auto-apply wherever possible" lawfully resolves to "autofill everywhere, submit nowhere unattended."**
+   LinkedIn: explicit ToS ban, first-offense suspensions through 2025-26, vendor HeyReach itself banned
+   Mar-2026, appeals <10%. Wellfound: same contract class, termination without notice. Direct ATS submit
+   APIs (Greenhouse/Lever/Ashby/SmartRecruiters) all exist but ALL require employer-issued credentials —
+   closed to applicant-side agents. The industry safe harbor is Simplify-class prefill + human click.
+   Email-apply is safe ONLY as drafted-then-user-approved-per-message (would widen the gmail.readonly
+   scope — a deliberate invariant change). [VOLATILE — verified 30-Aug-2026]
+2. **The one genuinely new lawful discovery lane is his own LinkedIn job-alert emails** via the existing
+   gmail.readonly Dak integration: zero credits, daily freshness, no platform ToS contact. Wellfound has
+   NO lawful direct lane (no API/RSS; GraphQL is ToS-barred) — its startups are reachable only via
+   aggregators + their own ATS boards (the D132 board-discovery loop is the lawful mechanism).
+3. **Work-authorization filtering is buildable and mostly absent today.** Structured eligibility fields
+   exist on Remotive (candidate_required_location), Jobicy (jobGeo), Ashby (workplaceType/address),
+   SimplifyJobs (sponsorship marks / "(No Sponsorship)" title suffix — verify field in live file);
+   everything else needs a sentence-scoped, negation-aware JD-text scan (no-sponsorship / citizens-only /
+   clearance-ITAR / W2-only / OPT-CPT-negated ⇒ demote; work-from-anywhere / India-eligible ⇒ boost).
+   Repo today: ONE regex feeding a soft 15/100 sub-score; no Job.eligibility field, no gate. Hook points:
+   khabri/normalize (ingest choke point), jd/decode (typed verdict), radar/score (visible deduction).
+4. **The resume ask is a typesetting upgrade, not a new content engine.** All 8 supplied samples share the
+   LaTeX register: serif, section rules, right-aligned dates, **bold inline keywords mid-bullet**, project
+   header `Name | Tech1, Tech2` + link, labeled skill categories, dense one page. The compiler already has
+   rules/right-aligned dates/categories (D141); the deltas are bold-inline text runs (segment-aware width
+   + parse-back), a serif face option (Times-Roman is a pdf-lib standard font — zero embedding risk), and
+   the project-header formula. Single column stays (columns are the parse-killer, not serifs/bold).
+   Full sample analysis: scratchpad resume-craft-lane.md → merged in §IV below.
+5. **Discovery sources: all 9 current lanes alive, nothing paywalled.** Changes: JSearch's documented
+   primary is now `/search-v2` with CURSOR pagination (path lever exists; page-2 logic doesn't speak
+   cursor); Jobicy count ceiling now 200 (we send 100); SimplifyJobs Summer2027 live (46.9k stars, new
+   `category:"AI/ML/Data"` field; 2026 repo 301s to it — lane self-healed as designed); The Muse is the
+   only clean new keyless candidate (fixed taxonomy — probe before adopting); India portals (Naukri/
+   Internshala/Cutshort) lawfully closed except via JSearch/Adzuna. [VOLATILE — verified 30-Aug-2026]
+6. **LLM stack: no forced migrations.** Groq gpt-oss-120b/20b live, NOT deprecated (30 RPM · 8K TPM ·
+   200K TPD free); NEW free brain `qwen/qwen3.6-27b` production on Groq (same key/limits) — best zero-cost
+   chain addition. Gemini: gemini-3.7-flash is current Flash flagship (ours pinned two behind; optional
+   data-level upgrade); structured output improved. Cerebras free tier DEAD; OpenRouter/GitHub Models
+   below reliability bar; Mistral Experiment tier exists but unpublished limits — probe before wiring.
+   [VOLATILE — verified 30-Aug-2026]
+7. **Vercel Hobby: 12-function cap still in effect — the app sits at 10-11, ≤2 slots left.** Any new
+   server surface must be consolidated into existing functions or spend the last slot deliberately.
+   Hobby cron now allows daily jobs (100/project, once/day ±59min) — a lawful "sweep even when he doesn't
+   open the app" lever that doesn't exist today. Blob free limits comfortable. [VOLATILE — 30-Aug-2026]
+8. **The existing codebase survives review.** ~19k LOC, zero TODOs, 707/709 gates green, tsc clean, no
+   dead modules, I3 triple-grep-enforced, I5 by construction, one-page is a solver with real font
+   metrics. The truth-compiler core, budget rations, identity/vault, and discovery plumbing are keepers.
+   Weaknesses found: work-auth gap (verdict 3); TWO separate chats (read-only regex-routed Guru + 10-op
+   Baithak) versus the brief's "one conversation like Claude" — no function-calling anywhere, context is
+   a flat 12k string; no template abstraction in the renderer (Jake's look = editing pdf.ts/LINE_METRICS);
+   CLAUDE.md is a 129KB changelog violating its own ≤60-line constitution law (highest-value cleanup);
+   §11 stack section materially stale ("one serverless function" vs 10); no DECISIONS.md as the Charter
+   requires; watchlist/API probes ~6 weeks stale.
+9. **Gmail readonly scope unchanged** (restricted scope; personal-use unverified-app path still
+   legitimate, 100-test-user cap irrelevant). Any send capability = OAuth send scope + I3 revision —
+   escalation-listed, not assumed. [VOLATILE — verified 30-Aug-2026]
+10. **The demo-mode, password-gated-URL, and cross-device-sync asks are already built and verified**
+    (Darbaan gate, server-verified owner, E2E-encrypted vault sync, demo spends ₹0) — re-brief keeps them.
+
+## Lane details
+
+- **§I Auto-apply & platform risk** — risk table + ATS API auth shapes: see agent report (30-Aug-2026),
+  key facts in verdicts 1-2. Sources: LinkedIn UA §8.2, Greenhouse/Lever/Ashby/SmartRecruiters developer
+  docs, Simplify Copilot listing, HeyReach ban coverage, Wellfound ToS.
+- **§II Discovery APIs** — per-source status: JSearch (/search-v2, 200/mo free, x-api-key), Adzuna (alive;
+  free quota + what_or unverifiable without login today — no change signal), Remotive (CORS *, 24h delay,
+  attribution), RemoteOK (attribution/dofollow required), Arbeitnow (alive; visa_sponsorship boolean NOT
+  present — historic claim, remove reliance), Jobicy (count≤200, ≤1 req/hr guidance, new MCP/RSS),
+  Working Nomads (no CORS, proxy stays), WWR RSS (alive, AI roles ride programming feeds), HN Algolia
+  (Aug-2026 thread objectID 49156683), 4 ATS feeds unchanged w/ CORS *, SimplifyJobs Summer2027 +
+  New-Grad alive (11-13MB listings.json), speedyapply 2027-AI-College-Jobs (markdown only), The Muse
+  (keyless, CORS *, fixed taxonomy), rejected/keyed: Workable/Recruitee/Teamtailor/Personio/BambooHR/
+  Jooble/Careerjet/Findwork/YC-WaaS/USAJobs.
+- **§III Work-auth signals** — structured fields (verdict 3) + curated phrase lists (negation-aware;
+  guard "sponsorship available" positives; OPT/CPT nuance; PST-overlap soft penalty for IST) + JobSpy has
+  no solution to borrow; SimplifyJobs sponsorship marks = cheapest structured win; USCIS H-1B hub =
+  US-only company proxy, marginal here.
+- **§IV Resume craft (owner's 8 samples)** — the LaTeX register extraction; see verdict 4. Anti-patterns
+  noted (prose paragraphs, two-column project blocks, "guaranteed" wording in the weak sample).
+- **§V Prior evidence base** — everything below this line predates the re-brief and remains cited.
+
+---
+
 # RESEARCH.md — SIFARISH · Evidence Base (compiled 07-Jul-2026)
 
 Every architectural decision below is cited. Claude Code: re-verify anything in §6 live before relying on it.
