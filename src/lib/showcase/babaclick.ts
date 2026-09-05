@@ -51,7 +51,11 @@ export function showcaseJob(): Job {
  * Seed the worked example into the DEMO vault: the job + a keyless-compiled packet (reading, plan,
  * page). Idempotent (flag in nabzCache). Never runs in owner mode — his vault is his.
  */
-export async function seedDemoShowcase(): Promise<boolean> {
+export async function seedDemoShowcase(opts: { force?: boolean } = {}): Promise<boolean> {
+  const { getMode } = await import('../pehchaan')
+  // His vault is his — never seeded with the demo's example. (`force` exists for the gate suite,
+  // whose mode is frozen to owner at module load; no app path passes it.)
+  if (!opts.force && getMode() === 'owner') return false
   const FLAG = 'demo:showcase-babaclick'
   if (await db.nabzCache.get(FLAG)) return false
   const identity = await db.identity.get('me')

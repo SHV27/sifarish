@@ -42,6 +42,25 @@ in your browser and structurally cannot submit), and the **job-alert email lane*
 alert emails become Radar candidates via `gmail.readonly` — zero credits, no platform contact).
 **768 gates (incl. the generated-input matrix).**
 
+> **v5 · The Strategist (05-Sep-2026) — the re-brief that started from zero.** The founder's own worked
+> example: a posting that says *"we do not care about your university's brand, LeetCode, certificates"*
+> and *"we care enormously about logical reasoning, intellectual honesty, personal agency"* got a keyword
+> résumé and a rejection. v5 rebuilds the thinking layer as typed artifacts. **The Reading** understands
+> the whole posting (cares / does-not-care, each with the posting's own words, who reads, what the role
+> is). **The Game Plan** decides the three lines a reader hits first, the section order, and — for EVERY
+> true fact in the dossier — *played* or *benched*, with a reason in the company's words; skills rows are
+> assembled from what the posting asks ∩ what the evidence proves, every item carrying its proof.
+> **The Critic** (a hostile recruiter with its own rubric) reads the executed page and the plan is revised
+> once. **The Page** runs at the campus canon's full size — 36pt margins, embedded serif, clickable links
+> with visible handles, every achievement, page 2 only before any true fact would be dropped.
+> **The Dossier** takes facts of any kind out loud ("add fact: district-level badminton player") and
+> creates the section on demand; READMEs are re-absorbed monthly. **The Hunt** puts two ceilings above
+> the rubric (a senior role can no longer score 100 for an intern; stale roles rank below fresh ones) with
+> a one-sentence why on every card. **The Desk** shows where every application stands with the last
+> signal Gmail saw, and Ek Baat listens from every screen. Brains: Gemini 3.8 Flash deep pass → Groq →
+> a deterministic floor that always runs; the packet prints which one built it. **830 gates**, the page
+> read by eye (`resume-eye`), proven live on the owner's own vault.
+
 SIFARISH is a personal hiring agent for one candidate — a 4th-year CSE student hunting a
 compulsory AI-engineering internship in a market where **91% of recruiters now actively hunt
 fabricated resumes** and **pretty resumes die in ATS parsers**. It collapses hours of per-company
@@ -52,6 +71,23 @@ It is fully functional **with zero API keys.**
 ---
 
 ## What it actually looks like
+
+### v5 — the desk, and the worked example (demo mode, read cold)
+The demo opens on the desk: what this is, one button into the worked example, the next move, where
+each application stands, and *Tell the team*. Nothing spends; nothing of the owner's is here.
+
+![The desk in demo mode](docs/screenshots/v2-demo-desk.png)
+
+### v5 — the game plan, executed
+The Babaclick posting read: *founder* reader, intern window; certificates **benched** with the posting's
+own words; NTSE and the board scores played as *proof of aptitude — they say they care about "logical
+reasoning"*; every skill in the rows carries its proving fact ids; the validator's notes are on the board.
+
+![The game plan board](docs/screenshots/v2-demo-plan.png)
+
+### v5 — the owner's page, Gemini deep pass, on the real vault
+![The owner's packet](docs/screenshots/v2-owner-packet.png)
+
 
 Captured live from **Owner Mode on the real deployment** (headless, zero console errors) — real data,
 real roles, no mockups. The public demo runs a fictional persona; every screen below is the owner's own.

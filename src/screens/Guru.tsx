@@ -90,8 +90,10 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
     try {
       const note = await executeGlobalOp(p.op, (s) => onNav?.(s as Screen))
       pushAssistant(note)
-    } catch {
-      pushAssistant('Demo mode is read-only — open Owner Mode to make real changes.')
+    } catch (e) {
+      // Hunter (05-Sep-2026): the blanket "demo is read-only" line hid real owner-mode failures.
+      const msg = e instanceof Error ? e.message : String(e)
+      pushAssistant(/darbaan|locked|read-only/i.test(msg) ? 'Demo mode is read-only — open Owner Mode to make real changes.' : `That did not apply: ${msg.slice(0, 160)}`)
     }
   }
 

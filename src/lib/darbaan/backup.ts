@@ -10,7 +10,7 @@ import { db } from '../../db/db'
 const MAGIC = 'SIFARISH-BACKUP-v1'
 const ITERATIONS = 210_000
 
-const USER_TABLES = ['ledger', 'identity', 'voicebank', 'settings', 'jobs', 'packets', 'watchlist', 'savedHunts', 'suggestions', 'guruThreads'] as const
+const USER_TABLES = ['ledger', 'identity', 'voicebank', 'settings', 'jobs', 'packets', 'watchlist', 'savedHunts', 'suggestions', 'guruThreads', 'dak'] as const // v2: dak rides along (hunter finding)
 type UserTable = (typeof USER_TABLES)[number]
 
 interface TableLike {

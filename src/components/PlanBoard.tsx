@@ -17,6 +17,7 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
   const reading = packet.reading as Reading
   const ledger = useLiveQuery(() => db.ledger.toArray(), []) ?? []
   const [busy, setBusy] = useState(false)
+  const [wall, setWall] = useState<string | null>(null)
   const [open, setOpen] = useState<'reading' | 'board' | 'skills' | null>('board')
   const title = (id: string) => ledger.find((e) => e.id === id)?.title.split('—')[0].trim() ?? id
   const evidence = (id: string) => {
@@ -30,8 +31,13 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
 
   const overrule = async (opts: { playId?: string; benchId?: string }) => {
     setBusy(true)
+    setWall(null)
     try {
       await overrulePlan(packet, opts)
+    } catch (e) {
+      // Hunter (05-Sep-2026): in demo mode the vault is read-only at the database — say so (I4/I12).
+      const msg = e instanceof Error ? e.message : String(e)
+      setWall(/darbaan|locked|read-only/i.test(msg) ? 'Demo mode is read-only — this board is yours to edit in Owner Mode.' : `Could not apply: ${msg.slice(0, 140)}`)
     } finally {
       setBusy(false)
     }
@@ -217,6 +223,11 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
         </div>
       )}
       {busy && <p className="mt-2 text-[11px] text-ink-soft font-mono">Re-executing the plan…</p>}
+      {wall && (
+        <p className="mt-2 text-[11px] text-stamp" role="status">
+          {wall}
+        </p>
+      )}
     </section>
   )
 }

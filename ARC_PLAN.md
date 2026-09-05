@@ -82,3 +82,5 @@ Acceptance (frozen):
 
 Parked (NOTES.md): outcome-learning loop (starts empty by design) · The Muse lane · Vercel cron sweep ·
 letter voice pass · interview-prep sheet.
+
+> STATUS 05-Sep-2026: Arcs 1–4 built, deployed and proven live (see PROGRESS.md); Arc 5 in progress.

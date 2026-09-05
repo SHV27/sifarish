@@ -1,52 +1,58 @@
-# CLAUDE.md — SIFARISH (सिफ़ारिश)
+# CLAUDE.md — SIFARISH (सिफ़ारिश) · v2
 
 ## Commands
-- Gates: `npx vitest run` (709; `SIFARISH_MATRIX=1` deep) · Types: `npx tsc -b` · Build: `npm run build`
-- Deploy + verify served hash: load project skill `ship-verify` (never trust a green build — D76/D83).
-- Live proofs: `scripts/owner-smoke.mjs` · `scripts/demo-smoke.mjs` · `scripts/live-brain-probe.mts` (spaced calls; a 429 is not a dead brain).
+- Gates: `npx vitest run` (830; `SIFARISH_MATRIX=1` deep) · Types: `npx tsc -b` · Build: `npm run build`
+- Eyes (mandatory at arc close): project skill `resume-eye` — render a packet to PNG and READ it; `--live` for the Gemini pass.
+- Deploy + served-hash proof: project skill `ship-verify`; deploy = `VERCEL_TOKEN=… node scripts/rest-deploy.mjs` (token from the shell, never a file).
+- Live proofs on HIS data: `scripts/owner-packet-proof.mjs` (SIFARISH_PASS from env) · `scripts/owner-smoke.mjs` · `scripts/demo-smoke.mjs`.
 
 ## What this is
-Shaurya's personal job-hunt chief of staff: evidence-ledger → truth-compiled resume/letter per JD →
-lawful worldwide discovery → apply cockpit → pipeline board. Design law: **"Compile truth. Draft
-everything. Send nothing unattended."** Taste bar: a hostile recruiter respects the output.
-Non-negotiables: (1) no orphan claims — every bullet carries ledgerIds, LLM may rephrase never mint
-(I1); (2) no unattended submit anywhere, gmail stays readonly, grep-gated (I3); (3) keyless core —
-every feature works with zero API keys, fallbacks declare their mode visibly (I4).
+A studio of personal agents for one student: the whole posting is READ (what the company says it
+cares about / does not), a typed GAME PLAN plays or benches every true fact with a reason in the
+company's words, the PAGE executes the plan at full size, the HUNT ranks fresh roles he can actually
+take, and the DESK shows where every application stands. Law: **invent nothing, suppress nothing;
+the plan is the interface.** Taste bar: a founder who reads 100 résumés picks up the phone.
+Non-negotiables: (1) I1 — every line carries fact ids; a true relevant fact benched without a reason is
+a defect of the same class as a lie; (2) no unattended submit anywhere, Gmail readonly (I3);
+(3) keyless core — every feature runs with zero keys; the packet prints which brain built it (I4).
 
 ## Architecture (authorities & choke points)
-- Local-first Dexie (owner/demo split vaults) + Vercel static + 10 self-contained edge functions
-  (Hobby cap 12 — spend no slot without an ARCHITECTURE.md revision).
-- State authorities: `opRegistry` (every agent mutation) · `measureLine()` (one width model,
-  compiler + renderer) · `eligibility()` at ingest (persisted on Job, never re-derived) ·
-  `recompilePacket()` (only recompile door) · `pehchaan`/Darbaan (identity, server-verified).
-- Money/identity/privacy: 8 keyed functions require origin allowlist + x-sifarish-token; demo mode
-  can never spend; vault syncs ciphertext only (server never sees the key). New Dexie tables/fields
-  join the sync table-list in the same commit.
+- Brief: VISION-BRIEF-sifarish-v2.md (Appendix A = the acceptance scene). Plumbing kept from v1.
+- Authorities: `GamePlan` (strategist/plan.ts — the compiler executes it, never re-decides) ·
+  `Reading` (strategist/reading.ts — one decoder, lexicon floor inside) · `buildDigest()` (the only
+  ledger→brain serialisation) · `derivedSkills()` (dossier/skills.ts — skills are evidence, never a
+  list) · `recompilePacket()` (the only recompile door) · `scoreJob()` ceilings (radar/score.ts) ·
+  `syncPayload()` (the cloud carries his story; local stays complete) · `pehchaan`/Darbaan.
+- Brains: `/api/dimaag` (Node runtime, maxDuration 90) → gemini-3.8-flash → 3.7 → Groq (skipped
+  above 24k chars: 8K TPM) → deterministic floor. routing.json + prompts/registry.json are the truth.
+- The page: 36pt margins, embedded Tinos (public/fonts, pre-subsetted; width tables generated from
+  them), link annotations with visible text, tighten ladder + 6 fact-neutral steps before page 2.
+- 10 Vercel functions; 8 keyed ones share byte-identical guards (drift gate). New Dexie fields ride
+  existing tables; USER_TABLES is the sync/backup list.
 
 ## The Verifier (definition of done — every arc close)
-1. Machine: `npx vitest run` all green + `tsc -b` clean + warning-free build; new guards ship with
-   accept-true AND reject-false tests; every bug fix ships its regression test.
-2. Wire: the feature is reachable on the DEFAULT path (not a buried button) — else it is NOT built.
-3. Eyes: rendered PDF read, screenshots at 3 breakpoints, zero console errors.
-4. Live: deploy → served-hash verified → adversary curls (no-Origin 403, fake token → keyless) →
-   demo smoke ₹0 spend. "Done" for vault-affecting changes = proven on HIS DATA, not the seed.
+1. Machine: gates green + tsc clean + warning-free build; every guard ships accept-true AND reject-false tests.
+2. Wire: reachable on the DEFAULT path — else NOT built.
+3. Eyes: `resume-eye` PNGs read (Babaclick + an ordinary posting); 3 breakpoints; zero console errors.
+4. Live: deploy → served hash → owner proof on HIS vault (no 4xx/5xx in the console) → demo ₹0.
 
 ## Iron rules
-- Plan before multi-file changes; one item at a time; PROGRESS.md updated at every boundary.
-- 2 failed attempts on one path → stop, restate the bug's CLASS, fix at the choke point.
-- Verify volatile facts live (models, quotas, API shapes) at each arc open; log in RESEARCH.md.
-- Secrets: pulled via `vercel env pull`, never pasted; a decision log records THAT a secret rotates,
-  never its value (D108). Any key touching plaintext chat → owner rotates it.
-- The second copy of a rule is a fork of its future bugs — extend the authority, don't copy.
-- Demote, never hide (ranking); hide only on CONFIRMED ineligibility evidence, with a visible count.
+- Plan before multi-file changes; one item at a time; PROGRESS.md at every boundary.
+- Code patches go through files (Write tool → run), never shell heredocs: this shell mangles
+  backslashes (a `\b` became a backspace byte and a ceiling silently never fired). Byte-scan for
+  U+0008 before committing.
+- 2 failed attempts on one path → stop, name the bug's CLASS, fix at the choke point.
+- Verify volatile facts live at each arc open; log in RESEARCH.md. Secrets: env only (D108).
+- The second copy of a rule is a fork of its bugs — extend the authority.
+- Demote, never hide; hide only on CONFIRMED ineligibility, with a visible count.
+- Never commit shots-eye/, shots-eye-live/, shots-owner/ — they carry his data.
 
-## Stack (verified 30-Aug-2026 — full lock in ARCHITECTURE.md)
-Vite + React + TS · Dexie · Tailwind tokens · pdf-lib (Times/Helvetica standard fonts) + docx +
-pdfjs parse-back · Vitest (pool: forks) · Vercel Hobby · LLM: routing.json chain — Gemini Flash ↔
-Groq gpt-oss-120b/20b (json_schema always; json_object is a dead lane, D73/D74) · Discovery:
-4 ATS feeds + JSearch/Adzuna (keyed, rationed) + 8 keyless lanes + Gmail readonly (Dak).
+## Stack (verified 05-Sep-2026 — RESEARCH.md v2 verdicts)
+Vite 8 · React 19 · TS 5.9 · Dexie 4 · pdf-lib 1.17 + @pdf-lib/fontkit (Tinos embed) · docx 9 ·
+pdfjs 6 parse-back · Vitest 4 · Playwright · Vercel Hobby (REST deploy) · Gemini 3.8/3.7 Flash ↔ Groq
+gpt-oss-120b/20b (json_schema always) · discovery: ATS feeds + JSearch/Adzuna + keyless lanes + Gmail readonly.
 
 ## Files
-PROGRESS.md (state + ONE next action) · DECISIONS.md (append-only, RB-era) · HISTORY.md (D1–D168
-archive, verbatim) · RESEARCH.md (verdicts first) · ARC_PLAN.md · NOTES.md (parked, never silently
-built). If a rule in this file keeps being violated, the file is too long — flag it for pruning.
+PROGRESS.md (state + ONE next action) · DECISIONS.md (append-only; V2-1… this cycle) · HISTORY.md ·
+RESEARCH.md (verdicts first) · ARCHITECTURE.md · ARC_PLAN.md · NOTES.md (parked, never silently built).
+If a rule here keeps being violated, this file is too long — flag it for pruning.

@@ -45,7 +45,7 @@
     {
       "file": "src/lib/strategist/plan.ts",
       "versionedBy": "PROMPT_VERSION via registry bump (v2 strategist)",
-      "sha256": "a31987c8f82040bea085109c407a6c2803cca609b7c20ce56259f34d623c49ab"
+      "sha256": "76eab90b8311440d456331437e44e3dddef2c55a314d5904dd5cb76455b605fa"
     },
     {
       "file": "src/lib/strategist/critic.ts",

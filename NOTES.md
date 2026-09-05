@@ -18,3 +18,9 @@
   pass remains an idea, not a promise.
 - Demo-mode paste-tailor is read-only by design; it now SAYS so (I6) — a sandboxed demo-tailor
   (compile against demo vault in memory) would be a nice showcase upgrade.
+--- v2 cycle (05-Sep-2026), parked deliberately ---
+- Outcome-learning loop (which angle got replies) — starts empty by design; needs ≥5 recorded outcomes (V2-2 §3).
+- Baithak chat intents for play/bench of non-project facts (the board buttons cover it today).
+- Settings UI for pagePolicy / freshDays (chat + defaults cover it; a toggle is a nicety).
+- A demo NEXT line that points at the worked example instead of "apply now" (cosmetic).
+- The Muse keyless lane; Vercel cron sweep; SerpAPI top-up (250/mo) — only if a soak shows a gap.

@@ -2,7 +2,7 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: V2 CYCLE (05-Sep-2026) — Arc 1 THE RÉSUMÉ PATH built, gates green, deploying
+## Status: V2 CYCLE (05-Sep-2026) — ✅ DONE. Arcs 1–5 built, deployed, proven live on HIS vault
 
 Brief: VISION-BRIEF-sifarish-v2.md (voids the 30-Aug brief). Pipeline ran whole: recon (7 lanes,
 RESEARCH.md v2 verdicts) → boardroom (DECISIONS V2-1: 5 pillars, cut list, the Played/Benched board
@@ -41,18 +41,56 @@ as the innovation, 8 places the standard cannot be physically met logged in V2-2
   skills, a stale "July 2026" building line, a half-empty page 2, "React" leaking past his exclusion.
 - Gates: 808 (incl. tests/strategist.test.ts, 32 new) · tsc clean · warning-free build.
 
-### ONE next action
-→ Deploy via `VERCEL_TOKEN=… node scripts/rest-deploy.mjs`, prove the served hash, run
-  `scripts/resume-eye.mts … --live` for the Gemini proof, walk the live app in the browser, then open
-  Arc 2 (THE DOSSIER: open kinds via chat, README absorb refresh, derived skills as the only authority).
+### Arcs 2–4 — BUILT, DEPLOYED (05-Sep-2026, same session)
+- **Arc 2 · THE DOSSIER** — `add-fact` (kind inferred from his words; section created on demand;
+  sworn by owner), `create-section`, `promote-entry` ("I know LoRA now"), `set-skill-eligible`
+  ("allow React on my résumé"), `refresh-readmes`; deterministic parser + LLM lane + registry
+  validation; résumé-claim refusal untouched. README re-absorb monthly + on demand (context only).
+  Shelf renders custom kinds. Play/bench ANY fact on a packet's plan from the board. tests/dossier.
+- **Arc 3 · THE HUNT** — multiplicative ceilings above the rubric (senior/leadership 40%, regular
+  engineer 72%, >14d unverified 62%, >45d 40%), rendered as a part; one-sentence why on every card;
+  Adzuna 30 days. tests/hunt (two-sided). LIVE-CAUGHT + FIXED: cross-device vault sync was failing
+  with 413 (snapshot outgrew Vercel's 4.5 MB limit) — the cloud snapshot now carries his story
+  (moved jobs + packets + 45-day discoveries), local stays complete, size checked before upload.
+- **Arc 4 · THE DESK** — landing = one next move · every moved application with status, applied
+  date and the last Gmail signal (received / under review / interview / rejected; a signal, never a
+  stage) · fresh ranked roles with the why · Ek Baat input on the desk and in every screen's header.
+  Demo = what-this-is + the Babaclick worked example (keyless packet seeded into the demo vault).
+- LIVE-CAUGHT + FIXED: the Gemini deep pass hit the Edge 25 s limit (504) → `/api/dimaag` on the
+  Node runtime (maxDuration 90), thinking 'low' for reading/critic.
+- Gates: 830 · tsc clean · warning-free build · deployed via REST, served hash verified each arc.
+
+### Arc 5 — CERTIFY + SHIP — DONE
+- Hostile QA hunter (fresh context) on the v2 code: 6 findings, all fixed same day — demo-mode
+  play/bench now says why it cannot write; the Guru's catch names the real error instead of a
+  blanket "demo is read-only"; `dak` joined the sync/backup table lists; `findEntry` prefers exact
+  and whole-word matches (no more "react" → "React Native"); the demo seeder refuses owner mode by
+  itself; `sectionKeyFor('skill')` → 'skills' (one vocabulary).
+- Live proofs on the final deploy: served hash verified; no-Origin → 403, fake token → keyless;
+  owner packet proof on HIS vault → GEMINI DEEP PASS, 0 console errors (no 413, no 504); demo
+  smoke → 0 metered POSTs, 0 errors, persona intact, no owner leak; Lighthouse (demo landing):
+  accessibility 96, best practices 100; console clean; desk read at 390px.
+- README v5 section + 4 fresh screenshots (docs/screenshots/v2-*.png) · CLAUDE.md refreshed (58
+  lines) · project skill `resume-eye` · NOTES.md parked list · DECISIONS V2-1…V2-7.
+- Gates: 830 · tsc clean · warning-free build.
+
+### ONE next action (the owner's, ~5 min, whenever he wakes)
+→ Open Owner Mode once and READ one packet: the board says played/benched and why. Then say, on the
+  desk, the things only he knows — e.g. "I know LoRA now" · "I know LangGraph / MCP now" · "add fact:
+  AI/ML intern at <company>, <months> 2026" · "allow React on my résumé" (if he wants it back) —
+  each lands after his confirm. Then apply: the clock is October–November.
 
 ### Owner notes (for when he wakes)
-- His vault will re-tailor every stored packet on open (typeset v3) and union-add the five README
-  projects + the PRANA paper + the named Techgyan win. Nothing he wrote is overwritten.
-- "React" stays off the page because HE marked it not-interview-safe long ago (DECISIONS V2-3). One
-  chat line flips it once Arc 2's chat ops land.
+- His vault already held Sifarish/Braillix entries from Nabz that PREDATE this cycle's seed, so the
+  seed's richer bullets did not overwrite them (nothing of his is ever overwritten). The Shelf's
+  repair banner "re-forge" or "re-read my readmes" on the desk refreshes their context; the seed's
+  wording is the reference if he wants it (seed/ledger.seed.json).
+- "React" stays off the page because HE marked it not-interview-safe long ago; "allow React on my
+  résumé" flips it in one line.
 - The in_forge skills (LoRA, LangGraph/MCP, RAG+Guardrails+Evals, Transformers) still render as
-  "Currently Building" — he said he has almost all of these now; promoting them is one chat line in Arc 2.
+  "Currently Building" until he promotes them ("I know X now").
+- No new API key was needed; the pasted Vercel token expires in 7 days by his setting. The Gmail
+  connection (readonly) is still his to click once on the Morcha so the desk's signals start.
 
 ---
 

@@ -53,7 +53,8 @@ describe('the demo worked example', () => {
   })
   it('seeds a Babaclick job + a keyless packet with a reading and a plan; idempotent', async () => {
     expect(showcaseJob().jd).toMatch(/We do not care about/)
-    expect(await seedDemoShowcase()).toBe(true)
+    expect(await seedDemoShowcase()).toBe(false) // owner mode (the suite's frozen mode): never seeded
+    expect(await seedDemoShowcase({ force: true })).toBe(true)
     const j = await db.jobs.get(SHOWCASE_JOB_ID)
     expect(j?.status).toBe('tailored')
     const p = (await db.packets.where('jobId').equals(SHOWCASE_JOB_ID).toArray())[0]
@@ -62,6 +63,6 @@ describe('the demo worked example', () => {
     expect(p!.plan!.benched.some((b) => /certificates/i.test(b.reason))).toBe(true)
     expect(p!.strategistMode).toBe('heuristic')
     expect(p!.resume.lines.some((l) => l.kind === 'headline')).toBe(true)
-    expect(await seedDemoShowcase()).toBe(false)
+    expect(await seedDemoShowcase({ force: true })).toBe(false) // idempotent
   })
 })

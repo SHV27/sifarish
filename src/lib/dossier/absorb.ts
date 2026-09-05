@@ -104,10 +104,15 @@ export async function absorbFact(input: AbsorbInput): Promise<LedgerEntry> {
 export function findEntry(ledger: LedgerEntry[], needle: string): LedgerEntry | undefined {
   const n = needle.trim().toLowerCase()
   if (n.length < 2) return undefined
-  return (
-    ledger.find((e) => e.title.toLowerCase() === n) ??
-    ledger.find((e) => e.title.toLowerCase().split(/ — | – | \| /)[0].trim() === n) ??
-    ledger.find((e) => e.title.toLowerCase().includes(n)) ??
-    ledger.find((e) => n.includes(e.title.toLowerCase().split(/ — | – | \| /)[0].trim()) && e.title.length >= 3)
-  )
+  const short = (e: LedgerEntry) => e.title.toLowerCase().split(/ — | – | \| /)[0].trim()
+  const exact = ledger.find((e) => e.title.toLowerCase() === n) ?? ledger.find((e) => short(e) === n)
+  if (exact) return exact
+  // Word-boundary match ("react" must not resolve to "React Native" when a bare "React" exists —
+  // hunter finding, 05-Sep-2026): prefer a whole-word hit, then a UNIQUE substring hit, else nothing.
+  const wordRe = new RegExp(`(^|[^a-z0-9])${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`)
+  const words = ledger.filter((e) => wordRe.test(e.title.toLowerCase()))
+  if (words.length === 1) return words[0]
+  if (words.length > 1) return words.find((e) => short(e) === n) ?? words.sort((a, b) => a.title.length - b.title.length)[0]
+  const subs = ledger.filter((e) => e.title.toLowerCase().includes(n))
+  return subs.length === 1 ? subs[0] : undefined
 }

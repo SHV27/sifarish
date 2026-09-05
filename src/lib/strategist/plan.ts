@@ -1,6 +1,6 @@
 import type { GamePlan, Identity, JDDecode, LedgerEntry, PlanFact, Reading, SectionDef, SkillRow, StrategistMode, VisionProfile } from '../../types'
 import { displayTitle } from '../compile/compiler'
-import { derivedSkills, findSkill, type DerivedSkill } from '../dossier/skills'
+import { bannedSkillKeys, derivedSkills, findSkill, isBannedSkill, type DerivedSkill } from '../dossier/skills'
 import { generateWithMeta } from '../dimaag/core'
 import { entryRelevance } from '../match/evidence'
 import { detectDrift } from '../polish/factGuard'
@@ -40,6 +40,8 @@ export function sectionKeyFor(kind: string): string {
       return 'positions'
     case 'certification':
       return 'certs'
+    case 'skill':
+      return 'skills' // skill entries are evidence for the rows, never played facts — one key, plural
     case 'education':
     case 'experience':
       return kind
@@ -209,7 +211,14 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
 
   // Skills rows: JD ∩ evidence, the market's vocabulary first; shorter when they say syntax does not matter.
   const skills = buildSkillRows(reading, skillsAll, /syntax|code without|coding experience|leetcode/i.test(nocare) ? 6 : 10)
-  for (const k of reading.skills.must) if (!findSkill(skillsAll, k)) notes.push(`no evidence for "${k}" — kept off the page (I1); it goes to the gap note`)
+  // READ on the demo board: "no evidence for react" while the alignment map proved React via a project —
+  // the skill was OFF by HIS call (resumeEligible:false), not unproven. Say which.
+  const banned = bannedSkillKeys(ledger)
+  for (const k of reading.skills.must) {
+    if (findSkill(skillsAll, k)) continue
+    if (isBannedSkill(k, banned)) notes.push(`"${k}" is asked for and you hold it, but you marked it not-interview-safe — kept off the page by your call (say "allow ${k} on my résumé" to change that)`)
+    else notes.push(`no evidence for "${k}" — kept off the page (I1); it goes to the gap note`)
+  }
 
   // The three lines.
   const ntse = by('achievement').find((a) => NTSE_RE.test(a.title))

@@ -18,7 +18,7 @@ import type { BackupSnapshot } from '../types'
  */
 
 const KEEP = 5
-const USER_TABLES = ['ledger', 'identity', 'voicebank', 'settings', 'jobs', 'packets', 'watchlist', 'savedHunts', 'suggestions', 'guruThreads'] as const
+const USER_TABLES = ['ledger', 'identity', 'voicebank', 'settings', 'jobs', 'packets', 'watchlist', 'savedHunts', 'suggestions', 'guruThreads', 'dak'] as const // v2: dak (his handled Gmail cards) rides along
 type UserTable = (typeof USER_TABLES)[number]
 interface TableLike {
   toArray(): Promise<unknown[]>

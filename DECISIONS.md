@@ -284,3 +284,28 @@ sheet (who plays what, and who waits), and a poker read (a company's "we don't c
   vault with a keyless-compiled packet: reading (with "we do not care about LeetCode / certificates"),
   plan (certificates benched with those words), page. The demo desk opens with one paragraph on what
   the product does and one button into that packet. No owner data, ₹0.
+
+## V2-6 · The deep pass moves to the Node runtime (05-Sep-2026, live-caught)
+- On his real vault a Gemini plan pass crossed the Edge runtime's 25-second first-byte limit → HTTP
+  504 → the packet fell to the keyless floor (declared, but a worse page than the brain would have
+  made). `/api/dimaag` now runs on the Node runtime (Fluid compute; Hobby allows 300 s; we cap at
+  90) with the same Web-standard handler. The reading and the critic ask Gemini 3.x for `low`
+  thinking (seconds); the plan keeps the model default. A model that rejects the field is retried
+  once without it. Verified live after deploy: owner packet proof shows the Gemini deep pass again.
+- Function count unchanged (10). The 8-copy guard bytes are untouched (drift gate green).
+
+## V2-7 · Arc 5 — certification record (05-Sep-2026)
+- Hunter (fresh context) findings, all fixed same day: PlanBoard play/bench had no catch (a demo click
+  was a silent no-op) → the wall is named; Guru's catch called every failure "demo is read-only" →
+  names the real error; `dak` was missing from both USER_TABLES lists (sync + backup) → added (and
+  the two lists remain a sibling pair — a parity gate is the next hardening, parked in NOTES);
+  `findEntry` substring fallback could flip the wrong skill → exact / whole-word / unique-substring;
+  `seedDemoShowcase` relied on its caller for the owner guard → guards itself; `sectionKeyFor('skill')`
+  now returns 'skills' (one vocabulary; skill entries are evidence, never played facts).
+- Live proofs on the final deploy: served hash · no-Origin 403 · fake token → keyless · owner packet
+  proof on his vault (GEMINI DEEP PASS, 0 errors) · demo smoke (0 metered POSTs, 0 errors) ·
+  Lighthouse a11y 96 / best practices 100 (SEO 54 is the gated SPA — not a goal) · console clean ·
+  desk at 390px.
+- What the standard could not physically meet is logged in V2-2 and lived up to: the packet prints
+  its brain; the desk says when a LinkedIn-inbox status is his to mark; no guarantee language exists.
+- Credentials: none needed beyond the keys already on Vercel (told to the owner at the start).
