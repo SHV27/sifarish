@@ -1,7 +1,7 @@
 import { db } from '../db/db'
 import { getMode } from './pehchaan'
 import { meteredHeaders } from './apiGuard'
-import { snapshotPayload, writePayload } from '../db/tijori'
+import { syncPayload, SYNC_MAX_BYTES, writePayload } from '../db/tijori'
 
 /**
  * CROSS-DEVICE SYNC (Session 5.3) — open Owner Mode from any device, anywhere, and your ledger is
@@ -98,12 +98,24 @@ export async function pushVault(): Promise<boolean> {
   const key = await loadKey()
   if (!key) return false
   try {
-    const payload = await snapshotPayload()
+    // v2: the cloud carries his STORY (see tijori.syncPayload) — the full catch stays local.
+    const payload = await syncPayload()
     if (!Array.isArray(payload.ledger)) return false
-    const cipher = await encrypt(key, JSON.stringify(payload))
+    const plain = JSON.stringify(payload)
+    const cipher = await encrypt(key, plain)
+    if (cipher.length > SYNC_MAX_BYTES) {
+      // Observable degradation (I4): never a silent 413 again — the app SEES it.
+      const { catchAs } = await import('./boundary')
+      catchAs('shape', 'sync.push', `vault snapshot ${Math.round(cipher.length / 1024)} KB exceeds the ${Math.round(SYNC_MAX_BYTES / 1024)} KB upload limit`)
+      return false
+    }
     const updatedAt = localUpdatedAt() || Date.now()
     const res = await fetch('/api/vault', { method: 'POST', headers: meteredHeaders(), body: JSON.stringify({ cipher, updatedAt }) })
-    if (!res.ok) return false
+    if (!res.ok) {
+      const { catchAs } = await import('./boundary')
+      catchAs('provider', 'sync.push', `HTTP ${res.status}`)
+      return false
+    }
     const data = (await res.json()) as { ok?: boolean; configured?: boolean }
     if (data.ok) {
       // Pin the local version to what we uploaded so boots don't needlessly re-restore identical data.

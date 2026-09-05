@@ -145,7 +145,7 @@ async function handleAdzuna(req: Request): Promise<Response> {
     // nothing older than 60 days — the staleness deduction (D65) would sink those anyway, so
     // requesting them wasted the per-country credit on postings the queue discards.
     sort_by: 'date',
-    max_days_old: '60',
+    max_days_old: '30', // v2 THE HUNT: a month, not two — the queue is capped on freshness anyway
     'content-type': 'application/json',
   })
   try {

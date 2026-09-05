@@ -19,6 +19,9 @@ const ctx = await browser.newContext({ viewport: { width: 1400, height: 1100 } }
 const page = await ctx.newPage()
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
 page.on('pageerror', (e) => errors.push('PAGEERROR ' + e))
+page.on('response', (r) => {
+  if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url().slice(0, 120)}`)
+})
 const log = (...a) => console.log(...a)
 const body = async () => (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ')
 
@@ -54,7 +57,7 @@ if (n === 0) {
   await sleep(1500)
   await page.screenshot({ path: `${OUT}/packet-reasoned.png`, fullPage: true })
   const t = await body()
-  const badge = /template strategist \(keyless floor\)|gemini deep pass|groq deep pass/.exec(t)?.[0]
+  const badge = /template strategist \(keyless floor\)|gemini deep pass|groq deep pass/i.exec(t)?.[0]
   const counts = /Played (\d+) · benched (\d+)/.exec(t)
   const critic = /critic: (PASS|REVISE|SKIPPED)/.exec(t)?.[1]
   const pages = /(one page|\d pages)/.exec(t)?.[1]

@@ -79,6 +79,33 @@ export async function snapshotPayload(): Promise<Record<string, unknown[]>> {
   return payload
 }
 
+/**
+ * v2 (05-Sep-2026, LIVE-CAUGHT on his vault): the cloud sync POST was answered 413 — the full
+ * snapshot (≈800 discovered jobs, each carrying its whole description) had outgrown Vercel's
+ * request-body limit, so cross-device sync was failing silently. The CLOUD snapshot now carries
+ * his STORY, not the whole catch: every table whole, except `jobs`, which keeps (a) every job he
+ * moved (status ≠ found), (b) every job with a packet, and (c) discoveries fetched in the last
+ * SYNC_JOB_DAYS — with descriptions capped at SYNC_JD_CHARS. Local Dexie and the Tijori backups
+ * stay complete; a re-sweep re-discovers anything older. The size is checked BEFORE the upload
+ * and a named notice fires when even the trimmed snapshot would be refused.
+ */
+export const SYNC_JOB_DAYS = 45
+export const SYNC_JD_CHARS = 6000
+export const SYNC_MAX_BYTES = 4_200_000 // Vercel serverless body limit is 4.5 MB; base64 ciphertext grows ~33%
+export async function syncPayload(): Promise<Record<string, unknown[]>> {
+  const payload = await snapshotPayload()
+  const cutoff = Date.now() - SYNC_JOB_DAYS * 86400000
+  const jobs = (payload.jobs as { status?: string; packetId?: string; fetchedAt?: string; jd?: string; dismissed?: boolean; closed?: boolean }[]).filter((j) => {
+    if (j.status && j.status !== 'found') return true
+    if (j.packetId) return true
+    if (j.dismissed || j.closed) return false
+    const t = j.fetchedAt ? new Date(j.fetchedAt).getTime() : 0
+    return Number.isFinite(t) && t >= cutoff
+  })
+  payload.jobs = jobs.map((j) => (typeof j.jd === 'string' && j.jd.length > SYNC_JD_CHARS ? { ...j, jd: j.jd.slice(0, SYNC_JD_CHARS) } : j))
+  return payload
+}
+
 /** Write one encrypted snapshot; prune to the newest KEEP. Owner mode only. */
 export async function autoBackup(): Promise<BackupSnapshot | null> {
   if (getMode() !== 'owner') return null

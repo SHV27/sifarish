@@ -224,8 +224,81 @@ export function scoreJob(job: Job, ledger: LedgerEntry[], rubric: RubricWeights,
   parts.push(visionPart(job, vision))
 
   // Vision can push a strong match past the rubric's 100 — cap it; a deduction can't go below 0.
-  const total = Math.max(0, Math.min(100, parts.reduce((n, p) => n + p.points, 0)))
-  return { total, parts }
+  const summed = Math.max(0, Math.min(100, parts.reduce((n, p) => n + p.points, 0)))
+
+  // v2 THE HUNT (05-Sep-2026, owner-caught: "saare work ex maangte hain, how are you rating them
+  // 89/100?" — a senior West-Coast FDE sat at 100 on keyword strength). An additive rubric lets a
+  // role that CANNOT fit his window bank enough points elsewhere. Two CEILINGS now sit above the
+  // sum, multiplicative in spirit and rendered like every other part (L4), never hidden math:
+  //   · WINDOW: a senior/leadership role is capped at 40; a regular (non-intern, non-new-grad)
+  //     engineer role at 72 — an intern-window role always outranks it.
+  //   · FRESHNESS: older than FRESH_DAYS and not verified open on its own board → capped at 62;
+  //     older than STALE_DAYS → 40. Demoted, never hidden; the stamp says so on the card.
+  const leadership = /\b(manager|director|head of|vp|vice president|principal|staff engineer|chief)\b/i.test(job.title)
+  const seniorish = decode.seniority === 'senior' || leadership
+  const windowWords = /\b(intern|internship|new grad|new-grad|graduate|entry[- ]level|early[- ]career|junior|fresher|campus|student|trainee|fellow)\b/i.test(`${job.title} ${job.jd.slice(0, 600)}`)
+  // The title is the strongest level signal ("AI Engineer" with a body that never says "engineer"
+  // used to read as level-unstated and escape the ceiling).
+  const engineerTitle = /\b(engineer|developer|scientist|architect|researcher|consultant|specialist|analyst)\b/i.test(job.title)
+  const regularEngineer = !windowWords && (decode.seniority === 'mid' || (decode.seniority === 'unspecified' && engineerTitle))
+  let ceiling = 100
+  let ceilingWhy = ''
+  if (seniorish) {
+    ceiling = 40
+    ceilingWhy = 'Ceiling 40%: a senior/leadership role — it cannot use an intern window, whatever its keywords say.'
+  } else if (regularEngineer) {
+    ceiling = 72
+    ceilingWhy = 'Ceiling 72%: a regular engineer role with no intern/new-grad wording — a stretch; an intern-window role outranks it.'
+  }
+  const days = postedDaysAgo(job)
+  const verifiedOpen = isVerifiedOpen(job)
+  if (days !== null && !verifiedOpen) {
+    if (days > STALE_DAYS && ceiling > 40) {
+      ceiling = 40
+      ceilingWhy = `${ceilingWhy ? ceilingWhy + ' ' : ''}Ceiling 40%: posted ${days}d ago and not verified open — likely filled.`
+    } else if (days > FRESH_DAYS && ceiling > 62) {
+      ceiling = 62
+      ceilingWhy = `${ceilingWhy ? ceilingWhy + ' ' : ''}Ceiling 62%: posted ${days}d ago (older than ${FRESH_DAYS} days) and not verified open — fresh roles rank first.`
+    }
+  }
+  // Multiplicative, not a clamp: two roles under the same ceiling keep their ORDER (a titled
+  // target role still outranks a generic one), and nothing under a ceiling can tie at it.
+  const total = ceiling < 100 ? Math.round((summed * ceiling) / 100) : summed
+  if (total < summed) parts.push({ key: 'ceiling', label: 'Ceiling', points: total - summed, max: 0, why: ceilingWhy })
+  return { total, parts, why: whySentence(job, decode.seniority, days, verifiedOpen, parts, total) }
+}
+
+/** The hunt's freshness law: ≤14 days is fresh; >45 days without a board re-verification is stale. */
+export const FRESH_DAYS = 14
+export const STALE_DAYS = 45
+
+export function postedDaysAgo(job: Job, now = Date.now()): number | null {
+  if (!job.updatedAt) return null
+  const t = new Date(job.updatedAt).getTime()
+  if (!Number.isFinite(t)) return null
+  return Math.max(0, Math.floor((now - t) / 86400000))
+}
+export function isVerifiedOpen(job: Job, now = Date.now()): boolean {
+  const seenOpen = job.lastSeenOpenAt ? new Date(job.lastSeenOpenAt).getTime() : NaN
+  return Number.isFinite(seenOpen) && now - seenOpen <= VERIFIED_OPEN_WINDOW_DAYS * 86400000
+}
+
+/** One sentence, plain words, the way he would explain the rank to a friend. */
+function whySentence(_job: Job, seniority: string, days: number | null, verifiedOpen: boolean, parts: ScorePart[], total: number): string {
+  const bits: string[] = []
+  const win = seniority === 'intern' ? 'an internship' : seniority === 'early-career' ? 'an early-career role' : seniority === 'senior' ? 'a senior role' : seniority === 'mid' ? 'a regular engineer role' : 'a role of unstated level'
+  const age = days === null ? 'no posting date' : days === 0 ? 'posted today' : days <= FRESH_DAYS ? `posted ${days}d ago (fresh)` : verifiedOpen ? `posted ${days}d ago but verified open on its board` : days > STALE_DAYS ? `posted ${days}d ago (stale)` : `posted ${days}d ago`
+  bits.push(`${win}, ${age}`)
+  const vision = parts.find((p) => p.key === 'visionFit')
+  if (vision && vision.points >= 8) bits.push('matches a role you named')
+  else if (vision && vision.points < 0) bits.push('hits your not-interested list')
+  const ai = parts.find((p) => p.key === 'aiRelevance')
+  if (ai && ai.max > 0 && ai.points / ai.max >= 0.5) bits.push('AI-first work')
+  const ceiling = parts.find((p) => p.key === 'ceiling')
+  if (ceiling) bits.push(`capped at ${total}`)
+  const fam = parts.find((p) => p.key === 'roleFamily')
+  if (fam) bits.push('a family outside your vision')
+  return `${bits[0].charAt(0).toUpperCase()}${bits[0].slice(1)}${bits.length > 1 ? ' — ' + bits.slice(1).join(', ') : ''}.`
 }
 
 /**

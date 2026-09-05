@@ -151,6 +151,8 @@ export interface ScorePart {
 export interface ScoreBreakdown {
   total: number
   parts: ScorePart[]
+  /** v2 — one plain sentence a human reads first: why this score, in words (the parts are the arithmetic). */
+  why?: string
 }
 
 export interface Job {

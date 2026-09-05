@@ -662,6 +662,10 @@ function JobCard({ job, score, onTailor }: { job: Job; score: ScoreBreakdown; on
                 ✓ board-verified open
               </span>
             )}
+          </p>
+          {/* v2 THE HUNT — the one plain sentence before any arithmetic (L4: causal legibility). */}
+          {score.why && <p className="text-[11px] text-ink-soft mt-0.5 italic">{score.why}</p>}
+          <p className="hidden">
             {/* Session 7 — LinkedIn's "Be an early applicant" signal, from data we already hold. */}
             {fresh !== null && fresh <= 2 && (
               <span className="font-mono text-[10px] ml-2 text-forge" title="Posted within the last 48 hours — early applicants get read first">
