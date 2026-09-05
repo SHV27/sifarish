@@ -61,7 +61,11 @@ export function derivedSkills(ledger: LedgerEntry[]): DerivedSkill[] {
     }
     map.set(key, { text: t.name, key, factIds: [factId], category: rowCategory(t.row) })
   }
-  for (const e of eligible.filter((x) => x.kind === 'skill')) take(e.title.split('—')[0].trim(), e.id)
+  for (const e of eligible.filter((x) => x.kind === 'skill')) {
+    const head = e.title.split('—')[0].trim()
+    take(head, e.id)
+    for (const m of head.matchAll(/\(([^)]+)\)/g)) for (const part of m[1].split(/\s*[\/,]\s*/)) take(part, e.id)
+  }
   for (const e of eligible.filter((x) => x.kind !== 'skill')) for (const t of techOf(e)) take(t.name, e.id)
   return [...map.values()]
 }

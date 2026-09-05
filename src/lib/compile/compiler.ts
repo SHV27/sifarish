@@ -793,9 +793,12 @@ function compileFromPlan(input: CompileInput): CompiledResume {
       // header carries the README's own stack, else only tags the lexicon knows as real tech, else nothing.
       // v2 R4: the header stack is the TECH CANON's word for what this project proves (README stack
       // first, the posting's asks first among those) — never raw tags ("agents, llm, gpt, rag").
-      const stack = withStack ? headerStack(e, [...decode.mustHave, ...decode.niceToHave]).filter((x) => !isBannedSkill(x, banned)).join(', ') : ''
       const baseTitle = displayTitle(e.title)
-      const headerText = stack && baseTitle.length + stack.length < 90 ? `${baseTitle} | ${stack}` : baseTitle
+      const stackItems = withStack ? headerStack(e, [...decode.mustHave, ...decode.niceToHave]).filter((x) => !isBannedSkill(x, banned)) : []
+      // Keep as many canonical stack names as fit beside the title on ONE line (~104 chars at 10.5pt).
+      while (stackItems.length && baseTitle.length + stackItems.join(', ').length + 3 > 104) stackItems.pop()
+      const stack = stackItems.join(', ')
+      const headerText = stack ? `${baseTitle} | ${stack}` : baseTitle
       push(lines, {
         kind: 'entry-title',
         text: headerText,
