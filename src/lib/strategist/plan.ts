@@ -406,12 +406,12 @@ export function planSystem(): string {
     'Write the GAME PLAN for THIS company as the shrewdest human agent would after a week of thought:',
     '1) The three lines a reader hits first: a headline under his name and one summary sentence — specific, evidence-dense, in a builder\'s plain voice. No clichés, no "passionate", no "results-driven", no promises.',
     '   The HEADLINE states who he is and where he is going (his vision, in his register) — it NEVER lists project names; projects live in the PROJECTS section. The summary may name proof categories (a national scholarship, a hackathon win, N shipped systems) rather than project titles.',
-    '2) Section order chosen for THIS reader (a founder who says "we do not care about your university" is not handed education first; a posting about reasoning gets achievements early).',
+    '2) Section order chosen for THIS reader (a founder who says "we do not care about your university" is not handed education first; a posting about reasoning gets achievements early). A custom kind (sports, publications, anything he fed) may LEAD when it is the strongest proof for this reader — a district-level athlete line can be the first thing a sports-tech founder sees.',
     '3) EVERY fact in the dossier is either PLAYED (with its section and a reason in the posting\'s own words) or BENCHED (with a reason: quote the posting, or name the page budget). Suppress nothing true and relevant; invent nothing. Benching a true, relevant fact without a reason is as bad as lying.',
     '4) Skills rows assembled from what the posting asks for ∩ what the facts prove — every item must carry the fact ids that prove it. Never list a skill no fact supports.',
     '5) The reveal: if this reader would be delighted that the applicant built the AI system that compiled this page (a project named Sifarish in the dossier), turn it on and say why; at a conservative reader keep it off.',
     'Use ONLY fact ids from the dossier. Sections: education, experience, projects, skills, achievements, positions, certs, plus any custom kind that appears in the dossier.',
-    'Education lines are never benched (a missing degree line reads as hiding). Space is not your concern — the compiler tightens the page before it drops anything; never bench for "page budget".',
+    'Education lines are never benched (a missing degree line reads as hiding). PROJECTS: play the strongest three for this reader (four only when the dossier is thin) and bench the rest naming the page budget and what outranked them — the canon of real CSE résumés. Every OTHER kind: space is not your concern — the compiler tightens before it drops; never bench an achievement, position or experience for "page budget".',
     'Dates in the dossier are real and recent — TODAY is given at the top of the message; nothing dated before today is "future".',
     'Return JSON matching the schema exactly.',
   ].join('\n')
@@ -464,7 +464,7 @@ export function validatePlan(raw: PlanLLM, inputs: PlanInputs, digest: Digest, m
       played.push(fallback.played.find((p) => p.factId === f.id) ?? { factId: f.id, section: 'education', reason: 'the degree line is the first thing every reader checks' })
       continue
     }
-    if (/page budget|space|room|fit/i.test(reason) && !/they say|said|posting/i.test(reason)) {
+    if (f.kind !== 'project' && /page budget|space|room|fit/i.test(reason) && !/they say|said|posting/i.test(reason)) {
       notes.push(`${short(f.title)}: benched for "page budget" — played instead; the page-solver owns space and tightens before it drops`)
       played.push(fallback.played.find((p) => p.factId === f.id) ?? { factId: f.id, section: sectionKeyFor(f.kind), reason: 'played — space is the compiler\'s call, not the plan\'s' })
       continue
@@ -618,7 +618,9 @@ export function today(): string {
 export async function makePlan(inputs: PlanInputs): Promise<GamePlan> {
   const digest = buildDigest(inputs.ledger, inputs.identity, inputs.vision)
   const { canonForPrompt } = await import('../ustaad/canon')
-  const user = `TODAY: ${today()}\n\nTHE READING\n${readingForPrompt(inputs.reading)}\n\nTHE DOSSIER\n${digest.text}\n\n${await canonForPrompt()}`
+  const { loadMemory, memoryForPrompt } = await import('./memory')
+  const memory = await loadMemory(inputs.reading)
+  const user = `TODAY: ${today()}\n\nTHE READING\n${readingForPrompt(inputs.reading)}\n\nTHE DOSSIER\n${digest.text}\n\n${await canonForPrompt()}\n\n${memoryForPrompt(memory)}`
   const meta = await generateWithMeta<PlanLLM>({
     feature: 'strategist.plan',
     system: planSystem(),
@@ -626,6 +628,6 @@ export async function makePlan(inputs: PlanInputs): Promise<GamePlan> {
     maxTokens: 2600,
     schema: PLAN_SCHEMA as unknown as Record<string, unknown>,
   }).catch(() => null)
-  if (!meta || !meta.result) return planHeuristic(inputs.reading, inputs.ledger, inputs.identity, inputs.vision, inputs.sections)
-  return validatePlan(meta.result, inputs, digest, meta.mode)
+  if (!meta || !meta.result) return { ...planHeuristic(inputs.reading, inputs.ledger, inputs.identity, inputs.vision, inputs.sections), memory }
+  return { ...validatePlan(meta.result, inputs, digest, meta.mode), memory }
 }

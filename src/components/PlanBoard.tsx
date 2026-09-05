@@ -227,6 +227,19 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
         )}
       </div>
 
+      {plan.memory && plan.memory.length > 0 && (
+        <div className="mt-2 ledger-rule pt-2" aria-label="The memory — recorded outcomes this plan read">
+          <p className="font-mono text-[10px] text-ink-soft">THE MEMORY — what past applications taught this plan</p>
+          <ul className="mt-0.5 space-y-0.5">
+            {plan.memory.map((n, i) => (
+              <li key={`m${i}`} className="text-[11px] text-ink-soft">
+                · {n}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {(plan.notes.length > 0 || (packet.critic && packet.critic.issues.length > 0)) && (
         <div className="mt-2 ledger-rule pt-2">
           <p className="font-mono text-[10px] text-ink-soft">THE CRITIC and the validator</p>

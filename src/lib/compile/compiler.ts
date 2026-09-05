@@ -172,6 +172,14 @@ export function paginate(lines: CompiledLine[], tighten = 0): number[] {
   }
   return pages
 }
+/** Share of page 2 relative to page 1, by line count — the guard against an orphan second page. */
+export function pageTwoWeight(r: CompiledResume): number {
+  const pages = paginate(r.lines, r.tighten ?? 0)
+  const p1 = pages.filter((p) => p === 1).length
+  const p2 = pages.filter((p) => p === 2).length
+  return p1 === 0 ? 0 : p2 / p1
+}
+
 export function estimatePages(lines: CompiledLine[], tighten = 0): number {
   const p = paginate(lines, tighten)
   return p.length ? p[p.length - 1] : 1
@@ -902,11 +910,17 @@ function compileFromPlan(input: CompileInput): CompiledResume {
     return null
   }
   const maxPages = policy === 'two-ok' ? 2 : 1
-  // One page with the richest bullets first; then page 2 (if allowed) before touching content.
-  const one = fit(1, total, ONE_PAGE)
-  if (one) return one
+  // HUNTER-CAUGHT (05-Sep-2026, R3): under 'two-ok' the solver still walked every one-page
+  // degradation (2 bullets, no summary) before trying page 2 — the small page he rebuilt to escape.
+  // Now: the richest one-page variants; then a FULL two-pager (accepted only when page 2 carries
+  // real weight, never three orphan lines); only then the leaner one-page steps.
+  const richOne = fit(1, total, maxPages === 2 ? ONE_PAGE.slice(0, 2) : ONE_PAGE)
+  if (richOne) return richOne
   if (maxPages === 2) {
     const two = fit(2, total, TWO_PAGE)
+    if (two && pageTwoWeight(two) >= 0.25) return two
+    const leanOne = fit(1, total, ONE_PAGE.slice(2))
+    if (leanOne) return leanOne
     if (two) return two
   }
   // Last resort: bench played projects from the END of the plan's order, declared.

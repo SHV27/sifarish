@@ -120,6 +120,12 @@ const SCHEMA_CLASSIFY = {
 
 type OnceResult = CallResult | 'ratelimit' | null
 
+/** R3 — the last reason a metered call yielded nothing, for callers that must SAY why they degraded (I4). */
+let lastFailure = ''
+export function lastDimaagFailure(): string {
+  return lastFailure
+}
+
 async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>, thinking?: 'low' | 'medium' | 'high'): Promise<CallResult | null> {
   // Darshak/demo mode is structurally keyless (D44): a locked browser never spends a token.
   if (!meteredCallsAllowed()) return { result: null, tokens: 0, keyless: true }
@@ -148,18 +154,33 @@ async function callOnce(tier: DimaagTier, system: string, user: string, maxToken
       body: JSON.stringify({ tier, system, user, maxTokens, schema, ...(thinking ? { thinking } : {}) }),
     })
     if (!res.ok) {
+      lastFailure = `HTTP ${res.status} from /api/dimaag`
       catchAs('provider', `dimaag.${tier}`, `HTTP ${res.status}`)
       return null
     }
     // Studio W1: PARSED at the boundary, never assumed (Class A) — a shape change logs and
     // degrades through the ladder instead of rotting silently.
     const data = parse(await res.json(), `dimaag.${tier}`, isDimaagResp)
-    if (!data) return null
-    if (data.rateLimited) return 'ratelimit' // free-tier TPM hit — the caller backs off, not degrades
-    if (data.keyless) return { result: null, tokens: 0, keyless: true }
-    if (data.error || data.result == null) return null
+    if (!data) {
+      lastFailure = 'malformed reply from /api/dimaag'
+      return null
+    }
+    if (data.rateLimited) {
+      lastFailure = 'every free lane rate-limited'
+      return 'ratelimit' // free-tier TPM hit — the caller backs off, not degrades
+    }
+    if (data.keyless) {
+      lastFailure = 'keyless'
+      return { result: null, tokens: 0, keyless: true }
+    }
+    if (data.error || data.result == null) {
+      lastFailure = data.error ? `provider: ${String(data.error).slice(0, 120)}` : 'empty result'
+      return null
+    }
+    lastFailure = ''
     return { result: data.result, tokens: data.tokens ?? 0, keyless: false, model: data.model }
   } catch (e) {
+    lastFailure = 'network error reaching /api/dimaag'
     catchAs('network', `dimaag.${tier}`, e)
     return null
   }

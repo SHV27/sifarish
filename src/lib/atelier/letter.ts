@@ -156,7 +156,7 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
     // Session 7.2 (C7): the window reads from his live vision, never a hardcoded year.
     const window = vision?.windowStart && vision?.windowEnd ? `${vision.windowStart}–${vision.windowEnd}` : 'January–May 2027'
     paragraphs.push({
-      text: `I'm honest about what's still in progress: I'm building ${names} right now (${forge[0].forgeEta ?? 'July 2026'}). My internship window is ${window}, so it will be shipped well before day one.`,
+      text: `I'm honest about what's still in progress: I'm building ${names} right now${etaClause(forge[0].forgeEta)}. My internship window is ${window}, so it will be shipped well before day one.`,
       ledgerIds: forge.map((e) => e.id),
     })
   }
@@ -170,7 +170,7 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
   // 6 — Sifarish Signature (optional, per-company decision).
   if (useSignature) {
     paragraphs.push({
-      text: `P.S. — This letter was compiled by SIFARISH, the evidence-linked hiring agent I built: every claim above links to proof, because I designed it so it cannot lie. It's project #6 on my GitHub.`,
+      text: `P.S. — This letter was compiled by SIFARISH, the evidence-linked hiring agent I built: every claim above links to proof, because I designed it so it cannot lie.`,
       ledgerIds: [],
     })
   }
@@ -187,4 +187,12 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
   }
 
   return { paragraphs }
+}
+
+/** R3 (hunter-caught): a target date is stated only when it is still ahead — a past "July 2026" reads as a missed promise. */
+export function etaClause(eta: string | undefined, now = new Date()): string {
+  if (!eta) return ''
+  const t = Date.parse(`1 ${eta}`)
+  if (Number.isNaN(t)) return ` (target ${eta})`
+  return t >= new Date(now.getFullYear(), now.getMonth(), 1).getTime() ? ` (target ${eta})` : ''
 }

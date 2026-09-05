@@ -19,6 +19,9 @@ export interface DigestFact {
   stack: string[]
   bullets: { id: string; text: string }[]
   features: string[]
+  /** R3 — the README depth the brain reads: the problem statement + capped prose. */
+  problem: string
+  readme: string
   sworn: string
 }
 
@@ -46,6 +49,8 @@ export function digestFacts(ledger: LedgerEntry[]): DigestFact[] {
       stack: e.context?.stack ?? [],
       bullets: e.bullets.map((b) => ({ id: b.id, text: b.text })),
       features: (e.context?.features ?? []).slice(0, 6),
+      problem: e.context?.problem ?? '',
+      readme: e.context?.readme ?? '',
       sworn: e.sworn ?? 'owner',
     }))
 }
@@ -71,7 +76,11 @@ export function buildDigest(ledger: LedgerEntry[], identity: Identity, vision?: 
     if (f.stack.length) lines.push(`  stack: ${f.stack.slice(0, 10).join(', ')}`)
     if (f.url) lines.push(`  link: ${f.url}`)
     for (const b of f.bullets.slice(0, 6)) lines.push(`  - {${b.id}} ${cap(b.text, 260)}`)
-    if (f.features.length && f.bullets.length < 3) lines.push(`  readme: ${f.features.map((x) => cap(x, 140)).join(' | ')}`)
+    // R3 (hunter-caught): "unhe deeply padhe" — the README's problem statement and prose reached the
+    // vault but never the brain. Every project now carries them (capped), not only thin ones.
+    if (f.problem) lines.push(`  problem (his README): ${cap(f.problem, 300)}`)
+    if (f.features.length) lines.push(`  notable (his README): ${f.features.map((x) => cap(x, 140)).join(' | ')}`)
+    if (f.readme) lines.push(`  readme prose: ${cap(f.readme, 600)}`)
   }
   lines.push('')
   lines.push(`PROVEN SKILLS (text → fact ids): ${skills.slice(0, 80).map((s) => `${s.text} [${s.factIds.slice(0, 3).join(',')}]`).join('; ')}`)

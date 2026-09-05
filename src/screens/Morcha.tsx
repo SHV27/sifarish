@@ -25,6 +25,7 @@ const VERDICTS: { status: JobStatus; label: string }[] = [
 export function Morcha({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) => void; onNav?: (s: 'khabri') => void }) {
   const jobs = useLiveQuery(() => db.jobs.toArray()) ?? []
   const ledger = useLiveQuery(() => db.ledger.toArray()) ?? []
+  const allPackets = useLiveQuery(() => db.packets.toArray()) ?? []
   const [dossier, setDossier] = useState<InterviewDossier | null>(null)
   const [query, setQuery] = useState('')
 
@@ -113,7 +114,7 @@ export function Morcha({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) 
                 col={col}
                 jobs={byStatus.get(col.status) ?? []}
                 onOpenPacket={onOpenPacket}
-                onDossier={(job) => setDossier(buildDossier(job, ledger))}
+                onDossier={(job) => setDossier(buildDossier(job, ledger, allPackets.filter((p) => p.jobId === job.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]))}
               />
             ))}
             <div className="w-56 shrink-0">
@@ -437,6 +438,27 @@ function DossierModal({ dossier, onClose }: { dossier: InterviewDossier; onClose
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {dossier.cares.length > 0 && (
+          <div className="mt-4" aria-label="What they said they care about">
+            <h3 className="font-mono text-[11px] uppercase text-stamp tracking-wide">What they said they care about — and the proof you speak to</h3>
+            <ul className="mt-2 space-y-1.5">
+              {dossier.cares.map((c, i) => (
+                <li key={i} className="text-xs leading-relaxed">
+                  <span className="font-semibold text-ink">{c.care}</span>
+                  <span className="text-ink-soft"> · they wrote "{c.quote}"</span>
+                  <br />
+                  <span className="text-ink">→ {c.proof}</span>
+                </li>
+              ))}
+            </ul>
+            {dossier.doNotLead.length > 0 && (
+              <p className="mt-2 text-[11px] text-ink-soft">
+                Do not lead with what they said they do not care about: {dossier.doNotLead.join(' · ')}.
+              </p>
+            )}
           </div>
         )}
 

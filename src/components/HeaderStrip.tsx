@@ -32,7 +32,7 @@ export function HeaderStrip({ onAsk }: { onAsk?: (utterance: string) => void }) 
       <Stat label="interviews" value={String(interviews)} />
       {onAsk && (
         <form
-          className="hidden md:flex items-center gap-1 ml-2 min-w-0"
+          className="flex items-center gap-1 ml-2 min-w-0"
           onSubmit={(e) => {
             e.preventDefault()
             const t = ask.trim()
@@ -43,12 +43,13 @@ export function HeaderStrip({ onAsk }: { onAsk?: (utterance: string) => void }) 
           aria-label="Tell the team"
         >
           <input
-            className="bg-paper-sunken px-2 py-1 rounded text-xs w-56"
+            className="bg-paper-sunken px-2 py-1 rounded text-xs w-40 sm:w-56"
             value={ask}
             onChange={(e) => setAsk(e.target.value)}
             placeholder="Tell the team — “add fact: …”, “mark X applied”"
             aria-label="Tell the team"
           />
+          <button type="submit" className="text-xs font-semibold text-stamp px-1.5 py-1 rounded hover:bg-paper-sunken" aria-label="Send to the team">→</button>
         </form>
       )}
       <div className="flex items-center gap-2 ml-auto shrink-0" title="Moves only when truth moves">

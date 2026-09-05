@@ -138,7 +138,7 @@ export function Guru({ onOpenPacket, onNav, activeJobId }: { onOpenPacket: (jobI
 
       // EK BAAT op lanes — ONLY when the honesty router found nothing critical (it always runs
       // first; refusals/I9 are decided before any op or LLM sees the turn).
-      if (routed.intent === 'freeform') {
+      if (!routed.intent.startsWith('refuse')) {
         const ctx: AgentContext = { hunts, jobs, vision: appSettings?.visionProfile, ledger: await db.ledger.toArray() }
         // Lane 0 (v2 R2): the packet he last opened is in scope — "bench GLOAMING", "skills upar",
         // "summary hata" route to the page's own tailor (the Baithak ops), through the one recompile door.

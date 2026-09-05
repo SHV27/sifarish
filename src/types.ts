@@ -933,6 +933,8 @@ export interface GamePlan {
   rationale: string
   /** Validation notes: what the validator discarded and why (never silent). */
   notes: string[]
+  /** v2 R3 — THE MEMORY: recorded outcomes this plan was written with (starts empty, says so). */
+  memory?: string[]
   by: StrategistMode
   at: string
 }

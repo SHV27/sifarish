@@ -6,6 +6,7 @@ import { resumeStrength } from '../lib/strength'
 import { cleanSummaryForDisplay } from '../lib/compile/compiler'
 import { NabzPanel } from '../components/NabzPanel'
 import { Desk } from '../components/Desk'
+import { getMode } from '../lib/pehchaan'
 import RepairBanner from '../components/RepairBanner'
 
 const KIND_ORDER: { kind: EntryKind; label: string }[] = [
@@ -48,8 +49,8 @@ export function Shelf({ onNav, onTailor, onAsk }: { onNav: (t: 'radar' | 'morcha
         ...KIND_ORDER,
         // v2 THE DOSSIER: kinds created on demand ("sports", "publication", …) render as their own groups.
         ...[...new Set(entries.map((e) => e.kind))]
-          .filter((k) => !KIND_ORDER.some((o) => o.kind === k))
-          .map((k) => ({ kind: k as EntryKind, label: k.replace(/[-_]/g, ' ').replace(/\w/g, (c) => c.toUpperCase()) })),
+          .filter((k) => k !== 'skill' && !KIND_ORDER.some((o) => o.kind === k)) // skills are evidence, never a list here
+          .map((k) => ({ kind: k as EntryKind, label: k.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) })),
       ].map(({ kind, label }) => {
         const group = entries.filter((e) => e.kind === kind)
         if (group.length === 0) return null
@@ -77,7 +78,8 @@ export function Shelf({ onNav, onTailor, onAsk }: { onNav: (t: 'radar' | 'morcha
 
       <NabzPanel />
 
-      <VoiceBankCard />
+      <FeedSample />
+          <VoiceBankCard />
 
       {promoting && (
         <PromoteModal
@@ -513,6 +515,77 @@ function VoiceBankCard() {
           Add
         </button>
       </form>
+    </section>
+  )
+}
+
+/**
+ * v2 R3 (hunter-caught): "main sample resumes upload karunga" had one door — a ≥200-char paste
+ * into a single-line input. This is the real door: paste or upload (.txt / .pdf → text), and the
+ * sample joins the canon the strategist reads (his references, cited by name in the prompt).
+ */
+function FeedSample() {
+  const [text, setText] = useState('')
+  const [note, setNote] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const demo = getMode() !== 'owner'
+  const study = async (raw: string, from: string) => {
+    const t = raw.replace(/\r/g, '').trim()
+    if (t.length < 200) {
+      setNote('That is too short to be a résumé — paste or upload the whole thing.')
+      return
+    }
+    setBusy(true)
+    try {
+      const { addSample, listSamples } = await import('../lib/ustaad/canon')
+      await addSample(t)
+      const n = (await listSamples()).length
+      setNote(`Studied ${from} — ${n} sample${n === 1 ? '' : 's'} in your canon now; the next plan cites them as your references.`)
+      setText('')
+    } catch (e) {
+      setNote(`Could not study it: ${e instanceof Error ? e.message : String(e)}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const onFile = async (f: File | undefined) => {
+    if (!f) return
+    if (/\.pdf$/i.test(f.name)) {
+      const { extractPdfText } = await import('../lib/export/parseback')
+      const got = await extractPdfText(new Uint8Array(await f.arrayBuffer()))
+      await study(Array.isArray(got) ? got.join('\n') : String(got), f.name)
+    } else await study(await f.text(), f.name)
+  }
+  return (
+    <section className="dossier p-4 mt-2" aria-label="Feed the studio a sample résumé">
+      <h2 className="font-display font-semibold text-ink">Feed the studio a résumé you rate</h2>
+      <p className="text-xs text-ink-soft mt-1">
+        Your friends' LaTeX pages, any real CSE résumé that beat yours — paste it or upload the PDF. It is measured (sections, density, bullets) and
+        cited to the strategist as <em>your</em> reference, alongside the six samples it already studied. Nothing from it is ever copied onto your page.
+      </p>
+      {demo ? (
+        <p className="text-[11px] text-ink-soft mt-2">Demo mode is read-only — the owner's canon is his.</p>
+      ) : (
+        <div className="mt-2 flex flex-col gap-2">
+          <textarea
+            className="bg-paper-sunken rounded px-2 py-1.5 text-xs min-h-[96px] font-mono"
+            placeholder="Paste a whole résumé here…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            aria-label="Sample résumé text"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <button disabled={busy || text.trim().length === 0} onClick={() => study(text, 'the pasted résumé')} className="text-xs font-semibold bg-stamp text-paper px-3 py-1.5 rounded disabled:opacity-50">
+              {busy ? 'Studying…' : 'Study it'}
+            </button>
+            <label className="text-xs text-ink-soft cursor-pointer underline decoration-dotted">
+              or upload .pdf / .txt
+              <input type="file" accept=".pdf,.txt,text/plain,application/pdf" className="sr-only" onChange={(e) => void onFile(e.target.files?.[0])} aria-label="Upload a sample résumé" />
+            </label>
+          </div>
+          {note && <p className="text-[11px] text-ink-soft" role="status">{note}</p>}
+        </div>
+      )}
     </section>
   )
 }

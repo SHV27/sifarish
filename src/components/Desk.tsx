@@ -6,6 +6,29 @@ import { getMode } from '../lib/pehchaan'
 import { SHOWCASE_JOB_ID } from '../lib/showcase/babaclick'
 import type { Job } from '../types'
 
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+/**
+ * v2 R3 — THE CLOCK, from his own window (VisionProfile.windowStart, e.g. "Jan 2027"): the month
+ * before the window is end-semester exams (gone), so the seat must be secured by the end of the
+ * month before THAT, and the two months leading to it are the applying window (Oct–Nov for Jan).
+ * Data-driven: change the window by chat, the clock follows.
+ */
+export function clockLine(windowStart: string | undefined, now: Date): string | null {
+  const m = /([a-z]{3})[a-z]*\s+(\d{4})/i.exec(windowStart ?? '')
+  if (!m) return null
+  const mi = MONTHS.indexOf(m[1].toLowerCase())
+  if (mi < 0) return null
+  const start = new Date(Number(m[2]), mi, 1)
+  const secureBy = new Date(start.getFullYear(), start.getMonth() - 1, 0) // the month before the window is exams; secure it before that
+  const applyFrom = new Date(secureBy.getFullYear(), secureBy.getMonth() - 1, 1)
+  const days = Math.ceil((secureBy.getTime() - now.getTime()) / 86400000)
+  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  const mon = (d: Date) => d.toLocaleDateString('en-GB', { month: 'short' })
+  if (days < 0) return `the ${windowStart} window has opened — every application now is for a seat that starts immediately`
+  const weeks = Math.floor(days / 7)
+  return `${windowStart} internship · secure it by ${fmt(secureBy)} · ${weeks} week${weeks === 1 ? '' : 's'} left · applying window ${mon(applyFrom)}–${mon(secureBy)}${now < applyFrom ? ' (opens ' + fmt(applyFrom) + ' — tailor and shortlist now)' : ' — apply now'}`
+}
+
 type NavTarget = 'radar' | 'morcha' | 'khabri' | 'guru'
 
 /**
@@ -24,6 +47,7 @@ export function Desk({ onNav, onTailor, onAsk }: { onNav: (t: NavTarget) => void
   const jobs = useLiveQuery(() => db.jobs.toArray())
   const ledger = useLiveQuery(() => db.ledger.toArray())
   const settings = useLiveQuery(() => db.settings.get('app'))
+  const clock = useMemo(() => clockLine(settings?.visionProfile?.windowStart, new Date()), [settings?.visionProfile?.windowStart])
   const identity = useLiveQuery(() => db.identity.get('me'))
   const watchlist = useLiveQuery(() => db.watchlist.toArray())
   const dak = useLiveQuery(() => db.dak.toArray())
@@ -84,6 +108,12 @@ export function Desk({ onNav, onTailor, onAsk }: { onNav: (t: NavTarget) => void
         </h2>
         {b.newCount > 0 && <span className="stamp stamp-red">{b.newCount} new for you</span>}
       </div>
+      {clock && (
+        <p className="text-[11.5px] text-ink-soft mb-3" aria-label="The clock">
+          <span className="font-mono text-[10px] mr-2">THE CLOCK</span>
+          {clock}
+        </p>
+      )}
 
       {/* 1 · THE NEXT MOVE */}
       <div className="flex flex-wrap items-center justify-between gap-2 bg-paper-sunken rounded px-3 py-2 mb-4">

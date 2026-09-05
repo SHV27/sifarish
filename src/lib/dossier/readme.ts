@@ -35,8 +35,8 @@ export async function refreshProjectContexts(): Promise<RefreshSummary> {
   let refreshed = 0
   let skipped = 0
   const names: string[] = []
-  for (const e of ledger.filter((x) => x.kind === 'project' && x.evidence?.repo)) {
-    const repo = repoOf(e.evidence!.repo!)
+  for (const e of ledger.filter((x) => x.kind === 'project' && (x.evidence?.repo || /github\.com\//i.test(x.evidence?.url ?? '')))) {
+    const repo = repoOf(e.evidence!.repo ?? e.evidence!.url!)
     if (!repo) {
       skipped++
       continue

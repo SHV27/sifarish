@@ -6,8 +6,8 @@ import { archetypeById } from './darzi/archetypes'
 import { decodeJD } from './jd/decode'
 import { matchEvidence } from './match/evidence'
 import { compileResume, type CompileInput } from './compile/compiler'
-import { compileCoverLetter, compileOutreach, buildGapNote } from './compile/letters'
-import { getIntel, hookFromIntel } from './intel/client'
+import { compileOutreach, buildGapNote } from './compile/letters'
+import { getIntel } from './intel/client'
 import { redTeamPass } from './darzi/editor'
 import { nazarPass, nazarHeuristic, bulletIdsForIssues } from './darzi/nazar'
 import { composeLetter } from './atelier/letter'
@@ -72,7 +72,6 @@ export async function buildPacketFast(job: Job): Promise<Packet> {
 
   const cachedIntel = await db.intel.get(job.company.trim().toLowerCase())
   const intel = cachedIntel && !cachedIntel.keyless && cachedIntel.bullets.length > 0 ? cachedIntel : undefined
-  const intelHook = hookFromIntel(intel)
 
   const decode = decodeJD(job.jd)
   const coverage = matchEvidence(decode, ledger)
@@ -92,7 +91,9 @@ export async function buildPacketFast(job: Job): Promise<Packet> {
     summaryOn: true,
   })
   const editorial = editorialFromPlan(strategy.plan, strategy.reading, ledger)
-  const coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook, settings?.visionProfile)
+  // R3: the reading drives the letter on EVERY path (the demo and the keyless floor included) —
+  // the old compileCoverLetter opened on the skill list, which is what the owner read as generic.
+  const coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision: settings?.visionProfile, editorial, useSignature: false, reading: strategy.reading })
   const outreach = compileOutreach(job, identity, ledger, decode, settings?.visionProfile)
   const gapNote = buildGapNote(coverage)
   gapNote.push(...strategy.plan.notes)
@@ -129,7 +130,6 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   // v1 output). Intel shapes the cover-letter hook and the dossier panel — never a claim (I1).
   onProgress?.('Researching the company…')
   const intel = await getIntel(job.company).catch(() => undefined)
-  const intelHook = hookFromIntel(intel)
 
   const decode = decodeJD(job.jd)
   const coverage = matchEvidence(decode, ledger)
@@ -144,9 +144,11 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   // (a new number/tech/noun kills the rephrasing; the compiled truth stands). Packet-scoped.
   onProgress?.('Re-aiming the wording for this reader…')
   const bulletOverrides: Record<string, string> = {}
-  if (strategy.mode !== 'heuristic') {
+  const reframeFor = async (plan: GamePlan) => {
+    if (strategy.mode === 'heuristic') return
+    for (const k of Object.keys(bulletOverrides)) delete bulletOverrides[k]
     const { reframeProject } = await import('./polish/reframe')
-    const framed = strategy.plan.played.filter((p) => p.section === 'projects' && p.framing)
+    const framed = plan.played.filter((p) => p.section === 'projects' && p.framing)
     for (const p of framed.slice(0, 4)) {
       const entry = ledger.find((e) => e.id === p.factId)
       if (!entry) continue
@@ -154,6 +156,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
       if (r) Object.assign(bulletOverrides, r.overrides)
     }
   }
+  await reframeFor(strategy.plan)
   onProgress?.('Executing the game plan on the page…')
   const compileWithOverrides = (plan: GamePlan, excludedBulletIds?: string[]) =>
     compileResume({
@@ -183,6 +186,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     const revisedPlan = await makePlan({ reading: revisedReading, ledger, identity, vision, sections: settings?.sections }).catch(() => null)
     if (revisedPlan && revisedPlan.by !== 'heuristic') {
       strategy = { ...strategy, plan: revisedPlan }
+      await reframeFor(revisedPlan) // R3: the revised plan's framing becomes wording too (was decorative)
       resume = compileWithOverrides(revisedPlan)
       const again = await judgePage(pageTextOf(resume), strategy.reading, revisedPlan, true)
       critic = { ...again, revised: true }
@@ -244,8 +248,8 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     if (sig) signature = { on: useSignature, rationale: sig.rationale }
     coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision, editorial, useSignature, reading: strategy.reading })
   } else {
-    // Keyless / no-editorial path keeps the proven v2 letter (regression-safe).
-    coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook, vision)
+    // Keyless path: the same composer, driven by the heuristic reading (R3 — one letter door).
+    coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision, editorial, useSignature: false, reading: strategy.reading })
   }
   const outreach = compileOutreach(job, identity, ledger, decode, vision)
   const gapNote = buildGapNote(coverage)
@@ -337,6 +341,7 @@ export async function toggleSignature(packet: Packet, on: boolean): Promise<Pack
     intel: packet.intel,
     vision: settings?.visionProfile,
     editorial: packet.editorial,
+    reading: packet.reading,
     useSignature: on,
   })
   const updated: Packet = {
@@ -380,6 +385,7 @@ export async function refineLetter(packet: Packet, op: import('./atelier/baithak
     intel: packet.intel,
     vision: settings?.visionProfile,
     editorial: packet.editorial,
+    reading: packet.reading,
     useSignature: packet.signature?.on ?? false,
     proofLeadId: op.kind === 'swap-proof' ? op.toLedgerId : undefined,
     tightTo: op.kind === 'tighten' ? 170 : undefined,
@@ -435,7 +441,7 @@ export async function overrulePacket(packet: Packet, opts: { promoteId?: string;
             at: new Date().toISOString(),
           },
         },
-      ].slice(0, 3)
+      ]
     }
   }
 

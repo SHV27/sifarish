@@ -30,6 +30,8 @@ We care enormously about: logical reasoning · intellectual honesty · independe
 Full-Time Offer: Guaranteed. Successfully complete the full 12 weeks, and you are guaranteed a full-time offer.`
 
 export const SHOWCASE_JOB_ID = 'showcase-babaclick'
+/** Bump when the packet craft changes — the demo's worked example is rebuilt on next open (never his vault). */
+export const SHOWCASE_VERSION = 3
 
 export function showcaseJob(): Job {
   return {
@@ -56,44 +58,18 @@ export async function seedDemoShowcase(opts: { force?: boolean } = {}): Promise<
   // His vault is his — never seeded with the demo's example. (`force` exists for the gate suite,
   // whose mode is frozen to owner at module load; no app path passes it.)
   if (!opts.force && getMode() === 'owner') return false
-  const FLAG = 'demo:showcase-babaclick'
+  const FLAG = `demo:showcase-babaclick:v${SHOWCASE_VERSION}`
   if (await db.nabzCache.get(FLAG)) return false
   const identity = await db.identity.get('me')
   const ledger = await db.ledger.toArray()
   if (!identity || ledger.length === 0) return false
-  const settings = await db.settings.get('app')
+  // R3 (05-Sep-2026, READ on the demo board): the example was assembled by its own copy of the packet
+  // recipe and seeded ONCE — every later craft change (vision headline, honest letter, JD-driven
+  // skills) left the demo showing the stale page. One door now: the same fast packet the owner gets.
   const job = showcaseJob()
-  const { strategizeFast } = await import('../strategist')
-  const { compileResume } = await import('../compile/compiler')
-  const { decodeJD } = await import('../jd/decode')
-  const { matchEvidence } = await import('../match/evidence')
-  const { compileCoverLetter, compileOutreach, buildGapNote } = await import('../compile/letters')
-  const { estimateQuality } = await import('../ustaad/quality')
-  const { editorialFromPlan } = await import('../darzi')
-  const strategy = strategizeFast({ job, ledger, identity, vision: settings?.visionProfile, sections: settings?.sections })
-  const decode = decodeJD(job.jd)
-  const coverage = matchEvidence(decode, ledger)
-  const resume = compileResume({ identity, ledger, decode, coverage, jobId: job.id, plan: strategy.plan, pagePolicy: settings?.pagePolicy ?? 'two-ok', sections: settings?.sections, summaryOn: true })
-  const packet: Packet = {
-    id: `packet-${job.id}-showcase`,
-    jobId: job.id,
-    createdAt: new Date().toISOString(),
-    resume,
-    coverLetter: compileCoverLetter(job, identity, ledger, decode, coverage, undefined, settings?.visionProfile),
-    outreach: compileOutreach(job, identity, ledger, decode, settings?.visionProfile),
-    coverage,
-    gapNote: [...buildGapNote(coverage), ...strategy.plan.notes],
-    decode,
-    polished: false,
-    editorial: editorialFromPlan(strategy.plan, strategy.reading, ledger),
-    reading: strategy.reading,
-    plan: strategy.plan,
-    strategistMode: 'heuristic',
-    compilePlan: { order: strategy.plan.projectOrder, bullets: {}, sectionOrder: undefined },
-    quality: estimateQuality(resume, coverage, ledger),
-    summaryOn: true,
-    ready: true,
-  }
+  const { buildPacketFast } = await import('../darzi')
+  const fast = await buildPacketFast(job)
+  const packet: Packet = { ...fast, id: `packet-${job.id}-showcase`, enhancing: false, ready: true }
   await withSeedAllowance(async () => {
     await db.jobs.put(job)
     await db.packets.put({ ...packet, typesetVersion: 3 })

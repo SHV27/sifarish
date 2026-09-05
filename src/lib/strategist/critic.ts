@@ -1,5 +1,5 @@
 import type { CriticVerdict, GamePlan, Reading } from '../../types'
-import { generateWithMeta } from '../dimaag/core'
+import { generateWithMeta, lastDimaagFailure } from '../dimaag/core'
 import { scanHonesty } from '../slop/scan'
 import { today } from './plan'
 
@@ -72,7 +72,10 @@ export async function criticPass(pageText: string, reading: Reading, plan: GameP
     thinking: 'low',
   }).catch(() => null)
   const at = new Date().toISOString()
-  if (!meta || !meta.result) return { verdict: 'SKIPPED', issues: ['no brain was free for the critic — the page shipped unjudged; reopen to retry'], revised: false, by: 'heuristic', at }
+  if (!meta || !meta.result) {
+    const why = lastDimaagFailure() || 'session budget or keyless'
+    return { verdict: 'SKIPPED', issues: [`no brain answered the critic (${why}) — the page shipped unjudged; reopen to retry`], revised: false, by: 'heuristic', at }
+  }
   const r = meta.result
   const issues = (Array.isArray(r.issues) ? r.issues : [])
     .map((i) => String(i).replace(/\s+/g, ' ').trim())
@@ -92,6 +95,15 @@ export async function criticPass(pageText: string, reading: Reading, plan: GameP
  * Deterministic critic floor — the checks a hostile reader always makes, keyless. Runs on every
  * page (it costs nothing) and feeds the same issues list; the LLM critic adds judgement on top.
  */
+/** What a "we do not care about …" phrase looks like on the page, when it lands in the first 1200 chars. */
+const DISMISSED_PROBES: { re: RegExp; page: RegExp; label: string }[] = [
+  { re: /certificat/, page: /\bcertifications?\b/, label: 'certifications' },
+  { re: /leetcode|competitive programming|dsa problems/, page: /\bleetcode\b|\bcodeforces\b|\bdsa problems\b|\d+\+? problems solved/, label: 'LeetCode-style lines' },
+  { re: /corporate vocabulary|buzzwords/, page: /\b(synerg|stakeholder|cross-functional|leverag(e|ing) )\w*/, label: 'corporate vocabulary' },
+  { re: /grades|gpa|marks/, page: /\b(cgpa|gpa)\b/, label: 'grades' },
+  { re: /degree subject|university'?s brand|college brand|pedigree/, page: /^[^\n]*\n[^\n]*\n[^\n]*education/i, label: 'education lines' },
+]
+
 export function criticHeuristic(pageText: string, reading: Reading, plan: GamePlan): string[] {
   const issues: string[] = []
   const head = pageText.split('\n').slice(0, 5).join(' ').toLowerCase()
@@ -99,9 +111,12 @@ export function criticHeuristic(pageText: string, reading: Reading, plan: GamePl
   const strongest = plan.threeLines.factIds.length
   if (strongest === 0) issues.push('the three lines cite no fact — the opening carries no proof')
   if (care.length && !/\d/.test(head)) issues.push('no number in the first three lines; a reader anchors on a number')
+  const prime = pageText.slice(0, 1200).toLowerCase()
   for (const q of reading.doesNotCare) {
     const p = q.phrase.toLowerCase()
-    if (/certificat/.test(p) && /\bcertifications?\b/.test(pageText.slice(0, 1200).toLowerCase())) issues.push(`certifications sit in prime space although they say: "${q.quote}"`)
+    // R3 (hunter-caught): only certificates were checked; every dismissed thing now is.
+    const probe = DISMISSED_PROBES.find((d) => d.re.test(p))
+    if (probe && probe.page.test(prime)) issues.push(`${probe.label} sit in prime space although they say: "${q.quote}"`)
   }
   const hon = scanHonesty(pageText)
   if (!hon.clean) issues.push(`slop/guarantee phrases on the page: ${[...hon.slop, ...hon.guarantee].join(', ')}`)

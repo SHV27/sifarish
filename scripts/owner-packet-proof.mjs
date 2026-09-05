@@ -47,7 +47,7 @@ if (n === 0) {
   log('   opening:', (await first.innerText()).replace(/\s+/g, ' ').slice(0, 100))
   await first.click()
   // The instant packet lands in ~1s; the deep pass (Gemini reading + plan + critic) follows.
-  await page.getByText(/The game plan — why this page looks like this/).waitFor({ timeout: 60000 })
+  await page.getByText(/why this page looks like this/).waitFor({ timeout: 60000 })
   await page.screenshot({ path: `${OUT}/packet-instant.png`, fullPage: true })
   for (let i = 0; i < 24; i++) {
     const t = await body()
@@ -58,16 +58,14 @@ if (n === 0) {
   await page.screenshot({ path: `${OUT}/packet-reasoned.png`, fullPage: true })
   const t = await body()
   const badge = /template strategist \(keyless floor\)|gemini deep pass|groq deep pass/i.exec(t)?.[0]
-  const counts = /Played (\d+) · benched (\d+)/.exec(t)
-  const critic = /critic: (PASS|REVISE|SKIPPED)/.exec(t)?.[1]
-  const pages = /(one page|\d pages)/.exec(t)?.[1]
+  const counts = /played (\d+) · benched (\d+)/i.exec(t)
+  const critic = /critic: (PASS|REVISE|SKIPPED)/i.exec(t)?.[1]
+  const pages = /(ONE PAGE|TWO PAGES|\d pages)/.exec(t)?.[1]
   log('   mode badge:', badge ?? 'NOT FOUND')
   log('   played/benched:', counts ? `${counts[1]}/${counts[2]}` : 'NOT FOUND', '· pages:', pages ?? '?', '· critic:', critic ?? 'n/a')
-  const heads = (await page.locator('[aria-label="Compiled resume preview"] p').allInnerTexts()).map((s) => s.replace(/\s+/g, ' ').trim()).filter(Boolean)
-  log('   page (first 8 lines):')
-  for (const h of heads.slice(0, 8)) log('     ', h.slice(0, 120))
-  const headings = heads.filter((h) => /^[A-Z &]{6,}$/.test(h))
-  log('   section order:', headings.join(' → '))
+  log('   headline:', /THREE LINES\s*\n?\s*([^\n]{10,160})/.exec(t)?.[1]?.trim() ?? 'NOT FOUND')
+  log('   section order:', /order: ([^\n]+)/.exec(t)?.[1] ?? 'NOT FOUND')
+  log('   memory:', /THE MEMORY[^\n]*\n\s*·\s*([^\n]+)/.exec(t)?.[1] ?? 'not shown')
 }
 log(`ERRORS (${errors.length})`)
 for (const e of errors.slice(0, 8)) log('   ', e.slice(0, 160))
