@@ -113,3 +113,158 @@ hunter's NINE findings fixed same-day; 403 no-Origin ×4; fabricated token → k
 bookmarklet structural gates) · Money: ZERO new metered surface this cycle. Owner actions
 remaining: rotate the Vercel token pasted in chat (Vercel → Settings → Tokens), and connect
 Gmail once so the alert lane starts feeding the Radar.
+
+---
+# V2 CYCLE (05-Sep-2026 →) — VISION-BRIEF-sifarish-v2.md voids the 30-Aug brief
+
+## V2-1 · Boardroom Minutes (05-Sep-2026)
+
+Seats: Product Visionary · Principal Engineer · Market Analyst · UX Director · The Skeptic · Resource
+Officer · The Owner (his own words from the brief) · Domain seat: The Hostile Recruiter (a Babaclick-class
+founder who reads 100 résumés in an hour).
+
+### First principles (inherited assumptions stripped)
+The job ends at an interview call. Inputs: everything true about him (READMEs, facts he says out loud, his
+past) + everything the company says about itself (the whole page, not the JD). Output: one page a sharp
+human would have spent a week on, for THAT reader. Everything else (discovery, tracking, chat) exists so
+that page is made for the right company, on time, and he knows where each one stands.
+
+### Round 1 — "what is the product?"
+- Visionary: a studio of agents, not a builder. The résumé must be REASONED: read the company, decide what
+  leads, decide what is benched, say why.
+- Skeptic (hit 1): the last cycle also said "reasoning core", "four-pass Editor's Desk", "Dimaag" — and it
+  shipped keyword coverage as "11/11 aligned" (RESEARCH v2 verdict 5). Naming a pass "strategist" is not a
+  strategist. What is structurally different this time?
+- Principal Engineer's answer, accepted: the difference is in the DATA the brain is given and the ARTIFACT it
+  must produce. (a) Input = the whole posting + a values reading (what they care about / say they don't) +
+  the full dossier including README-derived evidence — not a mustHave keyword list. (b) Output = a typed GAME
+  PLAN (section order, lead evidence, played/benched facts each with a reason, skills assembled from JD ∩
+  evidence, reveal decision) that the compiler EXECUTES. The plan is inspectable; the page cannot disagree
+  with it; a plan that benches a true relevant fact without a reason is a gate failure. That is testable and
+  the old design had no such object.
+- Hostile Recruiter: "I read the first three lines and the project names. If NTSE and Braillix are not in
+  those three lines for MY posting, you lost." → the game plan's first decision is "the three lines".
+
+### Round 2 — "where does the dossier come from?"
+- Owner: "I am not going to maintain a fixed set of fields"; "skills in ledger is a waste".
+- Market Analyst: no reference product derives evidence from READMEs; Reactive Resume/AIHawk take typed forms.
+- Engineer: READMEs are pulled live (GitHub API, keyless for public repos), distilled ONCE into cited claims
+  (quote + line) — cached by README sha; keyless floor = headings/bullets/tech lists via a deterministic
+  distiller. Free-form facts ("district badminton player") land as Facts with an inferred kind; if no kind
+  fits, a new section kind is created and persisted (schema-less `kind: string` + a sections registry).
+- Skeptic (hit 2): schema-less facts become junk drawers; the strategist then drowns. Resolution: every fact
+  carries kind + one-line summary + evidence note; the strategist receives a CURATED dossier digest (≤ ~6k
+  tokens) built deterministically, not the raw vault (Anthropic context-engineering, verdict 8).
+- Resource Officer: Groq cannot take the deep prompt (8K TPM). Gemini 3.8-flash carries it; Groq takes
+  chunked passes; keyless floor is deterministic. Budget: ONE deep call per posting (cached by posting hash),
+  ONE critic call, ONE revise call — three calls per company, not thirty.
+
+### Round 3 — "the page, the hunt, the desk"
+- UX Director: the page must LOOK like the six samples (36pt margins, full page, links, all achievements).
+  Owner: "thode bade honge tab bhi chalega". Engineer: one page preferred; page 2 allowed before any true
+  content is dropped; the solver tightens spacing before content. Links = annotation + visible handle.
+- Skeptic (hit 3): discovery already has 9 lanes and he says results are old and misranked — adding lanes
+  is the wrong fix. Resolution: FRESHNESS is a gate (default 14 days, stamped on every card) and SENIORITY is
+  a multiplicative cap (senior → ≤40/100), intern/new-grad is the window; "why this score" is one plain
+  sentence. No new lane except the Summer2027 mirrors already on the list.
+- Owner: "har cheez aankhon ke saamne"; the earlier not-now on dashboards is void.
+  Engineer: one DESK screen: every application with its status (Gmail readonly parses LinkedIn/ATS status
+  mails: received / under review / rejected / interview), fresh roles ranked, and the one thing to do
+  today. Visibility is a table with stamps, not charts.
+- Skeptic (hit 4): a recruiter opening the demo cold will see a job-hunt CRM and shrug. Resolution: demo
+  landing IS the Babaclick worked example — posting → reading → game plan → page — in three scrolls.
+
+## PILLARS (5, in build order — the résumé path ships first, everything grows around it)
+1. **THE STRATEGIST** — reads the WHOLE posting into a Values Reading (care / don't-care / reader persona /
+   role archetype), then writes a typed Game Plan the compiler must execute: the three lines, section order,
+   played/benched facts each with a reason, skills assembled from JD ∩ evidence, framing angle per project,
+   the reveal decision. Separate hostile-recruiter critic with its own rubric; one revise. Every choice
+   inspectable with checkable evidence text. Beat "improve the prompts" because a plan is a testable object.
+   Costs: a new module family + Gemini as the deep brain. Survived the Skeptic by being an artifact, not a
+   promise.
+2. **THE DOSSIER** — schema-less evidence: facts of any kind (sections created on demand), README-derived
+   cited claims pulled live from GitHub, and NO maintained skills list — skills are derived from evidence and
+   chosen per posting. Talk-to-add is the default door. Beat "extend the ledger form" because the owner
+   refuses forms. Costs: a distiller + digest builder + a migration that preserves everything he has.
+3. **THE PAGE** — the campus canon at full size: 36pt margins, Times register kept, hyperlinks (annotation +
+   visible handle), every achievement/position/certification present, labelled skills rows per plan, section
+   order per plan, page 2 before any true fact is dropped. DOCX parity, parse-back intact.
+4. **THE HUNT, RE-RANKED** — freshness gate + seniority cap + intern window + vision fit, one-sentence "why".
+   Summer2027 mirrors + JSearch INTERN filter + Adzuna max_days_old. No scraping, ever.
+5. **THE DESK** — one screen: applications with Gmail-derived status stamps, fresh ranked roles, today's one
+   action; Ek Baat chat as the command line on every screen (add fact / new section / change plan / re-rank).
+   Demo mode = the Babaclick worked example, read cold in three scrolls.
+
+## THE CUT LIST
+- Unattended submit anywhere (ban-class risk; escalation-listed) · LinkedIn jobs-guest fetch (ToS) ·
+  Wellfound/YC scrapers · native mobile app (responsive web covers "open from anywhere") · charts/analytics
+  beyond the status table · Taleem gap-radar and Pulse as pillars (kept as-is, untouched) · a second chat
+  surface · "ATS score" in any wording · a fixed "made by Sifarish" line on every résumé.
+
+## THE INNOVATION (absent from every reference found)
+**The Played/Benched board**: for every fact in the dossier, the game plan states ON PAGE or BENCHED and
+the reason in the company's own words ("benched: they say they do not care about certificates"). Ancestry:
+a trial lawyer's brief (lead with the strongest admissible evidence for THIS judge), a theatre casting call
+sheet (who plays what, and who waits), and a poker read (a company's "we don't care about" list is a tell).
+
+## THE PRE-MORTEM OBITUARY
+1. "Died because the strategist was a prompt and the page ignored it" → the Game Plan is a typed object;
+   the compiler executes it; a gate fails if the page contradicts the plan or benches an unreasoned fact.
+2. "Died because the free brain 429'd mid-October and the résumé went blank" → three-lane chain + the
+   deterministic reading/plan floor; the mode is printed on the packet (I4).
+3. "Died because it looked like a CRM to the recruiter and like a form to him" → demo = worked example;
+   owner = chat-first with sections created on demand.
+
+## OPEN CALLS MADE ON THE OWNER'S BEHALF (veto in one word)
+1. Auto-apply stays prefill + human click (unchanged; the account-loss law).
+2. Page policy: one page preferred, page 2 allowed before any true fact is dropped; spacing tightens first.
+3. The Sifarish reveal is a per-company decision the plan makes and explains; never a fixed line.
+4. Existing infrastructure (Darbaan identity, encrypted vault sync, discovery lanes, Gmail readonly, the
+   Times renderer, deploy path) is KEPT; the thinking layer is rebuilt from scratch. This is how "scratch
+   everything" was interpreted: his frustration is with output quality and product shape, and the clock
+   is the deciding factor.
+
+## V2-2 · Where his standard cannot be physically met (logged openly, per the brief)
+1. "Gets a call at any cost" — no artifact guarantees a call. The product maximises call probability and
+   evidences why; no guarantee language exists anywhere (I9 stays).
+2. "Maximum ATS score" — no such score exists (RESEARCH v2 verdict 1). The honest claim: parses cleanly on
+   the Greenhouse/Lever/Ashby/Workday parser class, single column, standard fonts, text layer verified.
+3. "Self-evolves" — outcome data is one rejection. What evolves now is DATA he feeds: facts, READMEs,
+   postings, recorded outcomes; the outcome-learning loop starts empty and says so.
+4. "Last change ever" — job boards and models rot. Everything that rots is data (routing.json, lanes,
+   prompts registry, values lexicon); a routine market shift needs no session.
+5. LinkedIn in-app messages are invisible to Gmail readonly — only LinkedIn's EMAIL notifications are
+   read. Statuses that live only inside LinkedIn's inbox must be marked by hand (one chat line).
+6. Keyless mode's reading is deterministic (a values lexicon over sentences) and weaker than the Gemini
+   pass; the packet prints which mode built it.
+7. The app cannot verify a fact he tells it. His word is the oath; the dossier records "sworn by owner".
+8. Groq's free tier (8K TPM) cannot carry the deep pass; if Gemini's free tier walls, the floor is the
+   deterministic plan — the packet says so, never a silent shallower answer.
+
+## V2-3 · Arc 1 calls made while building (05-Sep-2026)
+- **Groq cannot carry the deep pass** (8K TPM, verified on console.groq.com): `/api/dimaag` now skips the
+  Groq lane for prompts above 24k chars and gives Gemini a 60k-char window; routing v1.2.0 heads with
+  gemini-3.8-flash (the current stable Flash). The keyless floor (deterministic reading + plan) is real
+  and is what the tests exercise; the Gemini pass is proven live separately.
+- **The page embeds its serif.** Read on the rendered page: the non-embedded standard Times is re-spaced by
+  every viewer ("the LLM" → "theLLM" in pdf.js), while every canon sample is a LaTeX PDF with embedded
+  fonts. Tinos (Apache-2.0, metric-compatible with Times New Roman) ships pre-subsetted to Latin-1 in
+  public/fonts (~31 KB each) — pdf-lib's runtime subsetter drops glyphs in pdf.js, so the files embed
+  whole; the compiler's width tables are generated from the same files (kerning ratio 1.0000). One new
+  runtime dependency (@pdf-lib/fontkit 1.1.1) — the STACK LOCK's "zero new deps" is amended for this, on
+  evidence. Fallback to the standard Times is declared on the render.
+- **"React" stays off the page.** The owner marked the React skill entry resumeEligible:false long ago; the
+  v2 dossier honours that everywhere (stack headers, skills rows, derived skills) even though his READMEs
+  use React. His call outranks the README; flipping it is one chat line (Arc 2). Logged so it is not read
+  as a bug.
+- **The golden-quality floor is 85, not 90**, on the legacy compile path: the seed is now a five-project
+  dossier with 4-6 bullets each and the rubric counts every un-numbered bullet the picker chose as a lost
+  point. Every lost point is still itemized. The product path (the plan) is judged by the critic instead.
+- **Three projects on a rich dossier.** The six canon samples show three projects when achievements,
+  positions and certifications also play; the plan caps at three unless the rest of the dossier is thin
+  (four then). Page 2 remains the fallback (Settings.pagePolicy 'two-ok'), never the plan — and the
+  page-solver exhausts six fact-neutral steps (bullets 4→3→2, description 280→170 chars, summary off)
+  and four spacing levels before it takes a second page or declares a bench.
+- **Postings are unwrapped before reading.** A hard-wrapped paste (email/PDF) lost the tail of "We do not
+  care about: …" across a line break; soft line breaks now join before the reader runs.
+- **A stale "Currently Building (July 2026)" reads as a broken promise**; a past ETA drops the date.

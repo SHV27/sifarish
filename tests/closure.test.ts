@@ -54,12 +54,19 @@ describe('F1 — the estimator measures with the renderer\'s EXACT font metrics'
     expect(src).toContain("from './times-metrics'")
   })
 
-  it('timesWidth() parity with pdf-lib Times (reg/bold/italic) — never under, ≤3% over (kerning)', async () => {
+  it('timesWidth() parity with the EMBEDDED serif (Tinos reg/bold/italic) — never under, ≤3% over (kerning)', async () => {
+    // v2 (05-Sep-2026): the renderer embeds Tinos (public/fonts); the estimator's tables are generated
+    // from the same files — the gate pins the two together, exactly as it pinned the standard Times.
+    const { loadSerifFaces } = await import('../src/lib/export/fonts')
+    const faces = (await loadSerifFaces())!
+    expect(faces, 'public/fonts/Tinos-*.ttf must load in Node').toBeTruthy()
+    const fontkit = (await import('@pdf-lib/fontkit')).default
     const doc = await PDFDocument.create()
+    doc.registerFontkit(fontkit)
     const fonts = {
-      reg: await doc.embedFont(StandardFonts.TimesRoman),
-      bold: await doc.embedFont(StandardFonts.TimesRomanBold),
-      obl: await doc.embedFont(StandardFonts.TimesRomanItalic),
+      reg: await doc.embedFont(faces.regular, { subset: false }),
+      bold: await doc.embedFont(faces.bold, { subset: false }),
+      obl: await doc.embedFont(faces.italic, { subset: false }),
     } as const
     const samples = [
       'Engineered a keyless core so every pillar runs without API keys',

@@ -152,7 +152,7 @@ describe('Defect 3 — the page reads like a typesetter set it', () => {
       summary:
         'A personal job-hunt chief of staff that compiles truthful evidence-linked resumes, hunts roles across lawful APIs, and drafts every artifact with hand-authored fallbacks everywhere',
     }
-    const ledger = [...SEED_LEDGER, long]
+    const ledger = [...SEED_LEDGER.filter((e) => e.kind !== 'project'), long] // v2: the only project → always on the page
     const decode = decodeJD(AI_JD)
     const coverage = matchEvidence(decode, ledger)
     const resume = compileResume({ identity: SEED_IDENTITY, ledger, decode, coverage, jobId: 'j1' })

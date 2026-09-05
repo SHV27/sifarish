@@ -2,13 +2,21 @@
 
 export type Tier = 'shipped' | 'in_forge'
 
-export type EntryKind =
+/**
+ * v2 THE DOSSIER — known kinds keep their typing; ANY string is a legal kind (a section created
+ * on demand — "sports", "publications", "volunteering"). The compiler never switches on a closed
+ * enum again: unknown kinds render as titled sections in the game plan's order (ARCHITECTURE v2
+ * contradiction 7).
+ */
+export type KnownEntryKind =
   | 'project'
   | 'skill'
   | 'education'
+  | 'experience'
   | 'achievement'
   | 'certification'
   | 'position'
+export type EntryKind = KnownEntryKind | (string & {})
 
 export interface Bullet {
   id: string
@@ -68,6 +76,8 @@ export interface LedgerEntry {
   tags: string[]
   /** Shaurya's call: some real skills are not interview-safe; they never enter any export. */
   resumeEligible: boolean
+  /** v2 — provenance of the fact: his own word, a README he wrote, or the seed. */
+  sworn?: 'owner' | 'readme' | 'seed'
   /**
    * Session 7 typesetter: optional skill-group override ('AI & ML' | 'Languages' |
    * 'Frameworks & Tools'). Absent → the deterministic lexicon categorizer decides.
@@ -230,6 +240,8 @@ export interface RubricWeights {
 
 export type LineKind =
   | 'contact'
+  /** v2 — the plan's headline (the first of the three lines), centered under the contact block. */
+  | 'headline'
   | 'summary'
   | 'heading'
   | 'entry-title'
@@ -259,6 +271,14 @@ export interface CompiledLine {
    * deterministic (compile/emphasis.ts), never LLM-chosen.
    */
   runs?: { text: string; bold?: boolean }[]
+  /**
+   * v2 — a clickable target for this line's link-shaped text (contact handles, project links).
+   * The VISIBLE text stays a readable handle/URL (parsers read anchor text, not the annotation —
+   * RESEARCH v2 verdict 1); the annotation is the click.
+   */
+  link?: string
+  /** v2 — extra link annotations inside the line: substring → URL (contact line handles). */
+  links?: { text: string; url: string }[]
 }
 
 export interface CompiledResume {
@@ -271,6 +291,10 @@ export interface CompiledResume {
    * happens). Names, not ids — they render directly in the gap note.
    */
   benchedByPage?: string[]
+  /** v2 — pages the page-solver settled on (1 by default; 2 only under Settings.pagePolicy 'two-ok'). */
+  pages?: number
+  /** v2 — the tighten level the solver used (0 = canon spacing … 3 = tightest), before any content step. */
+  tighten?: number
 }
 
 export interface CompiledDoc {
@@ -387,6 +411,14 @@ export interface Packet {
   baithakLog?: BaithakLogEntry[]
   /** Professional summary on the resume (default on) — evidence-linked, Baithak-toggleable. */
   summaryOn?: boolean
+  /** v2 THE STRATEGIST — the posting understood (values reading), persisted for inspection. */
+  reading?: Reading
+  /** v2 — THE GAME PLAN the compiler executed; the Played/Benched board renders from it. */
+  plan?: GamePlan
+  /** v2 — which brain wrote the reading + plan (printed on the packet; I4 observable degradation). */
+  strategistMode?: StrategistMode
+  /** v2 — the hostile-recruiter critic's verdict on the executed page (skipped is declared). */
+  critic?: CriticVerdict
 }
 
 // ---------- Boundary errlog (Studio Protocol W1) ----------
@@ -646,6 +678,13 @@ export interface Settings {
   /** Session 6.1 — set when the vault repair re-forges the ledger; packets older than this
    *  auto re-tailor on open, so a stored packet can never keep serving pre-repair bullets. */
   lastReforgeAt?: string
+  /**
+   * v2 — page policy. 'two-ok' (default; owner: "thode bade honge tab bhi chalega") lets the
+   * page-solver spill to a second page BEFORE any true fact is dropped; 'one' keeps the old law.
+   */
+  pagePolicy?: 'one' | 'two-ok'
+  /** v2 THE DOSSIER — sections registry (kind → heading, order). Created on demand, persisted. */
+  sections?: SectionDef[]
 }
 
 // ---------- Khabri (discovery + signals) ----------
@@ -802,4 +841,99 @@ export interface ApplyPlan {
   steps: ApplyStep[]
   screeningAnswers: { q: string; a: string; ledgerIds: string[] }[]
   generatedBy: 'guru' | 'template'
+}
+
+// ---------- v2 THE STRATEGIST (05-Sep-2026) ----------
+
+export type StrategistMode = 'gemini' | 'groq' | 'heuristic'
+
+/** A phrase the posting states, with the posting's own words as the receipt. */
+export interface ReadingQuote {
+  phrase: string
+  quote: string
+}
+
+/**
+ * THE READING — the whole posting understood once (not keyword-decoded): what this company says
+ * it cares about, what it says it does NOT care about, who reads the résumé, and what the role
+ * really is. Cached by posting hash; persisted on the packet so every plan decision can point at
+ * the posting's words. The lexicon decode survives inside `skills` as the keyless floor.
+ */
+export interface Reading {
+  company: string
+  roleTitle: string
+  /** One line: what the company does, in plain words (framing only, never a claim about him). */
+  domain: string
+  /** Two sentences: what this posting is really asking for. */
+  summary: string
+  cares: ReadingQuote[]
+  doesNotCare: ReadingQuote[]
+  readerPersona: 'founder' | 'hiring-manager' | 'recruiter-ats' | 'campus-panel'
+  roleWindow: 'intern' | 'new-grad' | 'mid' | 'senior' | 'unspecified'
+  /** Archetype id from darzi/archetypes (what THIS reviewer scans for first). */
+  archetype: string
+  skills: { must: string[]; nice: string[] }
+  /** Distinct word tokens of the posting (lowercase) — proven skills the posting MENTIONS join the rows. */
+  tokens?: string[]
+  /** 0..1 — would this reader be delighted that the applicant's own AI system compiled the page. */
+  revealAffinity: number
+  by: StrategistMode
+  at: string
+}
+
+export interface PlanFact {
+  factId: string
+  /** Section key (registry): education · experience · projects · skills · achievements · positions · certs · <custom kind>. */
+  section: string
+  /** Why it is on the page for THIS company — in the company's words where possible. */
+  reason: string
+  /** Optional angle for a project (framing direction the bullet selection honors — never new facts). */
+  framing?: string
+}
+
+export interface SkillRow {
+  label: string
+  /** Every item carries the fact ids that PROVE it (I1) — an unproven item never renders. */
+  items: { text: string; factIds: string[] }[]
+}
+
+/**
+ * THE GAME PLAN — the typed artifact the compiler executes. Everything visible on the page traces
+ * to a plan line with a reason; a true fact benched without a reason fails validation.
+ */
+export interface GamePlan {
+  /** The three lines a reader hits first: headline (under the name) + summary sentence, evidence-cited. */
+  threeLines: { headline: string; summary: string; factIds: string[] }
+  sectionOrder: string[]
+  played: PlanFact[]
+  benched: { factId: string; reason: string }[]
+  skills: SkillRow[]
+  /** The Sifarish reveal — a per-company strategic call, never a fixed stamp. */
+  reveal: { on: boolean; reason: string }
+  /** Convenience: project ids in play order (derived from `played`). */
+  projectOrder: string[]
+  /** Optional per-project bullet order the plan chose (ids); relevance backfills. */
+  bulletPlan?: Record<string, string[]>
+  /** The strategy in one paragraph, plain words — what a sharp human would say they did. */
+  rationale: string
+  /** Validation notes: what the validator discarded and why (never silent). */
+  notes: string[]
+  by: StrategistMode
+  at: string
+}
+
+export interface CriticVerdict {
+  verdict: 'PASS' | 'REVISE' | 'SKIPPED'
+  issues: string[]
+  /** True when the plan was revised once after the critic's issues. */
+  revised: boolean
+  by: StrategistMode
+  at: string
+}
+
+/** v2 — a section the dossier knows how to render (registry row; custom kinds land here). */
+export interface SectionDef {
+  kind: string
+  label: string
+  order: number
 }

@@ -14,6 +14,7 @@
     "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "@vercel/blob": "^2.6.1",
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^4.2.0",

@@ -25,8 +25,18 @@ const GROQ_MODELS = {
 
 // Final Jang W4c (Law-12, 19-Jul-2026): gemini-3-flash-preview was two generations behind;
 // gemini-3.5-flash is the current STABLE flagship flash. Chain order mirrors routing.json.
-const GEMINI_REASONING = ['gemini-3.5-flash', 'gemini-3.1-flash-lite'] as const
-const GEMINI_CLASSIFY = ['gemini-3.1-flash-lite'] as const
+// v2 (05-Sep-2026, Law-12 verified on ai.google.dev/gemini-api/docs/models): gemini-3.8-flash is the
+// current STABLE Flash; 3.7 stays as the second Gemini lane. Chain order mirrors routing.json v1.2.0.
+const GEMINI_REASONING = ['gemini-3.8-flash', 'gemini-3.7-flash'] as const
+const GEMINI_CLASSIFY = ['gemini-3.5-flash-lite'] as const
+/**
+ * v2 THE STRATEGIST — Groq's free tier is 8K tokens PER MINUTE (console.groq.com/docs/rate-limits,
+ * verified 05-Sep-2026): a whole-posting + dossier prompt cannot ride it. Prompts above this many
+ * characters (~6K tokens) skip the Groq lane instead of burning a guaranteed 413/429.
+ */
+const GROQ_MAX_PROMPT_CHARS = 24000
+/** Gemini takes the whole posting + the dossier (1M context); Groq keeps the 16k caps. */
+const GEMINI_MAX_CHARS = 60000
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -125,8 +135,8 @@ async function callGemini(
       method: 'POST',
       headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: body.system.slice(0, 16000) }] },
-        contents: [{ role: 'user', parts: [{ text: body.user.slice(0, 16000) }] }],
+        systemInstruction: { parts: [{ text: body.system.slice(0, GEMINI_MAX_CHARS) }] },
+        contents: [{ role: 'user', parts: [{ text: body.user.slice(0, GEMINI_MAX_CHARS) }] }],
         generationConfig: {
           temperature: body.tier === 'classify' ? 0 : 0.2,
           // Thinking models spend output tokens on reasoning before the JSON — a tight cap
@@ -207,7 +217,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'bad request' }, 400)
   }
   if (!body?.system || !body?.user) return json({ error: 'bad request' }, 400)
-  const maxTokens = Math.max(128, Math.min(Math.floor(Number(body.maxTokens) || 900), 2000))
+  const maxTokens = Math.max(128, Math.min(Math.floor(Number(body.maxTokens) || 900), 3000))
 
   // Build the lane order for this tier from whatever keys exist.
   const lanes: (() => Promise<LaneResult>)[] = []
@@ -216,7 +226,8 @@ export default async function handler(req: Request): Promise<Response> {
     if (geminiKey) for (const m of GEMINI_CLASSIFY) lanes.push(() => callGemini(m, geminiKey, body!, maxTokens))
   } else {
     if (geminiKey) for (const m of GEMINI_REASONING) lanes.push(() => callGemini(m, geminiKey, body!, maxTokens))
-    if (groqKey) lanes.push(() => callGroq(groqKey, body!, maxTokens))
+    // The Groq lane only when the prompt fits its per-minute window (else it is a guaranteed miss).
+    if (groqKey && body.system.length + body.user.length <= GROQ_MAX_PROMPT_CHARS) lanes.push(() => callGroq(groqKey, body!, maxTokens))
   }
 
   let sawRateLimit = false

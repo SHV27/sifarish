@@ -53,7 +53,9 @@ describe('set-entry — "ye skill hata" is honest tailoring, not a lie', () => {
 
 describe('reframe-project — wording is his, facts are frozen', () => {
   it('a guarded rephrasing renders in place, under the SAME evidence link (I1)', () => {
-    const project = SEED_LEDGER.find((e) => e.kind === 'project' && e.tier === 'shipped' && e.bullets.length > 0)!
+    // v2: the seed holds five projects and the legacy trim keeps four — pick one that is ON the page.
+    const onPage = compile(base).lines.find((l) => l.kind === 'entry-title' && SEED_LEDGER.some((e) => e.kind === 'project' && l.ledgerIds.includes(e.id)))!
+    const project = SEED_LEDGER.find((e) => e.kind === 'project' && onPage.ledgerIds.includes(e.id))!
     const bullet = project.bullets[0]
     // A legal rephrasing: re-aimed wording, not one new fact.
     const reworded = `Engineered ${bullet.text.charAt(0).toLowerCase()}${bullet.text.slice(1)}`

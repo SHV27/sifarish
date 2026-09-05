@@ -5,9 +5,17 @@
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
-const env = readFileSync('.env.local', 'utf8')
-const token = /VERCEL_TOKEN=([^\r\n]+)/.exec(env)?.[1]
-if (!token) throw new Error('VERCEL_TOKEN missing from .env.local')
+// v2: the token comes from the SHELL first (never written to any file), .env.local second.
+let token = process.env.VERCEL_TOKEN
+if (!token) {
+  try {
+    token = /VERCEL_TOKEN=([^
+]+)/.exec(readFileSync('.env.local', 'utf8'))?.[1]
+  } catch {
+    /* no .env.local */
+  }
+}
+if (!token) throw new Error('VERCEL_TOKEN missing (env or .env.local)')
 const TEAM = 'team_B21vLCIcwNIzaWX26hUkmNLq'
 const PROJECT = 'prj_oTE87H2PWVCPyp3vBdkYCWIaUuyd'
 

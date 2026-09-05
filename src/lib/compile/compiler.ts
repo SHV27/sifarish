@@ -2,10 +2,14 @@ import type {
   CompiledLine,
   CompiledResume,
   CoverageReport,
+  GamePlan,
   Identity,
   JDDecode,
   LedgerEntry,
+  SectionDef,
 } from '../../types'
+import { sectionLabel } from '../strategist/plan'
+import { bannedSkillKeys, isBannedSkill } from '../dossier/skills'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills, sanitizePdfText } from './typeset'
 import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEIGHT, isIdentityBullet } from './overlap'
@@ -44,12 +48,32 @@ export class CompileError extends Error {
 }
 
 // -- Budget constants (points) --
-export const PAGE = { width: 595.28, height: 841.89, margin: 48 }
-export const USABLE_HEIGHT = PAGE.height - PAGE.margin * 2 // 745.89
+// v2 THE PAGE (05-Sep-2026): 36pt (0.5in) margins — every one of the six campus-canon samples the
+// owner supplied runs a full page at half-inch margins; the old 48pt frame was the first reason
+// his page read "small". A4 stays (Indian campus canon prints A4).
+export const PAGE = { width: 595.28, height: 841.89, margin: 36 }
+export const USABLE_HEIGHT = PAGE.height - PAGE.margin * 2 // 769.89
+export const NAME_SIZE = 19
+
+/**
+ * v2 — THE TIGHTEN LADDER. Before ANY true fact is dropped, spacing tightens (leading/before scale);
+ * level 3 also drops body text by half a point. The canon samples tighten spacing to fit a full
+ * page — they never trim achievements — so the solver does the same, in this order.
+ */
+export const TIGHTEN_SCALE = [1, 0.94, 0.88, 0.82] as const
+export function metricsFor(kind: CompiledLine['kind'], tighten = 0): { size: number; leading: number; before: number; bold: boolean } {
+  const m = LINE_METRICS[kind]
+  const t = Math.max(0, Math.min(TIGHTEN_SCALE.length - 1, tighten))
+  const k = TIGHTEN_SCALE[t]
+  const size = t >= 3 && (kind === 'bullet' || kind === 'skills' || kind === 'forge' || kind === 'meta') ? m.size - 0.5 : m.size
+  return { size, leading: Math.round(m.leading * k * 100) / 100, before: Math.round(m.before * k * 100) / 100, bold: m.bold }
+}
 
 export const LINE_METRICS: Record<CompiledLine['kind'], { size: number; leading: number; before: number; bold: boolean }> = {
   contact: { size: 9.5, leading: 12.5, before: 2, bold: false },
-  summary: { size: 10, leading: 13, before: 6, bold: false },
+  // v2 — the plan's headline: the line under the name (centered, bold, the canon's title line).
+  headline: { size: 10.5, leading: 13.5, before: 4, bold: true },
+  summary: { size: 10, leading: 13, before: 5, bold: false },
   heading: { size: 11, leading: 14, before: 10, bold: true },
   'entry-title': { size: 10.5, leading: 13.5, before: 5, bold: true },
   meta: { size: 10, leading: 13, before: 1, bold: false },
@@ -87,16 +111,16 @@ function wrapCount(text: string, size: number, font: 'reg' | 'bold' | 'obl', fir
   return count
 }
 
-export function estimateLineHeight(line: CompiledLine, isName = false): number {
-  const m = LINE_METRICS[line.kind]
-  const size = isName ? 17 : m.size
+export function estimateLineHeight(line: CompiledLine, isName = false, tighten = 0): number {
+  const m = metricsFor(line.kind, tighten)
+  const size = isName ? NAME_SIZE : m.size
   const font: 'reg' | 'bold' | 'obl' = isName || m.bold ? 'bold' : line.kind === 'meta' || line.kind === 'forge' ? 'obl' : 'reg'
   const text = sanitizePdfText(line.text)
   const right = line.right ? sanitizePdfText(line.right) : ''
-  const lead = isName ? 21 : m.before + m.leading
+  const lead = isName ? NAME_SIZE + 4 : m.before + m.leading
   const extraLead = isName ? m.leading : m.leading
 
-  if (isName || line.kind === 'contact') {
+  if (isName || line.kind === 'contact' || line.kind === 'headline') {
     return lead + (wrapCount(text, size, font, MAXW) - 1) * extraLead
   }
   if (line.kind === 'heading') {
@@ -119,10 +143,37 @@ export function estimateLineHeight(line: CompiledLine, isName = false): number {
   return lead + (wrapCount(text, size, font, leftWidth) - 1) * m.leading
 }
 
-export function estimateHeight(lines: CompiledLine[]): number {
+export function estimateHeight(lines: CompiledLine[], tighten = 0): number {
   let h = 0
-  for (let i = 0; i < lines.length; i++) h += estimateLineHeight(lines[i], i === 0)
+  for (let i = 0; i < lines.length; i++) h += estimateLineHeight(lines[i], i === 0, tighten)
   return h
+}
+
+/**
+ * v2 — ONE pagination rule for the estimator AND the renderer (authority 2 extended to pages):
+ * a heading or an entry title never ends a page (keep-with-next); a page starts at the top margin.
+ * Returns the 1-based page of every line.
+ */
+export function paginate(lines: CompiledLine[], tighten = 0): number[] {
+  const pages: number[] = []
+  let y = 0
+  let page = 1
+  for (let i = 0; i < lines.length; i++) {
+    const h = estimateLineHeight(lines[i], i === 0, tighten)
+    const keep = lines[i].kind === 'heading' || lines[i].kind === 'entry-title'
+    const next = keep && lines[i + 1] ? estimateLineHeight(lines[i + 1], false, tighten) : 0
+    if (y > 0 && y + h + next > USABLE_HEIGHT) {
+      page++
+      y = 0
+    }
+    y += h
+    pages.push(page)
+  }
+  return pages
+}
+export function estimatePages(lines: CompiledLine[], tighten = 0): number {
+  const p = paginate(lines, tighten)
+  return p.length ? p[p.length - 1] : 1
 }
 
 /**
@@ -270,6 +321,16 @@ export interface CompileInput {
    * bullet — the judge can only remove/swap real ledger bullets, never write (I1).
    */
   excludedBulletIds?: string[]
+  /**
+   * v2 THE STRATEGIST — when a GAME PLAN is present the compiler EXECUTES it (section order,
+   * played facts, skills rows, the three lines, the reveal) and the page-solver tightens spacing
+   * before any content step; page 2 is allowed under `pagePolicy` 'two-ok' before any true fact
+   * is dropped. Without a plan the pre-v2 path runs unchanged (fixtures, keyless floors).
+   */
+  plan?: GamePlan
+  pagePolicy?: 'one' | 'two-ok'
+  sections?: SectionDef[]
+  summaryOn?: boolean
 }
 
 export type SectionKey = 'education' | 'skills' | 'projects' | 'forge' | 'achievements' | 'certs'
@@ -329,56 +390,13 @@ function trimLevelsFor(castCount: number): TrimLevel[] {
   return [...TRIM_LEVELS.map((lv) => ({ ...lv, maxProjects: Math.max(lv.maxProjects, n) })), ...TRIM_LEVELS.slice(-2)]
 }
 
-export function compileResume(input: CompileInput): CompiledResume {
-  const { identity, ledger, decode, coverage, jobId } = input
-  // Suppression is a single gate at the top: whatever he told the tailor to drop for this role
-  // cannot reappear through the project pool, the skills line, or any other section.
-  const excluded = new Set(input.excludedIds ?? [])
-  const eligible = ledger.filter((e) => e.resumeEligible && !excluded.has(e.id))
-  const shipped = eligible.filter((e) => e.tier === 'shipped')
-
-  // -- Project pool: the cast lineup under an editorial plan, else v1 relevance sort --
-  const allProjects = shipped.filter((e) => e.kind === 'project')
-  const relevanceSorted = () =>
-    allProjects
-      .slice()
-      .sort(
-        (a, b) =>
-          entryRelevance(b, decode) - entryRelevance(a, decode) ||
-          (b.evidence?.date ?? '').localeCompare(a.evidence?.date ?? ''),
-      )
-  let projectPool: LedgerEntry[]
-  if (input.editorial && input.editorial.order.length > 0) {
-    const byId = new Map(allProjects.map((p) => [p.id, p]))
-    projectPool = input.editorial.order.map((id) => byId.get(id)).filter((p): p is LedgerEntry => !!p)
-    if (projectPool.length === 0) projectPool = relevanceSorted()
-  } else {
-    projectPool = relevanceSorted()
-  }
-
-  // -- Fixed + trimmable content pools --
-  // Education newest-first (Session 6, caught in the live proof): Dexie returns rows in
-  // primary-key order, which put Class X above Class XII. Degrees read reverse-chronological.
-  // Dates arrive as "MM/YYYY" or "YYYY[-MM]" — normalize to YYYYMM so the sort is real.
-  const eduKey = (d?: string): string => {
-    const m = /^(\d{1,2})\/(\d{4})$/.exec(d ?? '')
-    if (m) return `${m[2]}${m[1].padStart(2, '0')}`
-    return (d ?? '').replace(/[^0-9]/g, '').padEnd(6, '0').slice(0, 6)
-  }
-  const education = shipped
-    .filter((e) => e.kind === 'education')
-    .sort((a, b) => eduKey(b.evidence?.date).localeCompare(eduKey(a.evidence?.date)))
-  const skills = shipped
-    .filter((e) => e.kind === 'skill')
-    .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
-  const achievements = shipped
-    .filter((e) => e.kind === 'achievement')
-    .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
-  const positions = shipped.filter((e) => e.kind === 'position')
-  const certs = shipped.filter((e) => e.kind === 'certification')
-  const forgeIds = new Set(coverage.building.flatMap((h) => h.ledgerIds))
-  const forgeEntries = eligible.filter((e) => e.tier === 'in_forge' && forgeIds.has(e.id))
-
+/**
+ * v2 — ONE bullet picker for the pre-v2 compile and the plan compile (the second copy of a rule
+ * is a fork of its bugs). Ranked by relevance (+ the plan's bullet order, + a framing hint),
+ * MMR-deduped page-wide, digit-bearing bullet guaranteed when the entry holds one.
+ */
+function createBulletPicker(input: CompileInput) {
+  const { decode } = input
   type PBullet = LedgerEntry['bullets'][number]
   const renderText = (b: PBullet) => input.bulletOverrides?.[b.id] ?? b.text
   const hasNumber = (b: PBullet) => /\d/.test(renderText(b)) || (b.metrics ? /\d/.test(b.metrics) : false)
@@ -386,12 +404,17 @@ export function compileResume(input: CompileInput): CompiledResume {
   /** Ranked candidate list: the editorial plan leads (D28 — Dimaag proposes), relevance backfills. */
   const excludedBullets = new Set(input.excludedBulletIds ?? [])
   const rankedBullets = (p: LedgerEntry): PBullet[] => {
-    const numBonus = (b: PBullet) => (hasNumber(b) ? 2 : 0)
+    const numBonus = (b: PBullet) => (hasNumber(b) ? 4 : 0) // v2: the canon front-loads numbers (Ustaad ¶quantify-everything-honest)
+    // v2 — the plan's framing for this project ("lead with the innovation angle") nudges bullets
+    // that speak that angle upward. A hint on ORDER only — never new text (I1).
+    const framing = (input.plan?.played.find((f) => f.factId === p.id)?.framing ?? '').toLowerCase()
+    const frameWords = framing.split(/[^a-z0-9]+/).filter((w) => w.length >= 4)
+    const frameBonus = (b: PBullet) => (frameWords.length ? frameWords.filter((w) => renderText(b).toLowerCase().includes(w)).length : 0)
     const pool = p.bullets.filter((b) => !excludedBullets.has(b.id))
     const base = pool
       .slice()
-      .sort((a, b) => bulletRelevance(b.keywords, decode) + numBonus(b) - (bulletRelevance(a.keywords, decode) + numBonus(a)))
-    const plan = input.editorial?.bullets[p.id]
+      .sort((a, b) => bulletRelevance(b.keywords, decode) + numBonus(b) + frameBonus(b) - (bulletRelevance(a.keywords, decode) + numBonus(a) + frameBonus(a)))
+    const plan = input.plan?.bulletPlan?.[p.id] ?? input.editorial?.bullets[p.id]
     if (plan && plan.length > 0) {
       const byId = new Map(pool.map((b) => [b.id, b]))
       const planned = plan.map((id) => byId.get(id)).filter((b): b is PBullet => !!b)
@@ -461,6 +484,64 @@ export function compileResume(input: CompileInput): CompiledResume {
     return chosen
   }
 
+  return { bulletsFor, renderText }
+}
+
+export function compileResume(input: CompileInput): CompiledResume {
+  if (input.plan) return compileFromPlan(input)
+
+  const { identity, ledger, decode, coverage, jobId } = input
+  // Suppression is a single gate at the top: whatever he told the tailor to drop for this role
+  // cannot reappear through the project pool, the skills line, or any other section.
+  const excluded = new Set(input.excludedIds ?? [])
+  const eligible = ledger.filter((e) => e.resumeEligible && !excluded.has(e.id))
+  const shipped = eligible.filter((e) => e.tier === 'shipped')
+
+  // -- Project pool: the cast lineup under an editorial plan, else v1 relevance sort --
+  const allProjects = shipped.filter((e) => e.kind === 'project')
+  const relevanceSorted = () =>
+    allProjects
+      .slice()
+      .sort(
+        (a, b) =>
+          entryRelevance(b, decode) - entryRelevance(a, decode) ||
+          (b.evidence?.date ?? '').localeCompare(a.evidence?.date ?? ''),
+      )
+  let projectPool: LedgerEntry[]
+  if (input.editorial && input.editorial.order.length > 0) {
+    const byId = new Map(allProjects.map((p) => [p.id, p]))
+    projectPool = input.editorial.order.map((id) => byId.get(id)).filter((p): p is LedgerEntry => !!p)
+    if (projectPool.length === 0) projectPool = relevanceSorted()
+  } else {
+    projectPool = relevanceSorted()
+  }
+
+  // -- Fixed + trimmable content pools --
+  // Education newest-first (Session 6, caught in the live proof): Dexie returns rows in
+  // primary-key order, which put Class X above Class XII. Degrees read reverse-chronological.
+  // Dates arrive as "MM/YYYY" or "YYYY[-MM]" — normalize to YYYYMM so the sort is real.
+  const eduKey = (d?: string): string => {
+    const m = /^(\d{1,2})\/(\d{4})$/.exec(d ?? '')
+    if (m) return `${m[2]}${m[1].padStart(2, '0')}`
+    return (d ?? '').replace(/[^0-9]/g, '').padEnd(6, '0').slice(0, 6)
+  }
+  const education = shipped
+    .filter((e) => e.kind === 'education')
+    .sort((a, b) => eduKey(b.evidence?.date).localeCompare(eduKey(a.evidence?.date)))
+  const skills = shipped
+    .filter((e) => e.kind === 'skill')
+    .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
+  const achievements = shipped
+    .filter((e) => e.kind === 'achievement')
+    .sort((a, b) => entryRelevance(b, decode) - entryRelevance(a, decode))
+  const positions = shipped.filter((e) => e.kind === 'position')
+  const certs = shipped.filter((e) => e.kind === 'certification')
+  const forgeIds = new Set(coverage.building.flatMap((h) => h.ledgerIds))
+  const forgeEntries = eligible.filter((e) => e.tier === 'in_forge' && forgeIds.has(e.id))
+
+  const { bulletsFor, renderText } = createBulletPicker(input)
+  const legacyBanned = bannedSkillKeys(ledger)
+
   const sectionOrder = input.editorial?.sectionOrder?.length ? input.editorial.sectionOrder : DEFAULT_SECTION_ORDER
 
   const assemble = (lv: TrimLevel): CompiledLine[] => {
@@ -515,7 +596,11 @@ export function compileResume(input: CompileInput): CompiledResume {
           // Re-brief Arc 2 (¶the canon's project-header formula): `NAME | Tech, Tech, Tech` —
           // the stack rides the HEADER (every strong sample the owner supplied does this), from
           // his own deep-read stack (D58) or tags. Emphasis pass keeps NAME bold, stack roman.
-          const stack = (p.context?.stack?.length ? p.context.stack : p.tags.map(displayTech)).slice(0, 4).join(', ')
+          const stack = (p.context?.stack?.length ? p.context.stack : p.tags.map(displayTech))
+            .map((x) => x.replace(/\s*\(.*\)$/, ''))
+            .filter((x) => !isBannedSkill(x, legacyBanned))
+            .slice(0, 4)
+            .join(', ')
           const baseTitle = displayTitle(p.title)
           const headerText = stack && (baseTitle.length + stack.length) < 90 ? `${baseTitle} | ${stack}` : baseTitle
           push(lines, {
@@ -602,6 +687,222 @@ export function compileResume(input: CompileInput): CompiledResume {
   const minimal = applyEmphasis(assemble(TRIM_LEVELS[TRIM_LEVELS.length - 1]), decode)
   throw new CompileError(
     `Page overflow even at maximum trim: ${Math.ceil(estimateHeight(minimal))}pt of ${Math.floor(USABLE_HEIGHT)}pt available.`,
+    ['A single entry in the Ledger is extremely long — shorten its title or bullets.'],
+  )
+}
+
+// =============================================================================================
+// v2 THE STRATEGIST → THE PAGE: the compiler EXECUTES the game plan (ARCHITECTURE v2, authority 1).
+// Everything visible traces to a plan line: section order, played facts (in plan order), skills
+// rows, the three lines, the reveal. The compiler may TIGHTEN spacing and (under 'two-ok') add a
+// page; it may not bench. If even the last resort must drop a played project, it is DECLARED on
+// the result (benchedByPage) — never silent.
+// =============================================================================================
+
+const asUrl = (handle: string): string => {
+  const h = handle.trim()
+  if (!h) return ''
+  if (/^https?:\/\//i.test(h)) return h
+  if (/^mailto:/i.test(h)) return h
+  return `https://${h.replace(/^\/+/, '')}`
+}
+
+function compileFromPlan(input: CompileInput): CompiledResume {
+  const { identity, ledger, decode, coverage, jobId } = input
+  const plan = input.plan as GamePlan
+  const excluded = new Set(input.excludedIds ?? [])
+  const eligible = ledger.filter((e) => e.resumeEligible && !excluded.has(e.id))
+  const byId = new Map(eligible.map((e) => [e.id, e]))
+  const { bulletsFor, renderText } = createBulletPicker(input)
+  const banned = bannedSkillKeys(ledger)
+
+  type Played = GamePlan['played'][number] & { entry: LedgerEntry }
+  const played: Played[] = plan.played
+    .map((p) => ({ ...p, entry: byId.get(p.factId) as LedgerEntry }))
+    .filter((p) => !!p.entry && p.entry.tier === 'shipped')
+  const inSection = (key: string) => played.filter((p) => p.section === key)
+  const forgeIds = new Set(coverage.building.flatMap((h) => h.ledgerIds))
+  const forgeEntries = eligible.filter((e) => e.tier === 'in_forge' && forgeIds.has(e.id))
+  const sifarish = played.find((p) => p.section === 'projects' && /sifarish/i.test(p.entry.title))
+  const revealOn = plan.reveal.on && !!sifarish
+
+  const projectOrderIds = plan.projectOrder.length ? plan.projectOrder : inSection('projects').map((p) => p.factId)
+  const projectsOrdered: Played[] = projectOrderIds
+    .map((id) => played.find((p) => p.factId === id && p.section === 'projects'))
+    .filter((p): p is Played => !!p)
+  for (const p of inSection('projects')) if (!projectsOrdered.includes(p)) projectsOrdered.push(p)
+
+  const eduKey = (d?: string): string => {
+    const m = /^(\d{1,2})\/(\d{4})$/.exec(d ?? '')
+    if (m) return `${m[2]}${m[1].padStart(2, '0')}`
+    return (d ?? '').replace(/[^0-9]/g, '').padEnd(6, '0').slice(0, 6)
+  }
+
+  const assemble = (bulletsPerProject: number, projectCap: number, descCap = 280, withSummary = true): CompiledLine[] => {
+    const lines: CompiledLine[] = []
+
+    // Letterhead: name (links to GitHub), one contact line with clickable handles (visible text
+    // stays a readable handle — parsers read anchor text, RESEARCH v2 verdict 1).
+    const github = identity.github?.trim()
+    push(lines, { kind: 'contact', text: identity.name, ledgerIds: [], ...(github ? { link: asUrl(github) } : {}) })
+    const handles = [identity.email, identity.phone, identity.github, identity.linkedin, identity.location].map((x) => (x ?? '').trim()).filter(Boolean)
+    const links: { text: string; url: string }[] = []
+    if (identity.email) links.push({ text: identity.email, url: `mailto:${identity.email}` })
+    if (github) links.push({ text: github, url: asUrl(github) })
+    if (identity.linkedin) links.push({ text: identity.linkedin, url: asUrl(identity.linkedin) })
+    push(lines, { kind: 'contact', text: handles.join(' | '), ledgerIds: [], links })
+
+    // The three lines (the plan's, evidence-cited).
+    const threeIds = plan.threeLines.factIds.filter((id) => byId.has(id))
+    if (plan.threeLines.headline.trim()) push(lines, { kind: 'headline', text: plan.threeLines.headline.trim(), ledgerIds: threeIds })
+    if (withSummary && input.summaryOn !== false && plan.threeLines.summary.trim()) push(lines, { kind: 'summary', text: plan.threeLines.summary.trim(), ledgerIds: threeIds })
+
+    const pageTexts: string[] = []
+    const heading = (key: string, ids: string[]) => push(lines, { kind: 'heading', text: sectionLabel(key, input.sections), ledgerIds: ids })
+
+    const entryWithBullets = (p: Played, cap: number, withStack: boolean) => {
+      const e = p.entry
+      const evidenceUrl = e.evidence?.url ?? e.evidence?.repo ?? ''
+      // The header's stack: his own README stack (parenthetical notes stripped), minus any skill he
+      // marked not-interview-safe (resumeEligible:false is his call, honored everywhere).
+      const stack = withStack
+        ? (e.context?.stack?.length ? e.context.stack : e.tags.map(displayTech))
+            .map((x) => x.replace(/\s*\(.*\)$/, ''))
+            .filter((x) => !isBannedSkill(x, banned))
+            .slice(0, 4)
+            .join(', ')
+        : ''
+      const baseTitle = displayTitle(e.title)
+      const headerText = stack && baseTitle.length + stack.length < 90 ? `${baseTitle} | ${stack}` : baseTitle
+      push(lines, {
+        kind: 'entry-title',
+        text: headerText,
+        right: e.evidence?.date ? displayDate(e.evidence.date) : undefined,
+        ledgerIds: [e.id],
+        ...(evidenceUrl ? { link: evidenceUrl } : {}),
+      })
+      let desc = sentenceTrim(cleanSummaryForDisplay(e.summary ?? ''), descCap)
+      if (revealOn && sifarish && p.factId === sifarish.factId) desc = `${desc.replace(/\.$/, '')} — this résumé was compiled by it`
+      const shownUrl = evidenceUrl ? cleanUrlForDisplay(evidenceUrl) : ''
+      const metaText = [desc, shownUrl].filter(Boolean).join(' · ')
+      if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [e.id], ...(shownUrl ? { links: [{ text: shownUrl, url: evidenceUrl }] } : {}) })
+      for (const b of bulletsFor(e, cap, pageTexts)) {
+        const text = renderText(b)
+        pageTexts.push(text)
+        push(lines, { kind: 'bullet', text: `- ${text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [e.id] })
+      }
+    }
+
+    const bulletSection = (key: string) => {
+      const items = inSection(key)
+      if (items.length === 0) return
+      heading(key, items.map((p) => p.factId))
+      for (const p of items) {
+        const e = p.entry
+        const hs = e.summary ? cleanSummaryForDisplay(e.summary).replace(/\.$/, '') : ''
+        const text = key === 'certs' ? `- ${e.title}${hs ? ` (${hs})` : ''}` : `- ${e.title}${hs ? ` — ${hs}` : ''}`
+        const url = e.evidence?.url
+        push(lines, { kind: 'bullet', text, ledgerIds: [e.id], ...(url ? { link: url } : {}) })
+      }
+    }
+
+    const sections: Record<string, () => void> = {
+      education: () => {
+        const items = inSection('education').slice().sort((a, b) => eduKey(b.entry.evidence?.date).localeCompare(eduKey(a.entry.evidence?.date)))
+        if (items.length === 0) return
+        heading('education', items.map((p) => p.factId))
+        for (const p of items) {
+          const e = p.entry
+          const meta = e.summary ? cleanSummaryForDisplay(e.summary) : displayDate(e.evidence?.date)
+          push(lines, { kind: 'entry-title', text: e.title, right: meta || undefined, ledgerIds: [e.id] })
+        }
+      },
+      experience: () => {
+        const items = inSection('experience')
+        if (items.length === 0) return
+        heading('experience', items.map((p) => p.factId))
+        for (const p of items) entryWithBullets(p, bulletsPerProject, false)
+      },
+      projects: () => {
+        const items = projectsOrdered.slice(0, projectCap)
+        if (items.length === 0) return
+        heading('projects', items.map((p) => p.factId))
+        for (const p of items) entryWithBullets(p, bulletsPerProject, true)
+        if (forgeEntries.length > 0) {
+          // A dated momentum line (I2) — but a date already in the past reads as a broken promise,
+          // so a stale ETA is dropped and the line says "in progress" instead.
+          const eta = forgeEntries[0].forgeEta
+          const etaMs = eta ? Date.parse(`1 ${eta}`) : NaN
+          const fresh = eta && (Number.isNaN(etaMs) ? true : etaMs > Date.now())
+          const names = forgeEntries.map((e) => e.title.split('—')[0].trim()).join(', ')
+          push(lines, { kind: 'forge', text: `Currently Building${fresh ? ` (${eta})` : ''}: ${names}`, ledgerIds: forgeEntries.map((e) => e.id) })
+        }
+      },
+      skills: () => {
+        const rows = plan.skills.map((r) => ({ ...r, items: r.items.filter((i) => i.factIds.some((id) => byId.has(id))) })).filter((r) => r.items.length > 0)
+        if (rows.length === 0) return
+        heading('skills', [...new Set(rows.flatMap((r) => r.items.flatMap((i) => i.factIds)))])
+        for (const r of rows) {
+          push(lines, { kind: 'skills', text: `${r.label}: ${r.items.map((i) => i.text).join(', ')}`, ledgerIds: [...new Set(r.items.flatMap((i) => i.factIds.filter((id) => byId.has(id))))] })
+        }
+      },
+    }
+    for (const key of plan.sectionOrder) {
+      if (sections[key]) sections[key]()
+      else bulletSection(key)
+    }
+    return lines
+  }
+
+  // -- THE PAGE-SOLVER: spacing tightens before content; page 2 before any true fact is dropped. --
+  const policy = input.pagePolicy ?? 'two-ok'
+  const total = projectsOrdered.length
+  // FACT-NEUTRAL steps, in order: richer bullets → fewer bullets → shorter project descriptions
+  // (sentence-trimmed, never mid-thought) → no summary paragraph (the headline stays). Every step
+  // keeps every played fact on the page; only the page-2 fallback and the declared last resort
+  // change WHAT is on it.
+  type Variant = { bpp: number; desc: number; summary: boolean }
+  const ONE_PAGE: Variant[] = [
+    { bpp: 4, desc: 280, summary: true },
+    { bpp: 3, desc: 280, summary: true },
+    { bpp: 3, desc: 170, summary: true },
+    { bpp: 2, desc: 280, summary: true },
+    { bpp: 2, desc: 170, summary: true },
+    { bpp: 2, desc: 170, summary: false },
+  ]
+  const TWO_PAGE: Variant[] = [
+    { bpp: 4, desc: 280, summary: true },
+    { bpp: 3, desc: 280, summary: true },
+  ]
+  const fit = (maxPages: number, projectCap: number, variants: Variant[]): CompiledResume | null => {
+    for (const v of variants) {
+      for (let tighten = 0; tighten < TIGHTEN_SCALE.length; tighten++) {
+        const lines = applyEmphasis(assemble(v.bpp, projectCap, v.desc, v.summary), decode)
+        const pages = estimatePages(lines, tighten)
+        if (pages <= maxPages) {
+          const dropped = projectsOrdered.slice(projectCap).map((p) => displayTitle(p.entry.title).split('—')[0].trim())
+          return { lines, jobId, pages, tighten, benchedByPage: dropped.length ? dropped : undefined }
+        }
+      }
+    }
+    return null
+  }
+  const maxPages = policy === 'two-ok' ? 2 : 1
+  // One page with the richest bullets first; then page 2 (if allowed) before touching content.
+  const one = fit(1, total, ONE_PAGE)
+  if (one) return one
+  if (maxPages === 2) {
+    const two = fit(2, total, TWO_PAGE)
+    if (two) return two
+  }
+  // Last resort: bench played projects from the END of the plan's order, declared.
+  for (let cap = total - 1; cap >= 1; cap--) {
+    const r = fit(maxPages, cap, [{ bpp: 2, desc: 170, summary: false }])
+    if (r) return r
+  }
+  const minimal = applyEmphasis(assemble(1, 1), decode)
+  throw new CompileError(
+    `Page overflow even at maximum tighten: ${Math.ceil(estimateHeight(minimal, 3))}pt of ${Math.floor(USABLE_HEIGHT * maxPages)}pt available.`,
     ['A single entry in the Ledger is extremely long — shorten its title or bullets.'],
   )
 }

@@ -1,6 +1,6 @@
-import { AlignmentType, BorderStyle, Document, Packer, Paragraph, TabStopType, TextRun } from 'docx'
+import { AlignmentType, BorderStyle, Document, ExternalHyperlink, Packer, Paragraph, TabStopType, TextRun } from 'docx'
 import type { CompiledDoc, CompiledResume } from '../../types'
-import { LINE_METRICS } from '../compile/compiler'
+import { NAME_SIZE, metricsFor } from '../compile/compiler'
 
 /**
  * DOCX export — the parse-reliability king (RESEARCH.md F6). Same compiled lines,
@@ -12,25 +12,45 @@ import { LINE_METRICS } from '../compile/compiler'
  * exactly like the PDF), bold inline skill labels, italic project taglines.
  */
 
-// A4 usable width in twips: 11906 - 960*2 margins.
-const RIGHT_TAB = 11906 - 960 * 2
+// v2 THE PAGE: 0.5in (720 twips) margins — the canon register. A4 usable width in twips.
+const MARGIN = 720
+const RIGHT_TAB = 11906 - MARGIN * 2
 
 function buildDoc(resume: CompiledResume): Document {
+  const tighten = resume.tighten ?? 0
   const children = resume.lines.map((line, i) => {
     const isName = i === 0
-    const m = LINE_METRICS[line.kind]
-    const size = Math.round((isName ? 17 : m.size) * 2) // half-points
+    const m = metricsFor(line.kind, tighten)
+    const size = Math.round((isName ? NAME_SIZE : m.size) * 2) // half-points
     // Re-brief Arc 2: the canon register in Word terms — Times New Roman, the same face every
     // strong sample wears (parses identically; D5 narrowed by RB-2).
     const font = 'Times New Roman'
-    const centered = isName || line.kind === 'contact'
+    const centered = isName || line.kind === 'contact' || line.kind === 'headline'
     const italics = line.kind === 'meta'
 
-    const runs: TextRun[] = []
+    const runs: (TextRun | ExternalHyperlink)[] = []
+    // v2 — clickable handles/URLs (visible text unchanged; Word hyperlinks parse as their text).
+    const linkRun = (text: string, url: string, boldRun: boolean) =>
+      new ExternalHyperlink({ link: url, children: [new TextRun({ text, bold: boldRun, italics, size, font, style: 'Hyperlink' })] })
+    if (line.links && line.links.length > 0 && !line.runs?.length) {
+      let rest = line.text
+      for (const l of line.links) {
+        const idx = rest.indexOf(l.text)
+        if (idx === -1) continue
+        if (idx > 0) runs.push(new TextRun({ text: rest.slice(0, idx), bold: isName || m.bold, italics, size, font }))
+        runs.push(linkRun(l.text, l.url, isName || m.bold))
+        rest = rest.slice(idx + l.text.length)
+      }
+      if (rest) runs.push(new TextRun({ text: rest, bold: isName || m.bold, italics, size, font }))
+    }
     // Styled inline runs (bold tech/metrics in bullets, roman stack on headers) — same
     // deterministic emphasis the PDF draws; concat equals the line text, so parsing is identical.
-    if (line.runs && line.runs.length > 0) {
-      for (const r of line.runs) runs.push(new TextRun({ text: r.text, bold: !!r.bold, italics, size, font }))
+    if (runs.length === 0 && line.runs && line.runs.length > 0) {
+      line.runs.forEach((r, j) => {
+        // A titled line links on its first (bold name) segment.
+        if (j === 0 && line.link) runs.push(linkRun(r.text, line.link, !!r.bold))
+        else runs.push(new TextRun({ text: r.text, bold: !!r.bold, italics, size, font }))
+      })
     }
     if (runs.length === 0 && line.kind === 'skills') {
       const idx = line.text.indexOf(': ')
@@ -40,7 +60,8 @@ function buildDoc(resume: CompiledResume): Document {
       }
     }
     if (runs.length === 0) {
-      runs.push(new TextRun({ text: line.text, bold: isName || m.bold, italics, size, font }))
+      if (line.link) runs.push(linkRun(line.text, line.link, isName || m.bold))
+      else runs.push(new TextRun({ text: line.text, bold: isName || m.bold, italics, size, font }))
     }
     if (line.right) {
       runs.push(new TextRun({ children: ['\t'], size, font }))
@@ -65,7 +86,7 @@ function buildDoc(resume: CompiledResume): Document {
         properties: {
           page: {
             size: { width: 11906, height: 16838 }, // A4 in twips
-            margin: { top: 960, bottom: 960, left: 960, right: 960 },
+            margin: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
           },
         },
         children,

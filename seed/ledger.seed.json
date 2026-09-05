@@ -131,7 +131,7 @@
       "id": "ach-ntse",
       "kind": "achievement",
       "title": "National NTSE Scholar",
-      "summary": "National Talent Search Examination scholarship, Government of India (2021).",
+      "summary": "National Talent Search Examination scholar, Government of India (2021) — a national-level test of aptitude and reasoning.",
       "bullets": [],
       "tier": "shipped",
       "evidence": {
@@ -140,25 +140,29 @@
       },
       "tags": [
         "scholarship",
-        "national"
+        "national",
+        "aptitude",
+        "reasoning"
       ],
       "resumeEligible": true
     },
     {
       "id": "ach-genai-hack",
       "kind": "achievement",
-      "title": "1st Place — Gen-AI Hackathon, IIT Ropar",
-      "summary": "Won first place at a generative-AI hackathon hosted at IIT Ropar.",
+      "title": "1st Place — Agentic & GenAI Showcase, Techgyan Hackathon, IIT Ropar",
+      "summary": "Won first place in the Agentic & GenAI showcase at IIT Ropar’s Techgyan Hackathon with Sifarish, the evidence-compiled job-hunt system.",
       "bullets": [],
       "tier": "shipped",
       "evidence": {
-        "date": "2025",
-        "note": "Hackathon result, IIT Ropar."
+        "date": "2026",
+        "note": "Techgyan Hackathon, IIT Ropar — Agentic & GenAI showcase, 1st place (Sifarish)."
       },
       "tags": [
         "hackathon",
         "genai",
-        "win"
+        "agentic",
+        "win",
+        "iit-ropar"
       ],
       "resumeEligible": true
     },
@@ -693,6 +697,472 @@
         "excluded"
       ],
       "resumeEligible": false
+    },
+    {
+      "id": "proj-braillix",
+      "kind": "project",
+      "title": "Braillix — a refreshable Braille display for mathematics (software half)",
+      "summary": "The teacher's blackboard on a blind child's fingers: a maths teacher writes, types or photographs a lesson and it lands on refreshable braille cells, live and verified, in English and Hindi — no account, no server, no API key, offline after first load. Capstone project; software built with a five-person team.",
+      "bullets": [
+        {
+          "id": "proj-braillix-b1",
+          "text": "Built the on-device recognition pipeline that turns handwriting, typed maths and textbook photos into Nemeth braille — Tesseract for English and Hindi words, a 76 MB on-device formula model for maths — with nothing leaving the room",
+          "keywords": [
+            "ocr",
+            "on-device",
+            "typescript",
+            "accessibility",
+            "computer-vision"
+          ]
+        },
+        {
+          "id": "proj-braillix-b2",
+          "text": "Verified the syllabus live: all 232 curriculum lines from classes 1–12, arithmetic to Bayes' theorem, translate and read back cleanly in about a second on the production site",
+          "keywords": [
+            "testing",
+            "evals",
+            "accessibility"
+          ]
+        },
+        {
+          "id": "proj-braillix-b3",
+          "text": "Engineered 3 independent proofs per expression so every dot can be trusted — Nemeth from speech-rule-engine over MathML, golden vectors against published tables, and a hand-rolled readback engine that reconstructs meaning from the dots alone",
+          "keywords": [
+            "verification",
+            "evals",
+            "typescript"
+          ]
+        },
+        {
+          "id": "proj-braillix-b4",
+          "text": "Reduced press-to-result from 64 s to about 1.25 s by warming both recognisers in the background at app start",
+          "keywords": [
+            "performance",
+            "on-device"
+          ]
+        },
+        {
+          "id": "proj-braillix-b5",
+          "text": "Designed the hardware transport as 1 interface with 3 implementations (simulator, Web Serial USB, Wi-Fi pods) under one conformance suite, plus a virtual pod that speaks the whole protocol so integration day starts from working",
+          "keywords": [
+            "hardware",
+            "system-design",
+            "typescript",
+            "testing"
+          ]
+        },
+        {
+          "id": "proj-braillix-b6",
+          "text": "Shipped with 727 unit tests and 101 end-to-end journeys; the build fails if any recognition model, OCR language file or Nemeth table is missing from the artifact",
+          "keywords": [
+            "testing",
+            "ci",
+            "typescript"
+          ]
+        }
+      ],
+      "tier": "shipped",
+      "evidence": {
+        "url": "https://braillix.vercel.app",
+        "repo": "https://github.com/SHV27/braillix",
+        "date": "08/2026",
+        "note": "Public repo + live deployment; README read 05-Sep-2026 (232-line syllabus proof, 727 unit / 101 e2e tests, ~1.25 s scan)."
+      },
+      "context": {
+        "problem": "A maths teacher who only knows WhatsApp needs a blackboard that lands on a blind student's fingers, live and verified, in English and Hindi.",
+        "features": [
+          "One surface: the lesson as typeset chalk, the cells beneath, a chalk tray with every symbol a school line needs",
+          "Write it like chalk · type it like a message · photograph it — all read on the laptop, offline",
+          "Nothing recognised reaches the display without a human: the confirm gate is a TypeScript type",
+          "Many students, one lesson: pods of different sizes mirror the same cells"
+        ],
+        "stack": [
+          "TypeScript",
+          "React",
+          "Vite",
+          "Tesseract.js",
+          "ONNX (on-device formula model)",
+          "speech-rule-engine",
+          "Web Serial",
+          "Service Worker"
+        ],
+        "readme": "",
+        "source": {
+          "repo": "https://github.com/SHV27/braillix",
+          "readAt": "2026-09-05"
+        }
+      },
+      "tags": [
+        "accessibility",
+        "on-device-ml",
+        "typescript",
+        "react",
+        "hardware",
+        "shipped",
+        "computer-vision",
+        "evals"
+      ],
+      "resumeEligible": true,
+      "sworn": "readme"
+    },
+    {
+      "id": "proj-sehat-saarthi",
+      "kind": "project",
+      "title": "Sehat Saarthi — Punjabi-first AI screening co-pilot for government hospitals",
+      "summary": "A Punjabi-first, fully free, multi-disease screening co-pilot for Punjab's government hospitals — the doctor drives, the saarthi guides. Proof of concept, pending clinical validation.",
+      "bullets": [
+        {
+          "id": "proj-sehat-saarthi-b1",
+          "text": "Trained 9 disease-screening modules on public datasets and deployed only the 7 a doctor can trust after a written reliability analysis — heart disease ROC-AUC 0.948, chest X-ray 0.957, breast cancer 0.998; retinopathy at 0.686 kept out",
+          "keywords": [
+            "ml",
+            "scikit-learn",
+            "evals",
+            "healthcare",
+            "python"
+          ]
+        },
+        {
+          "id": "proj-sehat-saarthi-b2",
+          "text": "Designed the whole product Punjabi-first across 7 live modules: Gurmukhi primary on every element, Web Speech read-outs for low-literacy patients, and a printable bilingual referral slip for the paper workflow rural clinics actually use",
+          "keywords": [
+            "ux",
+            "accessibility",
+            "react"
+          ]
+        },
+        {
+          "id": "proj-sehat-saarthi-b3",
+          "text": "Built the three-layer free stack — a Vite frontend on Vercel, FastAPI on a Hugging Face Space, tiny .joblib and .onnx models bundled in the package — with a module router so adding a disease is configuration, never a rewrite",
+          "keywords": [
+            "fastapi",
+            "react",
+            "python",
+            "system-design",
+            "onnx",
+            "deployment"
+          ]
+        },
+        {
+          "id": "proj-sehat-saarthi-b4",
+          "text": "Tuned every model high-recall with a mandatory bilingual disclaimer and an honest recall note; the service degrades to a deterministic stub instead of crashing when a model is missing",
+          "keywords": [
+            "ml",
+            "evals",
+            "fallback",
+            "python"
+          ]
+        }
+      ],
+      "tier": "shipped",
+      "evidence": {
+        "url": "https://sehat-saarthi-punjab.vercel.app",
+        "repo": "https://github.com/SHV27/sehat-saarthi",
+        "date": "06/2026",
+        "note": "Public repo + live app + HF Space API; README and model cards read 05-Sep-2026."
+      },
+      "context": {
+        "problem": "Punjab's tier-2/3 bottleneck is detection, not treatment: vacant specialist posts, no labs, India's highest Hepatitis-C burden, low-literacy Punjabi-only patients.",
+        "features": [
+          "Seven live modules with per-module Model Cards and honest limitations",
+          "Decision-support, never diagnosis: probability + confidence, three bands, high-recall",
+          "Punjab palette + phulkari motif, built for a cheap Android on flaky internet"
+        ],
+        "stack": [
+          "Python",
+          "FastAPI",
+          "scikit-learn",
+          "ONNX",
+          "React",
+          "Vite",
+          "Tailwind",
+          "Hugging Face Spaces"
+        ],
+        "readme": "",
+        "source": {
+          "repo": "https://github.com/SHV27/sehat-saarthi",
+          "readAt": "2026-09-05"
+        }
+      },
+      "tags": [
+        "ml",
+        "healthcare",
+        "fastapi",
+        "react",
+        "python",
+        "shipped",
+        "onnx"
+      ],
+      "resumeEligible": true,
+      "sworn": "readme"
+    },
+    {
+      "id": "proj-sifarish",
+      "kind": "project",
+      "title": "Sifarish — a job-hunt chief of staff that refuses to lie",
+      "summary": "A personal team of agents for one candidate: an evidence ledger compiled into a truth-checked résumé and cover letter per job posting, lawful worldwide job discovery, an apply cockpit and a pipeline board — fully functional with zero API keys.",
+      "bullets": [
+        {
+          "id": "proj-sifarish-b1",
+          "text": "Architected the truth-compiler: every résumé line carries ledger evidence ids, the LLM may rephrase but never mint, and the PDF's text layer is parse-back-tested 100% against the compiled lines on every export",
+          "keywords": [
+            "llm",
+            "typescript",
+            "system-design",
+            "verification",
+            "pdf"
+          ]
+        },
+        {
+          "id": "proj-sifarish-b2",
+          "text": "Built lawful discovery over 29 keyless ATS boards plus aggregator APIs across 18 country markets, with a work-authorization verdict at ingest — never scraping, never auto-submitting",
+          "keywords": [
+            "apis",
+            "typescript",
+            "system-design"
+          ]
+        },
+        {
+          "id": "proj-sifarish-b3",
+          "text": "Built a free-tier LLM router (Gemini and Groq, JSON-schema strict) with a deterministic fallback behind every feature, and a strategist pass that reads a whole posting into what the company values before it plans the page",
+          "keywords": [
+            "llm",
+            "agents",
+            "structured-output",
+            "gemini",
+            "groq",
+            "prompt-engineering"
+          ]
+        },
+        {
+          "id": "proj-sifarish-b4",
+          "text": "Enforced 776 automated gates including a 5,000-case generated-input matrix, an encrypted cross-device vault, and a read-only demo that cannot spend a token",
+          "keywords": [
+            "testing",
+            "security",
+            "typescript"
+          ]
+        }
+      ],
+      "tier": "shipped",
+      "evidence": {
+        "url": "https://sifarish-shv-s-projects.vercel.app",
+        "repo": "https://github.com/SHV27/sifarish",
+        "date": "09/2026",
+        "note": "Public repo + live deployment; 1st place, Agentic & GenAI showcase, Techgyan Hackathon, IIT Ropar."
+      },
+      "context": {
+        "problem": "Off-campus applying at scale needs a résumé tailored per company without a single invented claim, and a hunt that finds fresh, eligible roles lawfully.",
+        "features": [
+          "Compile truth. Draft everything. Send nothing.",
+          "Ek Baat: talk to the team — ledger adds, vision edits, hunts — proposed, you confirm",
+          "Apply Cockpit: pre-flight mistake-proofing + an autofill bookmarklet that structurally cannot submit"
+        ],
+        "stack": [
+          "TypeScript",
+          "React",
+          "Vite",
+          "Dexie",
+          "pdf-lib",
+          "Vercel Edge Functions",
+          "Gemini",
+          "Groq"
+        ],
+        "readme": "",
+        "source": {
+          "repo": "https://github.com/SHV27/sifarish",
+          "readAt": "2026-09-05"
+        }
+      },
+      "tags": [
+        "agentic-ai",
+        "llm",
+        "typescript",
+        "react",
+        "shipped",
+        "agents",
+        "structured-output",
+        "rag"
+      ],
+      "resumeEligible": true,
+      "sworn": "readme"
+    },
+    {
+      "id": "proj-aaina",
+      "kind": "project",
+      "title": "Aaina — an honest, research-grounded reading of a relationship",
+      "summary": "Free, no account: 122 questions drawn from published psychological research, 14 scored dimensions, a report written from the tensions between a person's own answers, and a plan of published exercises chosen for the results.",
+      "bullets": [
+        {
+          "id": "proj-aaina-b1",
+          "text": "Enforced anti-generic output in code: the model receives only an evidence bundle (scores, tensions, quoted answers), must cite evidence ids per paragraph under a strict JSON schema, and any paragraph whose evidence does not resolve is discarded before rendering",
+          "keywords": [
+            "llm",
+            "structured-output",
+            "typescript",
+            "groq",
+            "prompt-engineering"
+          ]
+        },
+        {
+          "id": "proj-aaina-b2",
+          "text": "Measured the anti-generic guarantee: 5 genuinely different profiles through the live model produced 0 identical sentences across all 10 pairs, in a re-runnable proof script",
+          "keywords": [
+            "evals",
+            "testing",
+            "llm"
+          ]
+        },
+        {
+          "id": "proj-aaina-b3",
+          "text": "Scored 14 dimensions from published instruments (CSI, Investment Model Scale, ECR-S, CPQ, Partner Phubbing Scale) and sequenced goodwill work before conflict work, following the intervention evidence",
+          "keywords": [
+            "research",
+            "psychology",
+            "typescript"
+          ]
+        },
+        {
+          "id": "proj-aaina-b4",
+          "text": "Implemented the harm screen as memory-only by construction — never stored, transmitted or printed — with a quick-exit button and verified Indian helplines shown first",
+          "keywords": [
+            "security",
+            "privacy",
+            "react"
+          ]
+        }
+      ],
+      "tier": "shipped",
+      "evidence": {
+        "url": "https://aaina-two.vercel.app",
+        "repo": "https://github.com/SHV27/aaina",
+        "date": "08/2026",
+        "note": "Public repo + live app; README and PROOF-ANTI-GENERIC.md read 05-Sep-2026."
+      },
+      "context": {
+        "problem": "Most relationship advice is written for nobody in particular.",
+        "features": [
+          "The contradiction engine: the report is written from tensions between a person's own answers",
+          "Every prescribed activity is a published intervention with mechanism, evidence grade and contraindications"
+        ],
+        "stack": [
+          "Vite 7",
+          "React 19",
+          "TypeScript",
+          "Zustand 5",
+          "Tailwind v4",
+          "Groq gpt-oss-120b",
+          "Vitest",
+          "Playwright"
+        ],
+        "readme": "",
+        "source": {
+          "repo": "https://github.com/SHV27/aaina",
+          "readAt": "2026-09-05"
+        }
+      },
+      "tags": [
+        "llm",
+        "typescript",
+        "react",
+        "shipped",
+        "structured-output",
+        "research"
+      ],
+      "resumeEligible": true,
+      "sworn": "readme"
+    },
+    {
+      "id": "proj-spark-core",
+      "kind": "project",
+      "title": "Spark Core — a portfolio that evolves itself",
+      "summary": "A running system, not a snapshot: it watches my GitHub, absorbs new repos, writes its own case studies from their READMEs, and logs its own evolution on the page.",
+      "bullets": [
+        {
+          "id": "proj-spark-core-b1",
+          "text": "Designed GitHub as the database: a manifest committed through the contents API drives every project, skill and line of copy across 5 env-only secrets; a referee test fails the build if a component contains personal content or a token-like string",
+          "keywords": [
+            "nextjs",
+            "typescript",
+            "system-design",
+            "security",
+            "ci"
+          ]
+        },
+        {
+          "id": "proj-spark-core-b2",
+          "text": "Built the Cortex: one tap reads a repo's README and Groq writes a strict-JSON case study that is committed and versioned — grounded in the README, never regenerated per visit",
+          "keywords": [
+            "llm",
+            "groq",
+            "structured-output",
+            "nextjs"
+          ]
+        },
+        {
+          "id": "proj-spark-core-b3",
+          "text": "Built an authenticated evolve seam (Bearer secret) so other systems can teach the portfolio new skills; edits go live in ~60 s with no redeploy",
+          "keywords": [
+            "apis",
+            "security",
+            "nextjs"
+          ]
+        }
+      ],
+      "tier": "shipped",
+      "evidence": {
+        "url": "https://shaurya-portfolio-eta.vercel.app",
+        "repo": "https://github.com/SHV27/spark-core",
+        "date": "07/2026",
+        "note": "Public repo + live site; README read 05-Sep-2026."
+      },
+      "context": {
+        "problem": "Portfolios go stale the day after they are built.",
+        "features": [
+          "Nothing is hardcoded that can be lived — component code contains zero personal content"
+        ],
+        "stack": [
+          "Next.js 14",
+          "TypeScript",
+          "Tailwind",
+          "Framer Motion",
+          "Groq",
+          "GitHub REST"
+        ],
+        "readme": "",
+        "source": {
+          "repo": "https://github.com/SHV27/spark-core",
+          "readAt": "2026-09-05"
+        }
+      },
+      "tags": [
+        "nextjs",
+        "llm",
+        "typescript",
+        "shipped"
+      ],
+      "resumeEligible": true,
+      "sworn": "readme"
+    },
+    {
+      "id": "pub-prana",
+      "kind": "publication",
+      "title": "PRANA — A Layered Framework for Sustainable AI Compute (position paper, v1)",
+      "summary": "Reframes AI's energy-water crisis as exergy misplacement and proposes a five-layer stack, follow-the-cold routing across hemispheres, and the compute-boiler facility archetype for district heating.",
+      "bullets": [],
+      "tier": "shipped",
+      "evidence": {
+        "repo": "https://github.com/SHV27/PRANA-Sustainable-AI",
+        "date": "07/2026",
+        "note": "Position paper PDF in the public repo; README read 05-Sep-2026."
+      },
+      "tags": [
+        "research",
+        "sustainability",
+        "ai-infra"
+      ],
+      "resumeEligible": true,
+      "sworn": "readme"
     }
   ]
 }

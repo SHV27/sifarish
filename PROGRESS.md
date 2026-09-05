@@ -2,6 +2,60 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
+## Status: V2 CYCLE (05-Sep-2026) — Arc 1 THE RÉSUMÉ PATH built, gates green, deploying
+
+Brief: VISION-BRIEF-sifarish-v2.md (voids the 30-Aug brief). Pipeline ran whole: recon (7 lanes,
+RESEARCH.md v2 verdicts) → boardroom (DECISIONS V2-1: 5 pillars, cut list, the Played/Benched board
+as the innovation, 8 places the standard cannot be physically met logged in V2-2) → architecture
+(ARCHITECTURE.md v2: plumbing kept, thinking layer rebuilt as typed artifacts) → arc plan (5 arcs).
+
+### Arc 1 — THE RÉSUMÉ PATH (Strategist + Page) — BUILT
+- **The Reading** (`src/lib/strategist/reading.ts`): the whole posting → cares / doesNotCare (each with
+  the posting's words) / reader / window / archetype / skills / reveal affinity. Gemini deep pass via
+  /api/dimaag (schema-strict, cached by posting hash); deterministic reader is the keyless floor;
+  postings are unwrapped before reading. Two-sided gates (Babaclick's "we do not care about LeetCode"
+  is a doesNotCare, never a care).
+- **The Game Plan** (`plan.ts`): three lines · section order · every fact PLAYED or BENCHED with a
+  reason in the company's words · skills rows assembled from JD ∩ evidence (every item proven) · the
+  reveal decision. `validatePlan` discards unknown ids, unreasoned benches, unproven skills, slop and
+  fact-drift — each discard noted. Heuristic plan = floor + fallback.
+- **The Critic** (`critic.ts`): hostile-recruiter rubric, one bounded revise; SKIPPED is declared.
+- **The Page**: 36pt margins, name 19pt, embedded Tinos (pre-subsetted, viewer-stable), link annotations
+  (name → GitHub, contact handles, project titles + live URLs) with visible text, multi-page with
+  keep-with-next, tighten ladder (4 spacing levels) + 6 fact-neutral content steps BEFORE page 2
+  (Settings.pagePolicy 'two-ok') before any declared bench. DOCX parity (hyperlinks, margins).
+  Parse-back (I5) green across pages and annotations. Width tables regenerated from the embedded faces.
+- **Wired on the DEFAULT path**: buildPacketFast (instant, heuristic strategy) → buildPacket (Gemini
+  reading + plan + critic) → recompilePacket executes the persisted plan. TYPESET_VERSION 3 re-tailors
+  every stored packet on open. The Played/Benched board (`components/PlanBoard.tsx`) replaces the
+  casting sheet: mode badge (gemini/groq/heuristic), pages, critic verdict, reading with receipts,
+  every fact with its reason and evidence text, skills with proof counts, validator + critic notes.
+- **The dossier seed**: Braillix, Sehat Saarthi, Sifarish, Aaina, Spark Core (README-derived, cited,
+  `sworn:'readme'`), the PRANA paper as a custom `publication` kind, the Techgyan win named, NTSE
+  framed as aptitude proof. `migrateDossierV2` union-adds into his vault (nothing overwritten, nothing
+  deleted, flag-guarded) + sections registry + page policy.
+- Routing v1.2.0 (gemini-3.8-flash head; Groq skipped above 24k chars — 8K TPM); registry v10.
+- Eyes: Babaclick page and an ordinary AI-engineer posting rendered to PNG (scripts/resume-eye.mts)
+  and READ — defects found by eye and fixed: eaten spaces at bold boundaries (viewer substitution →
+  fonts embedded), lost accents, a garbage care phrase from a hard-wrapped paste, FastAPI missing from
+  skills, a stale "July 2026" building line, a half-empty page 2, "React" leaking past his exclusion.
+- Gates: 808 (incl. tests/strategist.test.ts, 32 new) · tsc clean · warning-free build.
+
+### ONE next action
+→ Deploy via `VERCEL_TOKEN=… node scripts/rest-deploy.mjs`, prove the served hash, run
+  `scripts/resume-eye.mts … --live` for the Gemini proof, walk the live app in the browser, then open
+  Arc 2 (THE DOSSIER: open kinds via chat, README absorb refresh, derived skills as the only authority).
+
+### Owner notes (for when he wakes)
+- His vault will re-tailor every stored packet on open (typeset v3) and union-add the five README
+  projects + the PRANA paper + the named Techgyan win. Nothing he wrote is overwritten.
+- "React" stays off the page because HE marked it not-interview-safe long ago (DECISIONS V2-3). One
+  chat line flips it once Arc 2's chat ops land.
+- The in_forge skills (LoRA, LangGraph/MCP, RAG+Guardrails+Evals, Transformers) still render as
+  "Currently Building" — he said he has almost all of these now; promoting them is one chat line in Arc 2.
+
+---
+
 ## Status: FINAL-BAR PASS — ✅ DONE, THE APP IS HIS NOW (30-Aug-2026, served: index-BM8xfCyB)
 
 The owner's acceptance message + heart-statement, closed the same day: his dictated VISION is

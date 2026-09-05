@@ -138,7 +138,7 @@ describe('W3 — discovery: more catch per credit, self-healing seasons', () => 
     expect(read('src/App.tsx')).toContain('onOpenSettings')
     // Law-12 currency: the reasoning chain leads with the current stable flagship flash.
     const routing = JSON.parse(read('data/config/routing.json'))
-    expect(routing.lanes.reasoning[0]).toBe('gemini-3.5-flash')
+    expect(routing.lanes.reasoning[0]).toBe('gemini-3.8-flash') // v2 (05-Sep-2026): 3.8 is the current stable Flash
     // No raw model id spliced into a fetch URL — every lane id is a named constant.
     expect(read('api/polish.ts')).toContain('const GEMINI_MODEL =')
     expect(read('api/polish.ts')).not.toContain('models/gemini-3.1-flash-lite:generateContent')

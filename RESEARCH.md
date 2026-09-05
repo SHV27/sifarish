@@ -1,3 +1,132 @@
+# RESEARCH — SIFARISH v2 RE-BRIEF RECON — 05-Sep-2026
+
+Pipeline run for VISION-BRIEF-sifarish-v2.md (which voids the 30-Aug brief). Seven lanes ran as parallel
+read-only subagents + owner-thread verification of every decision-bearing volatile fact. Verdicts first.
+Prior recon (30-Aug, 07-Jul) is preserved below §V2-PRIOR and stays cited where still true.
+
+## Verdicts (the findings that change decisions)
+
+1. **There is no "ATS score."** No ATS vendor publishes one; Jobscan/Resume-Worded numbers are keyword-overlap
+   marketing. What real parsers punish: multi-column, tables, icons, header/footer contact, graphics. What they
+   do NOT punish: serif fonts, bold runs, link annotations. Parsers capture VISIBLE anchor text, not the URL
+   behind it → every link must show a readable URL/handle AND carry a clickable annotation. The honest product
+   claim is "parses cleanly on Greenhouse/Lever/Ashby/Workday class parsers — single column, standard fonts,
+   text layer verified by parse-back." [VOLATILE — verified 05-Sep-2026]
+2. **AI-sounding text is now an active rejection trigger** (49% of hiring managers auto-dismiss résumés they
+   read as AI-written; 62% reject non-personalised AI content). Therefore: (a) zero-slop is a hard gate on
+   every generated sentence, and (b) the "built by my own AI system" reveal is NEVER a stamped line on the
+   artifact — it is a per-company strategic call, deployed as an evidence line ("built Sifarish, the system
+   that compiled this résumé from a verified evidence ledger") only where the posting rewards agency/AI
+   (Babaclick-class), never at conservative employers. [verified 05-Sep-2026]
+3. **What AI-native employers say they read: proof of agency, not credentials.** Anthropic's hiring page puts
+   independent research/OSS "at the top of your résumé"; YC founders name education-first ordering and
+   unquantified bullets as failure modes; startups often have NO ATS — a founder reads it. → Section ORDER
+   and FRAMING must be a per-posting decision (values-driven), not a fixed template. This is the "chalaak"
+   the brief demands and the thing the current code cannot do (verdict 5).
+4. **The campus canon (6 real résumés supplied, all Thapar/LPU peers) is measurable, not a vibe:** full page,
+   ~0.5in (36pt) margins, 10–11pt Times/serif or clean sans, name 18–22pt, contact line with LinkedIn/GitHub/
+   LeetCode as hyperlinked text, Education with CGPA right-aligned, Experience → Projects (`Name | Tech` or
+   Name + GitHub link right) with 2–4 bold-inline-keyword bullets + "Tech Stack:" line, Technical Skills as
+   5–6 labelled rows (Languages / AI-ML / Frameworks / Databases / Tools / Core CS), Achievements listing
+   EVERYTHING (scholarships, hackathons, sports, cultural — Armaan lists Dhol and badminton), Certifications.
+   Two of six run to a dense full page with an Extra-curricular block. Nobody trims achievements to fit;
+   they tighten spacing. [measured 05-Sep-2026 from the six uploads]
+5. **Current app vs canon (cold audit, file:line):** A4 with 48pt margins and a one-page solver that steps
+   maxAchievements 99→4→3→2→1→0 (compiler.ts:298-314) — achievements are cut before spacing is; pdf.ts draws
+   ZERO link annotations; skills are a re-sort of the stored ledger list capped at 10 (compiler.ts:371) — the
+   exact "maintained skills list" the owner killed; alignment = mustHave keyword coverage from a regex lexicon
+   (alignment.ts:38-69, decode.ts:40-112) — company intel is passed in and used ONLY as a boolean
+   (alignment.ts:67). "11/11 aligned" was keyword coverage. Radar score is an additive sum where senior roles
+   still reach ~100 (score.ts:116-142, 227). Diagnosis: the RENDERER and DISCOVERY plumbing are sound; the
+   THINKING layer (JD understanding, evidence selection, framing, skills assembly, headline) is keyword
+   machinery wearing an LLM coat. That layer is rebuilt from scratch; the plumbing is kept.
+6. **Free LLM tiers, verified on the official pages today:** Groq free = 30 RPM · 1K RPD · **8K TPM** · 200K
+   TPD for gpt-oss-120b/20b and qwen3.6/3.8-27b → Groq physically cannot take a 10k-token strategist prompt
+   (whole posting + ledger + READMEs) in one call. Gemini: gemini-3.8-flash is the current STABLE Flash
+   (3.7, 3.6, 3.5 stable; 3.1-pro preview); free limits are shown only inside AI Studio (not published) —
+   design for 429s, read Retry-After. Cerebras no-card free tier ENDED Aug-2026; GitHub Models RETIRED
+   30-Jul-2026; Together has no free tier; OpenRouter free pool 50 RPD. → The deep pass runs on Gemini
+   (1M context, native responseSchema), Groq is the second brain for chunked/smaller passes, and the
+   deterministic template narrator is the keyless floor (I4). [VOLATILE — verified 05-Sep-2026]
+7. **Discovery: the lawful lanes are unchanged and the intern-specific answer is data, not scraping.**
+   Greenhouse/Lever/Ashby public JSON (free, real-time, no auth), Adzuna (`country=in`, max_days_old,
+   ~1000/mo), JSearch (`employment_types=INTERN`, `date_posted`, ~200/mo), SimplifyJobs Summer2027 +
+   vanshb03 mirrors (daily, intern-only, JSON), HN Who-is-hiring Sept-2026 = item 49522897, SerpAPI
+   250/mo optional. LinkedIn jobs-guest endpoint is alive but ToS-barred (unauthenticated → does not
+   touch HIS account, but it is a contract violation and an IP-block risk) → NOT used. LinkedIn/Wellfound
+   alert emails via gmail.readonly remain the only lawful LinkedIn lane. Internshala/Unstop/Naukri have no
+   public feed. The owner's real complaint (old + misranked) is a RANKING and FRESHNESS-GATE problem, not
+   a missing-source problem. [VOLATILE — verified 05-Sep-2026]
+8. **Agent-product patterns worth stealing (named):** reflection loop with a SEPARATE critic holding its
+   own rubric (self-critique shares blind spots); Chain-of-Density for evidence-dense bullets; strict
+   json_schema tool-calling for every mutation (already our law, now industry standard); Anthropic's
+   context-engineering guidance (minimum curated context per turn, not the whole vault); citation UI must be
+   CHECKABLE (id → literal evidence text), not a badge. Open-source résumé tools (AIHawk dead/AGPL, Resume-
+   Matcher, Reactive Resume, JobSpy) are builders or scrapers — none has a strategist; nothing to compose in.
+9. **Stack currency:** vite 8.2 · react 19.2.8 · typescript 7.0 (Go rewrite — stay on 5.9 this cycle) ·
+   dexie 4.4.5 · pdf-lib 1.17.1 (unmaintained but stable; link annotations via `Annots` + `Subtype: Link`
+   + URI action — confirmed API) · docx 9.7.1 · tailwind 4.3 · vitest 5.0 new major (stay on 4.1 this
+   cycle). Vercel Hobby: functions per deployment is now "framework-dependent" (the fixed 12 is no longer
+   stated); cron 100/project, once-a-day minimum on Hobby; max duration 300s. [VOLATILE — verified 05-Sep-2026]
+10. **Toolchain adoption (one per project):** `paths`-scoped skills exist; the one adoption this cycle is a
+    project-local `resume-eye` skill that renders a packet to PNG and reads it, because the brief's
+    verification standard is "read it as a recruiter would", not "tests pass".
+
+## Lane 1 — Craft: the 2026 student AI-engineer résumé
+- Jake's canon order Header → Education → Experience → Projects → Skills; Indian campus adds Achievements +
+  Positions of Responsibility as separate dated sections, same Action+Task+Quantified law.
+- The six supplied samples (Japnit, Kunal, Armaan, Tarun, Ujjwal, Atishay) agree on: bold-inline tech +
+  metrics inside bullets; project title hyperlinked or GitHub link right-aligned; "Tech Stack:" trailing
+  bullet; skills as labelled rows; one full page; every achievement present. Deviations: Ujjwal/Atishay
+  lead with a Skills summary / title line; Tarun leads with Technical Skills before Projects. → section
+  order is a legitimate per-posting variable within the canon.
+- AI-native screening reads for: shipped things with links, quantified impact, independent research/OSS,
+  ownership stories; explicitly down-weights pedigree. Sources: Sundeep Teki 2026 guide, YC founder résumé
+  advice, Simplify 6-second rule, Wofford 2026 filter note, Rejectless Jake's guide, IITB placement repo.
+
+## Lane 2 — Parsers (ATS reality)
+- Kill list: columns/tables/icons/header-footer contact/graphics. Safe: serif, bold, link annotations WITH
+  visible text. DOCX marginally more deterministic; single-column PDF with a real text layer parses on
+  Workday/Greenhouse/Lever/iCIMS. LinkedIn Easy Apply parses AND (for some employers) forwards the file.
+  One-vs-two page for students: genuinely contested, no rigorous study → policy: one page preferred,
+  page 2 permitted before any TRUE content is dropped (the owner's explicit instruction).
+- Sources: Jobscan tables/columns, QuickCV/CVCraft "tested 8 ATS", ATSVerification + ProfileOps on
+  hyperlinks, ResumeOptimizerPro parser internals, sunnypatell/ats-screener.
+
+## Lane 3 — Discovery lanes (table in verdict 7; per-lane URLs in Sources)
+
+## Lane 4 — Free LLM tiers (table in verdict 6)
+Recommended chain for the strategist: Gemini 3.8-flash (deep pass, json schema) → Gemini 3.7-flash →
+Groq gpt-oss-120b on a CHUNKED prompt (≤6k tokens) → template narrator. Classify lane: Groq gpt-oss-20b /
+qwen3.8-27b → gemini-3.5-flash-lite.
+
+## Lane 5 — Agent patterns (verdict 8) — steal list
+Reflection w/ separate critic · Chain of Density · strict json_schema ops · curated minimum context ·
+checkable citations. Do-not-copy: unattended submit (AIHawk), static generic rubrics, badge-only citations.
+
+## Lane 6 — Toolchain + stack (verdicts 9–10)
+
+## Lane 7 — Cold codebase audit (verdict 5) — salvage table in ARCHITECTURE.md.
+
+## Sources (05-Sep-2026)
+console.groq.com/docs/rate-limits · ai.google.dev/gemini-api/docs/models · ai.google.dev/gemini-api/docs/rate-limits ·
+vercel.com/docs/limits (updated 2026-09-03) · npmjs.com (vite, react, typescript, dexie, pdf-lib, docx, tailwindcss,
+vitest) · code.claude.com/docs/en/{hooks,skills,sub-agents} · forbes.com/sites/rachelwells/2026/03/18 ·
+resumepulse.ai/blog/hiring-managers-reject-ai-resumes-2026 · sundeepteki.org/advice/how-to-get-hired-at-openai-
+anthropic-and-google-deepmind-in-2026 · resumeatsanalyzer.com/blog/yc-startup-founder-resumes · simplify.jobs/blog/
+6-second-resume-rule · rejectless.app/guides/jakes-resume-template-guide · github.com/SudhakarKuma/IITB-Campus-
+Placement-Resumes · jobscan.co/blog/resume-tables-columns-ats · quickcv.io/blog/i-tested-8-ats-systems ·
+atsverification.com/blog/do-ats-read-hyperlinks-resume · profileops.com/en/blog/resume-hyperlinks-ats ·
+developer.adzuna.com/docs/search · rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch · boards-api.greenhouse.io ·
+github.com/SimplifyJobs/Summer2027-Internships · news.ycombinator.com/item?id=49522897 · linkedin.com/help/
+linkedin/answer/a511279 · anthropic.com/engineering/effective-context-engineering-for-ai-agents ·
+anthropic.com/engineering/building-effective-agents · arxiv.org/pdf/2309.04269 (Chain of Density) ·
+github.com/srbhr/resume-matcher · github.com/speedyapply/JobSpy
+
+---
+---
+# §V2-PRIOR — earlier recon, preserved verbatim
+
 # RESEARCH — SIFARISH RE-BRIEF RECON — 30-Aug-2026
 
 Re-brief pipeline run (VISION-BRIEF-sifarish.md). Five parallel lanes, all live-verified today.

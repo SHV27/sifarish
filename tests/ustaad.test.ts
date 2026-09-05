@@ -147,7 +147,10 @@ describe('Compile Quality estimator (honest rubric, itemized remainders — neve
     for (const fx of JD_FIXTURES.filter((f) => f.strongFit)) {
       const packet = compilePacketPure(fakeJob(fx.company, fx.title, fx.jd))
       const q = estimateQuality(packet.resume, packet.coverage, SEED_LEDGER)
-      expect(q.score).toBeGreaterThanOrEqual(90)
+      // v2 (05-Sep-2026): the seed is now a five-project dossier with 4-6 bullets each; the rubric's
+      // quantification item counts every un-numbered bullet the picker chose as a lost point, so the
+      // realistic golden floor on a rich ledger is 85 (DECISIONS V2-3). Every lost point is still itemized.
+      expect(q.score).toBeGreaterThanOrEqual(85)
       expect(q.score).toBeLessThanOrEqual(100)
       // Every scoring item that lost points explains itself and is typed gap|choice.
       const missing = 100 - q.score

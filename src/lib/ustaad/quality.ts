@@ -23,7 +23,12 @@ import { startsStrong, startsWeak } from './library'
  *     zero slop (¶verb-strength-ladder, ¶action-verb-lead).
  */
 
-const STANDARD_HEADINGS = new Set(['EDUCATION', 'SKILLS', 'PROJECTS', 'ACHIEVEMENTS', 'CERTIFICATIONS', 'EXPERIENCE'])
+// v2: the campus canon's own headings (six real samples) are standard — TECHNICAL SKILLS, POSITIONS OF
+// RESPONSIBILITY, PUBLICATIONS, plus the classic set. Parsers key on these exact words.
+const STANDARD_HEADINGS = new Set([
+  'EDUCATION', 'SKILLS', 'TECHNICAL SKILLS', 'PROJECTS', 'ACHIEVEMENTS', 'CERTIFICATIONS', 'EXPERIENCE',
+  'WORK EXPERIENCE', 'POSITIONS OF RESPONSIBILITY', 'PUBLICATIONS', 'AWARDS', 'LEADERSHIP', 'EXTRACURRICULAR', 'EXTRA-CURRICULAR',
+])
 
 /** Lines belonging to the PROJECTS section — craft checks apply to prose bullets, not title-lines. */
 function projectSection(resume: CompiledResume) {
@@ -37,7 +42,7 @@ function projectSection(resume: CompiledResume) {
       continue
     }
     if (!inProjects) continue
-    if (l.kind === 'entry-title') titles.push(l.text)
+    if (l.kind === 'entry-title') titles.push(`${l.text} ${l.right ?? ''}`) // v2: the date rides `right` (the canon)
     else if (l.kind === 'bullet') bullets.push({ text: l.text, ledgerIds: l.ledgerIds })
     else if (l.kind === 'meta') metas.push(l.text)
   }

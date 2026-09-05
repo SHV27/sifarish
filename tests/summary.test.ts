@@ -41,8 +41,9 @@ describe('professional summary — evidence-dense, never minted (I1)', () => {
     for (const tool of ['Python', 'Groq', 'Whisper', 'TypeScript', 'JavaScript', 'Git', 'RAG', 'LoRA', 'PyTorch', 'React']) {
       expect(line!.text).not.toContain(tool)
     }
-    // NO numbers (a count is a point-in-time fact).
-    expect(line!.text).not.toMatch(/\d/)
+    // NO decaying numbers (years, percentages, money). The live shipped-count proof (final-bar,
+    // 30-Aug-2026) is allowed: it only ever grows.
+    expect(line!.text).not.toMatch(/\d{4}|%|₹/)
     // NO geography, NO decaying "currently building".
     expect(line!.text).not.toMatch(/India|Indian|Punjab/i)
     expect(line!.text).not.toMatch(/currently|building|forge/i)

@@ -53,20 +53,20 @@ beforeEach(async () => {
 
 describe('overviewRepos — nothing is ever silently invisible (D47)', () => {
   it('lists every non-fork repo, forks excluded', async () => {
-    const repos = [repo('sifarish'), repo('a-fork', { fork: true })]
+    const repos = [repo('darpan'), repo('a-fork', { fork: true })]
     const ov = await overviewRepos(repos, false)
-    expect(ov.map((o) => o.repo.name)).toEqual(['sifarish'])
+    expect(ov.map((o) => o.repo.name)).toEqual(['darpan'])
   })
 
   it('a brand-new repo with no ledger entry shows as untracked, not hidden', async () => {
-    const ov = await overviewRepos([repo('sifarish')], false)
+    const ov = await overviewRepos([repo('darpan')], false)
     expect(ov[0].status).toBe('untracked')
   })
 
   it('REGRESSION: a repo dismissed once is still visible (as "dismissed"), never gone', async () => {
-    const repos = [repo('sifarish')]
+    const repos = [repo('darpan')]
     await computeSuggestions(repos) // creates the pending sug-new-sifarish
-    await dismissSuggestion('sug-new-sifarish')
+    await dismissSuggestion('sug-new-darpan')
     const ov = await overviewRepos(repos, false)
     expect(ov[0].status).toBe('dismissed')
     // The old behavior (the bug): computeSuggestions would `continue` past it forever and
@@ -84,10 +84,10 @@ describe('overviewRepos — nothing is ever silently invisible (D47)', () => {
 
 describe('the D47 guarantee lives in addRepoToLedger (Session 7.2: forceAddRepo deleted — dead code lies)', () => {
   it('a DISMISSED repo can still be added in one click — nothing hides forever', async () => {
-    const repos = [repo('sifarish')]
+    const repos = [repo('darpan')]
     await computeSuggestions(repos)
-    await dismissSuggestion('sug-new-sifarish')
-    expect((await db.suggestions.get('sug-new-sifarish'))?.status).toBe('dismissed')
+    await dismissSuggestion('sug-new-darpan')
+    expect((await db.suggestions.get('sug-new-darpan'))?.status).toBe('dismissed')
 
     const id = await addRepoToLedger(repos[0])
     expect(await db.ledger.get(id), 'the entry lands in the ledger regardless of dismiss history').toBeDefined()
@@ -105,30 +105,30 @@ describe('the D47 guarantee lives in addRepoToLedger (Session 7.2: forceAddRepo 
 
 describe('D52 — "Your GitHub, deeply read": every repo always shown + one-click add', () => {
   it('THE REPORTED REGRESSION: SIFARISH (dismissed) is STILL in the overview with an add path', async () => {
-    const repos = [repo('sifarish'), repo('gloaming'), repo('spark-core')]
+    const repos = [repo('darpan'), repo('gloaming'), repo('spark-core')]
     await computeSuggestions(repos)
-    await dismissSuggestion('sug-new-sifarish') // simulate the migrated dismissed record
+    await dismissSuggestion('sug-new-darpan') // simulate the migrated dismissed record
     const ov = await overviewRepos(repos, false)
-    const sif = ov.find((o) => o.repo.name === 'sifarish')
+    const sif = ov.find((o) => o.repo.name === 'darpan')
     expect(sif).toBeTruthy() // never hidden — the whole point
     expect(sif!.status).toBe('dismissed') // shown, and still addable in the UI
   })
 
   it('addRepoToLedger writes a RICH README-distilled draft, ignoring dismiss history', async () => {
-    const r = repo('sifarish', { description: 'A job-hunt chief of staff that refuses to lie.' })
+    const r = repo('darpan', { description: 'A job-hunt chief of staff that refuses to lie.' }) // v2: sifarish is a real ledger project now
     await computeSuggestions([r])
-    await dismissSuggestion('sug-new-sifarish')
+    await dismissSuggestion('sug-new-darpan')
     const id = await addRepoToLedger(r)
-    expect(id).toBe('proj-sifarish')
-    const entry = await db.ledger.get('proj-sifarish')
+    expect(id).toBe('proj-darpan')
+    const entry = await db.ledger.get('proj-darpan')
     expect(entry?.tier).toBe('shipped')
-    expect(entry?.evidence?.repo).toContain('sifarish')
+    expect(entry?.evidence?.repo).toContain('darpan')
     // Rich: the draft carries README-distilled bullets + summary (not just the one-line description).
     expect(entry?.summary.toLowerCase()).toContain('refuses to lie')
     expect(entry!.bullets.length).toBeGreaterThanOrEqual(2)
     expect(entry!.tags).toContain('rag')
     // and the suggestion is now accepted (trail), not blocking
-    expect((await db.suggestions.get('sug-new-sifarish'))?.status).toBe('accepted')
+    expect((await db.suggestions.get('sug-new-darpan'))?.status).toBe('accepted')
   })
 })
 

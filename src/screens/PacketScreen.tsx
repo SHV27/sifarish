@@ -15,6 +15,7 @@ import Baithak from '../components/Baithak'
 import AtelierBaithak from '../components/AtelierBaithak'
 import AlignmentMap from '../components/AlignmentMap'
 import Cockpit from '../components/Cockpit'
+import PlanBoard from '../components/PlanBoard'
 import type { EditorialPlan } from '../types'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
@@ -369,7 +370,7 @@ function PacketBody({
             </button>
           </div>
         )}
-        {packet.editorial && <CastingSheet packet={packet} />}
+        {packet.plan && packet.reading ? <PlanBoard packet={packet} /> : packet.editorial && <CastingSheet packet={packet} />}
 
         <div className="dossier p-6 sm:p-8 bg-white relative" aria-label="Compiled resume preview">
           <span className="stamp stamp-red absolute -top-2 -right-2 animate-stamp-down">Compiled · {new Date(packet.createdAt).toLocaleDateString('en-IN')}</span>
@@ -482,6 +483,8 @@ function ResumeLine({ text, right, runs, kind, isName, count }: { text: string; 
   // right-aligned dates, bold skill labels — so what he sees IS what exports.
   const cls: Record<string, string> = {
     contact: 'text-[11px] text-neutral-700 text-center',
+    headline: 'text-[12px] font-bold text-neutral-900 text-center mt-1',
+    summary: 'text-[11.5px] text-neutral-800 leading-snug mt-1.5',
     heading: 'text-[12px] font-bold text-neutral-900 mt-3 tracking-wide border-b border-neutral-800 pb-0.5',
     'entry-title': 'text-[12px] font-semibold text-neutral-900 mt-1.5',
     meta: 'text-[11px] text-neutral-600 italic',

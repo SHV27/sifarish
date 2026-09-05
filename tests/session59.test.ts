@@ -116,8 +116,12 @@ describe('framingDirection — the same truth aimed at two different readers', (
     const job = fakeJob('Netomi', 'Agentic Engineer', 'LLM agents, RAG, evals, Python.')
     const decode = decodeJD(job.jd)
     const coverage = matchEvidence(decode, SEED_LEDGER)
-    const project = SEED_LEDGER.find((e) => e.kind === 'project' && e.tier === 'shipped' && e.bullets.length > 0)!
-    const b = project.bullets[0]
+    // v2: five seed projects, legacy trim keeps four — pick one that is ON the page.
+    const first = compileResume({ identity: SEED_IDENTITY, ledger: SEED_LEDGER, decode, coverage, jobId: job.id })
+    const onPage = first.lines.find((l) => l.kind === 'entry-title' && SEED_LEDGER.some((e) => e.kind === 'project' && l.ledgerIds.includes(e.id)))!
+    const project = SEED_LEDGER.find((e) => e.kind === 'project' && onPage.ledgerIds.includes(e.id))!
+    // …and a bullet of it that the picker actually rendered (rich entries hold more bullets than fit).
+    const b = project.bullets.find((x) => first.lines.some((l) => l.kind === 'bullet' && l.text.includes(x.text.slice(0, 40))))!
     const resume = compileResume({
       identity: SEED_IDENTITY,
       ledger: SEED_LEDGER,

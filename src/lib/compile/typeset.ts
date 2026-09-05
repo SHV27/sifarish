@@ -124,6 +124,6 @@ export function sanitizePdfText(text: string): string {
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')
     .replace(/•/g, '-')
-    .replace(/[^ -~–—·×…]/g, '')
+    .replace(/[^ -~–—·×…À-ÿ]/g, '') // Latin-1 letters are WinAnsi glyphs — "résumé" keeps its accents (read on the page, 05-Sep-2026)
     .replace(/ {2,}/g, ' ')
 }

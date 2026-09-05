@@ -5,6 +5,7 @@ import { db, withSeedAllowance } from './db'
 // in owner mode so a demo visitor never downloads it.
 import demoSeed from '../../seed/demo.seed.json'
 import type { Identity, LedgerEntry, Settings, VisionProfile, VoiceBank } from '../types'
+import { DEFAULT_SECTIONS } from '../lib/dossier/sections'
 import { DEFAULT_RUBRIC } from '../lib/radar/rubric'
 import { WATCHLIST_SEED, WATCHLIST_ADDITIONS_V58 } from '../lib/radar/watchlist.seed'
 import { SEED_HUNTS, migrateHuntFreshness } from '../lib/khabri/client'
@@ -71,6 +72,8 @@ function freshSettings(): Settings {
     appliedThisWeek: 0,
     visionProfile: DEFAULT_VISION,
     rubricChangelog: [{ at: new Date().toISOString(), summary: 'Initial rubric (v1 defaults).' }],
+    pagePolicy: 'two-ok',
+    sections: DEFAULT_SECTIONS,
   }
 }
 
@@ -204,7 +207,40 @@ export async function backfillV2(): Promise<void> {
     // authority above D59's hands-off rule is his own word. Flag-guarded (runs once); roles and
     // avoids he added by hand are UNION-merged, never dropped; dream is replaced with his text.
     await migrateVisionFinalBar().catch(() => 0)
+    // v2 (05-Sep-2026) — THE DOSSIER lands: his real projects (README-derived, sworn 'readme'),
+    // the Techgyan win named, the sections registry + page policy. Union-merge: ids he already
+    // holds are NEVER overwritten; nothing is deleted. Flag-guarded (runs once).
+    await migrateDossierV2().catch(() => 0)
   })
+}
+
+export async function migrateDossierV2(): Promise<number> {
+  const FLAG = 'migrated:dossier-v2'
+  if (await db.nabzCache.get(FLAG)) return 0
+  let changed = 0
+  if (getMode() === 'owner') {
+    const { OWNER_SEED } = await import('./ownerSeed')
+    const have = new Set((await db.ledger.toArray()).map((e) => e.id))
+    for (const e of OWNER_SEED.entries) {
+      if (have.has(e.id)) continue
+      await db.ledger.put({ ...e, sworn: e.sworn ?? 'seed' })
+      changed++
+    }
+    // The hackathon win, named properly — only if he never edited the seed's original title.
+    const hack = await db.ledger.get('ach-genai-hack')
+    const seedHack = OWNER_SEED.entries.find((e) => e.id === 'ach-genai-hack')
+    if (hack && seedHack && /^1st Place — Gen-AI Hackathon, IIT Ropar$/.test(hack.title)) {
+      await db.ledger.update('ach-genai-hack', { title: seedHack.title, summary: seedHack.summary, tags: seedHack.tags, evidence: seedHack.evidence })
+      changed++
+    }
+  }
+  const s = await db.settings.get('app')
+  if (s) {
+    const sections = s.sections?.length ? s.sections : DEFAULT_SECTIONS
+    await db.settings.update('app', { pagePolicy: s.pagePolicy ?? 'two-ok', sections })
+  }
+  await db.nabzCache.put({ key: FLAG, json: 'true', fetchedAt: new Date().toISOString() })
+  return changed
 }
 
 export async function migrateVisionFinalBar(): Promise<boolean> {

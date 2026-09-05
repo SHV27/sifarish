@@ -460,6 +460,46 @@ export async function generate<T>(input: GenerateInput): Promise<T | null> {
   return call.result as T
 }
 
+/**
+ * v2 THE STRATEGIST — `generate` with the answering brain named (the packet prints its mode:
+ * gemini / groq / heuristic — I4 observable degradation). Same cache, budget and keyless contract.
+ */
+export interface GenerateMeta<T> {
+  result: T | null
+  /** 'gemini' | 'groq' when a brain answered; 'heuristic' when the caller must use its floor. */
+  mode: 'gemini' | 'groq' | 'heuristic'
+  model?: string
+  cached: boolean
+}
+export async function generateWithMeta<T>(input: GenerateInput): Promise<GenerateMeta<T>> {
+  const tier: DimaagTier = input.tier ?? 'reasoning'
+  const cacheKey = hash({ k: 'generate', f: input.feature, s: input.system, u: input.user })
+  const cached = await db.dimaagCache.get(cacheKey)
+  if (cached) {
+    await recordUsage(input.feature, tier, 'hit')
+    const parsed = JSON.parse(cached.json) as { __model?: string } & Record<string, unknown>
+    const model = typeof parsed.__model === 'string' ? parsed.__model : undefined
+    delete parsed.__model
+    return { result: parsed as unknown as T, mode: modeOf(model), model, cached: true }
+  }
+  if ((await allowedThisRun(tier === 'reasoning' ? 'dimaag' : 'chhota')) < 1) {
+    await recordUsage(input.feature, tier, 'fallback')
+    return { result: null, mode: 'heuristic', cached: false }
+  }
+  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 2000, input.schema)
+  if (!call || call.keyless || call.result == null || typeof call.result !== 'object') {
+    await recordUsage(input.feature, tier, 'fallback')
+    return { result: null, mode: 'heuristic', cached: false }
+  }
+  await recordUsage(input.feature, tier, 'call', call.tokens, call.model)
+  await db.dimaagCache.put({ hash: cacheKey, json: JSON.stringify({ ...(call.result as object), __model: call.model }), at: new Date().toISOString() })
+  return { result: call.result as T, mode: modeOf(call.model), model: call.model, cached: false }
+}
+function modeOf(model?: string): 'gemini' | 'groq' | 'heuristic' {
+  if (!model) return 'gemini'
+  return /gemini/i.test(model) ? 'gemini' : 'groq'
+}
+
 // ---- helpers ----
 function labelOf(input: DecideInput, id: string): string {
   return input.options.find((o) => o.id === id)?.label ?? id
