@@ -104,7 +104,10 @@ function quotesFrom(text: string, kind: 'care' | 'nocare'): ReadingQuote[] {
     if (p.length < 3 || seen.has(k)) return
     // Junk guard: a dangling pronoun/determiner ("exceptional people to capture them", "the") or a
     // whole clause is not a value the company named.
-    if (/\b(them|it|us|you|that|this|those|these|the|a|an|to|of|and)$/i.test(k) || k.split(' ').length > 7) return
+    if (/\b(them|it|us|you|that|this|those|these|the|a|an|to|of|and|with|for|in|on|at|by|from|strong|who|which|are|is|have|has)$/i.test(k) || k.split(' ').length > 7) return
+    // OWNER-READ: "built for a place that values individuals with strong" — a phrase that starts with a
+    // people-noun and never names the value is a torn sentence, not a value.
+    if (/^(individuals?|people|candidates?|someone|those|anyone|you)\b/i.test(k)) return
     seen.add(k)
     out.push({ phrase: cap(p, 70), quote: cap(clean(quote), 180) })
   }

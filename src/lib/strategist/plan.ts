@@ -1,6 +1,7 @@
 import type { GamePlan, Identity, JDDecode, LedgerEntry, PlanFact, Reading, SectionDef, SkillRow, StrategistMode, VisionProfile } from '../../types'
 import { displayTitle } from '../compile/compiler'
-import { bannedSkillKeys, derivedSkills, findSkill, isBannedSkill, type DerivedSkill } from '../dossier/skills'
+import { bannedSkillKeys, derivedSkills, findSkill, isBannedSkill, skillRow, type DerivedSkill } from '../dossier/skills'
+import { canonTech } from '../dossier/tech'
 import { generateWithMeta } from '../dimaag/core'
 import { entryRelevance } from '../match/evidence'
 import { detectDrift } from '../polish/factGuard'
@@ -217,7 +218,7 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
   }
 
   // Skills rows: JD ∩ evidence, the market's vocabulary first; shorter when they say syntax does not matter.
-  const skills = buildSkillRows(reading, skillsAll, /syntax|code without|coding experience|leetcode/i.test(nocare) ? 6 : 10)
+  const skills = buildSkillRows(reading, skillsAll, /syntax|code without|coding experience|leetcode/i.test(nocare) ? 6 : 8, played.map((p) => p.factId))
   // READ on the demo board: "no evidence for react" while the alignment map proved React via a project —
   // the skill was OFF by HIS call (resumeEligible:false), not unproven. Say which.
   const banned = bannedSkillKeys(ledger)
@@ -286,39 +287,32 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
 /** The campus canon's labelled rows (six real samples): Languages · AI & ML · Frameworks & Libraries · Tools & Platforms · Core CS. */
 // The canon (six samples): 4–6 labelled rows — Languages / AI-ML / Frameworks / Databases / Tools / Core CS.
 export const SKILL_ROWS = ['Languages', 'AI & ML', 'Frameworks & Libraries', 'Databases', 'Tools & Platforms', 'Core CS'] as const
-const DB_RE = /\b(sql|postgres(?:ql)?|mysql|sqlite|mongodb|mongo|redis|dexie|indexeddb|supabase|firestore|chromadb|chroma|faiss|pinecone|weaviate|qdrant|vector (?:db|database|store)s?)\b/i
-const TOOLS_RE = /\b(git|github|docker|linux|vercel|netlify|vs code|vscode|hugging ?face|groq|gemini|claude|cursor|postman|aws|gcp|azure|render|firebase|supabase|kubernetes|ci|ci\/cd|github actions|ollama|tesseract)\b/i
-const CORE_RE = /\b(oop|oops|object[- ]oriented|operating systems?|dbms|computer networks?|dsa|data structures?|algorithms?|system design|distributed systems|networking)\b/i
 export function rowLabel(s: DerivedSkill): (typeof SKILL_ROWS)[number] {
-  if (CORE_RE.test(s.text)) return 'Core CS'
-  if (DB_RE.test(s.text)) return 'Databases'
-  if (s.category === 'Languages') return 'Languages'
-  if (s.category === 'AI & ML') return 'AI & ML'
-  if (TOOLS_RE.test(s.text)) return 'Tools & Platforms'
-  return 'Frameworks & Libraries'
+  return skillRow(s)
 }
 
 /** Skills rows assembled per posting: asked-for first (must → nice), then AI/ML core, then the rest. */
-export function buildSkillRows(reading: Reading, skillsAll: DerivedSkill[], perRow = 10): SkillRow[] {
+export function buildSkillRows(reading: Reading, skillsAll: DerivedSkill[], perRow = 8, playedIds: string[] = []): SkillRow[] {
   const picked = new Map<string, DerivedSkill>()
   const take = (term: string) => {
-    const s = findSkill(skillsAll, term)
+    const canon = canonTech(term)
+    const s = canon ? skillsAll.find((x) => x.text === canon.name) : findSkill(skillsAll, term)
     if (s && !picked.has(s.key)) picked.set(s.key, s)
   }
+  // 1) What THIS company asked for, that he can prove — the reason the rows exist (brief B.4).
   reading.skills.must.forEach(take)
   reading.skills.nice.forEach(take)
-  // Proven skills the posting MENTIONS anywhere (FastAPI, PostgreSQL…) — the lexicon is finite, the
-  // posting is not; if they wrote the word and he holds the proof, it belongs in the rows.
+  // Anything the posting MENTIONS anywhere (FastAPI, PostgreSQL…) that he holds — the posting is the lexicon.
   const tokens = new Set(reading.tokens ?? [])
-  if (tokens.size) for (const s of skillsAll) if (!picked.has(s.key) && s.key.length >= 4 && tokens.has(s.text.toLowerCase().replace(/[^a-z0-9+#.-]/g, ''))) picked.set(s.key, s)
-  // Then the CORE he holds — a skill proven by ≥2 facts (used across his work), the market's
-  // vocabulary first. A one-off tool nobody asked for ("Whisper", the owner's own example) never
-  // pads the page: skills are for the company, not a museum of everything he touched.
+  if (tokens.size) for (const s of skillsAll) if (!picked.has(s.key) && canonTech(s.text)?.aliases.some((a) => tokens.has(a.replace(/[^a-z0-9+#.-]/g, '')))) picked.set(s.key, s)
+  // 2) The stacks of the projects that PLAY on this page — the rows must agree with the headers.
+  const played = new Set(playedIds)
+  if (played.size) for (const s of skillsAll) if (!picked.has(s.key) && s.factIds.some((id) => played.has(id))) picked.set(s.key, s)
+  // 3) His languages and the AI/ML core he has used across ≥2 facts — never a one-off tool nobody asked for.
   const core = (s: DerivedSkill) => s.factIds.length >= 2
   const byProof = skillsAll.slice().sort((a, b) => b.factIds.length - a.factIds.length)
-  for (const s of byProof) if (s.category === 'AI & ML' && core(s) && !picked.has(s.key)) picked.set(s.key, s)
   for (const s of byProof) if (s.category === 'Languages' && core(s) && !picked.has(s.key)) picked.set(s.key, s)
-  for (const s of byProof) if (core(s) && !picked.has(s.key)) picked.set(s.key, s)
+  for (const s of byProof) if (s.category === 'AI & ML' && core(s) && !picked.has(s.key)) picked.set(s.key, s)
   const rows = new Map<string, SkillRow>()
   for (const s of picked.values()) {
     const label = rowLabel(s)

@@ -212,6 +212,7 @@ export async function backfillV2(): Promise<void> {
     // holds are NEVER overwritten; nothing is deleted. Flag-guarded (runs once).
     await migrateDossierV2().catch(() => 0)
     await migrateAgenticSkillsV2().catch(() => 0)
+    await migratePranaKind().catch(() => 0)
     // v2 THE DESK — the demo's worked example (Appendix A), seeded once per demo vault; never in owner mode.
     if (getMode() !== 'owner') {
       // R3: the fictional persona's seed grew (two projects shipped) — a returning visitor's demo
@@ -383,6 +384,27 @@ export async function migrateDemoPersonaR3(): Promise<number> {
       const cur = await db.ledger.get(raw.id)
       if (cur && cur.tier === 'in_forge') {
         await db.ledger.put({ ...raw })
+        n++
+      }
+    }
+    await db.nabzCache.put({ key: FLAG, json: String(n), fetchedAt: new Date().toISOString() })
+  })
+  return n
+}
+
+/**
+ * OWNER'S WORD (05-Sep-2026): PRANA is a self-published position paper (GitHub + LinkedIn), not a
+ * publication — "publication" on the page overclaims. Any entry titled PRANA that still wears the
+ * 'publication' kind becomes 'writing' (Independent Research & Writing). Nothing deleted; runs once.
+ */
+export async function migratePranaKind(): Promise<number> {
+  const FLAG = 'migrated:prana-kind-writing'
+  if (await db.nabzCache.get(FLAG)) return 0
+  let n = 0
+  await withSeedAllowance(async () => {
+    for (const e of await db.ledger.toArray()) {
+      if (/\bPRANA\b/i.test(e.title) && e.kind === 'publication') {
+        await db.ledger.put({ ...e, kind: 'writing' })
         n++
       }
     }

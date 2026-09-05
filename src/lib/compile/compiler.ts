@@ -10,6 +10,7 @@ import type {
 } from '../../types'
 import { sectionLabel } from '../strategist/plan'
 import { bannedSkillKeys, isBannedSkill } from '../dossier/skills'
+import { headerStack } from '../dossier/tech'
 import { entryRelevance, bulletRelevance } from '../match/evidence'
 import { sentenceTrim, cleanUrlForDisplay, stripMarkdownResidue, groupSkills, sanitizePdfText } from './typeset'
 import { bulletOverlap, bulletOverlapSameProject, HARD_DUPLICATE, REDUNDANCY_WEIGHT, isIdentityBullet } from './overlap'
@@ -281,6 +282,22 @@ const TECH_CASE: Record<string, string> = {
   claude: 'Claude', dexie: 'Dexie', vite: 'Vite', vercel: 'Vercel', serverless: 'Serverless',
   tailwind: 'Tailwind', docker: 'Docker', sql: 'SQL', mongodb: 'MongoDB', fastapi: 'FastAPI',
 }
+/** Drop a summary that only restates the title (≥ 60% of its words already in the title) — keep the tail that adds something. */
+export function trimRestatement(title: string, summary: string): string {
+  if (!summary) return ''
+  const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((w) => w.length > 2)
+  const t = new Set(words(title))
+  const parts = summary.split(/ — | with /)
+  const head = words(parts[0])
+  if (head.length === 0) return summary
+  const overlap = head.filter((x) => t.has(x)).length / head.length
+  if (overlap < 0.5) return summary
+  // The head restates the title. Keep a tail that adds something ("… with Sifarish, the evidence-compiled job-hunt system").
+  const tail = parts.slice(1).join(' ').trim()
+  const tw = words(tail)
+  return tw.length >= 3 && tw.filter((x) => !t.has(x)).length / tw.length >= 0.5 ? tail[0].toUpperCase() + tail.slice(1) : ''
+}
+
 export function displayTech(tag: string): string {
   return tag
     .split(/[-_\s]+/)
@@ -605,10 +622,8 @@ export function compileResume(input: CompileInput): CompiledResume {
           // Re-brief Arc 2 (¶the canon's project-header formula): `NAME | Tech, Tech, Tech` —
           // the stack rides the HEADER (every strong sample the owner supplied does this), from
           // his own deep-read stack (D58) or tags. Emphasis pass keeps NAME bold, stack roman.
-          const stack = (p.context?.stack?.length ? p.context.stack : p.tags.map(displayTech))
-            .map((x) => x.replace(/\s*\(.*\)$/, ''))
+          const stack = headerStack(p, [...decode.mustHave, ...decode.niceToHave])
             .filter((x) => !isBannedSkill(x, legacyBanned))
-            .slice(0, 4)
             .join(', ')
           const baseTitle = displayTitle(p.title)
           const headerText = stack && (baseTitle.length + stack.length) < 90 ? `${baseTitle} | ${stack}` : baseTitle
@@ -776,14 +791,9 @@ function compileFromPlan(input: CompileInput): CompiledResume {
       // marked not-interview-safe (resumeEligible:false is his call, honored everywhere).
       // OWNER-CAUGHT: "SIFARISH | agents, llm, gpt, rag" — raw keyword tags are not a stack. The
       // header carries the README's own stack, else only tags the lexicon knows as real tech, else nothing.
-      const stack = withStack
-        ? (e.context?.stack?.length ? e.context.stack : e.tags.filter((t) => TECH_CASE[t.toLowerCase()]).map(displayTech))
-            .map((x) => x.replace(/\s*\(.*\)$/, ''))
-            .filter((x) => !isBannedSkill(x, banned))
-            .filter((x, i, arr) => arr.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i)
-            .slice(0, 4)
-            .join(', ')
-        : ''
+      // v2 R4: the header stack is the TECH CANON's word for what this project proves (README stack
+      // first, the posting's asks first among those) — never raw tags ("agents, llm, gpt, rag").
+      const stack = withStack ? headerStack(e, [...decode.mustHave, ...decode.niceToHave]).filter((x) => !isBannedSkill(x, banned)).join(', ') : ''
       const baseTitle = displayTitle(e.title)
       const headerText = stack && baseTitle.length + stack.length < 90 ? `${baseTitle} | ${stack}` : baseTitle
       push(lines, {
@@ -811,7 +821,11 @@ function compileFromPlan(input: CompileInput): CompiledResume {
       heading(key, items.map((p) => p.factId))
       for (const p of items) {
         const e = p.entry
-        const hs = e.summary ? cleanSummaryForDisplay(e.summary).replace(/\.$/, '') : ''
+        const hs0 = e.summary ? cleanSummaryForDisplay(e.summary).replace(/\.$/, '') : ''
+        // OWNER-READ: "1st Place — Agentic & GenAI Showcase … — Won first place in the Agentic & GenAI
+        // showcase at …" restated its own title. A summary that repeats the title's words is trimmed
+        // to the part that adds something; an identical one is dropped.
+        const hs = trimRestatement(e.title, hs0)
         const text = key === 'certs' ? `- ${e.title}${hs ? ` (${hs})` : ''}` : `- ${e.title}${hs ? ` — ${hs}` : ''}`
         const url = e.evidence?.url
         push(lines, { kind: 'bullet', text, ledgerIds: [e.id], ...(url ? { link: url } : {}) })

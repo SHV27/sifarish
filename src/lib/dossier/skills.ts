@@ -1,7 +1,6 @@
 import type { LedgerEntry } from '../../types'
-import { displayTech } from '../compile/compiler'
-import { categorizeSkill, type SkillCategory } from '../compile/typeset'
-import { LEXICON } from '../jd/lexicon'
+import type { SkillCategory } from '../compile/typeset'
+import { canonTech, techOf, type TechRow } from './tech'
 
 /**
  * v2 THE DOSSIER — `derivedSkills()` is THE authority on "what is true about him, skill-wise"
@@ -26,27 +25,7 @@ export interface DerivedSkill {
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#.]/g, '')
 
 /** Tags that are organisational, not skills — never a skills-row item. */
-const NOT_SKILL = new Set([
-  'shipped', 'deployment', 'deployed', 'win', 'hackathon', 'national', 'scholarship', 'leadership', 'organizing',
-  'education', 'cse', 'thapar', 'game', 'agentic-ai', 'volunteer', 'social', 'mentorship', 'analytics', 'ai',
-  'ml', 'llm', 'fallback', 'degradation', 'narrative', 'agent', 'serverless',
-])
-
 /** Known skill display forms for canonical lexicon/tag keys the ledger speaks. */
-const DISPLAY: Record<string, string> = {
-  'tool-use': 'Tool use / function calling',
-  'prompt-engineering': 'Prompt engineering',
-  embeddings: 'Embeddings & vector search',
-  'fine-tuning': 'Fine-tuning',
-  orchestration: 'Agent orchestration',
-  agents: 'Agentic systems',
-  llm: 'LLMs',
-  rag: 'RAG',
-  mcp: 'MCP',
-  evals: 'Evals',
-  guardrails: 'Guardrails',
-}
-
 /** Keys of skills the OWNER marked resumeEligible:false — his call, honored everywhere (D59). */
 export function bannedSkillKeys(ledger: LedgerEntry[]): Set<string> {
   return new Set(ledger.filter((e) => e.kind === 'skill' && !e.resumeEligible).map((e) => norm(e.title.split('—')[0])))
@@ -59,48 +38,43 @@ export function isBannedSkill(text: string, banned: Set<string>): boolean {
 }
 
 /** The market's vocabulary: a tag/keyword becomes a skill only if the JD lexicon knows it. */
-const LEXICON_KEYS = new Set(LEXICON.map((l) => norm(l.canonical)))
-
-function add(map: Map<string, DerivedSkill>, text: string, factId: string, category?: string, banned?: Set<string>) {
-  const clean = text.trim().replace(/\s+/g, ' ')
-  if (!clean || clean.length > 40) return
-  const key = norm(clean)
-  if (!key || NOT_SKILL.has(clean.toLowerCase())) return
-  if (banned && isBannedSkill(clean, banned)) return
-  const existing = map.get(key)
-  if (existing) {
-    if (!existing.factIds.includes(factId)) existing.factIds.push(factId)
-    return
-  }
-  // Near-duplicates merge into the earlier (hand-named) form: "Agentic AI" ⊃ "Agentic" ⊃ "Agentic systems".
-  for (const [k, v] of map) {
-    if (Math.min(k.length, key.length) >= 6 && (k.startsWith(key) || key.startsWith(k))) {
-      if (!v.factIds.includes(factId)) v.factIds.push(factId)
-      return
-    }
-  }
-  map.set(key, { text: clean, key, factIds: [factId], category: categorizeSkill(clean, category) })
-}
-
 /**
  * The union of every skill the dossier proves. Order: skill entries first (his hand-curated
  * names win the display form), then project stacks, then keywords/tags.
  */
 export function derivedSkills(ledger: LedgerEntry[]): DerivedSkill[] {
+  // v2 R4 (owner-caught: "statistics, speech, gpt, inference" printed as skills): ONLY the tech
+  // canon (data/config/tech.json) names a skill. His stack, tags and bullet keywords are surface
+  // forms; each is mapped to its canonical technology or dropped — never printed raw.
   const map = new Map<string, DerivedSkill>()
   const banned = bannedSkillKeys(ledger)
   const eligible = ledger.filter((e) => e.resumeEligible && e.tier === 'shipped')
-  for (const e of eligible.filter((x) => x.kind === 'skill')) add(map, e.title.split('—')[0].trim(), e.id, e.category, banned)
-  for (const e of eligible) {
-    for (const s of e.context?.stack ?? []) add(map, s.replace(/\s*\(.*\)$/, ''), e.id, undefined, banned)
+  const take = (raw: string, factId: string) => {
+    const t = canonTech(raw)
+    if (!t) return
+    if (isBannedSkill(t.name, banned) || isBannedSkill(raw, banned)) return
+    const key = norm(t.name)
+    const existing = map.get(key)
+    if (existing) {
+      if (!existing.factIds.includes(factId)) existing.factIds.push(factId)
+      return
+    }
+    map.set(key, { text: t.name, key, factIds: [factId], category: rowCategory(t.row) })
   }
-  // Tags/keywords are competencies in his own shorthand ("verification", "ci") — only the ones the
-  // market's lexicon names become skills; the rest stay evidence for the matcher, never page text.
-  for (const e of eligible) {
-    for (const b of e.bullets) for (const k of b.keywords) if (LEXICON_KEYS.has(norm(k))) add(map, DISPLAY[k] ?? displayTech(k), e.id, undefined, banned)
-    for (const t of e.tags) if (LEXICON_KEYS.has(norm(t))) add(map, DISPLAY[t] ?? displayTech(t), e.id, undefined, banned)
-  }
+  for (const e of eligible.filter((x) => x.kind === 'skill')) take(e.title.split('—')[0].trim(), e.id)
+  for (const e of eligible.filter((x) => x.kind !== 'skill')) for (const t of techOf(e)) take(t.name, e.id)
   return [...map.values()]
+}
+
+/** The canon's row for a technology, in the compile layer's category vocabulary. */
+function rowCategory(row: TechRow): SkillCategory {
+  if (row === 'Languages' || row === 'AI & ML') return row
+  return 'Frameworks & Tools'
+}
+
+/** The canon row of a derived skill (the six samples' labelled rows). */
+export function skillRow(s: DerivedSkill): TechRow {
+  return canonTech(s.text)?.row ?? (s.category === 'Languages' ? 'Languages' : s.category === 'AI & ML' ? 'AI & ML' : 'Frameworks & Libraries')
 }
 
 /** Find a derived skill by any surface form of a JD term ("langgraph", "LangGraph", "lang graph"). */

@@ -1,5 +1,5 @@
 import type { CompiledLine, JDDecode } from '../../types'
-import { LEXICON } from '../jd/lexicon'
+import { canonTech, techSurfaceForms } from '../dossier/tech'
 import { sanitizePdfText } from './typeset'
 import { timesWidth } from './times-metrics'
 
@@ -23,13 +23,10 @@ export interface Run {
 const METRIC_RE = /[₹$€£]?\d[\d,.]*(?:%|\+|[kKxX×])?(?:\s?(?:LPA|lakh|crore|ms|s\b|GB|MB|KB|TB|users?|stars?|repos?|files?|pages?|models?))?/g
 
 /** Tech/term surface forms worth bolding, from the SAME lexicon the JD decoder speaks. */
-const TERM_PATTERNS: string[] = [
-  ...new Set(
-    LEXICON.flatMap((l) => [l.canonical, ...l.patterns])
-      .map((p) => p.trim().toLowerCase())
-      .filter((p) => p.length >= 3 && !/^(ml |ai |safety|attention|serving|prompting)/.test(p)),
-  ),
-]
+// v2 R4 (owner-read: "probability", "alignment", "Predictive Analytics" bolded as if they were tech):
+// only the TECH CANON's surface forms are bold-inline — the canon of the six samples bolds tech and
+// numbers, never competencies.
+const TERM_PATTERNS: string[] = techSurfaceForms().filter((p) => p.length >= 3 && !/^(cv|os|c|ts|js|py|ci|next|rest|cursor|node|attention)$/.test(p))
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -67,7 +64,7 @@ export function deriveBulletRuns(sanitized: string, decode?: JDDecode): Run[] | 
   // 2 · Lexicon tech terms + this JD's own keywords (word-boundary, case preserved from the text).
   const terms = [
     ...TERM_PATTERNS,
-    ...(decode ? [...decode.mustHave, ...decode.niceToHave].map((k) => k.toLowerCase()) : []),
+    ...(decode ? [...decode.mustHave, ...decode.niceToHave].map((k) => k.toLowerCase()).filter((k) => canonTech(k) !== null) : []),
   ]
   for (const term of terms) {
     const re = new RegExp(`(?<![a-z0-9])${escapeRe(term)}(?![a-z])`, 'gi')
