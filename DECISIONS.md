@@ -351,3 +351,23 @@ reader) — the chalaki he asked for, structurally unable to invent.
 Also from the ten re-readings: every line of the brief was walked once more; the items it names
 that are data he feeds (sample résumés → the canon metrics; postings; outcomes) are recorded in
 RESEARCH/NOTES; the acceptance scene is re-run by eye after every change (resume-eye).
+
+## V2-9 · THE TEAM — the distance to the brief, walked again (05-Sep-2026, after "the whole app is far from the vision")
+Read the brief line by line once more; the gaps that were NOT the page, now closed:
+- **"company ke baare mein detailed research … poori detailed company info pe act karne ki taakat"** —
+  THE RESEARCHER: cited company intel (Tavily, 7-day cache) now rides INTO the reading and the plan
+  prompt and sits on the board with sources; keyless → declared "reading stands on the posting alone".
+- **"app ke kisi bhi point pe kuch bhi change karwana halwa ho"** — talk-to-do-anything: edit any
+  field of any fact ("change Braillix's summary to …", "braillix ka title … kar do"), hide / bring
+  back a fact (never deleted), one page / two pages, rename a section, study a pasted résumé; and
+  the packet he last opened is in scope from the desk/header input — "bench GLOAMING", "skills upar"
+  become confirmable cards that apply through the Baithak's one door.
+- **"resume builder has studied thousands of real cse resumes … sample resumes upload karunga"** —
+  THE CANON as data: data/ustaad/canon.json (the six samples, measured) + samples he feeds by chat,
+  stored in the vault and cited to the strategist as HIS references — self-evolving without code.
+- **The letter** now opens on what THEY said they care about and names one proof — the reading
+  drives every artifact, not only the page.
+- **The board speaks as the team** — THE READER / THE RESEARCHER / THE STRATEGIST / THE TAILOR
+  (re-aimed N bullets) / THE CRITIC — the product's manner, as the brief asked.
+- Honest limits (V2-2 stands): research is only as good as the free intel lane; a company with no
+  public footprint yields "none found", said plainly.

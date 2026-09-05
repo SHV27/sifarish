@@ -2,7 +2,7 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: V2 CYCLE (05-Sep-2026) — ✅ DONE. Arcs 1–5 built, deployed, proven live on HIS vault
+## Status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1 (THE OWNER'S EYE) + R2 (THE TEAM) built, deployed, proven live on HIS vault
 
 Brief: VISION-BRIEF-sifarish-v2.md (voids the 30-Aug brief). Pipeline ran whole: recon (7 lanes,
 RESEARCH.md v2 verdicts) → boardroom (DECISIONS V2-1: 5 pillars, cut list, the Played/Benched board
@@ -73,6 +73,16 @@ as the innovation, 8 places the standard cannot be physically met logged in V2-2
 - README v5 section + 4 fresh screenshots (docs/screenshots/v2-*.png) · CLAUDE.md refreshed (58
   lines) · project skill `resume-eye` · NOTES.md parked list · DECISIONS V2-1…V2-7.
 - Gates: 830 · tsc clean · warning-free build.
+
+### R1 · THE OWNER'S EYE + R2 · THE TEAM — after his review (DECISIONS V2-8, V2-9)
+- Headline = his vision sentence, never project names · PRANA deduped + honest kind · the preview
+  IS the PDF (canon-tight metrics, two-line education, real stacks) · Shelf's skills list retired,
+  his agentic skills shipped by his word, five labelled rows · session cap 12→80 + a loud banner
+  when the template built a page · framing → re-aimed wording per company (drift-guarded).
+- THE RESEARCHER (cited company intel into the reading/plan/board) · talk-to-do-anything (edit /
+  hide / page policy / rename / study a sample; packet-scoped ops from anywhere as cards) · the
+  canon as data + samples he feeds · the letter opens on what they said they care about · the board
+  speaks as the team. Gates 840 · tsc clean · warning-free build.
 
 ### ONE next action (the owner's, ~5 min, whenever he wakes)
 → Open Owner Mode once and READ one packet: the board says played/benched and why. Then say, on the

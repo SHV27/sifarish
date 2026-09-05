@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "studiedOn": "2026-09-05",
+  "comment": "THE CANON — measured from six real, selected-student CSE résumés the owner supplied (Thapar/LPU peers, LaTeX). Data, not code: the compiler's metrics and the strategist's prompt read this; new samples he feeds by chat ('study this résumé: …') join it as his own references.",
+  "samples": [
+    { "id": "japnit", "shape": "Times ~11pt, name 20pt centered, contact line with LinkedIn/GitHub/LeetCode links, EDUCATION (institution bold + dates right, degree italic + CGPA right) → EXPERIENCE (company bold – role, 4 bullets bold-inline) → PROJECTS (name bold, GitHub link right, 2-3 bullets, 'Tech Stack:' line) → TECHNICAL SKILLS (6 labelled rows: Languages / AI-ML / Libraries & Frameworks / Databases / Tools & Technologies / Core CS) → ACHIEVEMENTS (every one, incl. Amazon ML Summer School, 400+ DSA). Full page, tight leading." },
+    { "id": "kunal", "shape": "Serif, name caps centered, EDUCATION → EXPERIENCE (2 roles, quantified: 2500+ students, −10% load time) → PROJECTS (3, GitHub icon right, 'Tech Stack -' line) → TECHNICAL SKILLS (5 rows) → ACHIEVEMENTS (350+ DSA, merit scholarship, SIH internal round). Full page." },
+    { "id": "armaan", "shape": "Small-caps headings, EDUCATION with school rows (SSC/HSLC %), EXPERIENCE (GDSC core member, quantified 300+ students, +60%), PROJECTS ('Name | React, Node…' + dates right), TECHNICAL SKILLS (3 rows), ACHIEVEMENTS (merit scholarship ₹10L+, Samsung Prism, cultural: Dhol 50+ honours, sports: district badminton 3rd). Everything true is on the page." },
+    { "id": "tarun", "shape": "Technical Skills FIRST (4 rows), then PROJECTS ('Name — Tech, Tech' right-aligned stack, 2-3 bullets with metrics 70%, 84.15%), then EXTRA CURRICULARS / ACHIEVEMENTS (temple volunteering, 200+ DSA). Dense single column." },
+    { "id": "ujjwal", "shape": "Skills summary first with proficiency levels, EDUCATION with favourite courses, EXPERIENCE (2), PROJECTS (3 with Tech lines), ACHIEVEMENTS (global ranks 783rd/557th named), CERTIFICATIONS (3). Sans face, dense." },
+    { "id": "atishay", "shape": "Sans, title line under the name ('FULL-STACK SOFTWARE ENGINEER'), EXPERIENCE & LEADERSHIP (with a 120-hour programme + a ₹3.5L budget), PROJECTS (4, italic tech line, 3 bullets each, metrics 61%, 78-94%, 145 checks), SKILLS (4 rows), CERTIFICATIONS. Full page at tiny margins." }
+  ],
+  "conventions": [
+    "One full page, ~0.5in margins, 10–11pt serif or clean sans; nobody trims achievements to fit — they tighten spacing.",
+    "Name 18–22pt centered; one contact line with LinkedIn/GitHub/LeetCode as hyperlinked text.",
+    "EDUCATION: institution bold with years right; degree in italics beneath with CGPA right; school rows with percentages.",
+    "PROJECTS: bold name + stack (or link) on the header line, 2–4 bullets, bold-inline tech and metrics, a 'Tech Stack:' or italic tech line.",
+    "TECHNICAL SKILLS: 4–6 labelled rows (Languages / AI-ML / Frameworks / Databases / Tools / Core CS) — assembled for the target, not a museum.",
+    "ACHIEVEMENTS: every true one, including scholarships, sports and cultural — each quantified where a number exists.",
+    "POSITIONS OF RESPONSIBILITY / EXTRA-CURRICULARS as their own dated sections (the Indian campus canon).",
+    "Bullets open with a strong verb, name the number, name the tool; no duty-listing; no clichés."
+  ]
+}

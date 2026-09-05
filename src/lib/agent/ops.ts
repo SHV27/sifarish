@@ -1,5 +1,5 @@
 import { db } from '../../db/db'
-import type { Job, LedgerEntry, SavedHunt, VisionProfile } from '../../types'
+import type { EditOp, Job, LedgerEntry, SavedHunt, VisionProfile } from '../../types'
 import { setJobStatus } from '../morcha'
 import { addSavedHunt, syncVisionHunts, runSweep } from '../khabri/client'
 import { absorbFact, ensureSection, findEntry, inferKind, labelFor, splitFact } from '../dossier/absorb'
@@ -28,6 +28,18 @@ export type GlobalOp =
   | { kind: 'set-skill-eligible'; entryId: string; eligible: boolean }
   /** Re-read every public README into the projects' context (never touches his bullets). */
   | { kind: 'refresh-readmes' }
+  /** v2 R2 — any field of any fact, by talking ("change Braillix's summary to …"). His words, his ledger. */
+  | { kind: 'edit-entry'; entryId: string; field: 'title' | 'summary' | 'date' | 'url'; value: string }
+  /** Hide a fact from every page (resumeEligible false) / bring it back. Never deleted. */
+  | { kind: 'hide-entry'; entryId: string; hide: boolean }
+  /** One page only / two pages allowed. */
+  | { kind: 'set-page-policy'; policy: 'one' | 'two-ok' }
+  /** Rename a section's heading in the registry. */
+  | { kind: 'rename-section'; sectionKind: string; label: string }
+  /** Study a résumé he pasted — it joins the canon the strategist reads. */
+  | { kind: 'add-sample'; text: string }
+  /** v2 R2 — a packet-scoped edit (the Baithak's own op) proposed from anywhere; the packet is named. */
+  | { kind: 'packet-edit'; jobId: string; edit: EditOp; utterance: string }
   | { kind: 'vision-add-role'; role: string }
   | { kind: 'vision-drop-role'; role: string }
   | { kind: 'vision-add-avoid'; term: string }
@@ -131,6 +143,44 @@ export function validateGlobalOp(raw: Record<string, unknown>, ctx: AgentContext
     }
     case 'refresh-readmes':
       return mk({ kind }, 'Re-read your GitHub READMEs', 'Every project with a repo link gets its README context refreshed (features, stack, prose); your bullets and titles are never touched.', ['context only', 'keyless for public repos'])
+    case 'edit-entry': {
+      const e = (ctx.ledger ?? []).find((x) => x.id === s('entryId')) ?? findEntry(ctx.ledger ?? [], s('entryId'))
+      const field = s('field') as 'title' | 'summary' | 'date' | 'url'
+      const value = s('value')
+      if (!e || !['title', 'summary', 'date', 'url'].includes(field) || value.length < 2 || value.length > 600) return null
+      return mk(
+        { kind, entryId: e.id, field, value },
+        `${e.title.split(/ — /)[0]} — ${field} → "${value.slice(0, 70)}${value.length > 70 ? '…' : ''}"`,
+        'Edits your Sach Ledger exactly like the Shelf editor — your words, your truth. Every packet recompiles from it.',
+        ['ledger is self-declared truth', 'reversible in the Shelf'],
+      )
+    }
+    case 'hide-entry': {
+      const e = (ctx.ledger ?? []).find((x) => x.id === s('entryId')) ?? findEntry(ctx.ledger ?? [], s('entryId'))
+      const hide = raw.hide !== false
+      if (!e || e.resumeEligible === !hide) return null
+      return mk(
+        { kind, entryId: e.id, hide },
+        hide ? `Hide "${e.title.split(/ — /)[0]}" from every page` : `Bring "${e.title.split(/ — /)[0]}" back`,
+        hide ? 'Stays in your dossier as evidence; never rendered until you bring it back. Nothing is deleted.' : 'Renders again wherever a plan plays it.',
+        ['never deleted', 'reversible'],
+      )
+    }
+    case 'set-page-policy': {
+      const policy = s('policy') === 'one' ? 'one' : 'two-ok'
+      return mk({ kind, policy }, policy === 'one' ? 'One page only' : 'A second page is allowed', policy === 'one' ? 'The solver tightens spacing, trims descriptions and the summary, and only then declares a bench — never a silent drop.' : 'Spacing tightens first; page 2 only before any true fact would be dropped.', ['page policy is data'])
+    }
+    case 'rename-section': {
+      const sectionKind = s('sectionKind').toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      const label = s('label')
+      if (sectionKind.length < 3 || label.length < 2 || label.length > 40) return null
+      return mk({ kind, sectionKind, label }, `Section "${sectionKind}" → heading "${label}"`, 'The registry label changes; every page renders the new heading.', ['registry is data'])
+    }
+    case 'add-sample': {
+      const text = s('text')
+      if (text.length < 200) return null
+      return mk({ kind, text }, `Study this résumé (${Math.round(text.length / 100) / 10}k chars)`, 'Joins the canon the strategist reads — register and density are learned from it; its facts never enter your pages.', ['style reference only', 'never his facts'])
+    }
     case 'vision-add-role':
     case 'vision-drop-role': {
       const role = s('role')
@@ -256,6 +306,40 @@ export async function executeGlobalOp(op: GlobalOp, onNav?: (screen: string) => 
       await db.ledger.update(op.entryId, { resumeEligible: op.eligible })
       const e = await db.ledger.get(op.entryId)
       return op.eligible ? `"${e?.title}" may appear on the page again.` : `"${e?.title}" stays off the page.`
+    }
+    case 'edit-entry': {
+      const e = await db.ledger.get(op.entryId)
+      if (!e) return 'That entry is gone.'
+      if (op.field === 'title') await db.ledger.update(op.entryId, { title: op.value })
+      else if (op.field === 'summary') await db.ledger.update(op.entryId, { summary: op.value })
+      else if (op.field === 'date') await db.ledger.update(op.entryId, { evidence: { ...(e.evidence ?? { note: '' }), date: op.value } })
+      else await db.ledger.update(op.entryId, { evidence: { ...(e.evidence ?? { date: '', note: '' }), url: op.value } })
+      return `Done — ${e.title.split(/ — /)[0]}'s ${op.field} updated. Packets recompile from the ledger.`
+    }
+    case 'hide-entry': {
+      await db.ledger.update(op.entryId, { resumeEligible: !op.hide })
+      const e = await db.ledger.get(op.entryId)
+      return op.hide ? `"${e?.title.split(/ — /)[0]}" is hidden from every page (still in your dossier).` : `"${e?.title.split(/ — /)[0]}" is back.`
+    }
+    case 'set-page-policy': {
+      await db.settings.update('app', { pagePolicy: op.policy })
+      return op.policy === 'one' ? 'One page only, from the next compile.' : 'A second page is allowed before any true fact is dropped.'
+    }
+    case 'rename-section': {
+      await ensureSection(op.sectionKind, op.label)
+      return `Section "${op.sectionKind}" now reads "${op.label}".`
+    }
+    case 'add-sample': {
+      const { addSample } = await import('../ustaad/canon')
+      const sm = await addSample(op.text)
+      return `Studied — ${sm.shape}. The strategist reads it with the canon from the next packet.`
+    }
+    case 'packet-edit': {
+      const packet = (await db.packets.where('jobId').equals(op.jobId).toArray())[0]
+      if (!packet) return 'That packet is gone — open the role and tailor it again.'
+      const { applyEdit } = await import('../baithak/execute')
+      const r = await applyEdit(packet, op.edit, op.utterance)
+      return r.note
     }
     case 'refresh-readmes': {
       const { refreshProjectContexts } = await import('../dossier/readme')

@@ -37,7 +37,7 @@ const SUGGESTIONS = [
 
 const THREAD_ID = 'main'
 
-export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) => void; onNav?: (s: Screen) => void }) {
+export function Guru({ onOpenPacket, onNav, activeJobId }: { onOpenPacket: (jobId: string) => void; onNav?: (s: Screen) => void; activeJobId?: string | null }) {
   const identity = useLiveQuery(() => db.identity.get('me'))
   const [messages, setMessages] = useState<GuruMessage[] | null>(null)
   const [input, setInput] = useState('')
@@ -140,6 +140,30 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
       // first; refusals/I9 are decided before any op or LLM sees the turn).
       if (routed.intent === 'freeform') {
         const ctx: AgentContext = { hunts, jobs, vision: appSettings?.visionProfile, ledger: await db.ledger.toArray() }
+        // Lane 0 (v2 R2): the packet he last opened is in scope — "bench GLOAMING", "skills upar",
+        // "summary hata" route to the page's own tailor (the Baithak ops), through the one recompile door.
+        if (activeJobId) {
+          const packet = (await db.packets.where('jobId').equals(activeJobId).toArray())[0]
+          if (packet) {
+            const { parseUtterance } = await import('../lib/baithak/intent')
+            const parsed = parseUtterance(text, { packet, ledger: ctx.ledger ?? [] })
+            if (parsed.handled !== false && parsed.proposals.length > 0) {
+              // Propose → he confirms (the Baithak law), as cards in this thread, aimed at the open packet.
+              const job = jobs.find((j) => j.id === activeJobId)
+              append({ role: 'assistant', content: `${parsed.reply} (on the ${job?.company ?? 'open'} packet)`, citations: parsed.citations })
+              setProposals(
+                parsed.proposals.map((p) => ({
+                  id: p.id,
+                  op: { kind: 'packet-edit' as const, jobId: activeJobId, edit: p.op, utterance: text },
+                  label: `${job?.company ?? 'packet'}: ${p.after.slice(0, 80)}`,
+                  detail: `${p.before} → ${p.after}`,
+                  invariants: p.invariants,
+                })),
+              )
+              return
+            }
+          }
+        }
         // Lane 1: deterministic cue grammar (keyless core, zero spend).
         const det = parseGlobal(text, ctx)
         if (det && (det.proposals.length > 0 || det.reply)) {

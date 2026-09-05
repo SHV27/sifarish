@@ -50,7 +50,7 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
   return (
     <section className="dossier p-4 mb-3" aria-label="The game plan">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h2 className="font-display font-semibold text-ink text-sm">The game plan — why this page looks like this</h2>
+        <h2 className="font-display font-semibold text-ink text-sm">The team's notes — why this page looks like this</h2>
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`stamp !text-[9px] !rotate-0 ${mode === 'heuristic' ? 'stamp-forge' : 'stamp-shipped'}`} title="which brain wrote the reading + plan">
             {modeLabel}
@@ -76,7 +76,7 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
       {/* The reading — what the company said, with receipts */}
       <div className="mt-3 ledger-rule pt-2">
         <button className="text-xs font-semibold text-ink hover:underline" onClick={() => setOpen(open === 'reading' ? null : 'reading')}>
-          {open === 'reading' ? '▾' : '▸'} The reading — what {reading.company || 'they'} said
+          {open === 'reading' ? '▾' : '▸'} THE READER — what {reading.company || 'they'} said
           <span className="ml-2 font-mono text-[10px] text-ink-soft">
             {reading.roleWindow} · reader: {reading.readerPersona} · {reading.archetype}
           </span>
@@ -112,6 +112,23 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
               Skills asked for: {reading.skills.must.join(', ') || '—'}
               {reading.skills.nice.length ? ` · nice: ${reading.skills.nice.join(', ')}` : ''}
             </p>
+            <div>
+              <p className="font-mono text-[10px] text-ink-soft">THE RESEARCHER — beyond the posting</p>
+              {reading.research && reading.research.length > 0 ? (
+                <ul className="mt-1 space-y-0.5">
+                  {reading.research.slice(0, 6).map((r, i) => (
+                    <li key={i} className="text-[11px] text-ink">
+                      {r.text}{' '}
+                      <a href={r.url} target="_blank" rel="noreferrer" className="font-mono text-[10px] text-ink-soft underline decoration-dotted">
+                        source ↗
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[11px] text-ink-faint">no cited research this time — keyless, or nothing found for this company; the reading stands on the posting alone.</p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -119,7 +136,12 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
       {/* The board */}
       <div className="mt-2 ledger-rule pt-2">
         <button className="text-xs font-semibold text-ink hover:underline" onClick={() => setOpen(open === 'board' ? null : 'board')}>
-          {open === 'board' ? '▾' : '▸'} Played {plan.played.length} · benched {plan.benched.length}
+          {open === 'board' ? '▾' : '▸'} THE STRATEGIST — played {plan.played.length} · benched {plan.benched.length}
+          {packet.bulletOverrides && Object.keys(packet.bulletOverrides).length > 0 && (
+            <span className="ml-2 stamp stamp-shipped !text-[9px] !rotate-0" title="bullets re-aimed for this reader; facts frozen by the drift guard">
+              THE TAILOR re-aimed {Object.keys(packet.bulletOverrides).length}
+            </span>
+          )}
           <span className="ml-2 font-mono text-[10px] text-ink-soft">order: {plan.sectionOrder.map((k) => sectionLabel(k).toLowerCase()).join(' → ')}</span>
         </button>
         {open === 'board' && (
@@ -185,7 +207,7 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
       {/* Skills rows */}
       <div className="mt-2 ledger-rule pt-2">
         <button className="text-xs font-semibold text-ink hover:underline" onClick={() => setOpen(open === 'skills' ? null : 'skills')}>
-          {open === 'skills' ? '▾' : '▸'} Skills assembled for this posting ({plan.skills.reduce((n, r) => n + r.items.length, 0)}, every one proven)
+          {open === 'skills' ? '▾' : '▸'} THE TAILOR — skills assembled for this posting ({plan.skills.reduce((n, r) => n + r.items.length, 0)}, every one proven)
         </button>
         {open === 'skills' && (
           <ul className="mt-1 space-y-0.5">
@@ -207,7 +229,7 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
 
       {(plan.notes.length > 0 || (packet.critic && packet.critic.issues.length > 0)) && (
         <div className="mt-2 ledger-rule pt-2">
-          <p className="font-mono text-[10px] text-ink-soft">WHAT THE VALIDATOR AND THE CRITIC SAID</p>
+          <p className="font-mono text-[10px] text-ink-soft">THE CRITIC and the validator</p>
           <ul className="mt-0.5 space-y-0.5">
             {plan.notes.map((n, i) => (
               <li key={`n${i}`} className="text-[11px] text-ink-soft">

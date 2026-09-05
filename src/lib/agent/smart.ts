@@ -40,6 +40,7 @@ function systemPrompt(ctx: AgentContext, extra: { ledgerLine: string; identityNa
     '- {"kind":"add-entry","entryKind":"achievement"|"certification"|"skill","title":"…","detail":"…"}',
     '- {"kind":"add-fact","factKind":"experience"|"achievement"|"position"|"publication"|"sports"|"language"|"certification"|"<any short kind>","text":"<the fact in his words>","detail":"…"} — ANY true fact about him; a section is created if new',
     '- {"kind":"create-section","sectionKind":"<slug>","label":"…"} · {"kind":"promote-entry","entryId":"<title words of an in_forge entry>"} · {"kind":"set-skill-eligible","entryId":"<skill title>","eligible":true|false} · {"kind":"refresh-readmes"}',
+    '- {"kind":"edit-entry","entryId":"<title words>","field":"title"|"summary"|"date"|"url","value":"…"} · {"kind":"hide-entry","entryId":"<title words>","hide":true|false} · {"kind":"set-page-policy","policy":"one"|"two-ok"} · {"kind":"rename-section","sectionKind":"<slug>","label":"…"} · {"kind":"add-sample","text":"<a résumé he pasted>"}',
     '- {"kind":"vision-add-role","role":"…"} · {"kind":"vision-drop-role","role":"…"}',
     '- {"kind":"vision-add-avoid","term":"…"} · {"kind":"vision-drop-avoid","term":"…"}',
     '- {"kind":"vision-add-company","company":"…"} · {"kind":"vision-set-dream","dream":"<his full vision text, verbatim>"}',

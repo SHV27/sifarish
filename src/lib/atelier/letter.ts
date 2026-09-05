@@ -75,6 +75,8 @@ export interface AtelierInput {
   proofLeadId?: string
   /** Atelier Baithak: cap the core word count harder than the default 250 (tighter letter). */
   tightTo?: number
+  /** v2 R2 — the strategist's reading: the letter opens on what THEY said they care about. */
+  reading?: import('../../types').Reading
 }
 
 export function composeLetter(input: AtelierInput): CompiledDoc {
@@ -97,7 +99,17 @@ export function composeLetter(input: AtelierInput): CompiledDoc {
 
   // 1 — Cited company hook (real fact) or an honest fallback opener.
   const hook = hookFromIntel(intel)
-  if (hook) {
+  const cares = (input.reading?.cares ?? []).map((q) => q.phrase.toLowerCase()).filter((p) => p.split(' ').length <= 4).slice(0, 3)
+  if (cares.length > 0) {
+    // v2 R2: the reading leads — their own words, then the one thing that proves it.
+    const lead = proofs[0]
+    const proof = lead ? `${lead.title.split('—')[0].trim()} is my proof` : 'the work below is my proof'
+    paragraphs.push({
+      text: `Dear ${job.company} team — you wrote that you care about ${cares.length === 1 ? cares[0] : `${cares.slice(0, -1).join(', ')} and ${cares[cares.length - 1]}`}. I'm applying for ${job.title} because that is how I already work, and ${proof}.`,
+      ledgerIds: lead ? [lead.id] : [],
+      ...(hook ? { citationUrl: hook.url } : {}),
+    })
+  } else if (hook) {
     const fact = hook.text.replace(/\s+$/, '').replace(/[.;]$/, '')
     paragraphs.push({
       text: `Dear ${job.company} team — I'm applying for ${job.title}. I noticed ${fact}.`,

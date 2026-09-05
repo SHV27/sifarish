@@ -36,7 +36,16 @@ export function strategizeFast(inp: StrategyInputs): Strategy {
 }
 
 export async function strategize(inp: StrategyInputs): Promise<Strategy> {
-  const reading = await readPosting(postingText(inp.job), inp.job.company, inp.job.title)
+  // THE RESEARCHER: cited company intel (Tavily, 7-day cache; ₹0 when cached; none when keyless).
+  let research: { text: string; url: string }[] = []
+  try {
+    const { getIntel } = await import('../intel/client')
+    const intel = await getIntel(inp.job.company)
+    research = intel.keyless ? [] : intel.bullets.map((b) => ({ text: b.text, url: b.url }))
+  } catch {
+    research = []
+  }
+  const reading = await readPosting(postingText(inp.job), inp.job.company, inp.job.title, research)
   const plan = await makePlan({ reading, ledger: inp.ledger, identity: inp.identity, vision: inp.vision, sections: inp.sections })
   const mode: StrategistMode = plan.by !== 'heuristic' ? plan.by : reading.by !== 'heuristic' ? reading.by : 'heuristic'
   return { reading, plan, mode }

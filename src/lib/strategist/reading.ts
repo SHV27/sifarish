@@ -285,6 +285,7 @@ export function readingSystem(): string {
     'You are THE READER on a team of personal agents whose whole working life is getting one student an interview call.',
     'You are handed a COMPLETE job posting page (not just the requirements list). Read every sentence twice before answering.',
     'Your job is to understand the company the way a shrewd human agent would: what they SAY they value, what they SAY they do not,',
+    'and what the team found about them beyond the posting (product, stage, hiring philosophy, news) — fold it into domain, summary and cares where it is stated, never invented.',
     'who will actually read the résumé (a founder reads differently from an ATS-driven recruiter), and what the role really is.',
     'Rules: quote their exact words for every phrase (≤ 25 words per quote); never invent a value they did not state;',
     "a sentence like 'we do not care about X' is a doesNotCare, NEVER a care; 'No X required' means X is not cared about;",
@@ -305,10 +306,12 @@ function grounded(q: ReadingQuote, text: string): ReadingQuote | null {
   return null
 }
 
-export async function readPosting(raw: string, company: string, roleTitle: string): Promise<Reading> {
+export async function readPosting(raw: string, company: string, roleTitle: string, research: { text: string; url: string }[] = []): Promise<Reading> {
   const text = unwrap(raw)
-  const base = readPostingHeuristic(text, company, roleTitle)
-  const user = `TODAY: ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}\nCOMPANY: ${company}\nROLE: ${roleTitle}\n\nFULL POSTING:\n${text.slice(0, 40000)}`
+  const base = { ...readPostingHeuristic(text, company, roleTitle), research }
+  // THE RESEARCHER's findings ride with the posting: "poori detailed company info pe act karne ki taakat".
+  const researchBlock = research.length ? `\n\nWHAT THE TEAM FOUND ABOUT THE COMPANY (cited, beyond the posting):\n${research.slice(0, 8).map((r) => `- ${r.text} [${r.url}]`).join('\n')}` : ''
+  const user = `TODAY: ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}\nCOMPANY: ${company}\nROLE: ${roleTitle}\n\nFULL POSTING:\n${text.slice(0, 40000)}${researchBlock}`
   const llm = await generate<ReadingLLM>({
     feature: 'strategist.reading',
     system: readingSystem(),

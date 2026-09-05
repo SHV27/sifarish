@@ -78,6 +78,47 @@ export function parseGlobal(utterance: string, ctx: AgentContext): GlobalParse |
     const r = propose({ kind: 'set-skill-eligible', entryId: clean(m[1]), eligible: false }, 'Confirm and it stays evidence only — never rendered.')
     if (r) return r
   }
+  // "change Braillix's summary to …" · "braillix ka title … kar do" · "set Sehat Saarthi's link to …"
+  m =
+    /^(?:change|set|update|badal(?:o)?|edit)\s+(.{2,60}?)(?:'s|\s+ka|\s+ki|\s+ke)?\s+(title|summary|description|date|link|url)\s+(?:to|as|=|:)\s*(.{2,600})$/i.exec(t) ??
+    /^(.{2,60}?)\s+(?:ka|ki|ke)\s+(title|summary|description|date|link|url)\s+(.{2,600}?)\s+(?:kar do|kardo|rakh do|rakho|bana do)$/i.exec(t)
+  if (m) {
+    const field = m[2].toLowerCase() === 'description' ? 'summary' : m[2].toLowerCase() === 'link' ? 'url' : (m[2].toLowerCase() as 'title' | 'summary' | 'date' | 'url')
+    const r = propose({ kind: 'edit-entry', entryId: clean(m[1]), field, value: clean(m[3]) }, 'Confirm and your dossier changes — every packet recompiles from it.')
+    if (r) return r
+  }
+  // "hide GLOAMING from my résumé" · "remove gloaming" · "gloaming hatao" · "bring back gloaming" · "show gloaming again"
+  m = /^(?:hide|remove|drop)\s+(.{2,60}?)(?:\s+from\s+(?:my\s+)?(?:resume|résumé|cv|page|pages|dossier))?$/i.exec(t) ?? /^(.{2,60}?)\s+(?:hatao|hata do|nikaal do|nikal do)$/i.exec(t)
+  if (m && !/\b(section|hunt|skill)\b/i.test(m[1])) {
+    const r = propose({ kind: 'hide-entry', entryId: clean(m[1]), hide: true }, 'Confirm and it stays in your dossier but never renders — nothing is deleted.')
+    if (r) return r
+  }
+  m = /^(?:bring back|show|unhide|restore)\s+(.{2,60}?)(?:\s+again)?$/i.exec(t) ?? /^(.{2,60}?)\s+(?:wapas (?:lao|le aao|daalo)|dikhao)$/i.exec(t)
+  if (m && !/\b(radar|morcha|shelf|khabri|guru|settings|packet)\b/i.test(m[1])) {
+    const r = propose({ kind: 'hide-entry', entryId: clean(m[1]), hide: false }, 'Confirm and it renders again wherever a plan plays it.')
+    if (r) return r
+  }
+  // "one page only" · "ek page" · "two pages ok" · "do page chalega"
+  if (/^(?:one page(?: only)?|ek (?:hi )?page(?: only)?|single page)$/i.test(t)) {
+    const r = propose({ kind: 'set-page-policy', policy: 'one' }, 'Confirm and the solver keeps every page to one sheet.')
+    if (r) return r
+  }
+  if (/^(?:two pages?(?: ok| allowed| fine| chalega)?|do page(?: chalega| ok)?|second page (?:ok|allowed))$/i.test(t)) {
+    const r = propose({ kind: 'set-page-policy', policy: 'two-ok' }, 'Confirm and a second page is allowed before any fact is dropped.')
+    if (r) return r
+  }
+  // "rename section sports to Athletics"
+  m = /^rename\s+section\s+(.{2,40}?)\s+(?:to|as)\s+(.{2,40})$/i.exec(t)
+  if (m) {
+    const r = propose({ kind: 'rename-section', sectionKind: clean(m[1]).toLowerCase().replace(/[^a-z0-9]+/g, '-'), label: clean(m[2]) }, 'Confirm and every page renders the new heading.')
+    if (r) return r
+  }
+  // "study this résumé: <paste>" · "sample resume: <paste>"
+  m = /^(?:study|learn|read)\s+(?:this\s+)?(?:resume|résumé|cv|sample)\s*[:\-–—]\s*([\s\S]{200,})$/i.exec(t) ?? /^(?:sample|reference)\s+(?:resume|résumé|cv)\s*[:\-–—]\s*([\s\S]{200,})$/i.exec(t)
+  if (m) {
+    const r = propose({ kind: 'add-sample', text: m[1].trim() }, 'Confirm and the strategist studies its register and density — never its facts.')
+    if (r) return r
+  }
   // "re-read my readmes" · "readme refresh karo" · "absorb my github"
   if (/^(?:re-?read|refresh|absorb|update)\s+(?:my\s+)?(?:github\s+)?readmes?(?:\s+(?:karo|again))?$/i.test(t) || /^readmes?\s+(?:refresh|re-?read)\s*(?:karo)?$/i.test(t)) {
     const r = propose({ kind: 'refresh-readmes' }, 'Confirm and every repo-linked project gets its README context refreshed (bullets untouched).')

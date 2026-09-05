@@ -40,12 +40,12 @@
     {
       "file": "src/lib/strategist/reading.ts",
       "versionedBy": "PROMPT_VERSION via registry bump (v2 strategist)",
-      "sha256": "87085c8ec59be57a525ea047b76db4d8b734921eb0a738184a1fa94971860e61"
+      "sha256": "c864dc3406b9477826c15c56f6487382beaed7aa3c8a7cf760cb1428a0e617bf"
     },
     {
       "file": "src/lib/strategist/plan.ts",
       "versionedBy": "PROMPT_VERSION via registry bump (v2 strategist)",
-      "sha256": "712bb798cd0150b7e9a521ec65513b71b182cbe3884af8bca313a21e05c8ef3f"
+      "sha256": "48e1dbe681db174fb09cef42c2f6ef1edced60c496dc1e6c9076a52280bd355b"
     },
     {
       "file": "src/lib/strategist/critic.ts",

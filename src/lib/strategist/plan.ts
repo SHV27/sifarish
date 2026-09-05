@@ -606,6 +606,7 @@ function readingForPrompt(r: Reading): string {
     `THEY SAY THEY DO NOT CARE ABOUT: ${r.doesNotCare.map((q) => `${q.phrase} ["${q.quote}"]`).join(' · ') || '(nothing stated)'}`,
     `SKILLS ASKED FOR: must = ${r.skills.must.join(', ') || '—'}; nice = ${r.skills.nice.join(', ') || '—'}`,
     `REVEAL AFFINITY (would they like that his own AI system compiled this page): ${r.revealAffinity}`,
+    r.research?.length ? `WHAT THE TEAM FOUND ABOUT THE COMPANY (cited): ${r.research.slice(0, 8).map((x) => `${x.text} [${x.url}]`).join(' · ')}` : 'COMPANY RESEARCH: none available (keyless or no source found).',
   ].join('\n')
 }
 
@@ -616,7 +617,8 @@ export function today(): string {
 
 export async function makePlan(inputs: PlanInputs): Promise<GamePlan> {
   const digest = buildDigest(inputs.ledger, inputs.identity, inputs.vision)
-  const user = `TODAY: ${today()}\n\nTHE READING\n${readingForPrompt(inputs.reading)}\n\nTHE DOSSIER\n${digest.text}`
+  const { canonForPrompt } = await import('../ustaad/canon')
+  const user = `TODAY: ${today()}\n\nTHE READING\n${readingForPrompt(inputs.reading)}\n\nTHE DOSSIER\n${digest.text}\n\n${await canonForPrompt()}`
   const meta = await generateWithMeta<PlanLLM>({
     feature: 'strategist.plan',
     system: planSystem(),

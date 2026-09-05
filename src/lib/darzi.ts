@@ -242,7 +242,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     onProgress?.('Composing your cover letter…')
     const useSignature = sig?.use ?? false
     if (sig) signature = { on: useSignature, rationale: sig.rationale }
-    coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision, editorial, useSignature })
+    coverLetter = composeLetter({ job, identity, ledger, decode, coverage, intel, vision, editorial, useSignature, reading: strategy.reading })
   } else {
     // Keyless / no-editorial path keeps the proven v2 letter (regression-safe).
     coverLetter = compileCoverLetter(job, identity, ledger, decode, coverage, intelHook, vision)

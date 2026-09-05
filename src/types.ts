@@ -537,7 +537,8 @@ export interface BaithakLogEntry {
 // ---------- Ustaad (P13, I13 — the library is data) ----------
 
 export interface UstaadRow {
-  id: 'library'
+  /** 'library' (the craft library) · 'samples' (v2 R2: résumés he fed the canon). */
+  id: 'library' | 'samples'
   json: string
   version: string
   updatedAt: string
@@ -883,6 +884,12 @@ export interface Reading {
   skills: { must: string[]; nice: string[] }
   /** Distinct word tokens of the posting (lowercase) — proven skills the posting MENTIONS join the rows. */
   tokens?: string[]
+  /**
+   * v2 THE RESEARCHER — what the team found about the company beyond the posting (cited, I7):
+   * product, funding, hiring philosophy, recent news. Read by the brain with the posting; shown on
+   * the board with sources. Empty when keyless (declared).
+   */
+  research?: { text: string; url: string }[]
   /** 0..1 — would this reader be delighted that the applicant's own AI system compiled the page. */
   revealAffinity: number
   by: StrategistMode
