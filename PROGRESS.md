@@ -2,7 +2,18 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1 + R2 + R3 (THE HUNTER'S PASS + THE MEMORY) built, deployed, proven live
+## Status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1 + R2 + R3 + R4 (THE TECH CANON) built, deployed, proven live
+
+### R4 — THE TECH CANON (DECISIONS V2-11) — after the owner read his own page
+- One vocabulary authority as DATA (`data/config/tech.json`): the only words allowed as a skill, a
+  header stack or bold-inline tech. Rows assembled per posting (JD-asked ∩ proven first), header
+  stacks canonical, no junk, PRANA under Writing once, restated summaries trimmed, care phrases whole.
+- TYPESET_VERSION 4: his stored packets re-tailor once on open. Proven on HIS vault (owner proof,
+  0 errors) and by eye (shots-eye/Babaclick-p1.png read). 864 gates · tsc clean · warning-free build.
+- ONE next action (his): open any packet — it re-tailors itself; read the rows; say "add fact: …" for
+  anything missing; extend tech.json only if a brand-new technology ever needs a name.
+
+
 
 ### R3 — the brief walked a third time, with the whole suite (DECISIONS V2-10)
 - **Fresh-context hunter** (studio-verify adversary) audited code vs brief line by line → 15 findings,

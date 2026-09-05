@@ -403,3 +403,20 @@ else benched for space). A skipped critic names its reason — which caught the 
 burst rate-limit at the tail of the pipeline; backoff now crosses the minute boundary.
 Honest limits (V2-2 stands): THE MEMORY cannot learn a rule from one rejection and says so until
 five outcomes exist; the recorded demo pass is a snapshot, not a live brain.
+
+## V2-11 · R4 — THE TECH CANON (05-Sep-2026; owner read his own page: "from which angle is this good?")
+Owner-read defects on his real vault's page: "Frameworks & Libraries: statistics, speech, gpt, inference";
+"SIFARISH | agents, llm, gpt, rag"; bold on "probability"/"alignment"/"Predictive Analytics"; a summary
+ending "values individuals with strong"; PRANA under PUBLICATIONS (twice); an achievement restating its title.
+Class (studio-debug): NO VOCABULARY AUTHORITY — tags, bullet keywords and the JD lexicon's competencies all
+reached the page as if they were technologies. Fix at one choke point: `data/config/tech.json` is the only
+vocabulary allowed as a skill, a header stack or bold-inline tech (canonical name, aliases, the six samples'
+rows). `derivedSkills` maps every surface form through it or drops it; rows = JD-asked ∩ proven → played
+projects' stacks → AI/ML core used across ≥2 facts, ≤8 per row, no filler; header stack = README stack/tags
+(never a bullet keyword), the posting's asks first, as many as fit one line; emphasis bolds canon tech +
+numbers only; care phrases refuse torn fragments; PRANA re-kinded to writing wherever it sits in his vault;
+a name-like duplicate prints once (the richer one); restated summaries trimmed. TYPESET_VERSION 4 re-tailors
+every stored packet once. Test of time (his word): projects come and go from the ledger with NO code —
+skills and stacks derive from whatever entries exist; a new technology is one line in tech.json.
+Gates: tests/tech-canon.test.ts (two-sided). Registry v14.
+
