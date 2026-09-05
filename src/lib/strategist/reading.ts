@@ -315,6 +315,7 @@ export async function readPosting(raw: string, company: string, roleTitle: strin
     user,
     maxTokens: 1400,
     schema: READING_SCHEMA as unknown as Record<string, unknown>,
+    thinking: 'low',
   }).catch(() => null)
   if (!llm) return base
   const cares = (Array.isArray(llm.cares) ? llm.cares : []).map((q) => grounded(q, text)).filter((q): q is ReadingQuote => !!q)

@@ -80,7 +80,8 @@ describe('S7 — the router lane order is law (source-level, keyless-determinist
   })
 
   it('remains a self-contained edge function (D22)', () => {
-    expect(src).toContain("export const config = { runtime: 'edge' }")
+    // v2 (05-Sep-2026): Node runtime — the deep pass crossed the Edge 25 s first-byte limit (504, live-caught).
+    expect(src).toContain("export const config = { runtime: 'nodejs', maxDuration: 90 }")
     expect(src).not.toMatch(/from '\.\/_/)
   })
 })

@@ -16,7 +16,11 @@
  * { keyless:true } so every caller falls back deterministically (I4). Self-contained (D22).
  */
 
-export const config = { runtime: 'edge' }
+// v2 (05-Sep-2026, LIVE-CAUGHT on his vault): the Gemini deep pass (whole posting + dossier, schema
+// output with thinking) crossed the Edge runtime's 25 s first-byte limit → HTTP 504 → the packet
+// fell to the keyless floor. Node runtime (Fluid compute, Hobby: 300 s) — the same Web-standard
+// handler, exported the way api/vault.ts does. maxDuration is capped well below the platform max.
+export const config = { runtime: 'nodejs', maxDuration: 90 }
 
 const GROQ_MODELS = {
   reasoning: 'openai/gpt-oss-120b',
@@ -53,6 +57,13 @@ interface DimaagRequest {
   /** JSON Schema for the expected result (D74/D80) — Groq gets json_schema strict mode,
    *  Gemini gets the converted responseSchema. Optional; without it, json_object/MIME-JSON. */
   schema?: Record<string, unknown>
+  /**
+   * v2 — Gemini 3.x thinking level ('low' | 'medium' | 'high'; medium is the model default and
+   * thinking cannot be disabled — ai.google.dev/gemini-api/docs/thinking, 05-Sep-2026). The reading
+   * and the critic ask for 'low' (seconds, not tens of seconds); the plan keeps the default.
+   * If a model rejects the field (400), the call is retried once without it — never a dead lane.
+   */
+  thinking?: 'low' | 'medium' | 'high'
 }
 
 /**
@@ -129,6 +140,7 @@ async function callGemini(
   key: string,
   body: DimaagRequest,
   maxTokens: number,
+  withThinking = true,
 ): Promise<LaneResult> {
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -144,10 +156,13 @@ async function callGemini(
           maxOutputTokens: Math.max(2048, maxTokens * 2),
           responseMimeType: 'application/json',
           ...(body.schema ? { responseSchema: toGeminiSchema(body.schema) } : {}),
+          ...(withThinking && body.thinking ? { thinkingConfig: { thinkingLevel: body.thinking } } : {}),
         },
       }),
     })
     if (res.status === 429) return { ok: false, rateLimited: true, error: 'gemini 429' }
+    // A model that does not know thinkingLevel answers 400 — retry once without it (self-healing).
+    if (res.status === 400 && withThinking && body.thinking) return callGemini(model, key, body, maxTokens, false)
     if (!res.ok) return { ok: false, error: `gemini ${res.status}` }
     const data = (await res.json()) as {
       candidates?: { content?: { parts?: { text?: string }[] } }[]
@@ -202,7 +217,7 @@ async function callGroq(key: string, body: DimaagRequest, maxTokens: number): Pr
   }
 }
 
-export default async function handler(req: Request): Promise<Response> {
+async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   const guarded = await guardRequest(req)
   if (guarded) return guarded
@@ -253,3 +268,5 @@ export default async function handler(req: Request): Promise<Response> {
   if (sawRateLimit) return json({ keyless: false, error: 'all lanes rate-limited', rateLimited: true }, 200)
   return json({ keyless: false, error: lastError || 'all lanes failed' }, 200)
 }
+
+export default { fetch: handler }

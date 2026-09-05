@@ -69,6 +69,7 @@ export async function criticPass(pageText: string, reading: Reading, plan: GameP
     user,
     maxTokens: 700,
     schema: CRITIC_SCHEMA as unknown as Record<string, unknown>,
+    thinking: 'low',
   }).catch(() => null)
   const at = new Date().toISOString()
   if (!meta || !meta.result) return { verdict: 'SKIPPED', issues: ['no brain was free for the critic — the page shipped unjudged; reopen to retry'], revised: false, by: 'heuristic', at }

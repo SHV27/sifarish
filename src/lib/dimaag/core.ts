@@ -120,11 +120,11 @@ const SCHEMA_CLASSIFY = {
 
 type OnceResult = CallResult | 'ratelimit' | null
 
-async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<CallResult | null> {
+async function callDimaag(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>, thinking?: 'low' | 'medium' | 'high'): Promise<CallResult | null> {
   // Darshak/demo mode is structurally keyless (D44): a locked browser never spends a token.
   if (!meteredCallsAllowed()) return { result: null, tokens: 0, keyless: true }
   for (let attempt = 1; attempt <= CALL_ATTEMPTS; attempt++) {
-    const r = await callOnce(tier, system, user, maxTokens, schema)
+    const r = await callOnce(tier, system, user, maxTokens, schema, thinking)
     // A tokens-per-minute rate limit (free tier) needs REAL back-off, not a 250ms retry — otherwise
     // a multi-project re-forge silently degrades to the deterministic (raw-README) path. Wait long
     // enough for the per-minute window to refill, then try again. (Session 5.6)
@@ -140,12 +140,12 @@ async function callDimaag(tier: DimaagTier, system: string, user: string, maxTok
   return null
 }
 
-async function callOnce(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>): Promise<OnceResult> {
+async function callOnce(tier: DimaagTier, system: string, user: string, maxTokens: number, schema?: Record<string, unknown>, thinking?: 'low' | 'medium' | 'high'): Promise<OnceResult> {
   try {
     const res = await fetch('/api/dimaag', {
       method: 'POST',
       headers: meteredHeaders(),
-      body: JSON.stringify({ tier, system, user, maxTokens, schema }),
+      body: JSON.stringify({ tier, system, user, maxTokens, schema, ...(thinking ? { thinking } : {}) }),
     })
     if (!res.ok) {
       catchAs('provider', `dimaag.${tier}`, `HTTP ${res.status}`)
@@ -428,6 +428,8 @@ export interface GenerateInput {
    * Groq's `json_object` mode, which openai/gpt-oss-120b fails on ~every attempt (measured live).
    */
   schema?: Record<string, unknown>
+  /** v2 — Gemini thinking level for this call (low = fast passes: reading, critic). */
+  thinking?: 'low' | 'medium' | 'high'
 }
 
 /**
@@ -450,7 +452,7 @@ export async function generate<T>(input: GenerateInput): Promise<T | null> {
     await recordUsage(input.feature, tier, 'fallback')
     return null
   }
-  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 2000, input.schema)
+  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 2000, input.schema, input.thinking)
   if (!call || call.keyless || call.result == null) {
     await recordUsage(input.feature, tier, 'fallback')
     return null
@@ -486,7 +488,7 @@ export async function generateWithMeta<T>(input: GenerateInput): Promise<Generat
     await recordUsage(input.feature, tier, 'fallback')
     return { result: null, mode: 'heuristic', cached: false }
   }
-  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 2000, input.schema)
+  const call = await callDimaag(tier, input.system, input.user, input.maxTokens ?? 2000, input.schema, input.thinking)
   if (!call || call.keyless || call.result == null || typeof call.result !== 'object') {
     await recordUsage(input.feature, tier, 'fallback')
     return { result: null, mode: 'heuristic', cached: false }

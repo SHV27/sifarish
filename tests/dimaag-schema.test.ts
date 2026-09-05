@@ -35,7 +35,7 @@ describe('every reasoning call site passes a JSON Schema (D74)', () => {
   })
 
   it('callDimaag forwards the schema to the server', () => {
-    expect(core).toMatch(/body: JSON\.stringify\(\{ tier, system, user, maxTokens, schema \}\)/)
+    expect(core).toMatch(/body: JSON\.stringify\(\{ tier, system, user, maxTokens, schema(, \.\.\.\(thinking \? \{ thinking \} : \{\}\))? \}\)/) // v2: + the optional thinking level
   })
 
   it('the server asks for json_schema whenever a schema is supplied', () => {

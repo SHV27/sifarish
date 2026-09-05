@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { distillReadme } from '../src/lib/nabz/github'
-import dimaagHandler from '../api/dimaag'
+import dimaagMod from '../api/dimaag'
+const dimaagHandler = dimaagMod.fetch // v2: Node-runtime export shape ({ fetch }), like api/vault
 import guruHandler from '../api/guru'
 import polishHandler from '../api/polish'
 import darbaanHandler from '../api/darbaan'
