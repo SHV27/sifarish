@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
+import { PENDING_ASK } from '../App'
 import type { GuruMessage, Job } from '../types'
 import type { Screen } from '../App'
 import { planTurn, runAction, streamGuru } from '../lib/guru/client'
@@ -93,6 +94,24 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
       pushAssistant('Demo mode is read-only — open Owner Mode to make real changes.')
     }
   }
+
+  // v2 EK BAAT everywhere: a sentence handed over from another screen is sent once, on mount.
+  const pendingSent = useRef(false)
+  useEffect(() => {
+    if (pendingSent.current || messages === null) return
+    let pending = ''
+    try {
+      pending = sessionStorage.getItem(PENDING_ASK) ?? ''
+      if (pending) sessionStorage.removeItem(PENDING_ASK)
+    } catch {
+      /* no storage */
+    }
+    if (pending) {
+      pendingSent.current = true
+      void send(pending)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages === null])
 
   const send = async (text: string) => {
     if (!text.trim() || busy || messages === null) return

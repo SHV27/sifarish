@@ -211,6 +211,11 @@ export async function backfillV2(): Promise<void> {
     // the Techgyan win named, the sections registry + page policy. Union-merge: ids he already
     // holds are NEVER overwritten; nothing is deleted. Flag-guarded (runs once).
     await migrateDossierV2().catch(() => 0)
+    // v2 THE DESK — the demo's worked example (Appendix A), seeded once per demo vault; never in owner mode.
+    if (getMode() !== 'owner') {
+      const { seedDemoShowcase } = await import('../lib/showcase/babaclick')
+      await seedDemoShowcase().catch(() => 0)
+    }
   })
 }
 

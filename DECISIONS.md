@@ -268,3 +268,19 @@ sheet (who plays what, and who waits), and a poker read (a company's "we don't c
 - **Postings are unwrapped before reading.** A hard-wrapped paste (email/PDF) lost the tail of "We do not
   care about: …" across a line break; soft line breaks now join before the reader runs.
 - **A stale "Currently Building (July 2026)" reads as a broken promise**; a past ETA drops the date.
+
+## V2-5 · Arc 4 (THE DESK) calls (05-Sep-2026)
+- **Signals are not stages.** Gmail's "application received" and "under review" mails are stamped on
+  the job as `lastSignal` (date + subject + Gmail deep link) at sweep; the pipeline stage still moves
+  only when he confirms a verdict card (interview / rejected). Confirming a "received" card is a no-op
+  on status by construction.
+- **The desk is a table with stamps, not charts** (the void not-now on dashboards is resolved this
+  way): every role he moved, its status, the applied date, the last signal Gmail saw — and, when no
+  mail was seen, the honest line that a LinkedIn-inbox reply is his to mark (V2-2 §5).
+- **Ek Baat from every screen.** One input in the header (and on the desk) hands a sentence to the
+  Guru, which sends it once on mount; the deterministic parser proposes, he confirms. In demo mode
+  the proposal renders and the Darbaan wall says why it cannot write.
+- **The demo is the worked example.** The Babaclick posting (a public job ad) is seeded into the demo
+  vault with a keyless-compiled packet: reading (with "we do not care about LeetCode / certificates"),
+  plan (certificates benched with those words), page. The demo desk opens with one paragraph on what
+  the product does and one button into that packet. No owner data, ₹0.

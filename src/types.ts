@@ -212,6 +212,12 @@ export interface Job {
   eligibility?: { verdict: 'eligible' | 'ambiguous' | 'ineligible'; reason: string; source: 'field' | 'jd-text' | 'none' }
   /** Owner restored a hidden role — his word outranks the classifier, permanently. */
   eligibilityOverride?: boolean
+  /**
+   * v2 THE DESK — the last status signal Gmail saw for this application (received / under review /
+   * interview / rejected / a reply), stamped at sweep with its date and a Gmail deep link. A SIGNAL,
+   * not a status: the pipeline stage still moves only on his confirmation (Nabz pattern).
+   */
+  lastSignal?: { kind: 'received' | 'under-review' | 'interview' | 'rejected' | 'reply'; at: string; subject: string; gmailUrl: string }
 }
 
 export type AtsSource = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters'
@@ -461,7 +467,7 @@ export interface DakCard {
   /** Deep link into Gmail — reading and replying happen THERE, never here (I3). */
   gmailUrl: string
   /** Heuristic stage suggestion — the owner confirms (Nabz pattern), never auto-applied. */
-  stageSuggestion?: 'interview' | 'rejected'
+  stageSuggestion?: 'interview' | 'rejected' | 'received' | 'under-review'
   /** DakCard status — 'acked' (Session 5.8) = "I know this one" — seen and handled outside the app; hidden from
    *  the active list forever (the message-id dedupe in sweepMail keeps it from resurfacing). */
   status: 'pending' | 'confirmed' | 'dismissed' | 'acked'

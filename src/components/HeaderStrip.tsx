@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { resumeStrength } from '../lib/strength'
 import { isoWeekKey } from '../db/seed'
 
 /** Compact war-status strip, persistent across the app (vision §P5). */
-export function HeaderStrip() {
+export function HeaderStrip({ onAsk }: { onAsk?: (utterance: string) => void }) {
+  const [ask, setAsk] = useState('')
   const settings = useLiveQuery(() => db.settings.get('app'))
   const jobs = useLiveQuery(() => db.jobs.toArray()) ?? []
   const entries = useLiveQuery(() => db.ledger.toArray()) ?? []
@@ -28,6 +30,27 @@ export function HeaderStrip() {
       <Stat label="applied this week" value={`${appliedThisWeek}/${quota}`} alert={appliedThisWeek >= quota} />
       <Stat label="awaiting reply" value={String(awaiting)} />
       <Stat label="interviews" value={String(interviews)} />
+      {onAsk && (
+        <form
+          className="hidden md:flex items-center gap-1 ml-2 min-w-0"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const t = ask.trim()
+            if (!t) return
+            setAsk('')
+            onAsk(t)
+          }}
+          aria-label="Tell the team"
+        >
+          <input
+            className="bg-paper-sunken px-2 py-1 rounded text-xs w-56"
+            value={ask}
+            onChange={(e) => setAsk(e.target.value)}
+            placeholder="Tell the team — “add fact: …”, “mark X applied”"
+            aria-label="Tell the team"
+          />
+        </form>
+      )}
       <div className="flex items-center gap-2 ml-auto shrink-0" title="Moves only when truth moves">
         <span className="text-[11px] text-ink-soft">Resume strength</span>
         <div

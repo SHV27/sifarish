@@ -15,6 +15,7 @@ import DimaagPulse from './components/DimaagPulse'
 import GateScreen from './components/GateScreen'
 import { usePehchaan, chooseDemoMode } from './lib/pehchaan'
 
+export const PENDING_ASK = 'sifarish.ekbaat.pending'
 export type Screen = 'shelf' | 'khabri' | 'radar' | 'packet' | 'guru' | 'morcha' | 'settings'
 
 const NAV: { key: Screen; label: string; hindi: string }[] = [
@@ -29,6 +30,15 @@ const NAV: { key: Screen; label: string; hindi: string }[] = [
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('shelf')
+  // v2 EK BAAT everywhere: any screen can hand the team a sentence; the Guru picks it up on mount.
+  const ask = (utterance: string) => {
+    try {
+      sessionStorage.setItem(PENDING_ASK, utterance)
+    } catch {
+      /* storage blocked — the Guru still opens */
+    }
+    setScreen('guru')
+  }
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const settings = useLiveQuery(() => db.settings.get('app'))
   const { mode, boot } = usePehchaan()
@@ -116,13 +126,13 @@ export default function App() {
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-center gap-3 border-b border-paper-edge pr-4">
           <div className="flex-1 min-w-0">
-            <HeaderStrip />
+            <HeaderStrip onAsk={ask} />
           </div>
           <DimaagPulse />
           <DarbaanControl />
         </div>
         <main id="main" className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-6xl w-full mx-auto">
-          {screen === 'shelf' && <Shelf onNav={setScreen} onTailor={openPacket} />}
+          {screen === 'shelf' && <Shelf onNav={setScreen} onTailor={openPacket} onAsk={ask} />}
           {screen === 'khabri' && <Khabri onOpenRadar={() => setScreen('radar')} onOpenSettings={() => setScreen('settings')} />}
           {screen === 'radar' && <Radar onTailor={openPacket} />}
           {screen === 'packet' && <PacketScreen jobId={activeJobId} onPickJob={openPacket} />}

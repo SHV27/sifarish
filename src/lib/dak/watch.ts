@@ -27,6 +27,11 @@ export const INTERVIEW_RE = /\b(interview|schedule a (call|chat|conversation)|av
 // interview cue — "unfortunately the interview slipped to Friday" is still an interview).
 export const STRONG_REJECT_RE = /\b((not|won'?t|will not|are not|isn'?t) (be )?(moving|going|proceeding) forward|regret to inform|other candidates|position has been filled|won'?t be proceeding|decided (not )?to (proceed|move forward)|not (be )?(selected|shortlisted)|will not be moving)\b/i
 export const REJECT_RE = /\b(unfortunately|regret to inform|other candidates|position has been filled|not (be )?(selected|shortlisted))\b/i
+// v2 THE DESK — the two signals every application gets before any verdict: the auto-ack and the
+// "we are reviewing" mail. Neither moves the pipeline; both are stamped on the job so the desk
+// can show where each application stands ("har cheez aankhon ke saamne").
+export const RECEIVED_RE = /\b(application (was |has been |is )?(received|submitted)|thank you for (applying|your application|your interest)|we (have )?received your application|your application to .* (was|has been) sent|application sent)\b/i
+export const REVIEW_RE = /\b((currently|now|is being|are) review(ing|ed)|under review|reviewing your (application|profile)|your application is (being )?reviewed|in review)\b/i
 /** ATS relay senders — matched at a LABEL boundary so 'lever' in clever.com never counts (bug A4). */
 const ATS_RELAY_RE = /(^|[.@])(greenhouse(-mail)?|lever|ashby(hq)?|smartrecruiters|myworkday(jobs)?|workday|workable|jobvite|icims|rippling|bamboohr|teamtailor|recruitee|breezy(hr)?)\./i
 /** Bulk noise a job-hunt inbox is full of — never a card. */
@@ -66,6 +71,8 @@ export function suggestStage(meta: MailMeta): DakCard['stageSuggestion'] {
   if (STRONG_REJECT_RE.test(hay)) return 'rejected' // a definitive no wins, even next to "interview"
   if (INTERVIEW_RE.test(hay)) return 'interview'
   if (REJECT_RE.test(hay)) return 'rejected' // weaker cues (unfortunately/regret) only if not an interview
+  if (REVIEW_RE.test(hay)) return 'under-review'
+  if (RECEIVED_RE.test(hay)) return 'received'
   return undefined
 }
 
@@ -169,14 +176,21 @@ export async function sweepMail(): Promise<{ newCards: number; checked: number; 
     await db.dak.put(card)
     added += 1
     // A detected reply clears the follow-up nudge (the job heard back — no need to poke them).
-    if (card.jobId) await db.jobs.update(card.jobId, { replyDetectedAt: card.fetchedAt })
+    if (card.jobId) {
+      await db.jobs.update(card.jobId, {
+        replyDetectedAt: card.fetchedAt,
+        // v2 THE DESK — the last signal, stamped (a signal, never a status change).
+        lastSignal: { kind: card.stageSuggestion ?? 'reply', at: card.date || card.fetchedAt, subject: card.subject, gmailUrl: card.gmailUrl },
+      })
+    }
   }
   return { newCards: added, checked: metas.length }
 }
 
 /** Owner confirms a suggested stage move (Nabz pattern — never automatic). */
 export async function confirmStage(card: DakCard): Promise<void> {
-  if (card.jobId && card.stageSuggestion) {
+  // Only a verdict moves the pipeline; "received" / "under review" are signals the desk shows.
+  if (card.jobId && (card.stageSuggestion === 'interview' || card.stageSuggestion === 'rejected')) {
     await db.jobs.update(card.jobId, { status: card.stageSuggestion })
   }
   await db.dak.update(card.id, { status: 'confirmed' })

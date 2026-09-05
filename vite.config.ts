@@ -9,7 +9,8 @@ export default defineConfig({
     // registry + emphasis layer). The budget that matters is GZIP over the wire — 162KB, well
     // inside the D16/D42 web-vitals bar — and pdf/docx/pdfjs stay dynamically split. Limit set
     // to 560 so the build stays honestly warning-free without artificial splits of hot paths.
-    chunkSizeWarningLimit: 560,
+    // v2: the lazy PDF export chunk carries pdf-lib + fontkit (font embedding) — loaded only on export, never on the critical path.
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         // Long-lived vendor chunk (react/dexie change rarely) — better caching + entry under the size gate.

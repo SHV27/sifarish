@@ -5,7 +5,7 @@ import type { EntryKind, LedgerEntry } from '../types'
 import { resumeStrength } from '../lib/strength'
 import { cleanSummaryForDisplay } from '../lib/compile/compiler'
 import { NabzPanel } from '../components/NabzPanel'
-import { Briefing } from '../components/Briefing'
+import { Desk } from '../components/Desk'
 import RepairBanner from '../components/RepairBanner'
 
 const KIND_ORDER: { kind: EntryKind; label: string }[] = [
@@ -17,7 +17,7 @@ const KIND_ORDER: { kind: EntryKind; label: string }[] = [
   { kind: 'position', label: 'Positions & Volunteering' },
 ]
 
-export function Shelf({ onNav, onTailor }: { onNav: (t: 'radar' | 'morcha' | 'khabri') => void; onTailor: (jobId: string) => void }) {
+export function Shelf({ onNav, onTailor, onAsk }: { onNav: (t: 'radar' | 'morcha' | 'khabri' | 'guru') => void; onTailor: (jobId: string) => void; onAsk?: (utterance: string) => void }) {
   const entries = useLiveQuery(() => db.ledger.toArray()) ?? []
   const [promoting, setPromoting] = useState<LedgerEntry | null>(null)
   const [justStamped, setJustStamped] = useState<string | null>(null)
@@ -26,7 +26,7 @@ export function Shelf({ onNav, onTailor }: { onNav: (t: 'radar' | 'morcha' | 'kh
   return (
     <div>
       <RepairBanner />
-      <Briefing onNav={onNav} onTailor={onTailor} />
+      <Desk onNav={onNav} onTailor={onTailor} onAsk={onAsk ?? (() => onNav('guru'))} />
       <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display font-bold text-3xl text-ink">Sach Ledger</h1>
