@@ -705,7 +705,7 @@ export async function floorPassPacket(packet: Packet): Promise<Packet> {
  * register re-tailors itself on open (the D140 repair law, applied to typography): bump this
  * when the page's LOOK changes even though no ledger content did.
  */
-export const TYPESET_VERSION = 3 // 1 = Helvetica plain (S7 "Taaj") · 2 = Times canon register · 3 = v2 full-size page (36pt, links, plan-executed)
+export const TYPESET_VERSION = 4 // 1 = Helvetica plain (S7 "Taaj") · 2 = Times canon register · 3 = v2 full-size page (36pt, links, plan-executed) · 4 = R4 tech canon (skills rows + header stacks re-assembled)
 
 /** A Baithak section-order op names the classic keys; the plan may hold more (custom kinds) — keep them, after. */
 function mergeSectionOrder(current: string[], requested: string[]): string[] {
