@@ -2,6 +2,7 @@ import type { GamePlan, Identity, JDDecode, LedgerEntry, PlanFact, Reading, Sect
 import { displayTitle } from '../compile/compiler'
 import { bannedSkillKeys, derivedSkills, findSkill, isBannedSkill, skillRow, type DerivedSkill } from '../dossier/skills'
 import { canonTech } from '../dossier/tech'
+import { chooseLens, leadsFor, lensesForPrompt } from './lens'
 import { generateWithMeta } from '../dimaag/core'
 import { entryRelevance } from '../match/evidence'
 import { detectDrift } from '../polish/factGuard'
@@ -122,6 +123,9 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
   const mindHits = reading.cares.filter((q) => MIND_RE.test(q.phrase)).length
   const mindFirst = mind && (mindHits >= 2 || /syntax|code without|coding experience|leetcode/i.test(nocare) || (!techHeavy && mindHits >= 1))
   const founder = reading.readerPersona === 'founder'
+  // THE LENS (R5): the angle a cunning team chooses BEFORE writing — data-driven (lenses.json).
+  const lensChoice = chooseLens(reading)
+  const lens = lensChoice.lens
   const played: PlanFact[] = []
   const benched: GamePlan['benched'] = []
   const notes: string[] = []
@@ -148,6 +152,7 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
     if (isSifarish(e) && reading.revealAffinity >= 0.6) s += 6
     const t = `${e.title} ${e.summary} ${e.tags.join(' ')}`
     if (mindFirst && /braille|blind|hardware|first-of|novel|innovat|refreshable/i.test(t)) s += 5 // the innovation angle leads
+    if (leadsFor(lens, t)) s += lens.id === 'ai-engineering' ? 2 : 6 // the lens's lead — an NGO ranks Braillix over an AI system
     else if (mind && /clinical|health|hospital|public|civic/i.test(t)) s += 3 // a real problem solved without being told how
     if (/shipped|live|deploy/i.test(e.tags.join(' ') + (e.evidence?.url ?? ''))) s += 1
     if (e.bullets.length >= 3) s += 1
@@ -165,13 +170,10 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
       if (mind && /braille|blind|hardware|clinical|health/i.test(`${p.title} ${p.summary}`)) reasons.push(`a real problem solved without being told how — they care about "${careQuote(reading, MIND_RE) ?? 'agency'}"`)
       const hits = reading.skills.must.filter((k) => p.tags.includes(k) || p.bullets.some((b) => b.keywords.includes(k)))
       if (hits.length) reasons.push(`proves ${hits.slice(0, 3).join(', ')} they ask for`)
+      if (leadsFor(lens, `${p.title} ${p.summary} ${p.tags.join(' ')}`) && lens.id !== 'ai-engineering') reasons.unshift(`carries the ${lens.label} angle they hire for`)
       if (!reasons.length) reasons.push('shipped, linked, and closest to the role')
       // The angle the wording is re-aimed toward for THIS company (drift-guarded reframe in darzi).
-      const framing = mindFirst
-        ? 'lead with the problem understood and the innovation, and with how the work was verified — proof of reasoning and agency, not a tool list'
-        : reading.readerPersona === 'founder'
-          ? 'lead with what shipped, who it serves and the measurable outcome — ownership end to end'
-          : undefined
+      const framing = mindFirst && lens.id === 'ai-engineering' ? 'lead with the problem understood and the innovation, and with how the work was verified — proof of reasoning and agency, not a tool list' : lens.framing
       played.push({ factId: p.id, section: 'projects', reason: reasons.join('; '), ...(framing ? { framing } : {}) })
     } else {
       benched.push({ factId: p.id, reason: `page budget — ranked below ${ranked.slice(0, maxProjects).map((x) => short(x.title)).join(', ')} for this posting; say "play ${short(p.title)}" to swap it in` })
@@ -189,7 +191,7 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
     const reason = mind && NTSE_RE.test(t) ? `national-level proof of the reasoning they ask for — "${careQuote(reading, MIND_RE) ?? 'logical reasoning'}"` : mind ? 'proof of agency and outcomes, which this reader weighs above credentials' : 'every true achievement plays; a reader compares the whole list'
     played.push({ factId: a.id, section: 'achievements', reason })
   }
-  for (const p of by('position')) played.push({ factId: p.id, section: 'positions', reason: 'responsibility taken without being told how — leadership reads as agency' })
+  for (const p of by('position')) played.push({ factId: p.id, section: 'positions', reason: lens.id === 'social-impact' && /volunteer|community|parishad|ngo|social/i.test(`${p.title} ${p.summary}`) ? `community work is direct evidence for a ${lens.label} reader` : 'responsibility taken without being told how — leadership reads as agency' })
 
   // Certifications: played unless they say they do not care about certificates.
   const certNo = noCareQuote(reading, CERT_RE)
@@ -206,9 +208,9 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
   const custom = [...new Set(played.map((p) => p.section).filter((s) => !(CORE_SECTIONS as readonly string[]).includes(s)))]
   let order: string[]
   if (reading.roleWindow === 'senior' || reading.roleWindow === 'mid') order = ['experience', 'projects', 'skills', 'education', 'achievements', 'positions', 'certs']
-  else if (mindFirst) order = ['education', 'achievements', 'projects', 'experience', 'skills', 'positions', 'certs']
+  else if (mindFirst && (lens.id === 'mind-first' || lens.id === 'ai-engineering')) order = ['education', 'achievements', 'projects', 'experience', 'skills', 'positions', 'certs']
   else if (founder && SHIP_RE.test(cares)) order = ['projects', 'experience', 'education', 'skills', 'achievements', 'positions', 'certs']
-  else order = ['education', 'experience', 'projects', 'skills', 'achievements', 'positions', 'certs']
+  else order = lens.sectionOrder.slice()
   const registryOrder = (sections ?? []).slice().sort((a, b) => a.order - b.order).map((s) => sectionKeyFor(s.kind))
   for (const k of registryOrder) if (!order.includes(k) && custom.includes(k)) order.push(k)
   for (const k of custom) if (!order.includes(k)) order.push(k)
@@ -218,7 +220,7 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
   }
 
   // Skills rows: JD ∩ evidence, the market's vocabulary first; shorter when they say syntax does not matter.
-  const skills = buildSkillRows(reading, skillsAll, /syntax|code without|coding experience|leetcode/i.test(nocare) ? 6 : 8, played.map((p) => p.factId))
+  const skills = buildSkillRows(reading, skillsAll, lens.skills === 'after' || /syntax|code without|coding experience|leetcode/i.test(nocare) ? 6 : 8, played.map((p) => p.factId))
   // READ on the demo board: "no evidence for react" while the alignment map proved React via a project —
   // the skill was OFF by HIS call (resumeEligible:false), not unproven. Say which.
   const banned = bannedSkillKeys(ledger)
@@ -239,15 +241,18 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
   const voice = voiceClause(vision?.dream)
   const headline = `${rolePhrase(vision, reading)}${voice ? ` — ${voice}` : ' — directs AI to solve real problems end to end'}${mindFirst && ntse ? ' · NTSE Scholar' : ''}`
   const proofBits: string[] = []
-  if (topProjects.length >= 2) proofBits.push(`${topProjects.length} shipped systems built end to end and live, linked below`)
-  if (ntse && mind) proofBits.push('a national NTSE scholarship for aptitude')
+  if (topProjects.length >= 2) proofBits.push(`${topProjects.length} shipped systems live and linked below`)
+  if (ntse && mind) proofBits.push('National NTSE Scholar (aptitude, top ~0.1% nationally)')
   if (hack) {
-    const where = (hack.title.split(/ — | – /)[1] ?? hack.title).trim()
+    const where = (hack.title.split(/ — | – /)[1] ?? hack.title).trim().replace(/^Agentic & GenAI Showcase, /, '')
     proofBits.push(/^1st|first/i.test(hack.title) ? `1st place, ${where}` : where)
   }
-  // The tail names ONE value they stated — only a short, clean phrase reads as their words, not ours.
+  // The tail names ONE value they stated — only a short, clean phrase reads as their words, not ours;
+  // and the summary stays two lines (OWNER-READ: three dense lines read as a wall).
   const careLead = reading.cares.map((q) => q.phrase).find((p) => p.split(' ').length <= 4 && /^[a-z]/i.test(p))
-  const summary = `Final-year CSE student who finds the real problem and directs AI to ship the thing that solves it — ${proofBits.join('; ') || 'shipped work, linked below'}${careLead ? `; built for a place that values ${careLead.toLowerCase()}` : ''}.`
+  const lead = lens.id === 'social-impact' ? 'Final-year CSE student who builds for the people a problem actually hurts, then directs AI to ship it' : 'Final-year CSE student who finds the real problem and directs AI to ship the thing that solves it'
+  let summary = `${lead} — ${proofBits.join('; ') || 'shipped work, linked below'}.`
+  if (careLead && summary.length + careLead.length < 215) summary = `${summary.slice(0, -1)}; built for a place that values ${careLead.toLowerCase()}.`
   const threeIds = [...new Set([...topProjects.map((p) => p.id), ...(ntse ? [ntse.id] : []), ...(hack ? [hack.id] : [])])]
 
   // The reveal — a per-company call.
@@ -271,6 +276,7 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
 
   return {
     threeLines: { headline, summary, factIds: threeIds },
+    lens: { id: lens.id, label: lens.label, because: lensChoice.because, why: lens.why },
     sectionOrder: order,
     played,
     benched,
@@ -617,7 +623,8 @@ export async function makePlan(inputs: PlanInputs): Promise<GamePlan> {
   const { canonForPrompt } = await import('../ustaad/canon')
   const { loadMemory, memoryForPrompt } = await import('./memory')
   const memory = await loadMemory(inputs.reading)
-  const user = `TODAY: ${today()}\n\nTHE READING\n${readingForPrompt(inputs.reading)}\n\nTHE DOSSIER\n${digest.text}\n\n${await canonForPrompt()}\n\n${memoryForPrompt(memory)}`
+  const lensChoice = chooseLens(inputs.reading)
+  const user = `TODAY: ${today()}\n\nTHE READING\n${readingForPrompt(inputs.reading)}\n\n${lensesForPrompt(lensChoice)}\n\nTHE DOSSIER\n${digest.text}\n\n${await canonForPrompt()}\n\n${memoryForPrompt(memory)}`
   const meta = await generateWithMeta<PlanLLM>({
     feature: 'strategist.plan',
     system: planSystem(),
@@ -626,5 +633,6 @@ export async function makePlan(inputs: PlanInputs): Promise<GamePlan> {
     schema: PLAN_SCHEMA as unknown as Record<string, unknown>,
   }).catch(() => null)
   if (!meta || !meta.result) return { ...planHeuristic(inputs.reading, inputs.ledger, inputs.identity, inputs.vision, inputs.sections), memory }
-  return { ...validatePlan(meta.result, inputs, digest, meta.mode), memory }
+  const validated = validatePlan(meta.result, inputs, digest, meta.mode)
+  return { ...validated, memory, lens: validated.lens ?? { id: lensChoice.lens.id, label: lensChoice.lens.label, because: lensChoice.because, why: lensChoice.lens.why } }
 }

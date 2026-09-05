@@ -227,6 +227,16 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
         )}
       </div>
 
+      {plan.lens && (
+        <div className="mt-2 ledger-rule pt-2" aria-label="The lens — the angle chosen for this company">
+          <p className="font-mono text-[10px] text-ink-soft">THE LENS — the angle the team chose</p>
+          <p className="text-[11px] text-ink mt-0.5">
+            <span className="font-semibold">{plan.lens.label}</span>
+            <span className="text-ink-soft"> — the posting says "{plan.lens.because}". {plan.lens.why}.</span>
+          </p>
+        </div>
+      )}
+
       {plan.memory && plan.memory.length > 0 && (
         <div className="mt-2 ledger-rule pt-2" aria-label="The memory — recorded outcomes this plan read">
           <p className="font-mono text-[10px] text-ink-soft">THE MEMORY — what past applications taught this plan</p>

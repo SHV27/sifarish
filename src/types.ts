@@ -935,6 +935,8 @@ export interface GamePlan {
   notes: string[]
   /** v2 R3 — THE MEMORY: recorded outcomes this plan was written with (starts empty, says so). */
   memory?: string[]
+  /** v2 R5 — THE LENS: the angle chosen for this company (data/config/lenses.json) and the cue that chose it. */
+  lens?: { id: string; label: string; because: string; why: string }
   by: StrategistMode
   at: string
 }

@@ -54,7 +54,7 @@ export class CompileError extends Error {
 // his page read "small". A4 stays (Indian campus canon prints A4).
 export const PAGE = { width: 595.28, height: 841.89, margin: 36 }
 export const USABLE_HEIGHT = PAGE.height - PAGE.margin * 2 // 769.89
-export const NAME_SIZE = 19
+export const NAME_SIZE = 20
 
 /**
  * v2 — THE TIGHTEN LADDER. Before ANY true fact is dropped, spacing tightens (leading/before scale);
@@ -73,15 +73,18 @@ export function metricsFor(kind: CompiledLine['kind'], tighten = 0): { size: num
 export const LINE_METRICS: Record<CompiledLine['kind'], { size: number; leading: number; before: number; bold: boolean }> = {
   // OWNER-CAUGHT (05-Sep-2026): "ek ek line ka gap ye voh" — measured against the six LaTeX
   // samples: body leading ≈1.18×, bullets 1pt apart, titles 4pt above, headings 8pt above.
-  contact: { size: 9.5, leading: 11.5, before: 1.5, bold: false },
-  headline: { size: 10.5, leading: 12.5, before: 3, bold: true },
-  summary: { size: 10, leading: 12, before: 3, bold: false },
-  heading: { size: 10.5, leading: 12.5, before: 8, bold: true },
-  'entry-title': { size: 10.5, leading: 12.6, before: 4, bold: true },
-  meta: { size: 10, leading: 12, before: 0.5, bold: false },
-  bullet: { size: 10.5, leading: 12.4, before: 1, bold: false },
-  skills: { size: 10.5, leading: 12.6, before: 1, bold: false },
-  forge: { size: 10.5, leading: 12.4, before: 1, bold: false },
+  // OWNER-READ (R5): "too congested" — re-measured against the LaTeX samples (Jake-style, 11pt):
+  // body leading ≈1.24×, 1.5pt between bullets, 5pt above an entry, 11pt above a heading, and a
+  // one-line summary/description register. The tighten ladder still compresses this when a page must.
+  contact: { size: 10, leading: 12, before: 2, bold: false },
+  headline: { size: 11, leading: 13.5, before: 5, bold: true },
+  summary: { size: 10.5, leading: 13, before: 4, bold: false },
+  heading: { size: 11, leading: 13.5, before: 11, bold: true },
+  'entry-title': { size: 10.5, leading: 13, before: 5, bold: true },
+  meta: { size: 10, leading: 12.5, before: 1, bold: false },
+  bullet: { size: 10.5, leading: 13, before: 1.5, bold: false },
+  skills: { size: 10.5, leading: 13, before: 1.5, bold: false },
+  forge: { size: 10.5, leading: 13, before: 2, bold: false },
 }
 
 /**
@@ -156,14 +159,33 @@ export function estimateHeight(lines: CompiledLine[], tighten = 0): number {
  * a heading or an entry title never ends a page (keep-with-next); a page starts at the top margin.
  * Returns the 1-based page of every line.
  */
+/**
+ * THE ONE PAGE-BREAK RULE (R5) — the height that must travel WITH line i onto the same page:
+ *   • a heading or an entry title keeps its next line (never a title orphaned at a page foot);
+ *   • a SHORT section (heading + ≤ 8 lines) travels whole — EDUCATION or TECHNICAL SKILLS never
+ *     sit half on one page and half overleaf (owner-read).
+ * The compiler's paginate() and the PDF renderer both call this — one authority, no fork.
+ */
+export function keepAhead(lines: CompiledLine[], i: number, tighten: number): number {
+  const line = lines[i]
+  const keep = line.kind === 'heading' || line.kind === 'entry-title'
+  let next = keep && lines[i + 1] ? estimateLineHeight(lines[i + 1], false, tighten) : 0
+  if (line.kind === 'heading') {
+    let j = i + 1
+    let block = 0
+    while (j < lines.length && lines[j].kind !== 'heading' && j - i <= 8) block += estimateLineHeight(lines[j++], false, tighten)
+    if (j >= lines.length || lines[j].kind === 'heading') next = Math.max(next, block)
+  }
+  return next
+}
+
 export function paginate(lines: CompiledLine[], tighten = 0): number[] {
   const pages: number[] = []
   let y = 0
   let page = 1
   for (let i = 0; i < lines.length; i++) {
     const h = estimateLineHeight(lines[i], i === 0, tighten)
-    const keep = lines[i].kind === 'heading' || lines[i].kind === 'entry-title'
-    const next = keep && lines[i + 1] ? estimateLineHeight(lines[i + 1], false, tighten) : 0
+    const next = keepAhead(lines, i, tighten)
     if (y > 0 && y + h + next > USABLE_HEIGHT) {
       page++
       y = 0
@@ -282,6 +304,36 @@ const TECH_CASE: Record<string, string> = {
   claude: 'Claude', dexie: 'Dexie', vite: 'Vite', vercel: 'Vercel', serverless: 'Serverless',
   tailwind: 'Tailwind', docker: 'Docker', sql: 'SQL', mongodb: 'MongoDB', fastapi: 'FastAPI',
 }
+/** R5 — the one-line description: cut at the last clause boundary before the cap; fall back to a sentence-trim only when no boundary exists. */
+export function descTrim(text: string, max: number): string {
+  if (text.length <= max) return text
+  let best = -1
+  for (const c of [': ', ' — ', '; ', ', ']) {
+    const i = text.lastIndexOf(c, max)
+    if (i >= 40 && i > best) best = i
+  }
+  if (best > 0) return text.slice(0, best).replace(/[,:;\s—]+$/, '').trim()
+  return sentenceTrim(text, max)
+}
+
+/**
+ * R5 — a bullet is at most two lines: a third clause after " — " or "; " is cut at that boundary
+ * (never mid-word, never an ellipsis) when the head still carries the verb and a number.
+ */
+export function clauseTrim(text: string, max = 185): string {
+  if (text.length <= max) return text
+  const cuts = [' — ', '; ', ', with ', ', and ']
+  let best = -1
+  for (const c of cuts) {
+    let i = text.lastIndexOf(c, max)
+    while (i > 0) {
+      if (i >= 70 && i > best) best = i
+      i = text.lastIndexOf(c, i - 1)
+    }
+  }
+  return best > 0 ? text.slice(0, best).trim() : text
+}
+
 /** The first title word (≥ 5 letters, hyphen-split) — "PRANA-Sustainable-AI" and "PRANA — A Layered …" share a stem. */
 function titleStem(title: string): string {
   // Only a NAME-like first token dedupes (PRANA, GLOAMING): all-caps, ≥ 4 letters. "Winner 1" / "Winner 2" are two facts.
@@ -828,13 +880,14 @@ function compileFromPlan(input: CompileInput): CompiledResume {
         ledgerIds: [e.id],
         ...(evidenceUrl ? { link: evidenceUrl } : {}),
       })
-      let desc = sentenceTrim(cleanSummaryForDisplay(e.summary ?? ''), descCap)
+      // R5: a description ends at a clause (":", " — ", ";", ", ") — never an ellipsis mid-thought.
+      let desc = descTrim(cleanSummaryForDisplay(e.summary ?? ''), descCap)
       if (revealOn && sifarish && p.factId === sifarish.factId) desc = `${desc.replace(/\.$/, '')} — this résumé was compiled by it`
       const shownUrl = evidenceUrl ? cleanUrlForDisplay(evidenceUrl) : ''
       const metaText = [desc, shownUrl].filter(Boolean).join(' · ')
       if (metaText) push(lines, { kind: 'meta', text: metaText, ledgerIds: [e.id], ...(shownUrl ? { links: [{ text: shownUrl, url: evidenceUrl }] } : {}) })
       for (const b of bulletsFor(e, cap, pageTexts)) {
-        const text = renderText(b)
+        const text = clauseTrim(renderText(b), 185)
         pageTexts.push(text)
         push(lines, { kind: 'bullet', text: `- ${text}${b.metrics ? ` (${b.metrics})` : ''}`, ledgerIds: [e.id] })
       }
@@ -850,7 +903,7 @@ function compileFromPlan(input: CompileInput): CompiledResume {
         // OWNER-READ: "1st Place — Agentic & GenAI Showcase … — Won first place in the Agentic & GenAI
         // showcase at …" restated its own title. A summary that repeats the title's words is trimmed
         // to the part that adds something; an identical one is dropped.
-        const hs = trimRestatement(e.title, hs0)
+        const hs = clauseTrim(trimRestatement(e.title, hs0), 150)
         const text = key === 'certs' ? `- ${e.title}${hs ? ` (${hs})` : ''}` : `- ${e.title}${hs ? ` — ${hs}` : ''}`
         const url = e.evidence?.url
         push(lines, { kind: 'bullet', text, ledgerIds: [e.id], ...(url ? { link: url } : {}) })
@@ -923,17 +976,18 @@ function compileFromPlan(input: CompileInput): CompiledResume {
   // keeps every played fact on the page; only the page-2 fallback and the declared last resort
   // change WHAT is on it.
   type Variant = { bpp: number; desc: number; summary: boolean }
+  // R5: the project description is ONE line (~120 chars) — the samples carry a header + bullets, never a paragraph.
   const ONE_PAGE: Variant[] = [
-    { bpp: 4, desc: 280, summary: true },
-    { bpp: 3, desc: 280, summary: true },
-    { bpp: 3, desc: 170, summary: true },
-    { bpp: 2, desc: 280, summary: true },
-    { bpp: 2, desc: 170, summary: true },
-    { bpp: 2, desc: 170, summary: false },
+    { bpp: 4, desc: 125, summary: true },
+    { bpp: 3, desc: 125, summary: true },
+    { bpp: 3, desc: 100, summary: true },
+    { bpp: 2, desc: 125, summary: true },
+    { bpp: 2, desc: 100, summary: true },
+    { bpp: 2, desc: 100, summary: false },
   ]
   const TWO_PAGE: Variant[] = [
-    { bpp: 4, desc: 280, summary: true },
-    { bpp: 3, desc: 280, summary: true },
+    { bpp: 4, desc: 125, summary: true },
+    { bpp: 3, desc: 125, summary: true },
   ]
   const fit = (maxPages: number, projectCap: number, variants: Variant[]): CompiledResume | null => {
     for (const v of variants) {
@@ -954,10 +1008,13 @@ function compileFromPlan(input: CompileInput): CompiledResume {
   // Now: the richest one-page variants; then a FULL two-pager (accepted only when page 2 carries
   // real weight, never three orphan lines); only then the leaner one-page steps.
   const richOne = fit(1, total, maxPages === 2 ? ONE_PAGE.slice(0, 2) : ONE_PAGE)
-  if (richOne) return richOne
+  // Under two-ok a one-pager squeezed to the smallest register (tighten 3) loses to a FULL two-pager
+  // whose second page carries weight; a light page 2 loses to the squeezed one-pager.
+  if (richOne && (maxPages === 1 || (richOne.tighten ?? 0) <= 2)) return richOne
   if (maxPages === 2) {
     const two = fit(2, total, TWO_PAGE)
     if (two && pageTwoWeight(two) >= 0.25) return two
+    if (richOne) return richOne
     const leanOne = fit(1, total, ONE_PAGE.slice(2))
     if (leanOne) return leanOne
     if (two) return two

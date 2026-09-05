@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "comment": "THE LENS (05-Sep-2026): how a cunning team reads a company before it writes a page. A lens is chosen from what the posting says (cues), and it decides what LEADS: which projects rank up (leadRe against title/summary/tags), the angle the wording is re-aimed to (framing), the section order, and how loud the skills rows are. Data, not code — add a lens for a new kind of company by adding an object here. The brain (Gemini) sees this catalogue and may keep or change the choice; the keyless floor applies it deterministically.",
+  "lenses": [
+    {
+      "id": "mind-first",
+      "label": "proof of mind",
+      "cues": ["logical reasoning", "intellectual honesty", "quality of your mind", "exceptional reasoning", "do not care about (your )?(university|degree|leetcode|certificates)", "first principles", "independent research", "personal agency"],
+      "leadRe": "braille|blind|hardware|first-of|novel|innovat|refreshable|from scratch|without being told",
+      "framing": "lead with the problem understood and the innovation, and with how the work was verified — proof of reasoning and agency, not a tool list",
+      "sectionOrder": ["education", "achievements", "projects", "experience", "skills", "positions", "certs"],
+      "skills": "after",
+      "why": "the posting is about the mind, not the stack — boards, NTSE, innovation and self-directed shipping carry the page"
+    },
+    {
+      "id": "social-impact",
+      "label": "social impact",
+      "cues": ["\\bngo\\b", "non-?profit", "social impact", "underserved", "rural", "community", "accessib", "inclusion", "public health", "grassroots", "foundation", "welfare", "humanitarian", "impact-first", "for good", "low-income", "disabilit", "civic", "government hospitals?"],
+      "leadRe": "braille|blind|hospital|rural|punjabi|village|welfare|accessib|community|patient|clinic|flood|farmer|scheme|elder|folk|assistive|low-literacy|disabilit",
+      "framing": "lead with who it serves and what changed for them, in plain words; name the AI once as the means, never as the point; keep every number that describes people reached, cost, or time saved",
+      "sectionOrder": ["projects", "experience", "positions", "achievements", "education", "skills", "certs"],
+      "skills": "after",
+      "why": "they hire for the people served — Braillix and Sehat Saarthi are stronger than any AI system here, and volunteering is evidence, not filler"
+    },
+    {
+      "id": "product-growth",
+      "label": "product & growth",
+      "cues": ["\\bgrowth\\b", "revenue", "unit economics", "customers", "conversion", "e-?commerce", "marketplace", "\\bproduct manager\\b", "\\bpm\\b", "go-to-market", "retention", "funnel", "business impact", "bottom line"],
+      "leadRe": "users|shipped|live|launch|revenue|orders|conversion|measur|impact|economics|market|customers|deploy",
+      "framing": "lead with what shipped, who uses it and the measurable outcome — ownership of a result end to end, decisions named, numbers first",
+      "sectionOrder": ["projects", "experience", "achievements", "education", "skills", "positions", "certs"],
+      "skills": "normal",
+      "why": "they read for outcomes and ownership — the page opens on shipped results with numbers, the stack rides behind"
+    },
+    {
+      "id": "research",
+      "label": "research rigour",
+      "cues": ["research intern", "\\bresearch\\b.*\\b(lab|group|scientist|paper)", "publication", "\\bbenchmark", "novel", "\\bphd\\b", "evaluation", "trustworthy", "state of the art", "arxiv", "experiment"],
+      "leadRe": "paper|framework|evaluat|benchmark|reliab|roc-auc|precision|recall|verified|study|position paper|research|method",
+      "framing": "lead with the question, the method and the measured result; name the verification and the limits honestly — rigour is the proof",
+      "sectionOrder": ["education", "projects", "writing", "achievements", "experience", "skills", "positions", "certs"],
+      "skills": "normal",
+      "why": "a research reader checks method and honesty first — measured results, the position paper and verification lines carry the page"
+    },
+    {
+      "id": "founder-ship",
+      "label": "founder, ships",
+      "cues": ["fast-paced", "startup", "0 to 1", "zero to one", "wear many hats", "ship (fast|daily|weekly)", "small team", "founding", "early-stage", "seed"],
+      "leadRe": "shipped|live|deploy|end to end|solo|built|zero api|keyless|production",
+      "framing": "lead with what shipped and how fast, end to end and alone where true; the reader is a founder who counts what is live",
+      "sectionOrder": ["projects", "experience", "education", "skills", "achievements", "positions", "certs"],
+      "skills": "normal",
+      "why": "a founder reads for shipped, live, owned — projects first, proof of speed and ownership"
+    },
+    {
+      "id": "ai-engineering",
+      "label": "AI engineering",
+      "cues": ["\\bllm", "\\bagent", "\\brag\\b", "fine-?tun", "machine learning", "ml engineer", "ai engineer", "pytorch", "transformers", "\\bnlp\\b", "computer vision", "genai", "generative ai"],
+      "leadRe": "llm|agent|rag|fine-tun|model|pipeline|inference|retrieval|prompt|ocr|vision|nlp|transformer",
+      "framing": "lead with the system built and the engineering decision inside it — the model, the pipeline, the evaluation — and the number that proves it works",
+      "sectionOrder": ["education", "experience", "projects", "skills", "achievements", "positions", "certs"],
+      "skills": "lead",
+      "why": "an AI-engineering reader scans stack and systems first — the technical proof leads, assembled for their asks"
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import { PDFDocument, PDFName, PDFString, StandardFonts, rgb, type PDFFont, type
 import fontkit from '@pdf-lib/fontkit'
 import { loadSerifFaces } from './fonts'
 import type { CompiledDoc, CompiledLine, CompiledResume } from '../../types'
-import { CompileError, NAME_SIZE, PAGE, estimateLineHeight, metricsFor } from '../compile/compiler'
+import { CompileError, NAME_SIZE, PAGE, estimateLineHeight, keepAhead, metricsFor } from '../compile/compiler'
 import { sanitizePdfText } from '../compile/typeset'
 import { layoutRuns } from '../compile/emphasis'
 
@@ -138,8 +138,7 @@ export async function renderResumePdf(resume: CompiledResume): Promise<Uint8Arra
     // Page break decided by the SAME rule as the compiler's paginate(): keep-with-next on
     // headings/titles, measured with the estimator (never under the drawn height).
     const h = estimateLineHeight(line, isName, tighten)
-    const keep = line.kind === 'heading' || line.kind === 'entry-title'
-    const next = keep && lines[i + 1] ? estimateLineHeight(lines[i + 1], false, tighten) : 0
+    const next = keepAhead(lines, i, tighten) // the compiler's one rule — never a second copy here
     if (usedOnPage > 0 && usedOnPage + h + next > PAGE.height - PAGE.margin * 2) {
       cur = newPage()
       y = PAGE.height - PAGE.margin
