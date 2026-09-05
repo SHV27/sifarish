@@ -1,10 +1,10 @@
 # NOTES.md — parked ideas (Closure Protocol Rule 0: written down, NOT built)
 
 - Campaign pace line in the Briefing (Aug–Dec clock vs applied/replies) — PRODUCT_BAR #1.
-- Outcome memory: which angle/archetype got HIM replies (≥5 samples, advisory) — PRODUCT_BAR #2.
+- ~~Outcome memory~~ — BUILT 05-Sep-2026 as THE MEMORY (strategist/memory.ts): outcomes as data, starts empty and says so.
 - Dak interview date/interviewer extraction into the dossier — PRODUCT_BAR #3.
 - Gap Sprint: Taleem gap → one-click in_forge → Nabz auto-promote — PRODUCT_BAR #4.
-- Interview-prep sheet compiled from packet evidence — PRODUCT_BAR #5.
+- ~~Interview-prep sheet~~ — BUILT 05-Sep-2026: the Morcha dossier speaks the plan (their cares → his proof; do-not-lead).
 - Guru streaming through the Gemini lane (needs an OpenAI-compatible streaming endpoint).
 - Prompt SKELETONS relocated to data/prompts (the version gate already enforces honesty).
 - Radar applyBy deadline capture; CPUE budget reallocation; dismiss-undo (PRODUCT_BAR).
@@ -19,7 +19,7 @@
 - Demo-mode paste-tailor is read-only by design; it now SAYS so (I6) — a sandboxed demo-tailor
   (compile against demo vault in memory) would be a nice showcase upgrade.
 --- v2 cycle (05-Sep-2026), parked deliberately ---
-- Outcome-learning loop (which angle got replies) — starts empty by design; needs ≥5 recorded outcomes (V2-2 §3).
+- Outcome-learning loop — THE MEMORY now records and feeds every outcome; a RULE is still refused below 5 outcomes (V2-2 §3), said on the board.
 - Baithak chat intents for play/bench of non-project facts (the board buttons cover it today).
 - Settings UI for pagePolicy / freshDays (chat + defaults cover it; a toggle is a nicety).
 - A demo NEXT line that points at the worked example instead of "apply now" (cosmetic).

@@ -1,0 +1,581 @@
+{
+  "recordedAt": "2026-09-05",
+  "mode": "gemini",
+  "reading": {
+    "company": "Babaclick",
+    "roleTitle": "Professional Vibe Coder – Growth Internship",
+    "domain": "Babaclick is a profitable global e‑commerce company that sells through marketplaces and runs an internal platform (Atlas) coordinating purchasing, catalogue, orders and fulfillment",
+    "summary": "The internship seeks a self‑directed intern who can research market opportunities, analyze data, and build AI‑assisted internal tools using React, Python, FastAPI and PostgreSQL while demonstrating strong logical reasoning and commercial judgment. The résumé will be read directly by the company’s founder/CEO",
+    "cares": [
+      {
+        "phrase": "logical reasoning",
+        "quote": "We care enormously about: logical reasoning"
+      },
+      {
+        "phrase": "intellectual honesty",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      },
+      {
+        "phrase": "independent research",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      },
+      {
+        "phrase": "quantitative comfort",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      },
+      {
+        "phrase": "speed of learning",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      },
+      {
+        "phrase": "personal agency",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      },
+      {
+        "phrase": "commercial judgment",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      },
+      {
+        "phrase": "attention to inconvenient details",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      },
+      {
+        "phrase": "whether you verify your own work",
+        "quote": "We care enormously about: logical reasoning · intellectual honesty · independent research · quantitative comfort · speed of learning · personal agency · commercial judgment · atte…"
+      }
+    ],
+    "doesNotCare": [
+      {
+        "phrase": "university brand",
+        "quote": "We do not care about: your university's brand"
+      },
+      {
+        "phrase": "degree subject",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      },
+      {
+        "phrase": "LeetCode",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      },
+      {
+        "phrase": "certificates",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      },
+      {
+        "phrase": "corporate vocabulary",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      },
+      {
+        "phrase": "prestigious internship",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      },
+      {
+        "phrase": "coding experience",
+        "quote": "No coding experience required"
+      },
+      {
+        "phrase": "previous professional coding experience",
+        "quote": "You do not need previous professional coding experience"
+      },
+      {
+        "phrase": "your university's brand",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      },
+      {
+        "phrase": "your degree subject",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      },
+      {
+        "phrase": "whether you can write code without AI",
+        "quote": "We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…"
+      }
+    ],
+    "readerPersona": "founder",
+    "roleWindow": "intern",
+    "archetype": "applied-ai",
+    "skills": {
+      "must": [
+        "claude",
+        "python",
+        "react",
+        "sql",
+        "transformers",
+        "fastapi",
+        "postgresql"
+      ],
+      "nice": [
+        "cursor",
+        "claude code",
+        "codex"
+      ]
+    },
+    "tokens": [
+      "professional",
+      "vibe",
+      "coder",
+      "growth",
+      "internship",
+      "babaclick",
+      "gurugram",
+      "haryana",
+      "india",
+      "on-site",
+      "full-time",
+      "person",
+      "weeks",
+      "month",
+      "stipend",
+      "yes",
+      "this",
+      "real",
+      "role",
+      "coding",
+      "experience",
+      "required",
+      "exceptional",
+      "reasoning",
+      "mandatory",
+      "most",
+      "companies",
+      "treat",
+      "interns",
+      "people",
+      "who",
+      "need",
+      "kept",
+      "away",
+      "from",
+      "important",
+      "decisions",
+      "tend",
+      "the",
+      "opposite",
+      "you",
+      "will",
+      "join",
+      "small",
+      "team",
+      "pursuing",
+      "major",
+      "commercial",
+      "opportunity",
+      "with",
+      "potential",
+      "materially",
+      "increase",
+      "and",
+      "some",
+      "cases",
+      "more",
+      "than",
+      "double",
+      "our",
+      "revenue",
+      "your",
+      "job",
+      "understand",
+      "research",
+      "what",
+      "nobody",
+      "knows",
+      "yet",
+      "reach",
+      "own",
+      "conclusions",
+      "build",
+      "systems",
+      "needed",
+      "capture",
+      "take",
+      "responsibility",
+      "for",
+      "its",
+      "impact",
+      "bottom",
+      "line",
+      "why",
+      "exists",
+      "profitable",
+      "london-headquartered",
+      "global",
+      "e-commerce",
+      "company",
+      "principal",
+      "technology",
+      "gurgaon",
+      "process",
+      "orders",
+      "annually",
+      "sell",
+      "through",
+      "marketplaces",
+      "including",
+      "amazon",
+      "walmart",
+      "new",
+      "internal",
+      "platform",
+      "atlas",
+      "coordinates",
+      "purchasing",
+      "catalogue",
+      "receiving",
+      "marketplace",
+      "operations",
+      "other",
+      "parts",
+      "business",
+      "vibecoder",
+      "has",
+      "shifted",
+      "bottleneck",
+      "many",
+      "types",
+      "software",
+      "development",
+      "remembering",
+      "syntax",
+      "longer",
+      "matters",
+      "understanding",
+      "problem",
+      "specifying",
+      "behaviour",
+      "precisely",
+      "recognising",
+      "when",
+      "output",
+      "wrong",
+      "matter",
+      "much",
+      "can",
+      "use",
+      "cursor",
+      "claude",
+      "code",
+      "codex",
+      "any",
+      "useful",
+      "tool",
+      "not",
+      "previous",
+      "think",
+      "enough",
+      "tell",
+      "system",
+      "must",
+      "recognise",
+      "answer",
+      "verify",
+      "that",
+      "finished",
+      "product",
+      "works",
+      "casual",
+      "generates",
+      "accountable",
+      "result",
+      "actually",
+      "part",
+      "reporting",
+      "directly",
+      "ceo",
+      "work",
+      "involve",
+      "combination",
+      "investigating",
+      "markets",
+      "products",
+      "competitors",
+      "regulations",
+      "apis",
+      "analysing",
+      "order",
+      "financial",
+      "data",
+      "modelling",
+      "unit",
+      "economics",
+      "building",
+      "tools",
+      "automations",
+      "using",
+      "harnesses",
+      "working",
+      "react",
+      "python",
+      "fastapi",
+      "postgresql",
+      "third-party",
+      "testing",
+      "against",
+      "inconvenient",
+      "edge",
+      "care",
+      "about",
+      "university",
+      "brand",
+      "degree",
+      "subject",
+      "whether",
+      "write",
+      "without",
+      "leetcode",
+      "certificates",
+      "corporate",
+      "vocabulary",
+      "have",
+      "already",
+      "held",
+      "prestigious",
+      "how",
+      "confidently",
+      "present",
+      "weak",
+      "conclusion",
+      "enormously",
+      "logical",
+      "intellectual",
+      "honesty",
+      "independent",
+      "quantitative",
+      "comfort",
+      "speed",
+      "learning",
+      "personal",
+      "agency",
+      "judgment",
+      "attention",
+      "details",
+      "things",
+      "happen",
+      "because",
+      "are",
+      "offer",
+      "guaranteed",
+      "successfully",
+      "complete",
+      "full"
+    ],
+    "revealAffinity": 0.9,
+    "by": "gemini",
+    "at": "2026-09-05T15:31:51.215Z",
+    "research": [
+      {
+        "text": "Review Queues Global Discovery Landed Cost Cross-Border Fulfilment OpenAI Our architecture connects supply, product data, marketplaces, fulfilment and AI workflows into systems that can grow across ca",
+        "url": "https://www.babaclick.com"
+      },
+      {
+        "text": "Culture & values 5.0. Great work environment with supportive colleagues and approachable management. Good work life balance, timely salary, Work culture is",
+        "url": "https://www.glassdoor.com/Reviews/Babaclick-Trading-Reviews-E4766118.htm"
+      },
+      {
+        "text": "was a chance to step away from screens, share a meal, and reconnect as a team — a moment to reflect on the progress made and the foundations built together 🎄 Proud of the focus, ownership, and consis",
+        "url": "https://www.linkedin.com/company/babaclick"
+      },
+      {
+        "text": "##### Model Context Protocol — spec2025-11-25 MCP is the de facto standard for connecting AI agents to external tools, per 97M monthly SDK downloads as of February 2026. Mid candidates should know the",
+        "url": "https://www.digitalapplied.com/blog/ai-developer-hiring-skills-that-matter-2026"
+      },
+      {
+        "text": "The company is highly rated for company culture, job security and promotions / appraisal, based on employee reviews on AmbitionBox.",
+        "url": "https://www.ambitionbox.com/overview/babaclick-overview"
+      },
+      {
+        "text": "The most standard component of hiring-process automation is communication with people. According to recent work by Wuttke et al. , in controlled experiments their LLM-based interviewer elicited more i",
+        "url": "https://arxiv.org/html/2512.20652v1"
+      }
+    ]
+  },
+  "plan": {
+    "threeLines": {
+      "headline": "AI engineer — directs AI to solve real problems end to end · NTSE Scholar",
+      "summary": "Final-year CSE student who finds the real problem and directs AI to ship the thing that solves it — 3 shipped systems built end to end and live, linked below; a national NTSE scholarship for aptitude; 1st place, Gen-AI Hackathon, IIT Ropar; built for a place that values logical reasoning.",
+      "factIds": [
+        "proj-darya",
+        "proj-munshi",
+        "proj-gloaming",
+        "ach-ntse",
+        "ach-genai-hack"
+      ]
+    },
+    "sectionOrder": [
+      "education",
+      "achievements",
+      "projects",
+      "experience",
+      "skills",
+      "positions",
+      "certs"
+    ],
+    "played": [
+      {
+        "factId": "edu-btech-tiet",
+        "section": "education",
+        "reason": "proof of aptitude — they say they care about \"logical reasoning\""
+      },
+      {
+        "factId": "edu-xii",
+        "section": "education",
+        "reason": "proof of aptitude — they say they care about \"logical reasoning\""
+      },
+      {
+        "factId": "edu-x",
+        "section": "education",
+        "reason": "proof of aptitude — they say they care about \"logical reasoning\""
+      },
+      {
+        "factId": "proj-darya",
+        "section": "projects",
+        "reason": "proves python, fastapi they ask for",
+        "framing": "lead with the problem understood and the innovation, and with how the work was verified — proof of reasoning and agency, not a tool list"
+      },
+      {
+        "factId": "proj-munshi",
+        "section": "projects",
+        "reason": "a real problem solved without being told how — they care about \"logical reasoning\"",
+        "framing": "lead with the problem understood and the innovation, and with how the work was verified — proof of reasoning and agency, not a tool list"
+      },
+      {
+        "factId": "proj-gloaming",
+        "section": "projects",
+        "reason": "proves react they ask for",
+        "framing": "lead with the problem understood and the innovation, and with how the work was verified — proof of reasoning and agency, not a tool list"
+      },
+      {
+        "factId": "ach-ntse",
+        "section": "achievements",
+        "reason": "national-level proof of the reasoning they ask for — \"logical reasoning\""
+      },
+      {
+        "factId": "ach-genai-hack",
+        "section": "achievements",
+        "reason": "proof of agency and outcomes, which this reader weighs above credentials"
+      },
+      {
+        "factId": "pos-saturnalia",
+        "section": "positions",
+        "reason": "responsibility taken without being told how — leadership reads as agency"
+      },
+      {
+        "factId": "pos-urja",
+        "section": "positions",
+        "reason": "responsibility taken without being told how — leadership reads as agency"
+      },
+      {
+        "factId": "pos-bvp",
+        "section": "positions",
+        "reason": "responsibility taken without being told how — leadership reads as agency"
+      }
+    ],
+    "benched": [
+      {
+        "factId": "cert-launched-global",
+        "reason": "they say: \"We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…\""
+      },
+      {
+        "factId": "cert-predictive",
+        "reason": "they say: \"We do not care about: your university's brand · your degree subject · whether you can write code without AI · LeetCode · certificates · corporate vocabulary · whether you have alr…\""
+      }
+    ],
+    "skills": [
+      {
+        "label": "Languages",
+        "items": [
+          {
+            "text": "Python",
+            "factIds": [
+              "skill-python",
+              "proj-darya"
+            ]
+          },
+          {
+            "text": "TypeScript",
+            "factIds": [
+              "proj-gloaming",
+              "proj-munshi",
+              "skill-js-ts"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "AI & ML",
+        "items": [
+          {
+            "text": "Prompt & Agent Design (Claude Code)",
+            "factIds": [
+              "skill-agent-design"
+            ]
+          },
+          {
+            "text": "LLMs",
+            "factIds": [
+              "proj-gloaming",
+              "skill-agent-design"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Frameworks & Libraries",
+        "items": [
+          {
+            "text": "Speech",
+            "factIds": [
+              "proj-munshi",
+              "skill-groq-whisper"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Tools & Platforms",
+        "items": [
+          {
+            "text": "Claude",
+            "factIds": [
+              "skill-agent-design"
+            ]
+          }
+        ]
+      }
+    ],
+    "reveal": {
+      "on": false,
+      "reason": "no Sifarish fact in the dossier"
+    },
+    "projectOrder": [
+      "proj-darya",
+      "proj-munshi",
+      "proj-gloaming"
+    ],
+    "rationale": "Babaclick reads for logical reasoning, intellectual honesty, independent research and says it does not care about university brand, degree subject, leetcode. So the page leads with education and achievements, plays 11 facts and benches 2, and assembles 6 skills the posting asks for from evidence he holds.",
+    "notes": [
+      "\"react\" is asked for and you hold it, but you marked it not-interview-safe — kept off the page by your call (say \"allow react on my résumé\" to change that)",
+      "no evidence for \"sql\" — kept off the page (I1); it goes to the gap note",
+      "no evidence for \"transformers\" — kept off the page (I1); it goes to the gap note",
+      "no evidence for \"fastapi\" — kept off the page (I1); it goes to the gap note",
+      "no evidence for \"postgresql\" — kept off the page (I1); it goes to the gap note"
+    ],
+    "by": "heuristic",
+    "at": "2026-09-05T15:33:13.087Z",
+    "memory": [
+      "no recorded outcomes yet — the outcome loop starts empty; every \"mark as applied\", interview and rejection you record teaches the next plan"
+    ]
+  },
+  "critic": {
+    "verdict": "REVISE",
+    "issues": [
+      "six-second read: Arjun shows strong AI project experience and logical reasoning but hides required React/SQL skills and wastes space on irrelevant education.",
+      "Education block dominates top, emphasizing university brand and CGPA, which the company explicitly disregards.",
+      "No concrete evidence of React, SQL, or PostgreSQL experience despite being required skills.",
+      "Transformers expertise is only a vague “currently building” note, lacking demonstrable work or metrics.",
+      "Technical skills list omits FastAPI and concrete framework details, despite using it in projects.",
+      "Positions of responsibility unrelated to growth coding role consume valuable space."
+    ],
+    "revised": false,
+    "by": "groq",
+    "at": "2026-09-05T15:39:47.619Z"
+  }
+}

@@ -63,7 +63,7 @@ export function editorialFromPlan(plan: GamePlan, reading: Reading, ledger: Ledg
   }
 }
 
-const pageTextOf = (resume: Packet['resume']) => resume.lines.map((l) => `${l.text}${l.right ? ` ${l.right}` : ''}`).join('\n')
+export const pageTextOf = (resume: Packet['resume']) => resume.lines.map((l) => `${l.text}${l.right ? ` ${l.right}` : ''}`).join('\n')
 
 export async function buildPacketFast(job: Job): Promise<Packet> {
   const identity = await db.identity.get('me')

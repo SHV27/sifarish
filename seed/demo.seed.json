@@ -131,79 +131,102 @@
       "id": "proj-darya",
       "kind": "project",
       "title": "DARYA — Village-Level Flood Intelligence for Rupnagar",
-      "summary": "Dam, gauge, and IMD data fused into per-village Punjabi alerts delivered through a trusted human relay, with a replayable evaluation timeline of the 2025 Punjab floods.",
+      "summary": "Dam, gauge and IMD data fused into per-village Punjabi alerts delivered through a trusted human relay, with a replayable record of every warning issued.",
       "bullets": [
         {
           "id": "darya-b1",
-          "text": "Fusing dam-release, river-gauge, and IMD forecast data into village-level flood risk for Rupnagar district, delivered as Punjabi-language alerts through a trusted human relay",
+          "text": "Fused 3 public feeds (BBMB dam releases, CWC gauges, IMD nowcasts) into a per-village risk score for 41 villages, recomputed every 15 minutes",
           "keywords": [
-            "data-pipeline",
             "python",
-            "civic-tech",
-            "geospatial",
-            "alerts",
-            "multilingual"
+            "data-pipeline",
+            "fastapi"
           ]
         },
         {
           "id": "darya-b2",
-          "text": "Building a replayable evaluation timeline of the 2025 Punjab floods so every alert threshold is backtested against a real disaster, not a synthetic benchmark",
+          "text": "Modelled the unit economics of an SMS relay vs a WhatsApp relay and chose the one that reached 96% of households at ₹0.11 per warning",
           "keywords": [
-            "evaluation",
-            "backtesting",
-            "evals",
-            "time-series"
+            "economics",
+            "analysis",
+            "decision"
+          ]
+        },
+        {
+          "id": "darya-b3",
+          "text": "Kept a replayable log of every alert so a wrong warning can be traced to the exact reading that caused it — 2 false alarms found and fixed in the first month",
+          "keywords": [
+            "verification",
+            "logging",
+            "edge-cases"
           ]
         }
       ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
+      "tier": "shipped",
       "tags": [
-        "civic-tech",
-        "data-pipeline",
+        "civic",
         "python",
-        "evals",
-        "voice"
+        "fastapi",
+        "data",
+        "shipped"
       ],
-      "resumeEligible": true
+      "resumeEligible": true,
+      "evidence": {
+        "url": "https://darya-demo.vercel.app",
+        "repo": "https://github.com/arjun-demo/darya",
+        "date": "03/2026",
+        "note": "Public repo + live deployment (fictional persona)."
+      }
     },
     {
       "id": "proj-munshi",
       "kind": "project",
       "title": "MUNSHI — AI Exam Scribe for Blind Students",
-      "summary": "Zero-network, browser-first exam scribe whose trust mechanism is a tamper-evident hash chain.",
+      "summary": "Zero-network, browser-first exam scribe whose trust mechanism is a tamper-evident hash chain — a blind student dictates, the invigilator verifies, nothing leaves the room.",
       "bullets": [
         {
           "id": "munshi-b1",
-          "text": "Building a zero-network, browser-first AI exam scribe for blind students — nothing leaves the machine during an exam",
+          "text": "Built the dictation-to-answer-sheet pipeline in the browser with on-device speech recognition, so a 3-hour exam runs with the network cable unplugged",
           "keywords": [
-            "accessibility",
-            "assistive-tech",
-            "offline-first",
+            "speech",
+            "offline",
             "browser",
-            "speech"
+            "typescript"
           ]
         },
         {
           "id": "munshi-b2",
-          "text": "Designing a tamper-evident hash chain as the trust mechanism, so invigilators can verify the session log cryptographically instead of trusting the software",
+          "text": "Designed a tamper-evident hash chain over every keystroke and correction — an invigilator verifies a full sheet in under 40 seconds from a printed QR",
           "keywords": [
             "security",
             "hash-chain",
-            "integrity",
-            "cryptography"
+            "verification"
+          ]
+        },
+        {
+          "id": "munshi-b3",
+          "text": "Piloted with 12 students across 2 schools; every sheet verified, zero disputed answers, written up as a 9-page audit trail for the board",
+          "keywords": [
+            "pilot",
+            "outcome",
+            "metrics"
           ]
         }
       ],
-      "tier": "in_forge",
-      "forgeEta": "July 2026",
+      "tier": "shipped",
       "tags": [
-        "assistive-tech",
-        "accessibility",
-        "security",
-        "voice"
+        "assistive",
+        "offline-first",
+        "typescript",
+        "speech",
+        "shipped"
       ],
-      "resumeEligible": true
+      "resumeEligible": true,
+      "evidence": {
+        "url": "https://munshi-demo.vercel.app",
+        "repo": "https://github.com/arjun-demo/munshi",
+        "date": "05/2026",
+        "note": "Public repo + live deployment (fictional persona)."
+      }
     },
     {
       "id": "proj-katha",

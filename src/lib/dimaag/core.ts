@@ -80,7 +80,12 @@ interface CallResult {
  * (Resolved: decide/critique/classify all pass schemas now — see SCHEMA_DECIDE/CRITIQUE/CLASSIFY
  * below and D75-CLOSED. Every reasoning call site is on the json_schema path, live-verified.)
  */
-const CALL_ATTEMPTS = 3
+const CALL_ATTEMPTS = 4
+// R3 (live-caught, class: burst rate-limit at the tail of a sequential pipeline): the critic is the
+// LAST call after reading → plan → reframes, and the free lanes count per minute — it kept reading
+// "every free lane rate-limited". Three waits (10/20/30 s) cross the minute boundary; a real call
+// then answers. Wall time is spent only when a lane actually throttled.
+const RATE_LIMIT_WAIT_MS = 10000
 
 /**
  * D74 schemas. openai/gpt-oss measured 0/3 on json_object and 3/3 on json_schema with a prompt
@@ -135,7 +140,7 @@ async function callDimaag(tier: DimaagTier, system: string, user: string, maxTok
     // a multi-project re-forge silently degrades to the deterministic (raw-README) path. Wait long
     // enough for the per-minute window to refill, then try again. (Session 5.6)
     if (r === 'ratelimit') {
-      if (attempt < CALL_ATTEMPTS) await new Promise((res) => setTimeout(res, 8000 * attempt))
+      if (attempt < CALL_ATTEMPTS) await new Promise((res) => setTimeout(res, RATE_LIMIT_WAIT_MS * attempt))
       continue
     }
     // `keyless` is a settled answer (no key / demo browser) — retrying it would be a lie to

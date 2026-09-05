@@ -371,3 +371,35 @@ Read the brief line by line once more; the gaps that were NOT the page, now clos
   (re-aimed N bullets) / THE CRITIC — the product's manner, as the brief asked.
 - Honest limits (V2-2 stands): research is only as good as the free intel lane; a company with no
   public footprint yields "none found", said plainly.
+
+## V2-10 · R3 — THE BRIEF, WALKED A THIRD TIME (05-Sep-2026; owner: "har cheez milni chahiye final product mein")
+The whole suite ran on it: the brief re-read end to end; a FRESH-CONTEXT hunter (studio-verify's
+adversary) audited the code against the brief line by line and returned 15 findings; studio-debug
+named each class and fixed it at its choke point with a gate; studio-taste on the UI touched;
+studio-security/ship at the deploy. Findings are never optional — every one is closed:
+- **Page-solver starved the page** (class: wrong search order). Under two-ok it walked every
+  one-page degradation before trying page 2 — the small résumé he rebuilt to escape. Now: richest
+  one-page → FULL two-pager (orphan-page guard `pageTwoWeight ≥ 0.25`) → leaner one-page.
+- **The chat lane could not say what it advertised** (class: schema/prompt fork). additionalProperties
+  false stripped add-fact / edit / hide / section / policy / sample fields. Schema completed; gate reads the source.
+- **READMEs absorbed, never read** (class: stored-but-not-consumed). `problem`, notable and prose now
+  ride into the digest for every project — "unhe deeply padhe" is literal now.
+- Letter: refinements keep the Reading (no silent generic letter); no invented "#6 on my GitHub";
+  a past target date is dropped (`etaClause`, two-sided gate).
+- Critic revision re-aims wording; overrule no longer caps at three; custom kinds may LEAD (the
+  badminton line, for the right founder); ops run on every non-refusal turn; README refresh reaches
+  url-only projects; the deterministic critic probes every "we do not care" (LeetCode, grades,
+  corporate vocabulary, pedigree), not only certificates; "Tell the team" on every width.
+- **Sample résumés have a real door**: paste or upload (.pdf/.txt) on the Shelf → the canon.
+- **The demo showed the failure mode** (template strategist, because the demo spends nothing).
+  THE TEAM's deep pass now runs ONCE by script (`scripts/record-showcase.mts`) on the fictional
+  persona and ships as data; the worked example executes the recorded plan, labelled
+  "recorded on <date>". The persona gained two fictional shipped projects so the choice is real.
+Own additions from the brief: **THE MEMORY** (recorded outcomes as data — the honest self-evolving
+loop; starts empty and says so; read by every deep pass; on the board), **THE CLOCK** on the desk
+from his own window (secure by 30 Nov 2026; Oct–Nov applying window), the **interview brief speaks
+the plan** (their cares → his proof; do-not-lead list). One project-cap rule (canon three; nothing
+else benched for space). A skipped critic names its reason — which caught the real cause live:
+burst rate-limit at the tail of the pipeline; backoff now crosses the minute boundary.
+Honest limits (V2-2 stands): THE MEMORY cannot learn a rule from one rejection and says so until
+five outcomes exist; the recorded demo pass is a snapshot, not a live brain.

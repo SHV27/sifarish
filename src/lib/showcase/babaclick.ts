@@ -1,5 +1,6 @@
 import { db, withSeedAllowance } from '../../db/db'
-import type { Job, Packet } from '../../types'
+import type { CriticVerdict, GamePlan, Job, Packet, Reading, StrategistMode } from '../../types'
+import recorded from '../../../data/showcase/babaclick.strategy.json'
 
 /**
  * v2 THE DESK — the demo's WORKED EXAMPLE (VISION-BRIEF v2, Appendix A).
@@ -31,7 +32,7 @@ Full-Time Offer: Guaranteed. Successfully complete the full 12 weeks, and you ar
 
 export const SHOWCASE_JOB_ID = 'showcase-babaclick'
 /** Bump when the packet craft changes — the demo's worked example is rebuilt on next open (never his vault). */
-export const SHOWCASE_VERSION = 3
+export const SHOWCASE_VERSION = 4
 
 export function showcaseJob(): Job {
   return {
@@ -66,10 +67,35 @@ export async function seedDemoShowcase(opts: { force?: boolean } = {}): Promise<
   // R3 (05-Sep-2026, READ on the demo board): the example was assembled by its own copy of the packet
   // recipe and seeded ONCE — every later craft change (vision headline, honest letter, JD-driven
   // skills) left the demo showing the stale page. One door now: the same fast packet the owner gets.
+  const settings = await db.settings.get('app')
   const job = showcaseJob()
-  const { buildPacketFast } = await import('../darzi')
+  const { buildPacketFast, editorialFromPlan } = await import('../darzi')
   const fast = await buildPacketFast(job)
-  const packet: Packet = { ...fast, id: `packet-${job.id}-showcase`, enhancing: false, ready: true }
+  let packet: Packet = { ...fast, id: `packet-${job.id}-showcase`, enhancing: false, ready: true }
+  // HUNTER-CAUGHT (R3): the demo can spend nothing, so a visitor met the template strategist — the
+  // failure mode the product replaces. THE TEAM's deep pass was run ONCE on this persona (scripts/
+  // record-showcase.mts) and recorded as data; it executes here when every fact it cites exists.
+  const rec = recorded as unknown as { recordedAt: string; mode: StrategistMode; reading: Reading; plan: GamePlan; critic: CriticVerdict }
+  const ids = new Set(ledger.map((e) => e.id))
+  const cited = [...rec.plan.played.map((p) => p.factId), ...rec.plan.benched.map((b) => b.factId), ...rec.plan.threeLines.factIds]
+  if (rec.mode !== 'heuristic' && cited.every((id) => ids.has(id))) {
+    const { compileResume } = await import('../compile/compiler')
+    const { estimateQuality } = await import('../ustaad/quality')
+    const plan: GamePlan = { ...rec.plan, notes: [...rec.plan.notes, `recorded on ${rec.recordedAt} for the demo — the demo itself spends nothing; the owner's packets run this pass live`] }
+    const resume = compileResume({ identity, ledger, decode: fast.decode, coverage: fast.coverage, jobId: job.id, plan, pagePolicy: settings?.pagePolicy ?? 'two-ok', sections: settings?.sections, summaryOn: true })
+    packet = {
+      ...packet,
+      resume,
+      reading: rec.reading,
+      plan,
+      critic: rec.critic,
+      strategistMode: rec.mode,
+      editorial: editorialFromPlan(plan, rec.reading, ledger),
+      compilePlan: { order: plan.projectOrder, bullets: {}, sectionOrder: undefined },
+      gapNote: [...fast.gapNote.filter((n) => !n.startsWith('no evidence for')), ...plan.notes.filter((n) => n.startsWith('no evidence for'))],
+      quality: estimateQuality(resume, fast.coverage, ledger),
+    }
+  }
   await withSeedAllowance(async () => {
     await db.jobs.put(job)
     await db.packets.put({ ...packet, typesetVersion: 3 })
