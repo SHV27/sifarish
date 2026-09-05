@@ -2,7 +2,18 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1 + R2 + R3 + R4 (THE TECH CANON) built, deployed, proven live
+## Status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1…R5 (THE LENS + THE PAGE THAT BREATHES) built, deployed, proven live
+
+### R5 — THE LENS + THE PAGE THAT BREATHES (DECISIONS V2-12)
+- The angle is chosen before the writing, as data (`data/config/lenses.json`): NGO → Braillix and
+  Sehat Saarthi lead, volunteering is evidence, skills last; AI lab → systems and stack lead;
+  Babaclick → proof of mind. Shown on the board as THE LENS with the cue that chose it.
+- The page re-measured against the LaTeX samples; descriptions one line; bullets ≤ two lines; a full
+  two-pager beats a squeezed one-pager; short sections never split (one page-break rule, shared by
+  compiler and renderer). Read by eye: docs/screenshots/v2-page-babaclick.png, v2-page-ngo.png.
+- 871 gates · tsc clean · warning-free build · registry v15.
+
+
 
 ### R4 — THE TECH CANON (DECISIONS V2-11) — after the owner read his own page
 - One vocabulary authority as DATA (`data/config/tech.json`): the only words allowed as a skill, a

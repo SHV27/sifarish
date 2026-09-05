@@ -85,6 +85,11 @@ reasoning"*; every skill in the rows carries its proving fact ids; the validator
 
 ![The game plan board](docs/screenshots/v2-demo-plan.png)
 
+### v5 — the same dossier, two companies, two pages (THE LENS)
+Left: Babaclick ("we do not care about LeetCode, certificates") — proof of mind leads. Right: an NGO fellowship — Braillix and its people lead, volunteering is evidence, the stack rides last.
+
+<p><img src="docs/screenshots/v2-page-babaclick.png" width="49%"> <img src="docs/screenshots/v2-page-ngo.png" width="49%"></p>
+
 ### v5 — the page the plan executes (demo persona, recorded Gemini pass)
 ![The compiled page](docs/screenshots/v2-demo-page.png)
 

@@ -420,3 +420,22 @@ every stored packet once. Test of time (his word): projects come and go from the
 skills and stacks derive from whatever entries exist; a new technology is one line in tech.json.
 Gates: tests/tech-canon.test.ts (two-sided). Registry v14.
 
+## V2-12 · R5 — THE LENS + THE PAGE THAT BREATHES (05-Sep-2026; owner: "cunning as hell", "not beautiful, too congested")
+The cunning is a DECISION made before the writing, and it is data. `data/config/lenses.json` holds the
+angles a real team chooses between — proof of mind, social impact, product & growth, research rigour,
+founder-ship, AI engineering — each with the cues that pick it from the WHOLE posting (company blurb,
+culture, "we do not care"), what LEADS (project ranking regex), the framing every bullet is re-aimed to,
+the section order, and how loud the skills rows are. `chooseLens()` reads the reading; the keyless floor
+applies it; the brain sees the catalogue and the team's first read and may keep or change it; the board
+says which lens and why. His own test passes: an NGO posting ranks Braillix and Sehat Saarthi over
+Sifarish, opens on PROJECTS, treats volunteering as evidence, and says "builds for the people a problem
+actually hurts". A new kind of company is a new object in the file — no code (B.5, "test of time").
+The page: metrics re-measured against the six LaTeX samples (body 1.24× leading, 11pt above headings,
+5pt above entries, 1.5pt between bullets, name 20pt); descriptions one line ending at a clause;
+bullets at most two lines (clause-trimmed, never mid-word, never an ellipsis); a two-line summary; a
+squeezed one-pager (tighten 3) loses to a full two-pager with a weighty page 2; a short section
+(EDUCATION, TECHNICAL SKILLS) never splits across pages — `keepAhead()` is the ONE page-break rule and
+the PDF renderer calls it (the renderer had its own copy: a fork, now dead).
+Honest limit: the lens catalogue is six angles today; a posting that fits none falls to AI engineering
+and the board says "no stated angle".
+
