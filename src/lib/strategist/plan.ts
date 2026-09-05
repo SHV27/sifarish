@@ -384,8 +384,11 @@ export const PLAN_SCHEMA = {
     revealOn: { type: 'boolean' },
     revealReason: { type: 'string' },
     rationale: { type: 'string', description: 'One paragraph (≤ 120 words), plain words: what you did and why, as a sharp human agent would explain it.' },
+    lensId: { type: 'string', description: "The angle chosen: an id from THE LENS CATALOGUE, or 'custom'." },
+    lensLabel: { type: 'string', description: 'The angle in <= 5 words (e.g. "fintech risk", "civic tech").' },
+    lensWhy: { type: 'string', description: 'One sentence: what in the posting made this the angle.' },
   },
-  required: ['headline', 'summary', 'threeLineFactIds', 'sectionOrder', 'played', 'benched', 'skills', 'revealOn', 'revealReason', 'rationale'],
+  required: ['headline', 'summary', 'threeLineFactIds', 'sectionOrder', 'played', 'benched', 'skills', 'revealOn', 'revealReason', 'rationale', 'lensId', 'lensLabel', 'lensWhy'],
   additionalProperties: false,
 } as const
 
@@ -400,6 +403,9 @@ interface PlanLLM {
   revealOn: boolean
   revealReason: string
   rationale: string
+  lensId?: string
+  lensLabel?: string
+  lensWhy?: string
 }
 
 export function planSystem(): string {
@@ -634,5 +640,11 @@ export async function makePlan(inputs: PlanInputs): Promise<GamePlan> {
   }).catch(() => null)
   if (!meta || !meta.result) return { ...planHeuristic(inputs.reading, inputs.ledger, inputs.identity, inputs.vision, inputs.sections), memory }
   const validated = validatePlan(meta.result, inputs, digest, meta.mode)
-  return { ...validated, memory, lens: validated.lens ?? { id: lensChoice.lens.id, label: lensChoice.lens.label, because: lensChoice.because, why: lensChoice.lens.why } }
+  // The brain's angle wins when it named one (a fintech-risk posting may deserve an angle no catalogue holds).
+  const raw = meta.result
+  const brainLens = clean(String(raw.lensLabel ?? '')).slice(0, 40)
+  const lens = brainLens.length >= 3
+    ? { id: clean(String(raw.lensId ?? 'custom')).slice(0, 32) || 'custom', label: brainLens, because: clean(String(raw.lensWhy ?? '')).slice(0, 200) || 'the brain named this angle', why: 'chosen by the deep pass over the catalogue' }
+    : { id: lensChoice.lens.id, label: lensChoice.lens.label, because: lensChoice.because, why: lensChoice.lens.why }
+  return { ...validated, memory, lens }
 }

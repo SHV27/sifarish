@@ -86,3 +86,19 @@ describe('the page breathes (owner-read: "too congested")', () => {
     }
   })
 })
+
+describe('the catalogue covers the market, and the brain may name its own angle', () => {
+  it('data analyst → data & analytics; embedded → hardware; consulting → business; design → users; mentor fellowship → teaching', () => {
+    const pick = (t: string) => chooseLens(readPostingHeuristic(t, 'X', 'Role')).lens.id
+    expect(pick('Data Analyst Intern — build dashboards in Power BI, SQL queries and reports, KPIs for the business.')).toBe('data-analytics')
+    expect(pick('Embedded Systems Intern — firmware on ESP32 and Raspberry Pi, sensors, on-device inference.')).toBe('hardware-embedded')
+    expect(pick('Business Analyst Intern — structured problem solving with stakeholders, market research, case studies, strategy.')).toBe('business-consulting')
+    expect(pick('Product Design Intern — user research, usability, Figma prototypes, accessibility.')).toBe('design-users')
+    expect(pick('Campus Mentor Fellowship — teaching workshops, curriculum, community of first-year students.')).toBe('teaching-community')
+  })
+  it('a posting with no angle falls to AI engineering and says so', () => {
+    const c = chooseLens(readPostingHeuristic('Intern. Python.', 'X', 'Intern'))
+    expect(c.lens.id).toBe('ai-engineering')
+    expect(c.because).toMatch(/no stated angle/)
+  })
+})
