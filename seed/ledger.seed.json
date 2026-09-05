@@ -1146,18 +1146,19 @@
     },
     {
       "id": "pub-prana",
-      "kind": "publication",
-      "title": "PRANA — A Layered Framework for Sustainable AI Compute (position paper, v1)",
-      "summary": "Reframes AI's energy-water crisis as exergy misplacement and proposes a five-layer stack, follow-the-cold routing across hemispheres, and the compute-boiler facility archetype for district heating.",
+      "kind": "writing",
+      "title": "PRANA — A Layered Framework for Sustainable AI Compute (position paper)",
+      "summary": "Self-published position paper reframing AI's energy-water crisis as exergy misplacement; proposes a five-layer stack, follow-the-cold routing and the compute-boiler archetype.",
       "bullets": [],
       "tier": "shipped",
       "evidence": {
         "repo": "https://github.com/SHV27/PRANA-Sustainable-AI",
         "date": "07/2026",
-        "note": "Position paper PDF in the public repo; README read 05-Sep-2026."
+        "note": "Independent writing, self-published on GitHub and LinkedIn — NOT a peer-reviewed publication; the strategist must present it as independent research/writing, never as a journal paper."
       },
       "tags": [
         "research",
+        "writing",
         "sustainability",
         "ai-infra"
       ],

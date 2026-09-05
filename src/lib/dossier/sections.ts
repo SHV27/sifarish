@@ -13,5 +13,6 @@ export const DEFAULT_SECTIONS: SectionDef[] = [
   { kind: 'achievement', label: 'Achievements', order: 50 },
   { kind: 'position', label: 'Positions of Responsibility', order: 60 },
   { kind: 'certification', label: 'Certifications', order: 70 },
-  { kind: 'publication', label: 'Publications', order: 80 },
+  { kind: 'writing', label: 'Independent Research & Writing', order: 80 },
+  { kind: 'publication', label: 'Publications', order: 85 },
 ]

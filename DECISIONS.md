@@ -309,3 +309,45 @@ sheet (who plays what, and who waits), and a poker read (a company's "we don't c
 - What the standard could not physically meet is logged in V2-2 and lived up to: the packet prints
   its brain; the desk says when a LinkedIn-inbox status is his to mark; no guarantee language exists.
 - Credentials: none needed beyond the keys already on Vercel (told to the owner at the start).
+
+## V2-8 · THE OWNER'S EYE — decoded deltas and the rework (05-Sep-2026, after his review)
+
+DECODED 1 — "headline mein tumne 3 projects ka naam le liya … meri vision capture honi chahiye thi"
+· Layer: brains/words · Class: template-as-strategy · Fix: the headline is his vision sentence,
+third-personed (voiceClause of his dream) + the role; a headline naming any project is rejected
+by the validator and by the brain's prompt; projects live in PROJECTS. Test: no project title in
+the headline for Babaclick or an ordinary posting.
+
+DECODED 2 — PRANA twice, once as a "publication" that "sirf github/linkedin pe hai"
+· Layer: data/trust · Class: migration without a repo-key dedupe + a dishonest kind · Fix: seed
+entries whose repo he already holds are never added again; the kind is `writing` under
+INDEPENDENT RESEARCH & WRITING; the evidence note says self-published, not peer-reviewed; his own
+Nabz entry is re-kinded (kind + note only). Test: the seed's PRANA plays under `writing`.
+
+DECODED 3 — "formatting … kitna poor … ek ek line ka gap" against his friends' LaTeX PDFs
+· Layer: look · Class: judged an approximation (the HTML preview), and loose metrics · Fix: the
+preview IS the PDF (pdf.js canvas of the same bytes he downloads; the HTML lines become the
+evidence view); leading ≈1.18× body, 1pt between bullets, 4pt above titles, 8pt above headings;
+education as the canon's two lines (institution + years / degree + score; school lines stay one
+line); project headers carry a real stack or nothing. Test: page read at 2× (eye), gates on the
+education lines.
+
+DECODED 4 — "jd mein jo hongi resume mein voh daalna … kill list mein bola tha skills hata dena"
+· Layer: brains/data · Class: a stored list still fed the page; his own statement not honoured ·
+Fix: the Shelf's Skills group is retired from the UI (entries stay evidence); the agentic-AI
+in_forge skills are shipped by HIS word in the brief ("mere paas agentic ai wali almost saari
+hain ab" — LoRA, Transformers, LangGraph/MCP, RAG+Guardrails+Evals, HF deployment, Ollama; ML
+math and system design stay "almost"); rows are the canon's five labels (Languages · AI & ML ·
+Frameworks & Libraries · Tools & Platforms · Core CS), asked-for first.
+
+DECODED 5 — "nothing smart aur cunning"
+· Layer: brains · Class: the floor shipped as the final — a 12-call session cap sent his third
+packet to the keyless template, and nothing on the page said so loudly enough · Fix: cap 80;
+a packet built by the template while a brain is available wears a banner with one button
+("Run the deep pass"); the deep pass shows its steps while it runs; and the plan's framing is
+now RE-AIMED WORDING per company through the drift-guarded reframer (same facts, aimed at this
+reader) — the chalaki he asked for, structurally unable to invent.
+
+Also from the ten re-readings: every line of the brief was walked once more; the items it names
+that are data he feeds (sample résumés → the canon metrics; postings; outcomes) are recorded in
+RESEARCH/NOTES; the acceptance scene is re-run by eye after every change (resume-eye).

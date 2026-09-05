@@ -6,6 +6,7 @@ import { entryRelevance } from '../match/evidence'
 import { detectDrift } from '../polish/factGuard'
 import { scanHonesty } from '../slop/scan'
 import { buildDigest, type Digest } from './digest'
+import { voiceClause } from '../darzi/summary'
 import { DEFAULT_SECTIONS } from '../dossier/sections'
 
 /**
@@ -164,7 +165,13 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
       const hits = reading.skills.must.filter((k) => p.tags.includes(k) || p.bullets.some((b) => b.keywords.includes(k)))
       if (hits.length) reasons.push(`proves ${hits.slice(0, 3).join(', ')} they ask for`)
       if (!reasons.length) reasons.push('shipped, linked, and closest to the role')
-      played.push({ factId: p.id, section: 'projects', reason: reasons.join('; ') })
+      // The angle the wording is re-aimed toward for THIS company (drift-guarded reframe in darzi).
+      const framing = mindFirst
+        ? 'lead with the problem understood and the innovation, and with how the work was verified — proof of reasoning and agency, not a tool list'
+        : reading.readerPersona === 'founder'
+          ? 'lead with what shipped, who it serves and the measurable outcome — ownership end to end'
+          : undefined
+      played.push({ factId: p.id, section: 'projects', reason: reasons.join('; '), ...(framing ? { framing } : {}) })
     } else {
       benched.push({ factId: p.id, reason: `page budget — ranked below ${ranked.slice(0, maxProjects).map((x) => short(x.title)).join(', ')} for this posting; say "play ${short(p.title)}" to swap it in` })
     }
@@ -224,13 +231,14 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
   const ntse = by('achievement').find((a) => NTSE_RE.test(a.title))
   const hack = by('achievement').find((a) => /hackathon|1st|first place|winner/i.test(a.title))
   const topProjects = ranked.slice(0, maxProjects)
-  const lead = topProjects.slice(0, 3).map((p) => short(p.title))
-  const headParts = [rolePhrase(vision, reading)]
-  if (mind && ntse) headParts.push('NTSE Scholar')
-  if (lead.length) headParts.push(`built ${lead.join(', ')}`)
-  const headline = headParts.join(' · ')
+  // OWNER-CAUGHT (05-Sep-2026): "headline mein tumne 3 projects ka naam le liya … headline mein meri
+  // vision capture honi chahiye thi". The headline is WHO HE IS and WHERE HE IS GOING — his own
+  // vision sentence, third-personed — never a list of projects (those live in PROJECTS, and he will
+  // build more). Mind-first postings add the one credential that proves the mind.
+  const voice = voiceClause(vision?.dream)
+  const headline = `${rolePhrase(vision, reading)}${voice ? ` — ${voice}` : ' — directs AI to solve real problems end to end'}${mindFirst && ntse ? ' · NTSE Scholar' : ''}`
   const proofBits: string[] = []
-  if (topProjects.length >= 2) proofBits.push(`${topProjects.length} shipped systems built end to end and live`)
+  if (topProjects.length >= 2) proofBits.push(`${topProjects.length} shipped systems built end to end and live, linked below`)
   if (ntse && mind) proofBits.push('a national NTSE scholarship for aptitude')
   if (hack) {
     const where = (hack.title.split(/ — | – /)[1] ?? hack.title).trim()
@@ -275,6 +283,18 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
   }
 }
 
+/** The campus canon's labelled rows (six real samples): Languages · AI & ML · Frameworks & Libraries · Tools & Platforms · Core CS. */
+export const SKILL_ROWS = ['Languages', 'AI & ML', 'Frameworks & Libraries', 'Tools & Platforms', 'Core CS'] as const
+const TOOLS_RE = /\b(git|github|docker|linux|vercel|netlify|vs code|vscode|hugging ?face|groq|gemini|claude|cursor|postman|aws|gcp|azure|render|firebase|supabase|kubernetes|ci|ci\/cd|github actions|ollama|tesseract)\b/i
+const CORE_RE = /\b(oop|oops|object[- ]oriented|operating systems?|dbms|computer networks?|dsa|data structures?|algorithms?|system design|distributed systems|networking)\b/i
+export function rowLabel(s: DerivedSkill): (typeof SKILL_ROWS)[number] {
+  if (CORE_RE.test(s.text)) return 'Core CS'
+  if (s.category === 'Languages') return 'Languages'
+  if (s.category === 'AI & ML') return 'AI & ML'
+  if (TOOLS_RE.test(s.text)) return 'Tools & Platforms'
+  return 'Frameworks & Libraries'
+}
+
 /** Skills rows assembled per posting: asked-for first (must → nice), then AI/ML core, then the rest. */
 export function buildSkillRows(reading: Reading, skillsAll: DerivedSkill[], perRow = 10): SkillRow[] {
   const picked = new Map<string, DerivedSkill>()
@@ -298,13 +318,13 @@ export function buildSkillRows(reading: Reading, skillsAll: DerivedSkill[], perR
   for (const s of byProof) if (core(s) && !picked.has(s.key)) picked.set(s.key, s)
   const rows = new Map<string, SkillRow>()
   for (const s of picked.values()) {
-    const row = rows.get(s.category) ?? { label: s.category, items: [] }
+    const label = rowLabel(s)
+    const row = rows.get(label) ?? { label, items: [] }
     if (row.items.length >= perRow) continue
     row.items.push({ text: s.text, factIds: s.factIds.slice(0, 6) })
-    rows.set(s.category, row)
+    rows.set(label, row)
   }
-  const order = ['AI & ML', 'Languages', 'Frameworks & Tools']
-  return order.map((k) => rows.get(k)).filter((r): r is SkillRow => !!r && r.items.length > 0)
+  return SKILL_ROWS.map((k) => rows.get(k)).filter((r): r is SkillRow => !!r && r.items.length > 0)
 }
 
 // ---------- the Gemini plan + the validator ----------
@@ -343,7 +363,7 @@ export const PLAN_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          label: { type: 'string', enum: ['AI & ML', 'Languages', 'Frameworks & Tools'] },
+          label: { type: 'string', enum: ['Languages', 'AI & ML', 'Frameworks & Libraries', 'Tools & Platforms', 'Core CS'] },
           items: {
             type: 'array',
             items: {
@@ -385,6 +405,7 @@ export function planSystem(): string {
     'You have the READING (what this company says it cares about and does not) and the DOSSIER (every true fact about him, each with an id).',
     'Write the GAME PLAN for THIS company as the shrewdest human agent would after a week of thought:',
     '1) The three lines a reader hits first: a headline under his name and one summary sentence — specific, evidence-dense, in a builder\'s plain voice. No clichés, no "passionate", no "results-driven", no promises.',
+    '   The HEADLINE states who he is and where he is going (his vision, in his register) — it NEVER lists project names; projects live in the PROJECTS section. The summary may name proof categories (a national scholarship, a hackathon win, N shipped systems) rather than project titles.',
     '2) Section order chosen for THIS reader (a founder who says "we do not care about your university" is not handed education first; a posting about reasoning gets achievements early).',
     '3) EVERY fact in the dossier is either PLAYED (with its section and a reason in the posting\'s own words) or BENCHED (with a reason: quote the posting, or name the page budget). Suppress nothing true and relevant; invent nothing. Benching a true, relevant fact without a reason is as bad as lying.',
     '4) Skills rows assembled from what the posting asks for ∩ what the facts prove — every item must carry the fact ids that prove it. Never list a skill no fact supports.',
@@ -471,7 +492,7 @@ export function validatePlan(raw: PlanLLM, inputs: PlanInputs, digest: Digest, m
   // Skills — each item must be PROVEN by the dossier (I1); the fact ids are corrected from evidence.
   const skills: SkillRow[] = []
   for (const row of Array.isArray(raw.skills) ? raw.skills : []) {
-    const label = ['AI & ML', 'Languages', 'Frameworks & Tools'].includes(String(row.label)) ? String(row.label) : 'Frameworks & Tools'
+    const label = (SKILL_ROWS as readonly string[]).includes(String(row.label)) ? String(row.label) : 'Frameworks & Libraries'
     const items: SkillRow['items'] = []
     for (const it of Array.isArray(row.items) ? row.items : []) {
       const text = clean(String(it.text ?? ''))
@@ -538,7 +559,11 @@ ${inputs.reading.company} ${inputs.reading.roleTitle} ${inputs.reading.summary} 
     }
     return false
   }
-  if (bad(headline, 'headline') || headline.length > 120) headline = fallback.threeLines.headline
+  const namesProject = (h: string) => facts.filter((f) => f.kind === 'project').some((f) => h.toLowerCase().includes(short(f.title).toLowerCase()))
+  if (bad(headline, 'headline') || headline.length > 120 || namesProject(headline)) {
+    if (headline && namesProject(headline)) notes.push('headline named a project — replaced with the vision headline (projects live in PROJECTS)')
+    headline = fallback.threeLines.headline
+  }
   if (bad(summary, 'summary') || summary.length > 320) summary = fallback.threeLines.summary
   const threeIds = (Array.isArray(raw.threeLineFactIds) ? raw.threeLineFactIds.map(String) : []).filter((id) => factById.has(id))
   const factIds = threeIds.length ? threeIds : fallback.threeLines.factIds

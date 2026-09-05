@@ -70,16 +70,17 @@ export function metricsFor(kind: CompiledLine['kind'], tighten = 0): { size: num
 }
 
 export const LINE_METRICS: Record<CompiledLine['kind'], { size: number; leading: number; before: number; bold: boolean }> = {
-  contact: { size: 9.5, leading: 12.5, before: 2, bold: false },
-  // v2 — the plan's headline: the line under the name (centered, bold, the canon's title line).
-  headline: { size: 10.5, leading: 13.5, before: 4, bold: true },
-  summary: { size: 10, leading: 13, before: 5, bold: false },
-  heading: { size: 11, leading: 14, before: 10, bold: true },
-  'entry-title': { size: 10.5, leading: 13.5, before: 5, bold: true },
-  meta: { size: 10, leading: 13, before: 1, bold: false },
-  bullet: { size: 10.5, leading: 13.5, before: 1.5, bold: false },
-  skills: { size: 10.5, leading: 13.5, before: 1.5, bold: false },
-  forge: { size: 10.5, leading: 13.5, before: 1.5, bold: false },
+  // OWNER-CAUGHT (05-Sep-2026): "ek ek line ka gap ye voh" — measured against the six LaTeX
+  // samples: body leading ≈1.18×, bullets 1pt apart, titles 4pt above, headings 8pt above.
+  contact: { size: 9.5, leading: 11.5, before: 1.5, bold: false },
+  headline: { size: 10.5, leading: 12.5, before: 3, bold: true },
+  summary: { size: 10, leading: 12, before: 3, bold: false },
+  heading: { size: 10.5, leading: 12.5, before: 8, bold: true },
+  'entry-title': { size: 10.5, leading: 12.6, before: 4, bold: true },
+  meta: { size: 10, leading: 12, before: 0.5, bold: false },
+  bullet: { size: 10.5, leading: 12.4, before: 1, bold: false },
+  skills: { size: 10.5, leading: 12.6, before: 1, bold: false },
+  forge: { size: 10.5, leading: 12.4, before: 1, bold: false },
 }
 
 /**
@@ -765,10 +766,13 @@ function compileFromPlan(input: CompileInput): CompiledResume {
       const evidenceUrl = e.evidence?.url ?? e.evidence?.repo ?? ''
       // The header's stack: his own README stack (parenthetical notes stripped), minus any skill he
       // marked not-interview-safe (resumeEligible:false is his call, honored everywhere).
+      // OWNER-CAUGHT: "SIFARISH | agents, llm, gpt, rag" — raw keyword tags are not a stack. The
+      // header carries the README's own stack, else only tags the lexicon knows as real tech, else nothing.
       const stack = withStack
-        ? (e.context?.stack?.length ? e.context.stack : e.tags.map(displayTech))
+        ? (e.context?.stack?.length ? e.context.stack : e.tags.filter((t) => TECH_CASE[t.toLowerCase()]).map(displayTech))
             .map((x) => x.replace(/\s*\(.*\)$/, ''))
             .filter((x) => !isBannedSkill(x, banned))
+            .filter((x, i, arr) => arr.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i)
             .slice(0, 4)
             .join(', ')
         : ''
@@ -813,8 +817,18 @@ function compileFromPlan(input: CompileInput): CompiledResume {
         heading('education', items.map((p) => p.factId))
         for (const p of items) {
           const e = p.entry
+          // The canon (all six samples): INSTITUTION bold with the years right; the degree in italics
+          // beneath with the score right. "B.Tech X — Institute" splits on the dash; "2023–2027 · CGPA
+          // 7.7" splits on the middot. A school line without a degree stays one line.
+          const [degreeRaw, instRaw] = e.title.split(/ — | – /)
+          // Split only when the tail is an institution NAME (words), not a score ("Class XII, CBSE — 90%").
+          const tailIsName = !!instRaw && /[A-Za-z]{3,}/.test(instRaw) && !/^\s*[\d.]+\s*%?\s*$/.test(instRaw)
+          const institution = tailIsName ? instRaw.trim() : e.title.trim()
+          const degree = tailIsName ? degreeRaw.trim() : ''
           const meta = e.summary ? cleanSummaryForDisplay(e.summary) : displayDate(e.evidence?.date)
-          push(lines, { kind: 'entry-title', text: e.title, right: meta || undefined, ledgerIds: [e.id] })
+          const [when, score] = meta.split(/ · /)
+          push(lines, { kind: 'entry-title', text: institution, right: (when || meta).trim() || undefined, ledgerIds: [e.id] })
+          if (degree || score) push(lines, { kind: 'meta', text: degree || institution, right: score?.trim() || undefined, ledgerIds: [e.id] })
         }
       },
       experience: () => {

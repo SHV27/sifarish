@@ -118,6 +118,11 @@ describe('The Game Plan — the Babaclick scene (Appendix A) and the ordinary po
       expect(ids.has(e.id), `${e.id} missing from the plan`).toBe(true)
     }
   })
+  it('the headline is his VISION, never a project list (owner-caught 05-Sep-2026)', () => {
+    const projects = SEED_LEDGER.filter((e) => e.kind === 'project').map((e) => e.title.split(/ — /)[0].toLowerCase())
+    for (const name of projects) expect(plan.threeLines.headline.toLowerCase()).not.toContain(name)
+    expect(plan.threeLines.headline).toMatch(/finds the real problem|directs AI/)
+  })
   it('NTSE plays, and the three lines carry it — proof of mind for a posting about reasoning', () => {
     expect(plan.played.some((p) => p.factId === 'ach-ntse')).toBe(true)
     expect(`${plan.threeLines.headline} ${plan.threeLines.summary}`).toMatch(/NTSE/)
@@ -156,12 +161,13 @@ describe('The Game Plan — the Babaclick scene (Appendix A) and the ordinary po
     for (const c of SEED_LEDGER.filter((e) => e.kind === 'certification')) expect(p.played.some((x) => x.factId === c.id)).toBe(true)
     const ai = p.skills.find((r) => r.label === 'AI & ML')!
     expect(ai.items.slice(0, 4).map((i) => i.text.toLowerCase()).join(' ')).toMatch(/rag|langgraph|llm/)
+    expect(p.skills.length).toBeGreaterThanOrEqual(3) // the canon's labelled rows, not one line
     expect(p.reveal.on).toBe(true) // an applied-AI reader also rewards it
   })
   it('a custom kind (publication) gets its own section, after the core ones', () => {
     expect(sectionKeyFor('publication')).toBe('publication')
-    expect(plan.played.some((p) => p.factId === 'pub-prana' && p.section === 'publication')).toBe(true)
-    expect(plan.sectionOrder).toContain('publication')
+    expect(plan.played.some((p) => p.factId === 'pub-prana' && p.section === 'writing')).toBe(true) // self-published → writing, never 'publication'
+    expect(plan.sectionOrder).toContain('writing')
   })
   it('skills rows: asked-for terms come first and every item is proven', () => {
     const rows = buildSkillRows(readPostingHeuristic(ORDINARY, 'Acme', 'x'), derivedSkills(SEED_LEDGER))
@@ -224,6 +230,13 @@ describe('The Page — the plan executed at full size (36pt, links, tighten befo
     const headings = resume.lines.filter((l) => l.kind === 'heading').map((l) => l.text)
     expect(headings[0]).toBe('EDUCATION')
     expect(headings.indexOf('ACHIEVEMENTS')).toBeLessThan(headings.indexOf('PROJECTS'))
+    // the canon's two-line education: institution (years right) + degree (score right)
+    const edu = resume.lines.findIndex((l) => l.kind === 'heading' && l.text === 'EDUCATION')
+    expect(resume.lines[edu + 1].text).toMatch(/Thapar Institute/)
+    expect(resume.lines[edu + 1].right).toMatch(/2023–2027/)
+    expect(resume.lines[edu + 2].kind).toBe('meta')
+    expect(resume.lines[edu + 2].text).toMatch(/B\.Tech/)
+    expect(resume.lines[edu + 2].right).toMatch(/CGPA/)
     for (const p of strategy.plan.played) {
       expect(resume.lines.some((l) => l.ledgerIds.includes(p.factId)), `${p.factId} planned but not on the page`).toBe(true)
     }
@@ -291,7 +304,7 @@ describe('The Page — the plan executed at full size (36pt, links, tighten befo
     expect(r.lines.some((l) => l.ledgerIds.includes('proj-fake-google'))).toBe(false)
   })
   it('a custom-kind fact renders as its own titled section', () => {
-    expect(resume.lines.some((l) => l.kind === 'heading' && l.text === 'PUBLICATIONS')).toBe(true)
+    expect(resume.lines.some((l) => l.kind === 'heading' && l.text === 'INDEPENDENT RESEARCH & WRITING')).toBe(true)
     expect(resume.lines.some((l) => l.ledgerIds.includes('pub-prana'))).toBe(true)
   })
   it('the old (no-plan) compile path is untouched for fixtures: one page, no headline line', () => {

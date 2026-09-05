@@ -139,7 +139,23 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
   const settings = await db.settings.get('app')
   const vision = settings?.visionProfile
   let strategy = await strategize({ job, ledger, identity, vision, sections: settings?.sections })
-  const compileWith = (plan: GamePlan, excludedBulletIds?: string[]) =>
+  // THE CHALAKI (owner: "total framing different jaani thi"): the plan's angle per project becomes
+  // re-aimed WORDING — the same facts, aimed at THIS reader — through the drift-guarded reframer
+  // (a new number/tech/noun kills the rephrasing; the compiled truth stands). Packet-scoped.
+  onProgress?.('Re-aiming the wording for this reader…')
+  const bulletOverrides: Record<string, string> = {}
+  if (strategy.mode !== 'heuristic') {
+    const { reframeProject } = await import('./polish/reframe')
+    const framed = strategy.plan.played.filter((p) => p.section === 'projects' && p.framing)
+    for (const p of framed.slice(0, 4)) {
+      const entry = ledger.find((e) => e.id === p.factId)
+      if (!entry) continue
+      const r = await reframeProject(entry, `${p.framing}. The reader: ${strategy.reading.readerPersona} at ${strategy.reading.company || 'the company'}; they say they care about ${strategy.reading.cares.slice(0, 4).map((q) => q.phrase).join(', ') || 'shipped work'}.`).catch(() => null)
+      if (r) Object.assign(bulletOverrides, r.overrides)
+    }
+  }
+  onProgress?.('Executing the game plan on the page…')
+  const compileWithOverrides = (plan: GamePlan, excludedBulletIds?: string[]) =>
     compileResume({
       identity,
       ledger,
@@ -151,9 +167,9 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
       sections: settings?.sections,
       summaryOn: true,
       excludedBulletIds,
+      bulletOverrides: Object.keys(bulletOverrides).length ? bulletOverrides : undefined,
     })
-  onProgress?.('Executing the game plan on the page…')
-  let resume = compileWith(strategy.plan)
+  let resume = compileWithOverrides(strategy.plan)
 
   // -- THE CRITIC on the executed page; ONE bounded revise when a brain found real defects --
   onProgress?.('The critic reads it as the company would…')
@@ -167,14 +183,13 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
     const revisedPlan = await makePlan({ reading: revisedReading, ledger, identity, vision, sections: settings?.sections }).catch(() => null)
     if (revisedPlan && revisedPlan.by !== 'heuristic') {
       strategy = { ...strategy, plan: revisedPlan }
-      resume = compileWith(revisedPlan)
+      resume = compileWithOverrides(revisedPlan)
       const again = await judgePage(pageTextOf(resume), strategy.reading, revisedPlan, true)
       critic = { ...again, revised: true }
     }
   }
   const editorial: EditorialPlan | undefined = editorialFromPlan(strategy.plan, strategy.reading, ledger)
   const compileEditorial: CompileInput['editorial'] = { order: strategy.plan.projectOrder, bullets: strategy.plan.bulletPlan ?? {}, sectionOrder: undefined }
-  const bulletOverrides: Record<string, string> | undefined = undefined
   const nazarNotes: string[] = []
   let nazarDropIds: string[] | undefined
 
@@ -205,7 +220,7 @@ export async function buildPacket(job: Job, onProgress?: (step: string) => void)
       const dropIds = bulletIdsForIssues(nazar.issues, ledger, bulletOverrides)
       if (dropIds.length > 0) {
         nazarDropIds = dropIds
-        resume = compileWith(strategy.plan, dropIds)
+        resume = compileWithOverrides(strategy.plan, dropIds)
         nazarNotes.push(
           ...nazar.issues
             .filter((i) => i.type === 'duplicate')

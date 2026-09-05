@@ -185,7 +185,7 @@ describe('S7.1 — the Nazar: the page-level judge (deterministic floor + exclus
   it('nazar is WIRED on the default packet path and its removals are visible (source)', () => {
     const src = readFileSync('src/lib/darzi.ts', 'utf8')
     expect(src).toMatch(/nazarPass\(resume\)/)
-    expect(src).toMatch(/compileWith\(strategy\.plan, dropIds\)|excludedBulletIds: dropIds/) // v2: the plan compile takes the Nazar's exclusions
+    expect(src).toMatch(/compileWith(?:Overrides)?\(strategy\.plan, dropIds\)|excludedBulletIds: dropIds/) // v2: the plan compile takes the Nazar's exclusions
     expect(src).toMatch(/gapNote\.push\(\.\.\.nazarNotes\)/)
   })
 })

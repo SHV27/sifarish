@@ -10,7 +10,9 @@ import RepairBanner from '../components/RepairBanner'
 
 const KIND_ORDER: { kind: EntryKind; label: string }[] = [
   { kind: 'project', label: 'Projects' },
-  { kind: 'skill', label: 'Skills' },
+  // OWNER'S KILL LIST (v2 brief): "ledger ka skill section is just a waste of time and effort" — skill
+  // rows are ASSEMBLED per posting from evidence (dossier/skills.ts); the stored skill entries stay
+  // evidence but are no longer a list he maintains here.
   { kind: 'education', label: 'Education' },
   { kind: 'achievement', label: 'Achievements' },
   { kind: 'certification', label: 'Certifications' },

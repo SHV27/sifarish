@@ -16,6 +16,8 @@ import AtelierBaithak from '../components/AtelierBaithak'
 import AlignmentMap from '../components/AlignmentMap'
 import Cockpit from '../components/Cockpit'
 import PlanBoard from '../components/PlanBoard'
+import PdfPreview from '../components/PdfPreview'
+import { meteredCallsAllowed } from '../lib/apiGuard'
 import type { EditorialPlan } from '../types'
 
 export function PacketScreen({ jobId, onPickJob }: { jobId: string | null; onPickJob: (id: string) => void }) {
@@ -162,6 +164,7 @@ function PacketView({ job }: { job: Job }) {
   const [error, setError] = useState<{ message: string; suggestions: string[] } | null>(null)
   const [firstBuild, setFirstBuild] = useState(false) // true only until the INSTANT packet lands
   const [parseback, setParseback] = useState<string | null>(null)
+  const [progress, setProgress] = useState('')
   const startedFor = useRef<string | null>(null)
 
   // Two-phase (D33): phase 1 = instant deterministic packet (v2 speed); phase 2 = the Dimaag
@@ -182,9 +185,11 @@ function PacketView({ job }: { job: Job }) {
     // instant packet SILENTLY and unjudged — the zero-spend deterministic floors run on it and
     // the packet wears a visible "enhance failed — retry" chip.
     try {
-      const full = await buildPacket(job)
+      const full = await buildPacket(job, (step) => setProgress(step))
       await savePacket(full)
+      setProgress('')
     } catch (e) {
+      setProgress('')
       if (e instanceof CompileError) setError({ message: e.message, suggestions: e.suggestions })
       try {
         const current = (await db.packets.where('jobId').equals(job.id).toArray())[0]
@@ -304,6 +309,7 @@ function PacketView({ job }: { job: Job }) {
           onExportDocx={() => exportDocx(packet)}
           onRetailor={tailor}
           parseback={parseback}
+          progress={progress}
         />
       )}
     </div>
@@ -317,6 +323,7 @@ function PacketBody({
   onExportDocx,
   onRetailor,
   parseback,
+  progress,
 }: {
   packet: Packet
   job: Job
@@ -324,11 +331,13 @@ function PacketBody({
   onExportDocx: () => void
   onRetailor: () => void
   parseback: string | null
+  progress?: string
 }) {
   const { coverage } = packet
   const mustTotal = packet.decode.mustHave.length
   const [polishNote, setPolishNote] = useState<string | null>(null)
   const [polishing, setPolishing] = useState(false)
+  const [evidenceView, setEvidenceView] = useState(false)
 
   const polish = async () => {
     setPolishing(true)
@@ -354,9 +363,19 @@ function PacketBody({
           <div className="dossier p-3 mb-3 flex items-center gap-2 animate-dossier-in" aria-live="polite">
             <span className="w-2 h-2 rounded-full bg-forge animate-nudge shrink-0" />
             <p className="text-xs text-ink">
-              <strong>Ready to use now.</strong> The Dimaag is refining the casting, angles, and cover letter in
-              the background — this dossier will sharpen in a few seconds.
+              <strong>Ready to use now.</strong> The strategist is reading the whole posting, writing the game plan and
+              re-aiming the wording for this reader — {progress || 'a minute, not a second'}.
             </p>
+          </div>
+        )}
+        {!packet.enhancing && !packet.enhanceFailed && packet.strategistMode === 'heuristic' && meteredCallsAllowed() && (
+          <div className="dossier p-3 mb-3 flex items-center justify-between gap-2 animate-dossier-in" aria-live="polite">
+            <p className="text-xs text-ink">
+              <strong>Template strategist built this page</strong> — the brains were busy or the session's call budget was spent. This is the keyless floor, not the plan a brain would write.
+            </p>
+            <button className="text-xs font-semibold border border-ink-soft px-3 py-1.5 rounded shrink-0" onClick={onRetailor}>
+              ↻ Run the deep pass
+            </button>
           </div>
         )}
         {packet.enhanceFailed && !packet.enhancing && (
@@ -372,11 +391,20 @@ function PacketBody({
         )}
         {packet.plan && packet.reading ? <PlanBoard packet={packet} /> : packet.editorial && <CastingSheet packet={packet} />}
 
-        <div className="dossier p-6 sm:p-8 bg-white relative" aria-label="Compiled resume preview">
-          <span className="stamp stamp-red absolute -top-2 -right-2 animate-stamp-down">Compiled · {new Date(packet.createdAt).toLocaleDateString('en-IN')}</span>
-          {packet.resume.lines.map((line, i) => (
-            <ResumeLine key={i} text={line.text} right={line.right} runs={line.runs} kind={line.kind} isName={i === 0} count={line.ledgerIds.length} />
-          ))}
+        <div className="relative">
+          <span className="stamp stamp-red absolute -top-2 -right-2 z-10 animate-stamp-down">Compiled · {new Date(packet.createdAt).toLocaleDateString('en-IN')}</span>
+          {evidenceView ? (
+            <div className="dossier p-6 sm:p-8 bg-white" aria-label="Compiled resume — evidence view">
+              {packet.resume.lines.map((line, i) => (
+                <ResumeLine key={i} text={line.text} right={line.right} runs={line.runs} kind={line.kind} isName={i === 0} count={line.ledgerIds.length} />
+              ))}
+            </div>
+          ) : (
+            <PdfPreview resume={packet.resume} version={`${packet.id}:${packet.createdAt}:${packet.resume.lines.length}`} />
+          )}
+          <button className="mt-1 text-[11px] text-ink-soft hover:underline" onClick={() => setEvidenceView((v) => !v)}>
+            {evidenceView ? 'show the page (the PDF itself)' : 'show the evidence view (⛁ per line)'}
+          </button>
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <button className="text-xs font-semibold bg-ink text-paper px-4 py-2 rounded" onClick={onExportPdf}>

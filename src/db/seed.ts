@@ -211,6 +211,7 @@ export async function backfillV2(): Promise<void> {
     // the Techgyan win named, the sections registry + page policy. Union-merge: ids he already
     // holds are NEVER overwritten; nothing is deleted. Flag-guarded (runs once).
     await migrateDossierV2().catch(() => 0)
+    await migrateAgenticSkillsV2().catch(() => 0)
     // v2 THE DESK — the demo's worked example (Appendix A), seeded once per demo vault; never in owner mode.
     if (getMode() !== 'owner') {
       const { seedDemoShowcase } = await import('../lib/showcase/babaclick')
@@ -219,17 +220,64 @@ export async function backfillV2(): Promise<void> {
   })
 }
 
+/**
+ * OWNER'S WORD (VISION-BRIEF v2, kill list): "mere paas agentic ai wali almost saari hain ab". The
+ * agentic-AI skills the ledger still dated as in_forge are shipped by his own statement — flag-
+ * guarded, sworn by owner, the brief quoted in the evidence note. ML math and system design stay
+ * in the forge ("almost").
+ */
+export async function migrateAgenticSkillsV2(): Promise<number> {
+  const FLAG = 'migrated:agentic-skills-v2'
+  if (await db.nabzCache.get(FLAG)) return 0
+  let changed = 0
+  if (getMode() === 'owner') {
+    const now = new Date()
+    const date = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`
+    for (const id of ['skill-lora', 'skill-transformers', 'skill-langgraph-mcp', 'skill-rag', 'skill-deploy-hf', 'skill-ollama']) {
+      const e = await db.ledger.get(id)
+      if (!e || e.tier !== 'in_forge') continue
+      await db.ledger.update(id, {
+        tier: 'shipped',
+        forgeEta: undefined,
+        sworn: 'owner',
+        evidence: { ...(e.evidence ?? { note: '' }), date: e.evidence?.date && !/2026|2025/.test(e.evidence.date) ? e.evidence.date : date, note: `${e.evidence?.note ?? ''} Shipped by the owner's word in the v2 brief (05-Sep-2026): "mere paas agentic ai wali almost saari hain ab".`.trim() },
+      })
+      changed++
+    }
+  }
+  await db.nabzCache.put({ key: FLAG, json: 'true', fetchedAt: new Date().toISOString() })
+  return changed
+}
+
 export async function migrateDossierV2(): Promise<number> {
   const FLAG = 'migrated:dossier-v2'
   if (await db.nabzCache.get(FLAG)) return 0
   let changed = 0
   if (getMode() === 'owner') {
     const { OWNER_SEED } = await import('./ownerSeed')
-    const have = new Set((await db.ledger.toArray()).map((e) => e.id))
+    const existing = await db.ledger.toArray()
+    const have = new Set(existing.map((e) => e.id))
+    const repoKey = (u?: string) => (u ?? '').toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\.git$/, '').replace(/\/+$/, '')
+    const haveRepo = new Set(existing.map((e) => repoKey(e.evidence?.repo)).filter(Boolean))
     for (const e of OWNER_SEED.entries) {
       if (have.has(e.id)) continue
+      // OWNER-CAUGHT (05-Sep-2026): PRANA landed twice — his Nabz entry for the repo already existed
+      // under another id. A seed entry whose repo he already holds is NEVER added a second time.
+      const rk = repoKey(e.evidence?.repo)
+      if (rk && haveRepo.has(rk)) continue
       await db.ledger.put({ ...e, sworn: e.sworn ?? 'seed' })
       changed++
+    }
+    // His PRANA repo entry, if Nabz drafted it as a "project": it is self-published writing, and the
+    // strategist must know that. Only the kind + the honesty note change — his words stay his.
+    for (const e of existing) {
+      if (/prana/i.test(e.title) && e.kind === 'project' && /github\.com\/shv27\/prana/i.test(repoKey(e.evidence?.repo))) {
+        await db.ledger.update(e.id, {
+          kind: 'writing',
+          evidence: { ...(e.evidence ?? { date: '07/2026', note: '' }), note: `${e.evidence?.note ?? ''} Self-published position paper (GitHub + LinkedIn) — independent writing, not a peer-reviewed publication.`.trim() },
+        })
+        changed++
+      }
     }
     // The hackathon win, named properly — only if he never edited the seed's original title.
     const hack = await db.ledger.get('ach-genai-hack')
