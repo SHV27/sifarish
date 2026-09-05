@@ -214,6 +214,9 @@ export async function backfillV2(): Promise<void> {
     await migrateAgenticSkillsV2().catch(() => 0)
     // v2 THE DESK — the demo's worked example (Appendix A), seeded once per demo vault; never in owner mode.
     if (getMode() !== 'owner') {
+      // R3: the fictional persona's seed grew (two projects shipped) — a returning visitor's demo
+      // vault takes the seed's version of those entries. Demo data only; the owner vault is never touched.
+      await migrateDemoPersonaR3().catch(() => 0)
       const { seedDemoShowcase } = await import('../lib/showcase/babaclick')
       await seedDemoShowcase().catch(() => 0)
     }
@@ -367,4 +370,23 @@ export async function migrateWatchlistV58(): Promise<number> {
   }
   await db.nabzCache.put({ key: FLAG, json: 'true', fetchedAt: new Date().toISOString() })
   return added
+}
+
+/** Demo vaults only (guarded by the caller): entries the demo seed now ships replace their in-forge copies. Runs once. */
+export async function migrateDemoPersonaR3(): Promise<number> {
+  const FLAG = 'demo:persona-r3'
+  if (await db.nabzCache.get(FLAG)) return 0
+  let n = 0
+  await withSeedAllowance(async () => {
+    for (const raw of demoSeed.entries as unknown as LedgerEntry[]) {
+      if (raw.tier !== 'shipped') continue
+      const cur = await db.ledger.get(raw.id)
+      if (cur && cur.tier === 'in_forge') {
+        await db.ledger.put({ ...raw })
+        n++
+      }
+    }
+    await db.nabzCache.put({ key: FLAG, json: String(n), fetchedAt: new Date().toISOString() })
+  })
+  return n
 }
