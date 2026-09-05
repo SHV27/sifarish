@@ -9,8 +9,7 @@ import { readFileSync } from 'node:fs'
 let token = process.env.VERCEL_TOKEN
 if (!token) {
   try {
-    token = /VERCEL_TOKEN=([^
-]+)/.exec(readFileSync('.env.local', 'utf8'))?.[1]
+    token = /VERCEL_TOKEN=(\S+)/.exec(readFileSync('.env.local', 'utf8'))?.[1]
   } catch {
     /* no .env.local */
   }

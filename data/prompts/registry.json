@@ -40,17 +40,17 @@
     {
       "file": "src/lib/strategist/reading.ts",
       "versionedBy": "PROMPT_VERSION via registry bump (v2 strategist)",
-      "sha256": "46e8173c3d98cfcbfa1e75d87bdf5b107d2172d3afa7f2e41de6f7f9d68553f4"
+      "sha256": "9ac99a53549efad633f6c7604e0a67d85b09c95b171f9bb8e26bd512f6d26a05"
     },
     {
       "file": "src/lib/strategist/plan.ts",
       "versionedBy": "PROMPT_VERSION via registry bump (v2 strategist)",
-      "sha256": "01d21765002af4645369a8d2558c813b30a5276f0572e2d92caff2285c3a88ad"
+      "sha256": "a31987c8f82040bea085109c407a6c2803cca609b7c20ce56259f34d623c49ab"
     },
     {
       "file": "src/lib/strategist/critic.ts",
       "versionedBy": "PROMPT_VERSION via registry bump (v2 strategist)",
-      "sha256": "3c82e8716c950b89cff42e84f9579c91eaf6912cb5d913ccfe150f7045d54aba"
+      "sha256": "c3ce11ddbb78526c62ea9f138f3aa7da332b7fc8282444cd4486d020d15385cd"
     }
   ]
 }

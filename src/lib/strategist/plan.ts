@@ -381,6 +381,8 @@ export function planSystem(): string {
     '4) Skills rows assembled from what the posting asks for ∩ what the facts prove — every item must carry the fact ids that prove it. Never list a skill no fact supports.',
     '5) The reveal: if this reader would be delighted that the applicant built the AI system that compiled this page (a project named Sifarish in the dossier), turn it on and say why; at a conservative reader keep it off.',
     'Use ONLY fact ids from the dossier. Sections: education, experience, projects, skills, achievements, positions, certs, plus any custom kind that appears in the dossier.',
+    'Education lines are never benched (a missing degree line reads as hiding). Space is not your concern — the compiler tightens the page before it drops anything; never bench for "page budget".',
+    'Dates in the dossier are real and recent — TODAY is given at the top of the message; nothing dated before today is "future".',
     'Return JSON matching the schema exactly.',
   ].join('\n')
 }
@@ -423,6 +425,20 @@ export function validatePlan(raw: PlanLLM, inputs: PlanInputs, digest: Digest, m
     if (!f || seen.has(f.id)) continue
     seen.add(f.id)
     const reason = clean(String(b.reason ?? ''))
+    // LIVE-CAUGHT (05-Sep-2026, Gemini on Babaclick): the brain benched every education line on "we do
+    // not care about your university's brand" and three positions on "page budget". Education is never
+    // benched (a degree line missing reads as hiding; the posting's "brand" is not the fact) and the
+    // page budget belongs to the COMPILER, which tightens before it ever drops and declares it.
+    if (f.kind === 'education') {
+      notes.push(`${short(f.title)}: the brain benched an education line — played (education is never benched; the reader checks the degree line)`)
+      played.push(fallback.played.find((p) => p.factId === f.id) ?? { factId: f.id, section: 'education', reason: 'the degree line is the first thing every reader checks' })
+      continue
+    }
+    if (/page budget|space|room|fit/i.test(reason) && !/they say|said|posting/i.test(reason)) {
+      notes.push(`${short(f.title)}: benched for "page budget" — played instead; the page-solver owns space and tightens before it drops`)
+      played.push(fallback.played.find((p) => p.factId === f.id) ?? { factId: f.id, section: sectionKeyFor(f.kind), reason: 'played — space is the compiler\'s call, not the plan\'s' })
+      continue
+    }
     if (reason.length < 12) {
       notes.push(`${short(f.title)} was benched without a reason — played instead (suppress nothing unreasoned)`)
       played.push(fallback.played.find((p) => p.factId === f.id) ?? { factId: f.id, section: sectionKeyFor(f.kind), reason: 'played — the brain gave no reason to bench it' })
@@ -462,6 +478,25 @@ export function validatePlan(raw: PlanLLM, inputs: PlanInputs, digest: Digest, m
       const existing = skills.find((r) => r.label === label)
       if (existing) existing.items.push(...items.filter((i) => !existing.items.some((x) => x.text === i.text)))
       else skills.push({ label, items })
+    }
+  }
+  // LIVE-CAUGHT (05-Sep-2026): the brain's rows were thin ("Tesseract.js, Gemini, Evals") and dropped
+  // RAG/FastAPI the posting named. Asked-for, PROVEN skills the brain forgot are merged back in.
+  const asked = new Set([...inputs.reading.skills.must, ...inputs.reading.skills.nice].map((t) => t.toLowerCase()))
+  const tokens = new Set(inputs.reading.tokens ?? [])
+  const present = new Set(skills.flatMap((r) => r.items.map((i) => i.text.toLowerCase())))
+  for (const row of fallback.skills) {
+    for (const it of row.items) {
+      const low = it.text.toLowerCase()
+      if (present.has(low)) continue
+      const proof = findSkill(skillsAll, it.text)
+      const askedFor = [...asked].some((t) => findSkill(skillsAll, t)?.key === proof?.key) || tokens.has(low.replace(/[^a-z0-9+#.-]/g, ''))
+      if (!askedFor) continue
+      const target = skills.find((r) => r.label === row.label)
+      if (target) target.items.push(it)
+      else skills.push({ label: row.label, items: [it] })
+      present.add(low)
+      notes.push(`skill "${it.text}" is asked for and proven — added to the rows the brain forgot it from`)
     }
   }
   const finalSkills = skills.length ? skills : fallback.skills
@@ -540,9 +575,14 @@ function readingForPrompt(r: Reading): string {
   ].join('\n')
 }
 
+/** The date, month precision (the cache key changes monthly, not daily). Brains do not know today. */
+export function today(): string {
+  return new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
+
 export async function makePlan(inputs: PlanInputs): Promise<GamePlan> {
   const digest = buildDigest(inputs.ledger, inputs.identity, inputs.vision)
-  const user = `THE READING\n${readingForPrompt(inputs.reading)}\n\nTHE DOSSIER\n${digest.text}`
+  const user = `TODAY: ${today()}\n\nTHE READING\n${readingForPrompt(inputs.reading)}\n\nTHE DOSSIER\n${digest.text}`
   const meta = await generateWithMeta<PlanLLM>({
     feature: 'strategist.plan',
     system: planSystem(),

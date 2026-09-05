@@ -308,7 +308,7 @@ function grounded(q: ReadingQuote, text: string): ReadingQuote | null {
 export async function readPosting(raw: string, company: string, roleTitle: string): Promise<Reading> {
   const text = unwrap(raw)
   const base = readPostingHeuristic(text, company, roleTitle)
-  const user = `COMPANY: ${company}\nROLE: ${roleTitle}\n\nFULL POSTING:\n${text.slice(0, 40000)}`
+  const user = `TODAY: ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}\nCOMPANY: ${company}\nROLE: ${roleTitle}\n\nFULL POSTING:\n${text.slice(0, 40000)}`
   const llm = await generate<ReadingLLM>({
     feature: 'strategist.reading',
     system: readingSystem(),

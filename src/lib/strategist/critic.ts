@@ -1,6 +1,7 @@
 import type { CriticVerdict, GamePlan, Reading } from '../../types'
 import { generateWithMeta } from '../dimaag/core'
 import { scanHonesty } from '../slop/scan'
+import { today } from './plan'
 
 /**
  * v2 THE STRATEGIST · pass 3 — THE CRITIC (the hostile recruiter).
@@ -40,6 +41,7 @@ export function criticSystem(): string {
     'the first three lines do not carry the proof this company asked for; a valued quality is buried; something they said they do not care about takes prime space;',
     'a line reads as generic or AI-written; a number or link is missing where one would decide it; the section order fights the reader.',
     'Do not ask for facts that are not on the page — you cannot know them. Do not praise. PASS only if you would call this person.',
+    'You are told TODAY at the top of the message: a date at or before it is a real ship date, never a typo.',
     'Return JSON matching the schema exactly.',
   ].join(' ')
 }
@@ -60,7 +62,7 @@ function readingBrief(r: Reading): string {
 }
 
 export async function criticPass(pageText: string, reading: Reading, plan: GamePlan): Promise<CriticVerdict> {
-  const user = `THE READING\n${readingBrief(reading)}\n\nTHE PLAN'S OWN CLAIM: ${plan.rationale.slice(0, 500)}\n\nTHE PAGE\n${pageText.slice(0, 9000)}`
+  const user = `TODAY: ${today()} (every date on the page at or before today is real, not future)\n\nTHE READING\n${readingBrief(reading)}\n\nTHE PLAN'S OWN CLAIM: ${plan.rationale.slice(0, 500)}\n\nTHE PAGE\n${pageText.slice(0, 9000)}`
   const meta = await generateWithMeta<CriticLLM>({
     feature: 'strategist.critic',
     system: criticSystem(),
