@@ -32,7 +32,7 @@ Full-Time Offer: Guaranteed. Successfully complete the full 12 weeks, and you ar
 
 export const SHOWCASE_JOB_ID = 'showcase-babaclick'
 /** Bump when the packet craft changes — the demo's worked example is rebuilt on next open (never his vault). */
-export const SHOWCASE_VERSION = 4
+export const SHOWCASE_VERSION = 5
 
 export function showcaseJob(): Job {
   return {
