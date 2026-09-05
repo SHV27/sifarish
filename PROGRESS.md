@@ -11,7 +11,8 @@
 - The page re-measured against the LaTeX samples; descriptions one line; bullets ≤ two lines; a full
   two-pager beats a squeezed one-pager; short sections never split (one page-break rule, shared by
   compiler and renderer). Read by eye: docs/screenshots/v2-page-babaclick.png, v2-page-ngo.png.
-- 871 gates · tsc clean · warning-free build · registry v15.
+- Catalogue v2: eleven angles (mind, social impact, product & growth, research, founder-ship, data & analytics, business & consulting, design & users, hardware & embedded, teaching & community, AI engineering); the deep pass may NAME its own angle (lensId/lensLabel/lensWhy) and the board shows it. TYPESET_VERSION 5 re-tailors his stored packets once.
+- 873 gates · tsc clean · warning-free build · registry v16.
 
 
 
