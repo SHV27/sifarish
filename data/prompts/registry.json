@@ -1,6 +1,6 @@
 {
-  "version": 12,
-  "comment": "PROMPT REGISTRY (Studio W2, closes AUDIT #15): every prompt-bearing file is hashed here. Changing one WITHOUT bumping `version` (and FORGE_VERSION when the forge/reframe craft changed) fails tests/routing-config.test.ts — a craft edit can never again silently skip the vault-repair banner (the D140 class, now mechanical). v8 (30-Aug-2026): guru context pipeline.found excludes Haq-hidden roles (re-brief hunter #7) — count filter, no craft change. v9 (30-Aug-2026): FORGE_VERSION 6 — extreme-care mandate + full-strength framing + 3-5 bullets (final-bar pass). v10 (05-Sep-2026): v2 THE STRATEGIST — reading.ts / plan.ts / critic.ts join the registry (the reading, the game plan and the hostile-recruiter critic are prompt-bearing). v11 (05-Sep-2026, R3): plan.ts — ONE project-cap rule (canon three, bench the rest naming the budget + ranking; every other kind never benched for space). v12 (05-Sep-2026, R3 hunter pass): plan.ts custom kinds may lead; critic.ts deterministic floor probes every dismissed thing.",
+  "version": 13,
+  "comment": "PROMPT REGISTRY (Studio W2, closes AUDIT #15): every prompt-bearing file is hashed here. Changing one WITHOUT bumping `version` (and FORGE_VERSION when the forge/reframe craft changed) fails tests/routing-config.test.ts — a craft edit can never again silently skip the vault-repair banner (the D140 class, now mechanical). v8 (30-Aug-2026): guru context pipeline.found excludes Haq-hidden roles (re-brief hunter #7) — count filter, no craft change. v9 (30-Aug-2026): FORGE_VERSION 6 — extreme-care mandate + full-strength framing + 3-5 bullets (final-bar pass). v10 (05-Sep-2026): v2 THE STRATEGIST — reading.ts / plan.ts / critic.ts join the registry (the reading, the game plan and the hostile-recruiter critic are prompt-bearing). v11 (05-Sep-2026, R3): plan.ts — ONE project-cap rule (canon three, bench the rest naming the budget + ranking; every other kind never benched for space). v12 (05-Sep-2026, R3 hunter pass): plan.ts custom kinds may lead; critic.ts deterministic floor probes every dismissed thing. v13 (05-Sep-2026): plan.ts skills rows gain Databases (the canon six rows).",
   "entries": [
     {
       "file": "src/lib/nabz/forge.ts",
@@ -45,7 +45,7 @@
     {
       "file": "src/lib/strategist/plan.ts",
       "versionedBy": "PROMPT_VERSION via registry bump (v2 strategist)",
-      "sha256": "2f03d1b7ff0adb7bccf6658136b74837afdf94b6640dc2fdbfc514aba1cb4cca"
+      "sha256": "e2fa9301124ffe412c287db1d3bb82458fb1defc353d8489c945c3643bcbda44"
     },
     {
       "file": "src/lib/strategist/critic.ts",

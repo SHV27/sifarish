@@ -284,11 +284,14 @@ export function planHeuristic(reading: Reading, ledger: LedgerEntry[], _identity
 }
 
 /** The campus canon's labelled rows (six real samples): Languages · AI & ML · Frameworks & Libraries · Tools & Platforms · Core CS. */
-export const SKILL_ROWS = ['Languages', 'AI & ML', 'Frameworks & Libraries', 'Tools & Platforms', 'Core CS'] as const
+// The canon (six samples): 4–6 labelled rows — Languages / AI-ML / Frameworks / Databases / Tools / Core CS.
+export const SKILL_ROWS = ['Languages', 'AI & ML', 'Frameworks & Libraries', 'Databases', 'Tools & Platforms', 'Core CS'] as const
+const DB_RE = /\b(sql|postgres(?:ql)?|mysql|sqlite|mongodb|mongo|redis|dexie|indexeddb|supabase|firestore|chromadb|chroma|faiss|pinecone|weaviate|qdrant|vector (?:db|database|store)s?)\b/i
 const TOOLS_RE = /\b(git|github|docker|linux|vercel|netlify|vs code|vscode|hugging ?face|groq|gemini|claude|cursor|postman|aws|gcp|azure|render|firebase|supabase|kubernetes|ci|ci\/cd|github actions|ollama|tesseract)\b/i
 const CORE_RE = /\b(oop|oops|object[- ]oriented|operating systems?|dbms|computer networks?|dsa|data structures?|algorithms?|system design|distributed systems|networking)\b/i
 export function rowLabel(s: DerivedSkill): (typeof SKILL_ROWS)[number] {
   if (CORE_RE.test(s.text)) return 'Core CS'
+  if (DB_RE.test(s.text)) return 'Databases'
   if (s.category === 'Languages') return 'Languages'
   if (s.category === 'AI & ML') return 'AI & ML'
   if (TOOLS_RE.test(s.text)) return 'Tools & Platforms'
