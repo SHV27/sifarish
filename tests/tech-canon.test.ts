@@ -104,3 +104,18 @@ describe('the page reads clean', () => {
     for (const j of JUNK) for (const l of lines) expect(l, l).not.toMatch(new RegExp(`\\\\b${j}\\\\b`))
   })
 })
+
+describe('the page never repeats itself, and a header is what the project is built with', () => {
+  it('two PRANA entries print once — the richer one', async () => {
+    const { dedupeByTitleStem } = await import('../src/lib/compile/compiler')
+    const a = { entry: { title: 'PRANA-Sustainable-AI — A green AI framework', summary: 'short', bullets: [] } }
+    const b = { entry: { title: 'PRANA — A Layered Framework for Sustainable AI Compute (position paper)', summary: 'Self-published position paper reframing the energy-water crisis as exergy misplacement', bullets: [] } }
+    const out = dedupeByTitleStem([a, b])
+    expect(out).toHaveLength(1)
+    expect(out[0].entry.title).toMatch(/^PRANA — A Layered/)
+  })
+  it('a bullet keyword never reaches the header stack', () => {
+    const g = { ...SEED_LEDGER.find((e) => e.id === 'proj-gloaming')!, context: undefined, tags: ['typescript'], bullets: [{ id: 'x', text: 'queried a database', keywords: ['sql'], ledgerIds: [] }] } as unknown as LedgerEntry
+    expect(headerStack(g)).toEqual(['TypeScript'])
+  })
+})

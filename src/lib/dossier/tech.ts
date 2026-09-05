@@ -54,8 +54,8 @@ export function isTech(term: string): boolean {
   return canonTech(term) !== null
 }
 
-/** Every technology an entry proves, canonical and deduped: README stack first, then tags, then bullet keywords. */
-export function techOf(entry: LedgerEntry): Tech[] {
+/** Every technology an entry proves, canonical and deduped: README stack first, then tags, then (when asked) bullet keywords. */
+export function techOf(entry: LedgerEntry, opts: { keywords?: boolean } = { keywords: true }): Tech[] {
   const out: Tech[] = []
   const seen = new Set<string>()
   const take = (raw: string) => {
@@ -67,14 +67,15 @@ export function techOf(entry: LedgerEntry): Tech[] {
   }
   for (const s of entry.context?.stack ?? []) take(s)
   for (const t of entry.tags ?? []) take(t)
-  for (const b of entry.bullets ?? []) for (const k of b.keywords ?? []) take(k)
+  if (opts.keywords !== false) for (const b of entry.bullets ?? []) for (const k of b.keywords ?? []) take(k)
   return out
 }
 
 /** The header stack for a project: ≤ 4 canonical technologies, the ones the posting asks for first. */
 export function headerStack(entry: LedgerEntry, askedFor: string[] = [], max = 4): string[] {
   const asked = new Set(askedFor.map((a) => canonTech(a)?.name).filter((x): x is string => !!x))
-  const all = techOf(entry)
+  // OWNER-READ: "SIFARISH | …, SQL" — a bullet keyword is not what the project is built with.
+  const all = techOf(entry, { keywords: false })
   const first = all.filter((t) => asked.has(t.name))
   const rest = all.filter((t) => !asked.has(t.name))
   return [...first, ...rest].slice(0, max).map((t) => t.name)

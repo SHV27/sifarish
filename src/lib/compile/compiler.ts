@@ -282,6 +282,28 @@ const TECH_CASE: Record<string, string> = {
   claude: 'Claude', dexie: 'Dexie', vite: 'Vite', vercel: 'Vercel', serverless: 'Serverless',
   tailwind: 'Tailwind', docker: 'Docker', sql: 'SQL', mongodb: 'MongoDB', fastapi: 'FastAPI',
 }
+/** The first title word (≥ 5 letters, hyphen-split) — "PRANA-Sustainable-AI" and "PRANA — A Layered …" share a stem. */
+function titleStem(title: string): string {
+  // Only a NAME-like first token dedupes (PRANA, GLOAMING): all-caps, ≥ 4 letters. "Winner 1" / "Winner 2" are two facts.
+  const w = title.split(/[\s—–|:]+/)[0]?.split('-')[0] ?? ''
+  return /^[A-Z][A-Z0-9]{3,}$/.test(w) ? w.toLowerCase() : ''
+}
+/** Same stem → keep the richer entry (longest summary + bullets); the page never says one thing twice. */
+export function dedupeByTitleStem<T extends { entry: { title: string; summary?: string; bullets: unknown[] } }>(items: T[]): T[] {
+  const best = new Map<string, T>()
+  const order: string[] = []
+  for (const it of items) {
+    const k = titleStem(it.entry.title) || `#${order.length}:${it.entry.title}`
+    const cur = best.get(k)
+    const weight = (x: T) => (x.entry.summary?.length ?? 0) + x.entry.bullets.length * 40
+    if (!cur) {
+      best.set(k, it)
+      order.push(k)
+    } else if (weight(it) > weight(cur)) best.set(k, it)
+  }
+  return order.map((k) => best.get(k)!)
+}
+
 /** Drop a summary that only restates the title (≥ 60% of its words already in the title) — keep the tail that adds something. */
 export function trimRestatement(title: string, summary: string): string {
   if (!summary) return ''
@@ -819,7 +841,7 @@ function compileFromPlan(input: CompileInput): CompiledResume {
     }
 
     const bulletSection = (key: string) => {
-      const items = inSection(key)
+      const items = dedupeByTitleStem(inSection(key))
       if (items.length === 0) return
       heading(key, items.map((p) => p.factId))
       for (const p of items) {
