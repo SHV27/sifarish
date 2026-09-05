@@ -2,7 +2,34 @@
 
 **Resume line: "read PROGRESS.md and continue."**
 
-## Status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1 (THE OWNER'S EYE) + R2 (THE TEAM) built, deployed, proven live on HIS vault
+## Status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1 + R2 + R3 (THE HUNTER'S PASS + THE MEMORY) built, deployed, proven live
+
+### R3 — the brief walked a third time, with the whole suite (DECISIONS V2-10)
+- **Fresh-context hunter** (studio-verify adversary) audited code vs brief line by line → 15 findings,
+  every one fixed at its choke point with a gate (tests/r3-audit.test.ts, tests/memory.test.ts):
+  page-solver prefers a FULL two-pager over a starved one-pager (orphan-page guard); the chat lane's
+  schema can say every dossier op; README depth (problem + prose) reaches the plan brain; letter keeps
+  the reading, invents nothing, drops stale ETAs; critic revision re-aims wording; overrule uncapped;
+  custom kinds may lead; ops on every non-refusal turn; url-only READMEs refresh; deterministic critic
+  probes every "we do not care"; "Tell the team" on every width; sample résumés: paste or upload
+  (.pdf/.txt) on the Shelf.
+- **THE MEMORY**: recorded outcomes as data (jobs moved + the reader they were aimed at + what the page
+  led with) → read by every deep pass, shown on the board; starts empty and says so; refuses a rule
+  below 5 outcomes. **THE CLOCK** on the desk from his own window (secure by 30 Nov 2026 · Oct–Nov).
+  **Interview brief** speaks the plan (their cares → his proof; do-not-lead list).
+- **Demo**: the worked example executes THE TEAM's deep pass recorded once by script
+  (`scripts/record-showcase.mts`, data/showcase/babaclick.strategy.json) — GEMINI DEEP PASS + critic
+  on the fictional persona (now three shipped projects), labelled "recorded on 2026-09-05".
+- A skipped critic now names its reason — which exposed the live cause (burst rate-limit at the tail
+  of reading → plan → reframes → critic); backoff 10/20/30 s. Today's repeated proof runs exhausted the
+  free lanes, so the last live eye shows SKIPPED with the reason; his own packets run one at a time.
+- Live proofs on `index-DlPkpohU`: served hash OK · no-Origin → 403 · demo smoke 0 metered POSTs, 0
+  errors, no owner leak · owner proof on HIS vault 0 errors (the Siemens packet showed the keyless
+  floor within the 2-minute wait — rate-limited day; "Run the deep pass" re-runs it) · demo journey
+  read in the browser: clock, memory, recorded pass, honest letter, PDF preview; console clean.
+- Gates: 853 · tsc clean · warning-free build. Registry v12. NOTES parked items marked built.
+
+## Prior status: V2 CYCLE (05-Sep-2026) — Arcs 1–5 + R1 (THE OWNER'S EYE) + R2 (THE TEAM) built, deployed, proven live on HIS vault
 
 Brief: VISION-BRIEF-sifarish-v2.md (voids the 30-Aug brief). Pipeline ran whole: recon (7 lanes,
 RESEARCH.md v2 verdicts) → boardroom (DECISIONS V2-1: 5 pillars, cut list, the Played/Benched board

@@ -85,6 +85,13 @@ reasoning"*; every skill in the rows carries its proving fact ids; the validator
 
 ![The game plan board](docs/screenshots/v2-demo-plan.png)
 
+### v5 — the page the plan executes (demo persona, recorded Gemini pass)
+![The compiled page](docs/screenshots/v2-demo-page.png)
+
+The board above it now also carries **THE MEMORY** (what recorded outcomes taught this plan — it starts
+empty and says so) and the critic's verdict with its reasons; the desk carries **THE CLOCK** from the
+owner's own window. Sample résumés join the canon by paste or upload on the Shelf.
+
 ### v5 — the owner's page, Gemini deep pass, on the real vault
 ![The owner's packet](docs/screenshots/v2-owner-packet.png)
 
