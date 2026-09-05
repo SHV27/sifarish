@@ -1,7 +1,8 @@
 import { db } from '../../db/db'
-import type { Job, SavedHunt, VisionProfile } from '../../types'
+import type { Job, LedgerEntry, SavedHunt, VisionProfile } from '../../types'
 import { setJobStatus } from '../morcha'
 import { addSavedHunt, syncVisionHunts, runSweep } from '../khabri/client'
+import { absorbFact, ensureSection, findEntry, inferKind, labelFor, splitFact } from '../dossier/absorb'
 
 /**
  * EK BAAT — THE GLOBAL OP REGISTRY (re-brief Pillar 1, ARCHITECTURE authority 1).
@@ -18,6 +19,15 @@ import { addSavedHunt, syncVisionHunts, runSweep } from '../khabri/client'
 
 export type GlobalOp =
   | { kind: 'add-entry'; entryKind: 'achievement' | 'certification' | 'skill'; title: string; detail?: string }
+  /** v2 THE DOSSIER — a fact of ANY kind, said out loud; the kind is inferred, the section created on demand. */
+  | { kind: 'add-fact'; factKind: string; text: string; detail?: string }
+  | { kind: 'create-section'; sectionKind: string; label: string }
+  /** in_forge → shipped ("I know LoRA now"): the dated momentum line becomes a fact. */
+  | { kind: 'promote-entry'; entryId: string }
+  /** resumeEligible flip on a skill he once benched ("allow React on my résumé"). */
+  | { kind: 'set-skill-eligible'; entryId: string; eligible: boolean }
+  /** Re-read every public README into the projects' context (never touches his bullets). */
+  | { kind: 'refresh-readmes' }
   | { kind: 'vision-add-role'; role: string }
   | { kind: 'vision-drop-role'; role: string }
   | { kind: 'vision-add-avoid'; term: string }
@@ -43,6 +53,8 @@ export interface AgentContext {
   hunts: SavedHunt[]
   jobs: Job[]
   vision?: VisionProfile
+  /** v2 — the dossier, so promote / eligibility ops validate against REAL entries. */
+  ledger?: LedgerEntry[]
 }
 
 let seq = 0
@@ -75,6 +87,50 @@ export function validateGlobalOp(raw: Record<string, unknown>, ctx: AgentContext
         ['ledger is self-declared truth', 'resume renders it only via I1 evidence links'],
       )
     }
+    case 'add-fact': {
+      const text = s('text')
+      if (text.length < 6 || text.length > 300) return null
+      const factKind = (s('factKind') || inferKind(text)).toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      if (!factKind) return null
+      const { title } = splitFact(text)
+      return mk(
+        { kind, factKind, text, detail: s('detail') || undefined },
+        `Add to your dossier (${labelFor(factKind)}): "${title.slice(0, 80)}"`,
+        `Lands in your Sach Ledger as kind "${factKind}" (a section is created if none exists), sworn by you, dated today. The strategist decides per posting whether it plays — "${title.slice(0, 40)}" may be the strongest line for one company and benched for another.`,
+        ['sworn by owner (I1)', 'section created on demand', 'played/benched per posting with a reason'],
+      )
+    }
+    case 'create-section': {
+      const sectionKind = s('sectionKind').toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      const label = s('label') || labelFor(sectionKind)
+      if (sectionKind.length < 3 || sectionKind.length > 40) return null
+      return mk({ kind, sectionKind, label }, `Create section "${label}"`, 'A new kind in the registry; facts you add under it render as their own titled section when played.', ['registry is data', 'compiler renders any kind'])
+    }
+    case 'promote-entry': {
+      const needle = s('entryId')
+      const e = (ctx.ledger ?? []).find((x) => x.id === needle) ?? findEntry((ctx.ledger ?? []).filter((x) => x.tier === 'in_forge'), needle)
+      if (!e || e.tier !== 'in_forge') return null
+      return mk(
+        { kind, entryId: e.id },
+        `Promote "${e.title.split(/ — /)[0]}" to shipped`,
+        'It leaves the dated "Currently Building" line and becomes a fact the page can play — only say so if you can defend it in an interview.',
+        ['tier honesty (I2)', 'sworn by owner'],
+      )
+    }
+    case 'set-skill-eligible': {
+      const needle = s('entryId')
+      const eligible = raw.eligible === true
+      const e = (ctx.ledger ?? []).find((x) => x.id === needle) ?? findEntry((ctx.ledger ?? []).filter((x) => x.kind === 'skill'), needle)
+      if (!e || e.kind !== 'skill' || e.resumeEligible === eligible) return null
+      return mk(
+        { kind, entryId: e.id, eligible },
+        eligible ? `Allow "${e.title}" on the page` : `Keep "${e.title}" off the page`,
+        eligible ? 'Skills rows and project stacks may show it again (it was marked not-interview-safe before).' : 'Stays evidence for matching; never rendered.',
+        ['his call outranks the README (D59)'],
+      )
+    }
+    case 'refresh-readmes':
+      return mk({ kind }, 'Re-read your GitHub READMEs', 'Every project with a repo link gets its README context refreshed (features, stack, prose); your bullets and titles are never touched.', ['context only', 'keyless for public repos'])
     case 'vision-add-role':
     case 'vision-drop-role': {
       const role = s('role')
@@ -176,6 +232,36 @@ export function validateGlobalOp(raw: Record<string, unknown>, ctx: AgentContext
 /** Execute a CONFIRMED op. Returns the honest confirmation line for the chat. */
 export async function executeGlobalOp(op: GlobalOp, onNav?: (screen: string) => void): Promise<string> {
   switch (op.kind) {
+    case 'add-fact': {
+      const e = await absorbFact({ text: op.text, kind: op.factKind, detail: op.detail })
+      return `Done — "${e.title}" is in your dossier under ${labelFor(e.kind)} (sworn by you, dated ${e.evidence?.date}). Every future packet weighs it; the board says why it plays or sits.`
+    }
+    case 'create-section': {
+      const created = await ensureSection(op.sectionKind, op.label)
+      return created ? `Section "${op.label}" created — tell me facts for it any time.` : `Section "${op.label}" already exists.`
+    }
+    case 'promote-entry': {
+      const e = await db.ledger.get(op.entryId)
+      if (!e) return 'That entry is gone.'
+      const now = new Date()
+      await db.ledger.update(op.entryId, {
+        tier: 'shipped',
+        forgeEta: undefined,
+        evidence: { ...(e.evidence ?? { note: '' }), date: e.evidence?.date ?? `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`, note: `${e.evidence?.note ?? ''} Promoted to shipped by the owner in conversation.`.trim() },
+        sworn: 'owner',
+      })
+      return `"${e.title.split(/ — /)[0]}" is shipped now — it leaves the Currently Building line and can play on the page.`
+    }
+    case 'set-skill-eligible': {
+      await db.ledger.update(op.entryId, { resumeEligible: op.eligible })
+      const e = await db.ledger.get(op.entryId)
+      return op.eligible ? `"${e?.title}" may appear on the page again.` : `"${e?.title}" stays off the page.`
+    }
+    case 'refresh-readmes': {
+      const { refreshProjectContexts } = await import('../dossier/readme')
+      const r = await refreshProjectContexts()
+      return `Re-read ${r.refreshed} README${r.refreshed === 1 ? '' : 's'}${r.skipped ? `, ${r.skipped} unchanged/unavailable` : ''} — the strategist now reads the latest words you wrote.`
+    }
     case 'add-entry': {
       const id = `${op.entryKind}-${Date.now()}`
       const now = new Date()

@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { GamePlan, Packet, Reading } from '../types'
 import { sectionLabel } from '../lib/strategist/plan'
-import { overrulePacket } from '../lib/darzi'
+import { overrulePlan } from '../lib/darzi'
 
 /**
  * v2 — THE PLAYED / BENCHED BOARD: the game plan is the interface. Every fact in the dossier is
@@ -28,10 +28,10 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
   const modeLabel = mode === 'heuristic' ? 'template strategist (keyless floor)' : `${mode} deep pass`
   const pages = packet.resume.pages ?? 1
 
-  const overrule = async (opts: { promoteId?: string; benchId?: string }) => {
+  const overrule = async (opts: { playId?: string; benchId?: string }) => {
     setBusy(true)
     try {
-      await overrulePacket(packet, opts)
+      await overrulePlan(packet, opts)
     } finally {
       setBusy(false)
     }
@@ -138,8 +138,8 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
                         </summary>
                         <p className="text-[10px] text-ink-soft mt-0.5 pl-3">{evidence(p.factId)}</p>
                       </details>
-                      {key === 'projects' && (
-                        <button className="text-[10px] text-ink-soft hover:text-stamp shrink-0" disabled={busy} onClick={() => overrule({ benchId: p.factId })}>
+                      {key !== 'education' && (
+                        <button className="text-[10px] text-ink-soft hover:text-stamp shrink-0" disabled={busy} onClick={() => overrule({ benchId: p.factId })} title="bench this fact for THIS company (your call, recorded)">
                           bench
                         </button>
                       )}
@@ -160,11 +160,9 @@ export default function PlanBoard({ packet }: { packet: Packet }) {
                         </summary>
                         <p className="text-[10px] mt-0.5 pl-3">{evidence(b.factId)}</p>
                       </details>
-                      {ledger.find((e) => e.id === b.factId)?.kind === 'project' && (
-                        <button className="text-[10px] text-shipped hover:underline shrink-0" disabled={busy} onClick={() => overrule({ promoteId: b.factId })}>
-                          play
-                        </button>
-                      )}
+                      <button className="text-[10px] text-shipped hover:underline shrink-0" disabled={busy} onClick={() => overrule({ playId: b.factId })} title="put this fact on the page for THIS company (your call, recorded)">
+                        play
+                      </button>
                     </li>
                   ))}
                 </ul>

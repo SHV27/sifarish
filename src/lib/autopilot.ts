@@ -40,6 +40,15 @@ export async function runAutopilot(): Promise<void> {
   // human-confirmed (Pulse brief), hand-set hunts untouchable (D59). Zero budget, zero key.
   await proposeHuntEdits(settings.visionProfile).catch((e) => catchAs('provider', 'autopilot.huntRetire', e))
 
+  // v2 THE DOSSIER — his READMEs are the asset and they change as he ships: re-read them into the
+  // projects' context once a month (keyless for public repos; bullets never touched). Delayed so it
+  // never contends with the sweep's network burst.
+  import('./dossier/readme')
+    .then(async (m) => {
+      if (await m.readmeRefreshDue()) setTimeout(() => m.refreshProjectContexts().catch((e) => catchAs('provider', 'autopilot.readmeRefresh', e)), 6000)
+    })
+    .catch((e) => catchAs('provider', 'autopilot.readmeRefresh', e))
+
   // Stagger so we never fire two credit-spending sweeps at the same instant.
   const sweepStale = !settings.lastSweepAt || Date.now() - new Date(settings.lastSweepAt).getTime() > SWEEP_STALE_MS
   if (sweepStale) {

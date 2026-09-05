@@ -42,7 +42,13 @@ export function Shelf({ onNav, onTailor }: { onNav: (t: 'radar' | 'morcha' | 'kh
         </div>
       </div>
 
-      {KIND_ORDER.map(({ kind, label }) => {
+      {[
+        ...KIND_ORDER,
+        // v2 THE DOSSIER: kinds created on demand ("sports", "publication", …) render as their own groups.
+        ...[...new Set(entries.map((e) => e.kind))]
+          .filter((k) => !KIND_ORDER.some((o) => o.kind === k))
+          .map((k) => ({ kind: k as EntryKind, label: k.replace(/[-_]/g, ' ').replace(/\w/g, (c) => c.toUpperCase()) })),
+      ].map(({ kind, label }) => {
         const group = entries.filter((e) => e.kind === kind)
         if (group.length === 0) return null
         return (

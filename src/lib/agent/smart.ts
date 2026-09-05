@@ -38,6 +38,8 @@ function systemPrompt(ctx: AgentContext, extra: { ledgerLine: string; identityNa
     '',
     'Available ops (set unused fields to null):',
     '- {"kind":"add-entry","entryKind":"achievement"|"certification"|"skill","title":"…","detail":"…"}',
+    '- {"kind":"add-fact","factKind":"experience"|"achievement"|"position"|"publication"|"sports"|"language"|"certification"|"<any short kind>","text":"<the fact in his words>","detail":"…"} — ANY true fact about him; a section is created if new',
+    '- {"kind":"create-section","sectionKind":"<slug>","label":"…"} · {"kind":"promote-entry","entryId":"<title words of an in_forge entry>"} · {"kind":"set-skill-eligible","entryId":"<skill title>","eligible":true|false} · {"kind":"refresh-readmes"}',
     '- {"kind":"vision-add-role","role":"…"} · {"kind":"vision-drop-role","role":"…"}',
     '- {"kind":"vision-add-avoid","term":"…"} · {"kind":"vision-drop-avoid","term":"…"}',
     '- {"kind":"vision-add-company","company":"…"} · {"kind":"vision-set-dream","dream":"<his full vision text, verbatim>"}',

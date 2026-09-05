@@ -455,6 +455,40 @@ export async function overrulePacket(packet: Packet, opts: { promoteId?: string;
 }
 
 /**
+ * v2 THE DOSSIER — play or bench ANY fact on THIS packet's plan (achievement, position, publication,
+ * a custom kind…), not only projects. His word is final; the reason is recorded as his; the page
+ * recompiles through the one door. Packet-scoped: other packets and the ledger are untouched.
+ */
+export async function overrulePlan(packet: Packet, opts: { playId?: string; benchId?: string }): Promise<Packet> {
+  if (!packet.plan) return packet
+  const ledger = await db.ledger.toArray()
+  const plan = packet.plan
+  let played = plan.played.slice()
+  let benched = plan.benched.slice()
+  if (opts.benchId) {
+    played = played.filter((p) => p.factId !== opts.benchId)
+    if (!benched.some((b) => b.factId === opts.benchId)) benched = [{ factId: opts.benchId, reason: 'Benched by the owner (studio head overrule).' }, ...benched]
+  }
+  if (opts.playId) {
+    const e = ledger.find((x) => x.id === opts.playId)
+    if (e) {
+      benched = benched.filter((b) => b.factId !== opts.playId)
+      if (!played.some((p) => p.factId === opts.playId)) {
+        const { sectionKeyFor } = await import('./strategist/plan')
+        played = [...played, { factId: e.id, section: sectionKeyFor(e.kind), reason: 'Played by the owner (studio head overrule).' }]
+      }
+    }
+  }
+  const projectOrder = played.filter((p) => p.section === 'projects').map((p) => p.factId)
+  const sectionOrder = plan.sectionOrder.slice()
+  for (const p of played) if (!sectionOrder.includes(p.section)) sectionOrder.push(p.section)
+  const next: Packet = { ...packet, plan: { ...plan, played, benched, projectOrder, sectionOrder } }
+  const recompiled = await recompilePacket(next, {})
+  await db.packets.put(recompiled)
+  return recompiled
+}
+
+/**
  * Session 7.2 (A1) — THE ONE RECOMPILE AUTHORITY. Every post-build recompile (Baithak op,
  * summary toggle, overrule) used to re-assemble compile options ad-hoc, each forgetting a
  * different field: Baithak ops dropped the professional summary, setSummary dropped Nazar's

@@ -118,7 +118,7 @@ export function Guru({ onOpenPacket, onNav }: { onOpenPacket: (jobId: string) =>
       // EK BAAT op lanes — ONLY when the honesty router found nothing critical (it always runs
       // first; refusals/I9 are decided before any op or LLM sees the turn).
       if (routed.intent === 'freeform') {
-        const ctx: AgentContext = { hunts, jobs, vision: appSettings?.visionProfile }
+        const ctx: AgentContext = { hunts, jobs, vision: appSettings?.visionProfile, ledger: await db.ledger.toArray() }
         // Lane 1: deterministic cue grammar (keyless core, zero spend).
         const det = parseGlobal(text, ctx)
         if (det && (det.proposals.length > 0 || det.reply)) {
